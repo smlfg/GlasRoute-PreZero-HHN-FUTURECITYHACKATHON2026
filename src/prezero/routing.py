@@ -126,7 +126,7 @@ def _aggregate_locations(
     locations: pd.DataFrame,
     config: OperationalConfig | None = None,
 ) -> pd.DataFrame:
-    """Collapse per-material scores to unique Location_id rows, summing only critical bin mass."""
+    """Collapse per-material scores to physical sites, summing bin mass at each point."""
     if scored.empty:
         return pd.DataFrame()
 
@@ -143,18 +143,29 @@ def _aggregate_locations(
     )
     work["crit_mass_kg"] = work["bin_mass_kg"].where(work["critical"], 0.0)
 
-    ordered = work.sort_values(
-        ["Location_id", "score", "material_type"],
-        ascending=[True, False, True],
+    merged = work.merge(
+        locations[["Location_id", "lat", "lon", "source", "confidence"]],
+        on="Location_id",
+        how="inner",
     )
-    per_loc = ordered.groupby("Location_id", as_index=False).agg(
+    merged["_lat_key"] = merged["lat"].round(6)
+    merged["_lon_key"] = merged["lon"].round(6)
+    ordered = merged.sort_values(
+        ["_lat_key", "_lon_key", "score", "material_type", "Location_id"],
+        ascending=[True, True, False, True, True],
+    )
+    per_loc = ordered.groupby(["_lat_key", "_lon_key"], as_index=False).agg(
+        Location_id=("Location_id", "min"),
         score=("score", "max"),
         critical=("critical", "any"),
         primary_material=("material_type", "first"),
         last_fill_level=("last_fill_level", "max"),
         critical_bins=("critical", "sum"),
+        bins=("Location_id", "size"),
         mass_kg=("crit_mass_kg", "sum"),
         max_bin_mass_kg=("bin_mass_kg", "max"),
+        source=("source", "first"),
+        confidence=("confidence", "first"),
     )
 
     no_crit = per_loc["critical_bins"] == 0
@@ -162,12 +173,9 @@ def _aggregate_locations(
     per_loc.loc[no_crit, "mass_kg"] = per_loc.loc[no_crit, "max_bin_mass_kg"]
     per_loc = per_loc.drop(columns=["max_bin_mass_kg"])
 
-    merged = per_loc.merge(
-        locations[["Location_id", "lat", "lon", "source", "confidence"]],
-        on="Location_id",
-        how="inner",
-    )
-    return merged.sort_values(["score", "Location_id"], ascending=[False, True]).reset_index(
+    per_loc["lat"] = per_loc["_lat_key"]
+    per_loc["lon"] = per_loc["_lon_key"]
+    return per_loc.sort_values(["score", "Location_id"], ascending=[False, True]).reset_index(
         drop=True
     )
 
@@ -435,7 +443,7 @@ def build_route(
     scored: pd.DataFrame,
     locations: pd.DataFrame,
     depot: tuple[float, float] = DEFAULT_DEPOT,
-    max_stops: int = 25,
+    max_stops: int | None = None,
     date: str | None = None,
     output_dir: str | Path = ".",
     config: OperationalConfig | None = None,
@@ -452,7 +460,7 @@ def build_route(
                 "lat": float(cfg.disposal_depot[0]),
                 "lon": float(cfg.disposal_depot[1]),
             },
-            "max_stops": int(max_stops),
+            "max_stops": None if max_stops is None else int(max_stops),
             "num_stops": 0,
             "total_critical_locations": 0,
             "total_active_locations": 0,
@@ -476,7 +484,8 @@ def build_route(
     else:
         critical_locs = loc_scores[loc_scores["critical"]]
         pool = critical_locs if not critical_locs.empty else loc_scores
-        selected = pool.head(max_stops).reset_index(drop=True)
+        selected = pool if max_stops is None else pool.head(max_stops)
+        selected = selected.reset_index(drop=True)
 
         stops, unload_stops, vehicles, planned_km, total_mass_kg = _simulate_constrained_routes(
             selected, cfg
@@ -497,7 +506,7 @@ def build_route(
                 "lat": float(cfg.disposal_depot[0]),
                 "lon": float(cfg.disposal_depot[1]),
             },
-            "max_stops": int(max_stops),
+            "max_stops": None if max_stops is None else int(max_stops),
             "num_stops": collection_stop_count,
             "total_critical_locations": int(len(critical_locs)),
             "total_active_locations": int(len(loc_scores)),
