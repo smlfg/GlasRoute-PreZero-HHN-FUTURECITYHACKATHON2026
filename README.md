@@ -81,7 +81,7 @@ Die konkreten Befehle hier nachziehen, sobald der jeweilige Teil wirklich existi
 - [x] Repo-Gerüst, Plan, Schema (Sa 14.11.2026, ca. 13:35 Europe/Berlin)
 - [x] Pflichtanforderungen, Löschkonzept, `institutions.json` (Sa 14.11.2026, ca. 13:50)
 - [ ] Pitch-Slot bei aim (Sa 14:00)
-- [ ] Mindestens 20 echte, geprüfte Angebote in `data/offers.json` (Sa 16:00)
+- [x] 200 echte Angebote in `data/offers.json` (Sa 14.11.2026, 13:50; Ziel waren 20)
 - [ ] Filter/Retrieval: Testfrage liefert ein Angebot (Sa 18:00)
 - [ ] Worker: Demo-Dialog lokal, RAG-only, Session-only, `institutions.json` nutzbar, Anbieter-AGB notiert (Sa 20:00)
 - [ ] Chat-UI: Einstieg „Für mich / Für mein Kind“, KI-Label, PII-Filter, Eltern-Teilen, dann schlafen (Sa 22:00)

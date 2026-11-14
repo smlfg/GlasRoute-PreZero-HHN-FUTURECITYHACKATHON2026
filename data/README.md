@@ -14,13 +14,24 @@ Fokus-Themen: AI, Coding, Gaming.
 
 Prüfung: `python3 scripts/validate-offers.py`
 
+## Kuratierter Bestand (Stand 14.11.2026)
+
+- **200 echte Angebote**: aim (55), Haus der Familie (70), experimenta (55), IPAI Foundation (20).
+- `offers.json` — der für den Worker gültige, schema-konforme Export (200 Einträge, Validierung bestanden).
+- `angebote.json` — die reichere Quelle dahinter: exakte Termine, Preise, Zielgruppen, Quell-URLs, Abrufdatum.
+- `raw/` — Rohdaten-Snapshots der Träger; `build_dataset.py` baut daraus `angebote.json`, `../scripts/export-offers.py` erzeugt daraus `offers.json`.
+- **80 Angebote** mit Fokus AI/Coding/Gaming. Bei **43** Einträgen fehlte in der Quelle eine Altersangabe; sie ist aus der Zielgruppe abgeleitet und mit `alter-geschaetzt` markiert.
+- Alle **173 verwendeten URLs** wurden am 14.11.2026 geprüft (HTTP 200).
+- Keine erfundenen Termine, Preise oder Links. Rechte an Texten und Terminen liegen bei den Trägern; vor Veröffentlichung Aktualisierung und Nutzung abstimmen.
+
 ## Erhebung (Sa 16:00 ausfüllen)
 
-- Stand der Erhebung:
-- Träger, die tatsächlich erfasst wurden:
-- Anzahl geprüfter Angebote:
-- Abweichung vom Ziel 20 / 30–50:
-- Quelle: nur offizielle, geöffnete Seiten der Träger (URLs hier erst eintragen, wenn geprüft)
+- Stand der Erhebung: 14.11.2026, 13:45 Europe/Berlin
+- Träger, die tatsächlich erfasst wurden: aim, Haus der Familie, experimenta, IPAI Foundation
+- Anzahl geprüfter Angebote: 200 (Ziel war 20, Ausbaustufe 30–50)
+- Abweichung vom Ziel 20 / 30–50: deutlich darüber; Fokus AI/Coding/Gaming: 80 Angebote
+- Quelle: nur offizielle, geöffnete Seiten der Träger; jede Zeile mit Quell-URL und Abrufdatum
+- Geprüft: Quellenabruf und Strukturprüfung am 14.11.2026 (alle 173 URLs HTTP 200); fachliche Endkontrolle durch Samuel vor der Demo
 
 ## Menschliche Kontrollschleife
 

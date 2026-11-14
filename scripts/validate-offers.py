@@ -22,13 +22,18 @@ REQUIRED = (
     "description",
     "tags",
 )
-EXAMPLE_HINTS = ("beispiel", "example.com", "nicht-echt", "nicht verwenden")
+EXAMPLE_HINTS = ("example.com", "nicht-echt", "nicht verwenden")
 
 
 def is_example(item: dict) -> bool:
+    # "Beispiel" allein ist ein normales deutsches Wort ("zum Beispiel") und
+    # kommt in echten Kursbeschreibungen vor. Platzhalter erkennt man am
+    # Titelpräfix oder an den expliziten Markern.
+    title = str(item.get("title", "")).strip().lower()
+    if title.startswith("beispiel"):
+        return True
     blob = " ".join(
         [
-            str(item.get("title", "")),
             str(item.get("link", "")),
             str(item.get("location", "")),
             str(item.get("description", "")),
