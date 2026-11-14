@@ -1075,6 +1075,112 @@ def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
     """
 
 
+def _build_role_start_html(
+    route_bundle: dict[str, Any], locations_df: pd.DataFrame, date: str
+) -> str:
+    """Build the offline role selector and the operational driver/dispatcher views."""
+    location_lookup = {}
+    if "Location_id" in locations_df.columns:
+        for _, row in locations_df.iterrows():
+            location_lookup[str(row["Location_id"])] = row.to_dict()
+
+    rows: list[str] = []
+    map_points: list[str] = []
+    for stop in route_bundle["metrics"].get("stops", []):
+        loc_id = str(stop.get("Location_id", ""))
+        location = location_lookup.get(loc_id, {})
+        site = (
+            location.get("address")
+            or location.get("site")
+            or location.get("name")
+            or loc_id
+        )
+        material = str(stop.get("primary_material") or stop.get("material_type") or "-")
+        level = stop.get("est_fill_level", stop.get("last_fill_level"))
+        try:
+            level_text = "-" if level is None else f"{float(level):g} %"
+        except (TypeError, ValueError):
+            level_text = html.escape(str(level))
+        lat, lon = stop.get("lat"), stop.get("lon")
+        if lat is not None and lon is not None:
+            map_points.append(f"{float(lat):.6f},{float(lon):.6f}")
+        rows.append(
+            f"""
+            <tr class="driver-stop" data-loc="{html.escape(loc_id, quote=True)}"
+                data-mat="{html.escape(material, quote=True)}"
+                data-lat="{html.escape(str(lat or ''), quote=True)}"
+                data-lon="{html.escape(str(lon or ''), quote=True)}">
+              <td>{html.escape(str(stop.get("order", len(rows) + 1)))}</td>
+              <td><strong>{html.escape(str(site))}</strong><br><code>{html.escape(loc_id)}</code></td>
+              <td>{html.escape(material)}</td>
+              <td>{html.escape(level_text)}</td>
+              <td><label class="driver-check"><input class="emptied" type="checkbox"> geleert</label></td>
+              <td><input class="found-level" type="number" min="0" max="110" step="10"
+                  placeholder="10er-Schritte" aria-label="Füllstand vorgefunden"></td>
+            </tr>
+            """
+        )
+    waypoints = "|".join(map_points[1:-1])
+    maps_link = ""
+    if map_points:
+        maps_link = (
+            '<a class="secondary-btn" target="_blank" rel="noopener" '
+            f'href="https://www.google.com/maps/dir/?api=1&origin={map_points[0]}'
+            f'&destination={map_points[-1]}&waypoints={waypoints}">Google Maps öffnen</a>'
+        )
+    return f"""
+    <section id="start-screen" class="role-screen">
+      <div class="role-hero">
+        <p class="eyebrow">GlasRoute · {html.escape(date)}</p>
+        <h2>Welche Ansicht brauchst du?</h2>
+        <p>Die Tour bleibt offline im Browser. Die Disponentin gibt sie frei, der Fahrer dokumentiert die Rückmeldung, Analyse zeigt die Datengrundlage.</p>
+      </div>
+      <div class="role-cards">
+        <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Tour fahren, leeren und Rückmeldung exportieren</span></button>
+        <button type="button" class="role-card" data-role="dispatcher"><strong>Disponentin</strong><span>Tour auswählen, prüfen und freigeben</span></button>
+        <button type="button" class="role-card" data-role="analysis"><strong>Analyse</strong><span>Daten, Heatmap, Forecast, Fairer Vergleich, Copilot</span></button>
+      </div>
+    </section>
+
+    <section id="role-driver" class="role-panel driver-panel">
+      <div class="section-head">
+        <h2>Fahrer · heutige Tour</h2>
+        <p class="muted">Nur von der Disponentin freigegebene Touren werden angezeigt.</p>
+      </div>
+      <div id="driver-locked" class="coverage-hint">Diese Tour ist noch nicht freigegeben.</div>
+      <div id="driver-tour" hidden>
+        <div class="driver-actions">
+          {maps_link}
+          <button type="button" class="primary-btn" id="export-tour-btn">Tour exportieren</button>
+          <button type="button" class="secondary-btn" id="print-tour-btn">Druckansicht / PDF</button>
+        </div>
+        <div class="table-wrap">
+          <table class="driver-table">
+            <thead><tr><th>#</th><th>Adresse / Standort</th><th>Glasfarbe</th><th>Geschätzt</th><th>leer</th><th>Füllstand vorgefunden</th></tr></thead>
+            <tbody>{''.join(rows) or '<tr><td colspan="6">Keine freigegebenen Stopps</td></tr>'}</tbody>
+          </table>
+        </div>
+        <p id="export-status" class="muted" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="role-dispatcher" class="role-panel">
+      <div class="section-head">
+        <h2>Disponentin · Auswahl &amp; Freigabe</h2>
+        <p class="muted">Vorschlag prüfen und explizit freigeben. Erst danach erscheint die Tour beim Fahrer.</p>
+      </div>
+      <div class="approval-box">
+        <label for="role-dispatcher-name">Freigegeben durch</label>
+        <input id="role-dispatcher-name" type="text" value="dispatcher">
+        <button type="button" class="primary-btn" id="role-approve-route-btn">Tour freigeben</button>
+        <span id="role-approval-status" class="badge pending">Status: Vorgeschlagen</span>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Standort</th><th>Glas</th><th>Priorität</th></tr></thead>
+        <tbody>{''.join(rows) or '<tr><td colspan="4">Keine Stopps</td></tr>'}</tbody></table></div>
+    </section>
+    """
+
+
 MATERIAL_LABELS = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
 MATERIAL_COLORS = {"white": "#64748b", "green": "#2e8b57", "brown": "#8b4513"}
 
@@ -1428,6 +1534,7 @@ def build_ui(
     benchmark_section_html = _build_benchmark_section_html(compute_benchmark_summary(benchmark_rows, date))
     variables_section_html = _build_variables_section_html(route_data)
     data_section_html = _build_data_section_html(measurement_analysis)
+    role_start_html = _build_role_start_html(route_bundle, locations_df, date)
 
     proposal_json = _safe_json_for_html(route_bundle["proposal"])
     approval_filename = f"approval_{date}.json"
@@ -1669,6 +1776,51 @@ def build_ui(
       border-color: var(--accent);
       background: var(--accent-soft);
     }}
+    .role-screen, .role-panel {{
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }}
+    .role-hero {{
+      background: #0f172a;
+      color: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }}
+    .role-hero h2 {{ margin: 4px 0 8px; font-size: 30px; }}
+    .role-hero p {{ max-width: 720px; margin: 0; color: #cbd5e1; }}
+    .eyebrow {{ color: #93c5fd !important; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
+    .role-cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }}
+    .role-card {{
+      text-align: left; border: 2px solid var(--border); background: var(--surface);
+      border-radius: 10px; padding: 20px; cursor: pointer; min-height: 120px;
+    }}
+    .role-card:hover, .role-card:focus {{ border-color: var(--accent); background: var(--accent-soft); }}
+    .role-card strong {{ display: block; font-size: 20px; margin-bottom: 8px; }}
+    .role-card span {{ color: var(--muted); }}
+    .role-panel {{ display: none; }}
+    .role-panel.active {{ display: block; }}
+    .analysis-workspace {{ display: none; }}
+    .analysis-workspace.active {{ display: block; }}
+    .driver-panel {{ padding-top: 12px; }}
+    .driver-panel h2 {{ font-size: 28px; }}
+    .driver-table {{ font-size: 16px; }}
+    .driver-table th, .driver-table td {{ padding: 14px 12px; }}
+    .driver-check {{ display: flex; align-items: center; gap: 8px; font-size: 18px; }}
+    .driver-check input {{ width: 24px; height: 24px; }}
+    .found-level {{ width: 130px; padding: 10px; font-size: 16px; border: 1px solid var(--border); border-radius: 6px; }}
+    .driver-actions {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 16px; }}
+    .primary-btn, .secondary-btn {{
+      display: inline-block; border-radius: 6px; padding: 10px 14px; font-weight: 700; cursor: pointer; text-decoration: none;
+    }}
+    .primary-btn {{ border: 1px solid #166534; background: #16a34a; color: #fff; }}
+    .secondary-btn {{ border: 1px solid var(--border); background: var(--surface); color: var(--text); }}
+    @media print {{
+      body > *:not(#role-driver) {{ display: none !important; }}
+      #role-driver, #role-driver #driver-tour {{ display: block !important; }}
+      .driver-actions, #export-status {{ display: none !important; }}
+    }}
   </style>
 </head>
 <body>
@@ -1679,7 +1831,9 @@ def build_ui(
 
   {location_banner_html}
 
-  <nav class="tabs" role="tablist">
+  {role_start_html}
+
+  <nav class="tabs analysis-workspace" role="tablist">
     <button type="button" class="tab-btn active" data-target="view-data">1. Daten</button>
     <button type="button" class="tab-btn" data-target="view-forecast">2. Forecast-Timeline</button>
     <button type="button" class="tab-btn" data-target="view-heatmap">3. Heatmap</button>
@@ -1690,7 +1844,7 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-upload">8. Upload</button>
   </nav>
 
-  <main>
+  <main class="analysis-workspace">
     <section id="view-data" class="view-panel active">
       {data_section_html}
     </section>
@@ -1761,6 +1915,34 @@ def build_ui(
         btn.addEventListener("click", function() {{
           activateTab(btn.getAttribute("data-target"));
         }});
+      }});
+
+      var startScreen = document.getElementById("start-screen");
+      var rolePanels = {{
+        driver: document.getElementById("role-driver"),
+        dispatcher: document.getElementById("role-dispatcher")
+      }};
+      var analysisWorkspace = document.querySelectorAll(".analysis-workspace");
+      var approvalKey = "glasroute-approved-" + {json.dumps(date)};
+      function showRole(role) {{
+        if (startScreen) startScreen.style.display = "none";
+        Object.keys(rolePanels).forEach(function(key) {{
+          if (rolePanels[key]) rolePanels[key].classList.toggle("active", key === role);
+        }});
+        analysisWorkspace.forEach(function(node) {{
+          node.classList.toggle("active", role === "analysis");
+        }});
+        if (role === "driver") updateDriverAccess();
+      }}
+      function updateDriverAccess() {{
+        var approved = localStorage.getItem(approvalKey) === "true";
+        var locked = document.getElementById("driver-locked");
+        var tour = document.getElementById("driver-tour");
+        if (locked) locked.hidden = approved;
+        if (tour) tour.hidden = !approved;
+      }}
+      document.querySelectorAll(".role-card").forEach(function(card) {{
+        card.addEventListener("click", function() {{ showRole(card.getAttribute("data-role")); }});
       }});
 
       var insights = JSON.parse(document.getElementById("insights-payload").textContent);
@@ -1953,14 +2135,21 @@ def build_ui(
       var preview = document.getElementById("approval-record-preview");
       var proposalRaw = document.getElementById("proposal-payload").textContent;
 
+      function approveTour(approver) {{
+        var record = JSON.parse(proposalRaw);
+        record.status = "approved";
+        record.approved = true;
+        record.approved_by = approver;
+        record.approved_at = new Date().toISOString().replace(/\\.\\d{{3}}Z$/, "+00:00");
+        localStorage.setItem(approvalKey, "true");
+        updateDriverAccess();
+        return record;
+      }}
+
       if (approveBtn) {{
         approveBtn.addEventListener("click", function() {{
           var approver = (nameInput.value || "").trim() || "dispatcher";
-          var record = JSON.parse(proposalRaw);
-          record.status = "approved";
-          record.approved = true;
-          record.approved_by = approver;
-          record.approved_at = new Date().toISOString().replace(/\\.\\d{{3}}Z$/, "+00:00");
+          var record = approveTour(approver);
 
           badge.textContent = "Freigegeben durch " + approver;
           badge.classList.remove("pending");
@@ -1981,6 +2170,56 @@ def build_ui(
           URL.revokeObjectURL(url);
         }});
       }}
+      var roleApproveBtn = document.getElementById("role-approve-route-btn");
+      if (roleApproveBtn) {{
+        roleApproveBtn.addEventListener("click", function() {{
+          var roleName = (document.getElementById("role-dispatcher-name").value || "").trim() || "dispatcher";
+          approveTour(roleName);
+          var roleBadge = document.getElementById("role-approval-status");
+          roleBadge.textContent = "Freigegeben durch " + roleName;
+          roleBadge.classList.remove("pending");
+          roleBadge.classList.add("approved");
+        }});
+      }}
+
+      var exportBtn = document.getElementById("export-tour-btn");
+      if (exportBtn) {{
+        exportBtn.addEventListener("click", function() {{
+          var header = ["Location_id", "material_type", "date", "fill_level_perc", "fill_level_numeric", "is_overfull"];
+          var lines = [header.join(",")];
+          document.querySelectorAll("#role-driver .driver-stop").forEach(function(row) {{
+            var input = row.querySelector(".found-level");
+            var raw = input ? input.value.trim() : "";
+            var value = raw === "" ? "" : Number(raw);
+            if (raw !== "" && (!Number.isFinite(value) || value < 0 || value > 110 || value % 10 !== 0)) {{
+              input.setCustomValidity("Bitte 0 bis 110 in 10er-Schritten eingeben.");
+              input.reportValidity();
+              return;
+            }}
+            if (input) input.setCustomValidity("");
+            var level = raw === "" ? "" : String(value);
+            var overfull = raw !== "" && value >= 110 ? "True" : "False";
+            var cells = [row.dataset.loc, row.dataset.mat, {json.dumps(date)}, level === "110" ? "overfull" : level, level, overfull];
+            lines.push(cells.map(function(cell) {{
+              var text = String(cell === undefined ? "" : cell);
+              return '"' + text.replace(/"/g, '""') + '"';
+            }}).join(","));
+          }});
+          var blob = new Blob([lines.join("\\r\\n") + "\\r\\n"], {{type: "text/csv;charset=utf-8"}});
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = "tour_feedback_" + {json.dumps(date)} + ".csv";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          document.getElementById("export-status").textContent = "CSV exportiert: gleiche Spalten wie cleaned_readings.csv. Danach im Upload-Tab wieder einlesen.";
+        }});
+      }}
+      var printBtn = document.getElementById("print-tour-btn");
+      if (printBtn) printBtn.addEventListener("click", function() {{ window.print(); }});
+      updateDriverAccess();
 
       function parseCsvLine(line, delimiter) {{
         var cells = [];

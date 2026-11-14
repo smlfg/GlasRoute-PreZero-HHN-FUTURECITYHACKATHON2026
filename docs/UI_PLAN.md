@@ -1,6 +1,8 @@
 # GlasRoute UI Plan (`docs/UI_PLAN.md`)
 
-**Status:** Minimal, verifiable 4-view UI (`src/prezero/ui.py` → `ui_<date>.html`)  
+> **User Story:** Als Fahrer möchte ich nach einer Freigabe meine heutige Tour auf dem Smartphone als große, geordnete Stoppliste sehen, je Glasfarbe den geschätzten und vorgefundenen Füllstand dokumentieren und eine CSV im Eingabeformat exportieren, damit die Rückmeldung wieder in den Forecast-Kreislauf (Scan → Schätzung → Prognose → Tour) einfließt. Als Disponentin möchte ich Tourvorschläge prüfen und freigeben; als Analyst möchte ich die bestehenden Daten-, Heatmap-, Forecast-, Fairer-Vergleich- und Copilot-Ansichten nutzen.
+
+**Status:** Minimal, verifizierbare 4-view UI (`src/prezero/ui.py` → `ui_<date>.html`)
 **Principle:** **Ausschließlich nachweisbare Pipeline-Daten** — keine Events, keine geschätzten Leerungsdaten und keine hartcodierten KPI-Zahlen ohne Datenquelle.
 
 ---

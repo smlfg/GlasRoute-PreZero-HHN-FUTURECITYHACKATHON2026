@@ -210,6 +210,29 @@ def test_build_ui_has_all_four_views_and_no_unbacked_claims(tmp_path: Path) -> N
         assert forbidden not in html
 
 
+def test_build_ui_role_start_screen_supports_approval_and_round_trip_export(tmp_path: Path) -> None:
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    for role in ("Fahrer", "Disponentin", "Analyse"):
+        assert role in html
+    assert 'id="start-screen"' in html
+    assert 'id="role-driver"' in html
+    assert 'id="role-dispatcher"' in html
+    assert 'id="role-approve-route-btn"' in html
+    assert 'id="export-tour-btn"' in html
+    assert "fill_level_perc" in html and "fill_level_numeric" in html
+    assert "is_overfull" in html
+    assert "glasroute-approved-" in html
+    assert "window.print()" in html
+
+
 def test_cli_ui_command_generates_html(tmp_path: Path) -> None:
     readings_path = tmp_path / "cleaned.csv"
     locs_path = tmp_path / "locations.csv"
