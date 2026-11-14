@@ -248,3 +248,24 @@ def test_vehicle_volume_limit_forces_unload() -> None:
     assert max(loads) <= 6.0
     roomy = routing.build_route(scored, locs, config=routing.OperationalConfig())
     assert len(roomy["unload_stops"]) == 0
+
+
+def test_export_stops_csv_preserves_driving_order(tmp_path: Path) -> None:
+    import pandas as pd
+
+    from prezero import routing
+
+    scored, locs = _two_colour_site()
+    # Make site B have higher score so score order (B then A) differs from driving order if A is closer to depot.
+    scored.loc[scored["Location_id"] == "A", "score"] = 0.75
+    scored.loc[scored["Location_id"] == "B", "score"] = 0.99
+    cfg = routing.OperationalConfig(vehicle_max_volume_m3=6.0)
+    route = routing.build_route(scored, locs, date="2026-04-15", output_dir=tmp_path, config=cfg)
+
+    stops_csv = tmp_path / "stops_2026-04-15.csv"
+    assert stops_csv.is_file()
+    df = pd.read_csv(stops_csv)
+    assert df["order"].tolist() == [1, 2, 3]
+    assert df["stop_type"].tolist() == ["collection", "unload", "collection"]
+    assert df["Location_id"].tolist() == [s["Location_id"] for s in route["stops"]]
+    assert [s["order"] for s in route["stops"]] == [1, 2, 3]

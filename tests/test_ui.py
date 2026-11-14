@@ -205,9 +205,28 @@ def test_build_ui_has_all_four_views_and_no_unbacked_claims(tmp_path: Path) -> N
     # Re-exported cleanly from prezero.viz
     assert viz.build_ui is build_ui
 
-    # Strictly NO unbacked events or emptying dates
-    for forbidden in ("Weindorf", "Nachweihnachtsspitze", "Letzte Leerung", "last_emptying_date"):
+    # Strictly NO unbacked emptying dates
+    for forbidden in ("Letzte Leerung", "last_emptying_date"):
         assert forbidden not in html
+
+    # Documented calendar events, behavior grouping ('Combine'), and driver driving-order list
+    for expected in (
+        "Weihnachten",
+        "Nachweihnachtsspitze",
+        "Osterferien",
+        "Sommerferien",
+        "Heilbronner Weindorf",
+        "Gleiches Verhalten",
+        "Hochlast",
+        "Mittellast",
+        "Niedriglast",
+        "Selten gemessen",
+        "Stoppliste für den Fahrer (in Fahrreihenfolge",
+        'id="download-stops-csv-btn"',
+        'id="print-route-stops-btn"',
+        'id="driver-download-stops-csv-btn"',
+    ):
+        assert expected in html
 
 
 def test_build_ui_role_start_screen_supports_approval_and_round_trip_export(tmp_path: Path) -> None:
@@ -687,3 +706,21 @@ def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
     words = set(all_text.split())
     assert "True" not in words
     assert "False" not in words
+
+
+def test_compute_measurement_analysis_includes_behavior_groups() -> None:
+    from prezero.ui import compute_measurement_analysis
+
+    analysis = compute_measurement_analysis(_sample_readings())
+    assert analysis["container_count"] > 0
+    assert "behavior_groups" in analysis
+    assert "behavior_points" in analysis
+    assert len(analysis["behavior_groups"]) == 4
+    assert [g["group"] for g in analysis["behavior_groups"]] == [
+        "Hochlast",
+        "Mittellast",
+        "Niedriglast",
+        "Selten gemessen",
+    ]
+    assert sum(g["container_count"] for g in analysis["behavior_groups"]) == analysis["container_count"]
+    assert len(analysis["behavior_points"]) == analysis["container_count"]

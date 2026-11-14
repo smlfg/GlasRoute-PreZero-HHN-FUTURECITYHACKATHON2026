@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATES = ["2026-01-15", "2026-04-15", "2026-07-15", "2026-09-15"]
 SEEDS = [7, 42, 1337]
 DEPOT = (49.1427, 9.2109)
+SOLVER_SOLUTION_LIMIT = 25
 
 
 def _physical_sites(scored: pd.DataFrame, locs: pd.DataFrame, cfg: OperationalConfig) -> pd.DataFrame:
@@ -125,15 +126,24 @@ def _sequence_km(order: list[int], sites: pd.DataFrame, cfg: OperationalConfig) 
     return sum(_distance(a, b, cfg) for a, b in zip(points, points[1:]))
 
 
-def _solver_order(sites: pd.DataFrame, cfg: OperationalConfig) -> list[int] | None:
+def _solver_order(
+    sites: pd.DataFrame,
+    cfg: OperationalConfig,
+    solution_limit: int = SOLVER_SOLUTION_LIMIT,
+) -> list[int] | None:
     if pywrapcp is None:
         return None
     n = len(sites) + 1
+    max_w = round(cfg.vehicle_max_weight_kg)
+    max_v = round(cfg.vehicle_max_volume_m3 * 1000)
+    max_t = round(cfg.max_shift_hours * 60)
+    nn_rounds = _plan(_nn(sites, cfg), sites, cfg)["rounds"] if len(sites) > 0 else 1
     vehicles = max(
         1,
-        math.ceil(float(sites["critical_mass_kg"].sum()) / cfg.vehicle_max_weight_kg),
-        math.ceil(float(sites["critical_volume_m3"].sum()) / cfg.vehicle_max_volume_m3),
-        math.ceil(len(sites) * (cfg.stop_setup_min + cfg.lift_time_per_bin_min) / (cfg.max_shift_hours * 60)),
+        int(nn_rounds) + 5,
+        math.ceil(float(sites["critical_mass_kg"].sum()) / cfg.vehicle_max_weight_kg) + 2,
+        math.ceil(float(sites["critical_volume_m3"].sum()) / cfg.vehicle_max_volume_m3) + 2,
+        math.ceil(len(sites) * (cfg.stop_setup_min + cfg.lift_time_per_bin_min) / (cfg.max_shift_hours * 60)) + 2,
     )
     manager = pywrapcp.RoutingIndexManager(n, vehicles, 0)
     routing = pywrapcp.RoutingModel(manager)
@@ -144,17 +154,17 @@ def _solver_order(sites: pd.DataFrame, cfg: OperationalConfig) -> list[int] | No
             matrix[i][j] = round(_distance(points[i], points[j], cfg) * 1000)
     transit = routing.RegisterTransitCallback(lambda a, b: matrix[manager.IndexToNode(a)][manager.IndexToNode(b)])
     routing.SetArcCostEvaluatorOfAllVehicles(transit)
-    demands = [0] + [round(float(x)) for x in sites["critical_mass_kg"]]
+    demands = [0] + [min(max_w, round(float(x))) for x in sites["critical_mass_kg"]]
     demand_cb = routing.RegisterUnaryTransitCallback(lambda i: demands[manager.IndexToNode(i)])
-    routing.AddDimensionWithVehicleCapacity(demand_cb, 0, [round(cfg.vehicle_max_weight_kg)] * vehicles, True, "Weight")
+    routing.AddDimensionWithVehicleCapacity(demand_cb, 0, [max_w] * vehicles, True, "Weight")
     # Volume in litres so the solver works with integers.
-    volumes = [0] + [round(float(x) * 1000) for x in sites["critical_volume_m3"]]
+    volumes = [0] + [min(max_v, round(float(x) * 1000)) for x in sites["critical_volume_m3"]]
     volume_cb = routing.RegisterUnaryTransitCallback(lambda i: volumes[manager.IndexToNode(i)])
     routing.AddDimensionWithVehicleCapacity(
-        volume_cb, 0, [round(cfg.vehicle_max_volume_m3 * 1000)] * vehicles, True, "Volume"
+        volume_cb, 0, [max_v] * vehicles, True, "Volume"
     )
     service = [0] + [
-        round(cfg.stop_setup_min + max(1, int(x)) * cfg.lift_time_per_bin_min)
+        min(max_t, round(cfg.stop_setup_min + max(1, int(x)) * cfg.lift_time_per_bin_min))
         for x in sites["critical_bins"]
     ]
     timed = routing.RegisterTransitCallback(
@@ -165,11 +175,11 @@ def _solver_order(sites: pd.DataFrame, cfg: OperationalConfig) -> list[int] | No
         )
         + service[manager.IndexToNode(b)]
     )
-    routing.AddDimension(timed, 0, round(cfg.max_shift_hours * 60), True, "Time")
+    routing.AddDimension(timed, 0, max_t, True, "Time")
     params = pywrapcp.DefaultRoutingSearchParameters()
     params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-    params.time_limit.seconds = 5
+    params.solution_limit = int(solution_limit)
     solution = routing.SolveWithParameters(params)
     if solution is None:
         return None
@@ -332,7 +342,7 @@ from **{int(april.iloc[0].critical_ids)} critical IDs**. Every route uses `Opera
 
 {table}
 
-Runtime is measured per route calculation; solver time is capped at 30 seconds. B0 is the
+Runtime is measured per route calculation; the OR-Tools solver stops deterministically after a fixed limit of {SOLVER_SOLUTION_LIMIT} solutions (`solution_limit = {SOLVER_SOLUTION_LIMIT}`) for reproducible results. B0 is the
 paper-list order (ID sort), B1 is all-site nearest neighbor, B2 is critical-only nearest
 neighbor, B3 adds 2-opt, and B4 uses OR-Tools CVRP capacity constraints. Each round is packed
 under 11 t and includes a disposal-depot unload and return.

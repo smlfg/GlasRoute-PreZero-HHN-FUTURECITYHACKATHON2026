@@ -486,6 +486,52 @@ def format_route_summary(route_data: Mapping[str, Any]) -> str:
     return f"{vehicles} {veh_label}, {total_rounds} {rnd_label}, {h_str} h, {t_str} t, {km_str} km"
 
 
+STOPS_CSV_COLUMNS: list[str] = [
+    "order",
+    "vehicle",
+    "round",
+    "stop_type",
+    "Location_id",
+    "lat",
+    "lon",
+    "primary_material",
+    "critical_bins",
+    "est_fill_level",
+    "last_fill_level",
+    "mass_kg",
+    "load_kg",
+    "volume_m3",
+    "load_m3",
+    "leg_km",
+    "cumulative_km",
+    "score",
+    "source",
+    "confidence",
+]
+
+
+def stops_to_dataframe(route_data: Mapping[str, Any]) -> pd.DataFrame:
+    """Return all route stops strictly in driving order (never score order)."""
+    raw_stops = list(route_data.get("stops") or [])
+    if not raw_stops:
+        return pd.DataFrame(columns=STOPS_CSV_COLUMNS)
+    frame = pd.DataFrame(raw_stops)
+    for col in STOPS_CSV_COLUMNS:
+        if col not in frame.columns:
+            frame[col] = None
+    frame["order"] = pd.to_numeric(frame["order"], errors="coerce").fillna(0).astype(int)
+    frame = frame.sort_values("order", kind="mergesort").reset_index(drop=True)
+    return frame[STOPS_CSV_COLUMNS]
+
+
+def export_stops_csv(route_data: Mapping[str, Any], output_path: str | Path) -> Path:
+    """Write the driver stop list in driving order to CSV."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    stops_to_dataframe(route_data).to_csv(path, index=False)
+    return path
+
+
 def build_route(
     scored: pd.DataFrame,
     locations: pd.DataFrame,
@@ -594,5 +640,6 @@ def build_route(
         out_path = Path(output_dir) / f"route_{date}.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(route_data, indent=2), encoding="utf-8")
+        export_stops_csv(route_data, Path(output_dir) / f"stops_{date}.csv")
 
     return route_data

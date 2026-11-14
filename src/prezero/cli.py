@@ -346,6 +346,8 @@ def run_cmd(
         output_dir=out_dir,
         config=cfg,
     )
+    stops_out = Path(cleaned).parent / f"stops_{date}.csv"
+    routing.export_stops_csv(route_data, stops_out)
     trends_path = viz.plot_trends(cleaned_df, out_dir / "trends.png")
     map_path = viz.plot_route(
         route_data,
@@ -393,7 +395,7 @@ def run_cmd(
     )
     click.echo(route_data["comparison"])
     click.echo(
-        f"Outputs: {out_dir / f'route_{date}.json'}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
+        f"Outputs: {out_dir / f'route_{date}.json'}, {stops_out}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
     )
 
 

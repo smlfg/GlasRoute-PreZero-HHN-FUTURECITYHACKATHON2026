@@ -635,8 +635,16 @@ def _build_route_section_html(
 
       <div class="map-wrap">{route_iframe}</div>
 
-      <h3>Stopp-Liste in Fahrreihenfolge</h3>
-      <p class="muted">Klick auf einen Stopp (Karte, Stopp-Liste oder Top-20) zeigt die vorberechnete Copilot-Erklärung für Standort und Glasart.</p>
+      <div class="stop-list-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+        <div>
+          <h3 style="margin-bottom:4px;">Stoppliste für den Fahrer (in Fahrreihenfolge, nicht Dringlichkeits-Reihenfolge)</h3>
+          <p class="muted" style="margin:0;">Abfolge von Stopp #1 bis Tour-Ende inkl. Zwischenentladungen am Entsorgungshof. Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung.</p>
+        </div>
+        <div class="driver-actions" style="margin:0;">
+          <button id="download-stops-csv-btn" type="button" class="secondary-btn">Stoppliste als CSV (Fahrreihenfolge)</button>
+          <button id="print-route-stops-btn" type="button" class="secondary-btn">Druckansicht / PDF</button>
+        </div>
+      </div>
       <div id="explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
         <table>
@@ -1305,12 +1313,13 @@ def _build_role_start_html(
     <section id="role-driver" class="role-panel driver-panel">
       <div class="section-head">
         <h2>Fahrer · heutige Tour</h2>
-        <p class="muted">Nur von der Disponentin freigegebene Touren werden angezeigt.</p>
+        <p class="muted">Stoppliste in <strong>Fahrreihenfolge (nicht Dringlichkeits-Reihenfolge)</strong>. Nur von der Disponentin freigegebene Touren werden angezeigt.</p>
       </div>
       <div id="driver-locked" class="coverage-hint">Diese Tour ist noch nicht freigegeben.</div>
       <div id="driver-tour" hidden>
         <div class="driver-actions">
           {maps_link}
+          <button type="button" class="secondary-btn" id="driver-download-stops-csv-btn">Stoppliste als CSV (Fahrreihenfolge)</button>
           <button type="button" class="primary-btn" id="export-tour-btn">Tour exportieren</button>
           <button type="button" class="secondary-btn" id="print-tour-btn">Druckansicht / PDF</button>
         </div>
@@ -1349,6 +1358,124 @@ def _build_role_start_html(
 
 
 MATERIAL_COLORS = {"white": "#64748b", "green": "#2e8b57", "brown": "#8b4513"}
+
+CALENDAR_EVENTS: tuple[dict[str, str], ...] = (
+    {
+        "id": "weihnachten",
+        "label": "Weihnachten & Weihnachtsferien BW",
+        "short_label": "Weihnachten",
+        "period": "22.12.2025 – 05.01.2026",
+        "start": "2025-12-22",
+        "end": "2026-01-05",
+        "color": "rgba(220, 38, 38, 0.14)",
+        "border": "#dc2626",
+        "annotation_pos": "top left",
+        "effect": "Feiertage und Betriebspause: Glas sammelt sich während der Ferien und der anschließenden 7-tägigen Messpause an.",
+    },
+    {
+        "id": "nachweihnachten",
+        "label": "Nachweihnachtsspitze (Nachholrunde)",
+        "short_label": "Nachweihnachtsspitze",
+        "period": "12.01. – 18.01.2026",
+        "start": "2026-01-12",
+        "end": "2026-01-18",
+        "color": "rgba(185, 28, 28, 0.20)",
+        "border": "#991b1b",
+        "annotation_pos": "top right",
+        "effect": "Nachholrunde nach der Messlücke (05.–11.01.): Spitzenwert von 52,7 % überfüllten Messungen (kein Grundrauschen).",
+    },
+    {
+        "id": "osterferien",
+        "label": "Osterferien BW",
+        "short_label": "Osterferien",
+        "period": "30.03. – 11.04.2026",
+        "start": "2026-03-30",
+        "end": "2026-04-11",
+        "color": "rgba(217, 119, 6, 0.13)",
+        "border": "#d97706",
+        "annotation_pos": "top left",
+        "effect": "Schulferien in Baden-Württemberg: veränderter Einwurf- und Abholrhythmus rund um Ostern.",
+    },
+    {
+        "id": "pfingstferien",
+        "label": "Pfingstferien BW",
+        "short_label": "Pfingstferien",
+        "period": "26.05. – 05.06.2026",
+        "start": "2026-05-26",
+        "end": "2026-06-05",
+        "color": "rgba(217, 119, 6, 0.13)",
+        "border": "#d97706",
+        "annotation_pos": "top left",
+        "effect": "Schulferien um Pfingsten: leicht gedämpfter Übervoll-Anteil durch urlaubsbedingte Abwesenheiten.",
+    },
+    {
+        "id": "sommerferien",
+        "label": "Sommerferien BW",
+        "short_label": "Sommerferien",
+        "period": "30.07. – 12.09.2026",
+        "start": "2026-07-30",
+        "end": "2026-09-12",
+        "color": "rgba(37, 99, 235, 0.11)",
+        "border": "#2563eb",
+        "annotation_pos": "top left",
+        "effect": "Sechs Wochen Schulferien: mittlerer Füllstand sinkt von 65,6 % auf 57,5 % (Übervoll-Quote 6,6 % statt 11,4 %).",
+    },
+    {
+        "id": "weindorf",
+        "label": "Heilbronner Weindorf",
+        "short_label": "Weindorf",
+        "period": "10.09. – 20.09.2026",
+        "start": "2026-09-10",
+        "end": "2026-09-20",
+        "color": "rgba(124, 58, 237, 0.16)",
+        "border": "#7c3aed",
+        "annotation_pos": "bottom right",
+        "effect": "Traditionelles Herbstfest in Heilbronn nach Ende der Sommerferien: lokaler Glas-Mehrbedarf Mitte September.",
+    },
+)
+
+BEHAVIOR_GROUPS_META: tuple[dict[str, str], ...] = (
+    {
+        "name": "Hochlast",
+        "color": "#dc2626",
+        "criterion": "Füllrate ≥ 2,20 pp/Tag oder Übervoll-Quote ≥ 15 %",
+        "action": "Kurzer, fester Takt / Vorrang auf kritischen Touren",
+    },
+    {
+        "name": "Mittellast",
+        "color": "#d97706",
+        "criterion": "Moderate Füllrate und < 15 % Übervoll-Quote",
+        "action": "Regelbetrieb nach Füllstands-Timer (80 %-Schwelle)",
+    },
+    {
+        "name": "Niedriglast",
+        "color": "#16a34a",
+        "criterion": "Füllrate < 1,00 pp/Tag und Übervoll-Quote < 5 %",
+        "action": "Streckungskandidat: größere Leerungsabstände möglich",
+    },
+    {
+        "name": "Selten gemessen",
+        "color": "#64748b",
+        "criterion": "< 4 Messungen oder Median-Messabstand ≥ 70 Tage",
+        "action": "Datenlücke schließen: gezielten Kontroll-Scan einplanen",
+    },
+)
+
+
+def _classify_behavior_group(
+    measurement_count: int,
+    median_interval_days: float,
+    daily_rate_pp: float,
+    overfull_rate: float,
+) -> str:
+    """Group containers with similar fill and overflow behavior ('Combine')."""
+    if measurement_count < 4 or median_interval_days >= 70.0:
+        return "Selten gemessen"
+    if overfull_rate >= 15.0 or daily_rate_pp >= 2.2:
+        return "Hochlast"
+    if overfull_rate < 5.0 and daily_rate_pp < 1.0:
+        return "Niedriglast"
+    return "Mittellast"
 
 
 def _measurement_analysis_frame(readings_df: pd.DataFrame) -> pd.DataFrame:
@@ -1420,6 +1547,8 @@ def compute_measurement_analysis(readings_df: pd.DataFrame) -> dict[str, Any]:
             "top_overfull": [],
             "intervals": [],
             "forecast_errors": [],
+            "behavior_groups": [],
+            "behavior_points": [],
         }
 
     bins = list(range(0, 111, 10))
@@ -1496,15 +1625,65 @@ def compute_measurement_analysis(readings_df: pd.DataFrame) -> dict[str, Any]:
     ]
 
     intervals: list[dict[str, Any]] = []
+    behavior_points: list[dict[str, Any]] = []
     for (location_id, material), group in work.groupby(["Location_id", "material_type"], sort=True):
+        group = group.sort_values("date")
         gaps = group["date"].diff().dt.days.dropna()
+        pos_gaps = gaps[gaps > 0]
         intervals.extend(
             {
                 "Location_id": str(location_id),
                 "material_type": str(material),
                 "interval_days": int(value),
             }
-            for value in gaps[gaps > 0]
+            for value in pos_gaps
+        )
+        cnt = int(len(group))
+        overfull_cnt = int((group["fill_level_numeric"] >= 110.0).sum())
+        overfull_pct = float(overfull_cnt / cnt * 100.0) if cnt > 0 else 0.0
+        mean_fill = float(group["fill_level_numeric"].mean())
+        med_gap = float(pos_gaps.median()) if not pos_gaps.empty else 0.0
+        days = group["date"].diff().dt.total_seconds() / 86400.0
+        refill_rates = (
+            (group["fill_level_numeric"].iloc[1:] / days.iloc[1:])
+            .where(days.iloc[1:] > 0)
+            .dropna()
+            .clip(0.0, 15.0)
+        )
+        daily_rate = float(refill_rates.median()) if not refill_rates.empty else 0.0
+        behavior_group = _classify_behavior_group(cnt, med_gap, daily_rate, overfull_pct)
+        behavior_points.append(
+            {
+                "Location_id": str(location_id),
+                "material_type": str(material),
+                "group": behavior_group,
+                "measurement_count": cnt,
+                "median_interval_days": round(med_gap, 1),
+                "mean_fill_pct": round(mean_fill, 1),
+                "daily_rate_pp": round(daily_rate, 2),
+                "overfull_rate": round(overfull_pct, 1),
+            }
+        )
+
+    total_containers = len(behavior_points)
+    behavior_groups: list[dict[str, Any]] = []
+    for meta in BEHAVIOR_GROUPS_META:
+        grp_name = meta["name"]
+        subset = [row for row in behavior_points if row["group"] == grp_name]
+        grp_cnt = len(subset)
+        behavior_groups.append(
+            {
+                "group": grp_name,
+                "color": meta["color"],
+                "criterion": meta["criterion"],
+                "action": meta["action"],
+                "container_count": grp_cnt,
+                "share_pct": round(100.0 * grp_cnt / total_containers, 1) if total_containers else 0.0,
+                "mean_fill_pct": round(statistics.mean(r["mean_fill_pct"] for r in subset), 1) if subset else 0.0,
+                "mean_daily_rate_pp": round(statistics.mean(r["daily_rate_pp"] for r in subset), 2) if subset else 0.0,
+                "mean_overfull_rate_pct": round(statistics.mean(r["overfull_rate"] for r in subset), 1) if subset else 0.0,
+                "median_interval_days": round(statistics.median(r["median_interval_days"] for r in subset), 1) if subset else 0.0,
+            }
         )
 
     forecast_errors: list[dict[str, Any]] = []
@@ -1519,11 +1698,40 @@ def compute_measurement_analysis(readings_df: pd.DataFrame) -> dict[str, Any]:
         "top_overfull": top_overfull,
         "intervals": intervals,
         "forecast_errors": forecast_errors,
+        "behavior_groups": behavior_groups,
+        "behavior_points": behavior_points,
     }
 
 
 def _plotly_html(fig: go.Figure, include_plotlyjs: bool = False) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=include_plotlyjs, config={"displayModeBar": False})
+
+
+def _add_event_markers_to_weekly_fig(fig: go.Figure, weeks: list[str]) -> None:
+    """Highlight documented holidays and local events directly on weekly timelines."""
+    if not weeks:
+        return
+    try:
+        min_dt = pd.Timestamp(min(weeks)) - pd.Timedelta(days=7)
+        max_dt = pd.Timestamp(max(weeks)) + pd.Timedelta(days=7)
+    except Exception:
+        return
+    for ev in CALENDAR_EVENTS:
+        ev_start = pd.Timestamp(ev["start"])
+        ev_end = pd.Timestamp(ev["end"])
+        if ev_end < min_dt or ev_start > max_dt:
+            continue
+        fig.add_vrect(
+            x0=ev["start"],
+            x1=ev["end"],
+            fillcolor=ev["color"],
+            line_width=1,
+            line_dash="dot",
+            line_color=ev["border"],
+            annotation_text=ev["short_label"],
+            annotation_position=ev["annotation_pos"],
+            annotation_font_size=10,
+        )
 
 
 def _build_data_section_html(analysis: dict[str, Any]) -> str:
@@ -1541,18 +1749,21 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
     fig_distribution.update_layout(barmode="group", title="Füllstandverteilung je Material", yaxis_title="Messungen", xaxis_title="Füllstand")
 
     weekly_overfull = analysis["weekly_overfull"]
+    overfull_weeks = [row["week"] for row in weekly_overfull]
     fig_overfull = go.Figure(
         go.Scatter(
-            x=[row["week"] for row in weekly_overfull],
+            x=overfull_weeks,
             y=[row["overfull_rate"] for row in weekly_overfull],
             mode="lines+markers",
             name="Übervoll",
             line={"color": "#dc2626"},
         )
     )
-    fig_overfull.update_layout(title="Übervoll-Anteil pro Kalenderwoche", yaxis_title="Anteil (%)", xaxis_title="Kalenderwoche")
+    _add_event_markers_to_weekly_fig(fig_overfull, overfull_weeks)
+    fig_overfull.update_layout(title="Übervoll-Anteil pro Kalenderwoche (mit Ereignis-Markierungen)", yaxis_title="Anteil (%)", xaxis_title="Kalenderwoche")
 
     weekly_fill = analysis["weekly_fill"]
+    fill_weeks = [row["week"] for row in weekly_fill]
     fig_fill = go.Figure()
     for material in ("white", "green", "brown"):
         rows = [row for row in weekly_fill if row["material_type"] == material]
@@ -1565,7 +1776,8 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
                 line={"color": MATERIAL_COLORS[material]},
             )
         )
-    fig_fill.update_layout(title="Wöchentliche Füllrate nach Material", yaxis_title="Füllrate (% pro Woche)", xaxis_title="Kalenderwoche")
+    _add_event_markers_to_weekly_fig(fig_fill, fill_weeks)
+    fig_fill.update_layout(title="Wöchentliche Füllrate nach Material (mit Ereignis-Markierungen)", yaxis_title="Füllrate (% pro Woche)", xaxis_title="Kalenderwoche")
 
     intervals = analysis["intervals"]
     fig_intervals = go.Figure()
@@ -1575,6 +1787,40 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
             go.Box(y=values, name=MATERIAL_LABELS[material], marker_color=MATERIAL_COLORS[material], boxmean=True)
         )
     fig_intervals.update_layout(title="Messintervall je Container", yaxis_title="Tage zwischen Scans")
+
+    behavior_points = analysis.get("behavior_points", [])
+    fig_behavior = go.Figure()
+    for meta in BEHAVIOR_GROUPS_META:
+        grp_name = meta["name"]
+        pts = [p for p in behavior_points if p["group"] == grp_name]
+        if not pts:
+            continue
+        fig_behavior.add_trace(
+            go.Scatter(
+                x=[p["daily_rate_pp"] for p in pts],
+                y=[p["overfull_rate"] for p in pts],
+                mode="markers",
+                name=f"{grp_name} ({len(pts)})",
+                marker={"color": meta["color"], "size": 7, "opacity": 0.72},
+                text=[
+                    (
+                        f"Standort {str(p['Location_id'])[:8]}… · "
+                        f"{MATERIAL_LABELS.get(str(p['material_type']).lower(), p['material_type'])}<br>"
+                        f"Gruppe: {grp_name}<br>"
+                        f"Füllrate: {_fmt_de(p['daily_rate_pp'], 2)} pp/Tag · "
+                        f"Übervoll: {_fmt_de(p['overfull_rate'], 1)} % · "
+                        f"Ø Füllstand: {_fmt_de(p['mean_fill_pct'], 1)} %"
+                    )
+                    for p in pts
+                ],
+                hoverinfo="text",
+            )
+        )
+    fig_behavior.update_layout(
+        title="Container mit gleichem Verhalten: Füllrate vs. Übervoll-Quote",
+        xaxis_title="Füllrate (Prozentpunkte pro Tag)",
+        yaxis_title="Übervoll-Quote (%)",
+    )
 
     errors = analysis["forecast_errors"]
     error_summary = []
@@ -1599,6 +1845,27 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         f"<td><code>{html.escape(row['Location_id'][:8] + '...' if len(row['Location_id']) > 12 else row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'].strip().lower(), row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
         for row in analysis["top_overfull"]
     )
+    behavior_rows = "".join(
+        f"<tr>"
+        f'<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{html.escape(grp["color"])};margin-right:6px;"></span><strong>{html.escape(grp["group"])}</strong><br><span class="muted" style="font-size:12px;">{html.escape(grp["criterion"])}</span></td>'
+        f"<td>{grp['container_count']}</td>"
+        f"<td>{_fmt_de(grp['share_pct'], 1)} %</td>"
+        f"<td>{_fmt_de(grp['mean_fill_pct'], 1)} %</td>"
+        f"<td>{_fmt_de(grp['mean_daily_rate_pp'], 2)} pp/Tag</td>"
+        f"<td>{_fmt_de(grp['mean_overfull_rate_pct'], 1)} %</td>"
+        f"<td>{_fmt_de(grp['median_interval_days'], 1)} d</td>"
+        f"<td>{html.escape(grp['action'])}</td>"
+        f"</tr>"
+        for grp in analysis.get("behavior_groups", [])
+    )
+    event_rows = "".join(
+        f"<tr>"
+        f'<td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:{html.escape(ev["border"])};margin-right:6px;"></span><strong>{html.escape(ev["label"])}</strong></td>'
+        f"<td>{html.escape(ev['period'])}</td>"
+        f"<td>{html.escape(ev['effect'])}</td>"
+        f"</tr>"
+        for ev in CALENDAR_EVENTS
+    )
     interval_values = [row["interval_days"] for row in intervals]
     median_interval = statistics.median(interval_values) if interval_values else None
     error_cards = "".join(
@@ -1611,6 +1878,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         _plotly_html(fig_fill),
         _plotly_html(fig_intervals),
         _plotly_html(fig_errors),
+        _plotly_html(fig_behavior),
     ]
     return f"""
       <div class="section-head">
@@ -1623,6 +1891,38 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         <div>{charts[1]}</div>
         <div>{charts[2]}</div>
         <div>{charts[3]}<p class="muted">Median des Scanintervalls: {"-" if median_interval is None else f"{median_interval:.1f} Tage"}.</p></div>
+      </div>
+      <div class="section-head">
+        <h3>Markierte Ereignisse im Wochenverlauf (Ausreißer erklärt statt Rauschen)</h3>
+        <p class="muted">Schulferien in Baden-Württemberg, Weihnachts-Messpause und lokale Feste erklären Ausschläge im Wochenverlauf.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ereignis</th><th>Zeitraum</th><th>Belegter Effekt in den Messdaten</th></tr></thead>
+          <tbody>{event_rows}</tbody>
+        </table>
+      </div>
+      <div class="section-head">
+        <h3>Gleiches Verhalten (Combine): Container nach Füllrate &amp; Überlaufquote gruppiert</h3>
+        <p class="muted">Methodik aus Analyse 09: Statt diskreter Inseln bilden die Container ein Kontinuum mit klarem Hochlast-Rand (Silhouette 0,19). Ähnliches Füllverhalten wird für Touren-Rhythmen gebündelt.</p>
+      </div>
+      <div>{charts[5]}</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Verhaltensgruppe</th>
+              <th>Container</th>
+              <th>Anteil</th>
+              <th>Ø Füllstand</th>
+              <th>Ø Füllrate</th>
+              <th>Ø Übervoll-Quote</th>
+              <th>Median-Abstand</th>
+              <th>Bündelungs-Empfehlung</th>
+            </tr>
+          </thead>
+          <tbody>{behavior_rows or '<tr><td colspan="8">Keine Daten</td></tr>'}</tbody>
+        </table>
       </div>
       <div class="section-head"><h3>Top 20 Container nach Übervoll-Häufigkeit</h3>
         <p class="muted">Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung für Standort und Glasart.</p>
@@ -1696,6 +1996,7 @@ def build_ui(
             "container_explains": insights.get("container_explains", {}),
             "ask_examples": insights.get("ask_examples", []),
             "rows": WHAT_IF_ROWS,
+            "stops": route_bundle["metrics"].get("stops", []),
         }
     )
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
@@ -1990,8 +2291,13 @@ def build_ui(
     .command-box {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }}
     .command-box code {{ flex: 1 1 360px; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 10px 12px; }}
     @media print {{
-      body > *:not(#role-driver) {{ display: none !important; }}
-      #role-driver, #role-driver #driver-tour {{ display: block !important; }}
+      body:not(.print-route-stops) > *:not(#role-driver) {{ display: none !important; }}
+      body:not(.print-route-stops) #role-driver, body:not(.print-route-stops) #role-driver #driver-tour {{ display: block !important; }}
+      body.print-route-stops > *:not(main.analysis-workspace) {{ display: none !important; }}
+      body.print-route-stops main.analysis-workspace {{ display: block !important; }}
+      body.print-route-stops .view-panel:not(#view-route) {{ display: none !important; }}
+      body.print-route-stops #view-route {{ display: block !important; }}
+      body.print-route-stops #view-route > *:not(.stop-list-header):not(.table-wrap) {{ display: none !important; }}
       .driver-actions, #export-status {{ display: none !important; }}
     }}
   </style>
@@ -2448,7 +2754,69 @@ def build_ui(
         }});
       }}
       var printBtn = document.getElementById("print-tour-btn");
-      if (printBtn) printBtn.addEventListener("click", function() {{ window.print(); }});
+      if (printBtn) printBtn.addEventListener("click", function() {{
+        document.body.classList.remove("print-route-stops");
+        window.print();
+      }});
+
+      function downloadStopsCsv() {{
+        var stops = insights.stops || [];
+        var matLabels = {{ white: "Weißglas", green: "Grünglas", brown: "Braunglas", unload: "Entladung" }};
+        var actLabels = {{ collection: "Leerung", unload: "Entladung", depot: "Betriebshof" }};
+        var header = [
+          "Fahrreihenfolge", "Fahrzeug", "Runde", "Aktion", "Standort_ID",
+          "Glasart", "Fuellstand_geschaetzt_pct", "Vorgefunden_letzter_Besuch_pct",
+          "Behaelter", "Masse_kg", "Volumen_m3", "Etappe_km", "Kumulativ_km", "Breitengrad", "Laengengrad"
+        ];
+        var lines = [header.join(",")];
+        stops.forEach(function(s) {{
+          var matRaw = String(s.primary_material || "").trim().toLowerCase();
+          var actRaw = String(s.stop_type || "collection").trim().toLowerCase();
+          var locRaw = String(s.Location_id || "");
+          var cells = [
+            s.order || "",
+            s.vehicle || "",
+            s.round || "",
+            actLabels[actRaw] || actRaw,
+            locRaw === "disposal_depot" ? "Entsorgungshof" : locRaw,
+            matLabels[matRaw] || matRaw,
+            s.est_fill_level !== undefined && s.est_fill_level !== null ? s.est_fill_level : "",
+            s.last_fill_level !== undefined && s.last_fill_level !== null ? s.last_fill_level : "",
+            s.critical_bins !== undefined && s.critical_bins !== null ? s.critical_bins : "",
+            s.mass_kg !== undefined && s.mass_kg !== null ? s.mass_kg : "",
+            s.volume_m3 !== undefined && s.volume_m3 !== null ? s.volume_m3 : "",
+            s.leg_km !== undefined && s.leg_km !== null ? s.leg_km : "",
+            s.cumulative_km !== undefined && s.cumulative_km !== null ? s.cumulative_km : "",
+            s.lat !== undefined && s.lat !== null ? s.lat : "",
+            s.lon !== undefined && s.lon !== null ? s.lon : ""
+          ];
+          lines.push(cells.map(function(cell) {{
+            var text = String(cell === undefined ? "" : cell);
+            return '"' + text.replace(/"/g, '""') + '"';
+          }}).join(","));
+        }});
+        var blob = new Blob(["\\uFEFF" + lines.join("\\r\\n") + "\\r\\n"], {{type: "text/csv;charset=utf-8"}});
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = "stoppliste_fahrreihenfolge_" + {json.dumps(date)} + ".csv";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }}
+      var downloadStopsBtn = document.getElementById("download-stops-csv-btn");
+      if (downloadStopsBtn) downloadStopsBtn.addEventListener("click", downloadStopsCsv);
+      var driverDownloadStopsBtn = document.getElementById("driver-download-stops-csv-btn");
+      if (driverDownloadStopsBtn) driverDownloadStopsBtn.addEventListener("click", downloadStopsCsv);
+      var printRouteStopsBtn = document.getElementById("print-route-stops-btn");
+      if (printRouteStopsBtn) {{
+        printRouteStopsBtn.addEventListener("click", function() {{
+          document.body.classList.add("print-route-stops");
+          window.print();
+          setTimeout(function() {{ document.body.classList.remove("print-route-stops"); }}, 500);
+        }});
+      }}
 
       var feedbackInput = document.getElementById("feedback-file-input");
       var feedbackStatus = document.getElementById("feedback-upload-status");
