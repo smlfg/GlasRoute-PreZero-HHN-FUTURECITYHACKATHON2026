@@ -387,6 +387,15 @@ def _summarize_route(route_data: Mapping[str, Any], total_critical_locations: in
     saved_km = round(float(route_data.get("saved_km", max(0.0, full_round_km - planned_km))), 2)
     saved_pct = round(float(route_data.get("saved_pct", 0.0)), 1)
     raw_max_stops = route_data.get("max_stops", 25)
+    assumptions = (
+        route_data.get("assumptions")
+        if isinstance(route_data.get("assumptions"), Mapping)
+        else {}
+    )
+    raw_shift_limit = route_data.get(
+        "max_shift_hours_limit", assumptions.get("max_shift_hours", 8.0)
+    )
+    shift_limit = 8.0 if raw_shift_limit is None else float(raw_shift_limit)
     return {
         "num_stops": num_stops,
         "total_critical_locations": int(total_critical_locations),
@@ -408,6 +417,7 @@ def _summarize_route(route_data: Mapping[str, Any], total_critical_locations: in
             ),
             2,
         ),
+        "max_shift_hours_limit": round(shift_limit, 2),
         "t_collected": round(float(route_data.get("t_collected", 0.0)), 2),
         "max_stops": None if raw_max_stops is None else int(raw_max_stops),
     }
@@ -421,32 +431,35 @@ def _collection_stops(route_data: Mapping[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def get_tour_overview(
-    date: str,
-    *,
-    route_path: str | Path | None = None,
-    scored_path: str | Path | None = None,
-    readings_path: str | Path = "data/processed/cleaned_readings.csv",
-    locations_path: str | Path = "data/external/locations.csv",
-    config_path: str | Path | None = None,
-) -> dict[str, Any]:
-    """Return authoritative tour metrics, top stops, and approval status without mutating artifacts."""
-    sources: list[str] = []
-    scored_df = _load_scored_data(date, scored_path, readings_path, sources)
-    locs_df = _load_locations_data(locations_path, sources)
-    route_data, _ = _load_baseline_route(date, scored_df, locs_df, route_path, config_path, sources)
-
+def _total_critical_counts(
+    route_data: Mapping[str, Any],
+    scored_df: pd.DataFrame,
+) -> tuple[int, int]:
     crit_df = (
         scored_df[scored_df["critical"].astype(bool)]
         if not scored_df.empty and "critical" in scored_df.columns
         else pd.DataFrame()
     )
     total_critical_pairs = int(len(crit_df))
-    total_critical_locations = (
-        int(crit_df["Location_id"].nunique())
-        if not crit_df.empty
-        else int(route_data.get("total_critical_locations", 0))
-    )
+    route_crit = route_data.get("total_critical_locations")
+    if route_crit is not None:
+        total_critical_locations = int(route_crit)
+    elif not crit_df.empty:
+        total_critical_locations = int(crit_df["Location_id"].nunique())
+    else:
+        total_critical_locations = 0
+    return total_critical_pairs, total_critical_locations
+
+
+def _build_tour_overview_payload(
+    date: str,
+    route_data: Mapping[str, Any],
+    scored_df: pd.DataFrame,
+    sources: list[str],
+    *,
+    approval_status: str = "pending",
+) -> dict[str, Any]:
+    total_critical_pairs, total_critical_locations = _total_critical_counts(route_data, scored_df)
     summary = _summarize_route(route_data, total_critical_locations)
 
     top_stops = [
@@ -465,11 +478,6 @@ def get_tour_overview(
         for idx, stop in enumerate(_collection_stops(route_data)[:5])
     ]
 
-    approval_file = Path("data/processed") / f"approval_{date}.json"
-    approval_status = "approved" if approval_file.is_file() else "pending"
-    if approval_file.is_file():
-        sources.append(str(approval_file))
-
     return {
         "tool": "get_tour_overview",
         "date": date,
@@ -486,6 +494,8 @@ def get_tour_overview(
         "vehicles_needed": summary["vehicles_needed"],
         "rounds": summary["rounds"],
         "shift_hours": summary["shift_hours"],
+        "max_vehicle_shift_hours": summary["max_vehicle_shift_hours"],
+        "max_shift_hours_limit": summary["max_shift_hours_limit"],
         "t_collected": summary["t_collected"],
         "comparison": str(route_data.get("comparison", "")),
         "top_stops": top_stops,
@@ -495,41 +505,89 @@ def get_tour_overview(
     }
 
 
-def explain_container(
-    location_id: str | tuple[str, str] = "",
-    material: str | None = None,
-    date: str = "2026-04-15",
+def get_tour_overview(
+    date: str,
     *,
-    container_key: str | tuple[str, str] | None = None,
-    scored_path: str | Path | None = None,
     route_path: str | Path | None = None,
+    scored_path: str | Path | None = None,
     readings_path: str | Path = "data/processed/cleaned_readings.csv",
     locations_path: str | Path = "data/external/locations.csv",
+    config_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Explain score, fill metrics, site siblings, and tour status for ``(Location_id, material_type)``."""
-    if container_key is not None:
-        if isinstance(location_id, str) and location_id.strip():
-            key_loc, key_mat = parse_container_key(container_key, material)
-            if key_loc != location_id.strip():
-                raise CopilotValidationError(
-                    f"Widersprüchliche Location_id ('{location_id}') und container_key ('{container_key}')."
-                )
-            loc_id, mat = key_loc, key_mat
-        else:
-            loc_id, mat = parse_container_key(container_key, material)
-    else:
-        loc_id, mat = parse_container_key(location_id, material)
-
+    """Return authoritative tour metrics, top stops, and approval status without mutating artifacts."""
     sources: list[str] = []
     scored_df = _load_scored_data(date, scored_path, readings_path, sources)
     locs_df = _load_locations_data(locations_path, sources)
-    route_data, _ = _load_baseline_route(date, scored_df, locs_df, route_path, None, sources)
+    route_data, _ = _load_baseline_route(date, scored_df, locs_df, route_path, config_path, sources)
 
+    approval_file = Path("data/processed") / f"approval_{date}.json"
+    approval_status = "approved" if approval_file.is_file() else "pending"
+    if approval_file.is_file():
+        sources.append(str(approval_file))
+
+    return _build_tour_overview_payload(
+        date,
+        route_data,
+        scored_df,
+        sources,
+        approval_status=approval_status,
+    )
+
+
+def _normalize_scored_frame(scored_df: pd.DataFrame) -> pd.DataFrame:
     work = scored_df.copy()
-    work["Location_id"] = work["Location_id"].astype(str).str.strip()
-    work["material_type"] = work["material_type"].astype(str).str.strip().str.lower()
+    if not work.empty:
+        work["Location_id"] = work["Location_id"].astype(str).str.strip()
+        work["material_type"] = work["material_type"].astype(str).str.strip().str.lower()
+    return work
 
-    site_rows = work[work["Location_id"] == loc_id].sort_values("score", ascending=False)
+
+def _location_provenance_from_row(l_row: Mapping[str, Any] | pd.Series) -> dict[str, Any]:
+    src = str(l_row.get("source", "unknown"))
+    conf = str(l_row.get("confidence", "unknown"))
+    return {
+        "lat": round(float(l_row["lat"]), 6),
+        "lon": round(float(l_row["lon"]), 6),
+        "source": src,
+        "confidence": conf,
+        "match_reason": str(l_row.get("match_reason", "")),
+        "is_simulated": src != "prezero_supplied" or conf != "high",
+    }
+
+
+def _missing_location_provenance() -> dict[str, Any]:
+    return {
+        "lat": None,
+        "lon": None,
+        "source": "missing",
+        "confidence": "none",
+        "match_reason": "Location_id fehlt in locations.csv",
+        "is_simulated": True,
+    }
+
+
+def _build_container_explanation_payload(
+    loc_id: str,
+    mat: str,
+    date: str,
+    work_scored: pd.DataFrame,
+    locs_df: pd.DataFrame,
+    route_data: Mapping[str, Any],
+    sources: list[str],
+    *,
+    site_rows_override: pd.DataFrame | None = None,
+    loc_stop_map: Mapping[str, Mapping[str, Any]] | None = None,
+    loc_prov_map: Mapping[str, dict[str, Any]] | None = None,
+    default_season: float | None = None,
+) -> dict[str, Any]:
+    if site_rows_override is not None:
+        site_rows = site_rows_override
+    else:
+        site_rows = (
+            work_scored[work_scored["Location_id"] == loc_id].sort_values("score", ascending=False)
+            if not work_scored.empty
+            else pd.DataFrame()
+        )
     if site_rows.empty:
         raise CopilotLookupError(f"Standort '{loc_id}' wurde für {date} nicht gefunden.")
 
@@ -543,17 +601,27 @@ def explain_container(
 
     row = target_rows.iloc[0]
     last_fill = float(row["last_fill_level"])
+    # Measure-and-empty: score uses the estimated current level, not the level found before emptying.
+    est_fill = float(row["est_fill_level"]) if "est_fill_level" in row else last_fill
     overfull_rate = float(row["overfull_rate"]) if "overfull_rate" in row else 0.0
-    season_factor = float(row["season_factor"]) if "season_factor" in row else features.get_season_factor(date)
+    season_factor = (
+        float(row["season_factor"])
+        if "season_factor" in row
+        else (default_season if default_season is not None else features.get_season_factor(date))
+    )
     material_weight = float(scoring.MATERIAL_WEIGHTS.get(mat, 0.5))
 
-    level_norm = min(1.0, max(0.0, last_fill / 110.0))
+    level_norm = min(1.0, max(0.0, est_fill / 110.0))
     overfull_clipped = min(1.0, max(0.0, overfull_rate))
     material_season = min(1.0, max(0.0, material_weight * min(1.0, max(0.0, season_factor))))
-    is_critical = bool(row["critical"]) if "critical" in row else float(row["score"]) >= scoring.CRITICAL_THRESHOLD
+    is_critical = (
+        bool(row["critical"])
+        if "critical" in row
+        else float(row["score"]) >= scoring.CRITICAL_THRESHOLD
+    )
 
     score_breakdown = {
-        "formula": "0.5 * (last_fill_level / 110) + 0.3 * overfull_rate + 0.2 * (material_weight * season_factor)",
+        "formula": "0.5 * (est_fill_level / 110) + 0.3 * overfull_rate + 0.2 * (material_weight * season_factor)",
         "level_norm": round(level_norm, 4),
         "level_component": round(0.5 * level_norm, 4),
         "overfull_rate": round(overfull_clipped, 4),
@@ -564,8 +632,14 @@ def explain_container(
         "critical_threshold": scoring.CRITICAL_THRESHOLD,
     }
 
-    collection_stops = _collection_stops(route_data)
-    loc_stop = next((stop for stop in collection_stops if str(stop.get("Location_id")) == loc_id), None)
+    if loc_stop_map is not None:
+        loc_stop = loc_stop_map.get(loc_id)
+    else:
+        collection_stops = _collection_stops(route_data)
+        loc_stop = next(
+            (stop for stop in collection_stops if str(stop.get("Location_id")) == loc_id),
+            None,
+        )
     site_in_planned_tour = loc_stop is not None
     site_stop_order = int(loc_stop["order"]) if loc_stop is not None else None
 
@@ -618,28 +692,15 @@ def explain_container(
         for _, r in site_rows.iterrows()
     ]
 
-    loc_match = locs_df[locs_df["Location_id"].astype(str).str.strip() == loc_id]
-    if not loc_match.empty:
-        l_row = loc_match.iloc[0]
-        src = str(l_row.get("source", "unknown"))
-        conf = str(l_row.get("confidence", "unknown"))
-        location_provenance = {
-            "lat": round(float(l_row["lat"]), 6),
-            "lon": round(float(l_row["lon"]), 6),
-            "source": src,
-            "confidence": conf,
-            "match_reason": str(l_row.get("match_reason", "")),
-            "is_simulated": src != "prezero_supplied" or conf != "high",
-        }
+    if loc_prov_map is not None:
+        location_provenance = loc_prov_map.get(loc_id, _missing_location_provenance())
     else:
-        location_provenance = {
-            "lat": None,
-            "lon": None,
-            "source": "missing",
-            "confidence": "none",
-            "match_reason": "Location_id fehlt in locations.csv",
-            "is_simulated": True,
-        }
+        loc_match = locs_df[locs_df["Location_id"].astype(str).str.strip() == loc_id]
+        location_provenance = (
+            _location_provenance_from_row(loc_match.iloc[0])
+            if not loc_match.empty
+            else _missing_location_provenance()
+        )
 
     last_date_raw = row["last_date"] if "last_date" in row else None
     last_date_str = str(pd.Timestamp(last_date_raw).date()) if pd.notna(last_date_raw) else "-"
@@ -653,6 +714,7 @@ def explain_container(
         "metrics": {
             "last_date": last_date_str,
             "last_fill_level": round(last_fill, 2),
+            "est_fill_level": round(est_fill, 2),
             "days_since_last": int(row["days_since_last"]) if "days_since_last" in row else 0,
             "overfull_rate": round(overfull_clipped, 4),
             "avg_daily_increase": round(float(row["avg_daily_increase"]), 4)
@@ -676,6 +738,47 @@ def explain_container(
         "approval_hint": APPROVAL_HINT_TEXT,
         "sources": _dedupe_sources(sources),
     }
+
+
+def explain_container(
+    location_id: str | tuple[str, str] = "",
+    material: str | None = None,
+    date: str = "2026-04-15",
+    *,
+    container_key: str | tuple[str, str] | None = None,
+    scored_path: str | Path | None = None,
+    route_path: str | Path | None = None,
+    readings_path: str | Path = "data/processed/cleaned_readings.csv",
+    locations_path: str | Path = "data/external/locations.csv",
+) -> dict[str, Any]:
+    """Explain score, fill metrics, site siblings, and tour status for ``(Location_id, material_type)``."""
+    if container_key is not None:
+        if isinstance(location_id, str) and location_id.strip():
+            key_loc, key_mat = parse_container_key(container_key, material)
+            if key_loc != location_id.strip():
+                raise CopilotValidationError(
+                    f"Widersprüchliche Location_id ('{location_id}') und container_key ('{container_key}')."
+                )
+            loc_id, mat = key_loc, key_mat
+        else:
+            loc_id, mat = parse_container_key(container_key, material)
+    else:
+        loc_id, mat = parse_container_key(location_id, material)
+
+    sources: list[str] = []
+    scored_df = _load_scored_data(date, scored_path, readings_path, sources)
+    locs_df = _load_locations_data(locations_path, sources)
+    route_data, _ = _load_baseline_route(date, scored_df, locs_df, route_path, None, sources)
+
+    return _build_container_explanation_payload(
+        loc_id,
+        mat,
+        date,
+        _normalize_scored_frame(scored_df),
+        locs_df,
+        route_data,
+        sources,
+    )
 
 
 def compare_routes(
@@ -720,13 +823,23 @@ WHAT_IF_PRESETS: tuple[tuple[str, str, str], ...] = (
     ("all_critical", "Alle kritischen", "max_stops = alle kritischen Standorte"),
 )
 
+UI_WHAT_IF_PRESETS: tuple[tuple[str, str, str], ...] = (
+    ("shift_6h", "Schicht 6 h", "max_shift_hours = 6,0 (statt Annahme)"),
+    ("truck_8t", "LKW 8 t", "vehicle_max_weight_kg = 8000 (kleineres Fahrzeug)"),
+    ("plus_vehicle", "+1 Fahrzeug", "Mehr kritische Standorte, bis genau ein Fahrzeug mehr nötig ist"),
+    ("stops_20", "Max. 20 Stopps", "max_stops = 20 (begrenzte Stoppanzahl)"),
+    ("all_critical", "Alle kritischen", "max_stops = alle kritischen Standorte"),
+)
+
 
 def precompute_what_if_presets(
     baseline_route: Mapping[str, Any],
     scored_df: pd.DataFrame,
     locs_df: pd.DataFrame,
+    *,
+    include_stops_20: bool = False,
 ) -> list[dict[str, Any]]:
-    """Run the four dispatcher presets in memory against ``baseline_route`` (never writes files)."""
+    """Run dispatcher presets in memory against ``baseline_route`` (never writes files)."""
     assumptions = baseline_route.get("assumptions")
     base_cfg = (
         routing.OperationalConfig.from_dict(assumptions)
@@ -743,8 +856,9 @@ def precompute_what_if_presets(
             scored_df, locs_df, depot=cfg.yard_depot, max_stops=max_stops, date=None, config=cfg
         )
 
+    preset_defs = UI_WHAT_IF_PRESETS if include_stops_20 else WHAT_IF_PRESETS
     results: list[dict[str, Any]] = []
-    for preset_id, label, description in WHAT_IF_PRESETS:
+    for preset_id, label, description in preset_defs:
         overrides: dict[str, Any]
         if preset_id == "shift_6h":
             overrides = {"max_shift_hours": 6.0}
@@ -767,6 +881,9 @@ def precompute_what_if_presets(
                     high = mid - 1
             sim = best
             overrides = {"max_stops": best_n}
+        elif preset_id == "stops_20":
+            overrides = {"max_stops": 20}
+            sim = run(base_cfg, 20)
         else:
             overrides = {"max_stops": total_crit}
             sim = run(base_cfg, None)
@@ -805,10 +922,11 @@ def explain_stop(
     for _, r in rows.iterrows():
         mat = _normalize_material(str(r["material_type"]))
         last_fill = float(r["last_fill_level"])
+        est_fill = float(r["est_fill_level"]) if "est_fill_level" in r else last_fill
         overfull = min(1.0, max(0.0, float(r.get("overfull_rate", 0.0))))
         season = float(r["season_factor"]) if "season_factor" in r else features.get_season_factor(date)
         weight = float(scoring.MATERIAL_WEIGHTS.get(mat, 0.5))
-        level_c = 0.5 * min(1.0, max(0.0, last_fill / 110.0))
+        level_c = 0.5 * min(1.0, max(0.0, est_fill / 110.0))
         overfull_c = 0.3 * overfull
         season_c = 0.2 * min(1.0, max(0.0, weight * min(1.0, max(0.0, season))))
         score = float(r["score"])
@@ -817,6 +935,8 @@ def explain_stop(
                 "Location_id": str(r["Location_id"]),
                 "material_type": mat,
                 "last_fill_level": round(last_fill, 1),
+                "est_fill_level": round(est_fill, 1),
+                "days_since_last": int(r["days_since_last"]) if "days_since_last" in r else None,
                 "overfull_rate_pct": round(overfull * 100.0, 1),
                 "level_component": round(level_c, 3),
                 "overfull_component": round(overfull_c, 3),
@@ -833,7 +953,8 @@ def explain_stop(
         reason = (
             f"{n_crit} von {len(containers)} Containern an diesem Standort sind kritisch "
             f"(Score \u2265 {scoring.CRITICAL_THRESHOLD}). Höchster Score {top['score']:.3f} "
-            f"({top['material_type']}, {top['last_fill_level']:.0f} % Füllstand)."
+            f"({top['material_type']}, jetzt geschätzt {top['est_fill_level']:.0f} % "
+            f"= Füllrate seit der letzten Leerung, beim letzten Besuch {top['last_fill_level']:.0f} % vorgefunden)."
         )
         if max_stops is not None:
             reason += f" Die Tour nimmt die {max_stops} kritischsten Standorte (nach Score)."
@@ -846,43 +967,24 @@ def explain_stop(
         "round": stop.get("round"),
         "source": stop.get("source"),
         "confidence": stop.get("confidence"),
-        "formula": "Score = 0,5 \u00b7 Füllstand/110 + 0,3 \u00b7 Überlaufquote + 0,2 \u00b7 Material \u00b7 Saison",
+        "formula": "Score = 0,5 \u00b7 geschätzter Füllstand jetzt/110 + 0,3 \u00b7 Überlaufquote + 0,2 \u00b7 Material \u00b7 Saison",
         "critical_threshold": scoring.CRITICAL_THRESHOLD,
         "containers": containers,
         "reason": reason,
     }
 
 
-def simulate_what_if(
+def _run_what_if_simulation(
     date: str,
     overrides: Mapping[str, Any],
-    *,
-    scored_path: str | Path | None = None,
-    route_path: str | Path | None = None,
-    readings_path: str | Path = "data/processed/cleaned_readings.csv",
-    locations_path: str | Path = "data/external/locations.csv",
-    base_config_path: str | Path | None = None,
+    baseline_route: Mapping[str, Any],
+    base_cfg: routing.OperationalConfig,
+    scored_df: pd.DataFrame,
+    locs_df: pd.DataFrame,
+    sources: list[str],
 ) -> dict[str, Any]:
-    """Run an in-memory What-If routing simulation on allowlisted parameters vs. baseline."""
     validated_overrides = validate_what_if_overrides(overrides)
-
-    sources: list[str] = []
-    scored_df = _load_scored_data(date, scored_path, readings_path, sources)
-    locs_df = _load_locations_data(locations_path, sources)
-    baseline_route, base_cfg = _load_baseline_route(
-        date, scored_df, locs_df, route_path, base_config_path, sources
-    )
-
-    crit_df = (
-        scored_df[scored_df["critical"].astype(bool)]
-        if not scored_df.empty and "critical" in scored_df.columns
-        else pd.DataFrame()
-    )
-    # Use the route's unit (physical sites) so stops and critical counts are comparable.
-    if baseline_route.get("total_critical_locations") is not None:
-        total_critical_locations = int(baseline_route["total_critical_locations"])
-    else:
-        total_critical_locations = int(crit_df["Location_id"].nunique()) if not crit_df.empty else 0
+    _, total_critical_locations = _total_critical_counts(baseline_route, scored_df)
 
     raw_base_max_stops = baseline_route.get("max_stops", 25)
     base_max_stops = None if raw_base_max_stops is None else int(raw_base_max_stops)
@@ -906,25 +1008,214 @@ def simulate_what_if(
     sim_route["date"] = date
 
     comparison = compare_routes(baseline_route, sim_route, total_critical_locations)
-    base_summary, sim_summary, delta = (
-        comparison["baseline"],
-        comparison["simulation"],
-        comparison["delta"],
-    )
-
     return {
         "tool": "simulate_what_if",
         "date": date,
         "overrides": validated_overrides,
-        "baseline": base_summary,
-        "simulation": sim_summary,
-        "delta": delta,
+        "baseline": comparison["baseline"],
+        "simulation": comparison["simulation"],
+        "delta": comparison["delta"],
         "approval_hint": (
             "What-If ist nur eine Simulation (route_<date>.json unverändert). "
             + APPROVAL_HINT_TEXT
         ),
         "sources": _dedupe_sources(sources),
     }
+
+
+def precompute_ui_copilot_bundle(
+    route_data: Mapping[str, Any],
+    scored_df: pd.DataFrame,
+    locs_df: pd.DataFrame,
+    date: str,
+    *,
+    readings_df: pd.DataFrame | None = None,
+) -> dict[str, Any]:
+    """Precompute deterministic Copilot overview, container explains, presets, and 5 Ask answers."""
+    sources = [f"data/processed/scored_{date}.csv", f"route_{date}.json", "data/external/locations.csv"]
+    if readings_df is not None:
+        sources.append("data/processed/cleaned_readings.csv")
+
+    approval_file = Path("data/processed") / f"approval_{date}.json"
+    approval_status = "approved" if approval_file.is_file() else "pending"
+    if approval_file.is_file():
+        sources.append(str(approval_file))
+
+    overview = _build_tour_overview_payload(
+        date,
+        route_data,
+        scored_df,
+        list(sources),
+        approval_status=approval_status,
+    )
+    overview_text = format_copilot_output(overview)
+
+    presets = precompute_what_if_presets(route_data, scored_df, locs_df, include_stops_20=True)
+
+    explains: dict[str, Any] = {}
+    for idx, stop in enumerate(route_data.get("stops", [])):
+        if str(stop.get("stop_type", "collection")) != "collection":
+            continue
+        try:
+            explains[str(idx)] = explain_stop(
+                stop, scored_df, locs_df, date, max_stops=route_data.get("max_stops")
+            )
+        except Exception:  # noqa: BLE001
+            continue
+
+    work_scored = _normalize_scored_frame(scored_df)
+    loc_stop_map = {
+        str(s.get("Location_id", "")).strip(): s for s in _collection_stops(route_data)
+    }
+    loc_prov_map: dict[str, dict[str, Any]] = {}
+    if not locs_df.empty and "Location_id" in locs_df.columns:
+        locs_norm = locs_df.copy()
+        locs_norm["Location_id"] = locs_norm["Location_id"].astype(str).str.strip()
+        for loc_key, l_row in locs_norm.drop_duplicates("Location_id").set_index("Location_id").iterrows():
+            loc_prov_map[str(loc_key)] = _location_provenance_from_row(l_row)
+
+    site_groups: dict[str, pd.DataFrame] = {}
+    if not work_scored.empty:
+        for loc_key, grp in work_scored.groupby("Location_id", sort=False):
+            site_groups[str(loc_key)] = grp.sort_values("score", ascending=False)
+
+    default_season = features.get_season_factor(date)
+    container_explains: dict[str, dict[str, Any]] = {}
+    if not work_scored.empty:
+        unique_pairs = work_scored[["Location_id", "material_type"]].drop_duplicates()
+        for loc_val, mat_raw in unique_pairs.itertuples(index=False, name=None):
+            loc_id = str(loc_val).strip()
+            try:
+                mat = _normalize_material(str(mat_raw))
+                exp = _build_container_explanation_payload(
+                    loc_id,
+                    mat,
+                    date,
+                    work_scored,
+                    locs_df,
+                    route_data,
+                    list(sources),
+                    site_rows_override=site_groups.get(loc_id, pd.DataFrame()),
+                    loc_stop_map=loc_stop_map,
+                    loc_prov_map=loc_prov_map,
+                    default_season=default_season,
+                )
+            except CopilotError:
+                continue
+            key = exp["container_key"]
+            container_explains[key] = {
+                "container_key": key,
+                "Location_id": loc_id,
+                "material_type": mat,
+                "formatted": format_copilot_output(exp),
+                "in_planned_tour": exp["in_planned_tour"],
+                "stop_order": exp["stop_order"],
+                "tour_reason": exp["tour_reason"],
+                "score": exp["metrics"]["score"],
+                "last_fill_level": exp["metrics"]["last_fill_level"],
+                "critical": exp["metrics"]["critical"],
+            }
+
+    # Choose a deterministic focus container present in container_explains for Ask example #2.
+    focus_key: str | None = None
+    for stop in _collection_stops(route_data):
+        cand_loc = str(stop.get("Location_id", "")).strip()
+        cand_mat = str(stop.get("primary_material", "")).strip().lower()
+        cand_key = f"{cand_loc}:{cand_mat}"
+        if cand_key in container_explains:
+            focus_key = cand_key
+            break
+    if focus_key is None and container_explains:
+        focus_key = next(iter(container_explains))
+
+    assumptions = route_data.get("assumptions")
+    base_cfg = (
+        routing.OperationalConfig.from_dict(assumptions)
+        if isinstance(assumptions, Mapping)
+        else routing.OperationalConfig()
+    )
+    fixed_questions = [
+        "Wie sieht der Touren-Überblick für den Stichtag aus?",
+        (
+            f"Warum ist Container {focus_key} in der Tour?"
+            if focus_key
+            else "Welche kritischen Stopps sind in der Tour?"
+        ),
+        "Was passiert bei Schichtlimit max_shift_hours=6?",
+        "Was wäre mit einem 8 t Fahrzeug (vehicle_max_weight_kg=8000)?",
+        "Was passiert bei max_stops=20?",
+    ]
+    ask_examples: list[dict[str, Any]] = []
+    for question in fixed_questions:
+        tool_name, args = _route_question_deterministically(question, date)
+        if tool_name == "get_tour_overview":
+            answer = overview_text
+        elif tool_name == "explain_container":
+            q_loc, q_mat = parse_container_key(args.get("location_id", ""), args.get("material"))
+            q_key = f"{q_loc}:{q_mat}"
+            if q_key in container_explains:
+                answer = container_explains[q_key]["formatted"]
+            else:
+                answer = overview_text
+        else:
+            sim_res = _run_what_if_simulation(
+                date,
+                args.get("overrides", {}),
+                route_data,
+                base_cfg,
+                scored_df,
+                locs_df,
+                list(sources),
+            )
+            answer = format_copilot_output(sim_res)
+        ask_examples.append(
+            {
+                "question": question,
+                "mode": "deterministic_fallback",
+                "tool_name": tool_name,
+                "arguments": args,
+                "answer": answer,
+            }
+        )
+
+    return {
+        "overview": overview,
+        "overview_text": overview_text,
+        "presets": presets,
+        "explains": explains,
+        "container_explains": container_explains,
+        "ask_examples": ask_examples,
+    }
+
+
+def simulate_what_if(
+    date: str,
+    overrides: Mapping[str, Any],
+    *,
+    scored_path: str | Path | None = None,
+    route_path: str | Path | None = None,
+    readings_path: str | Path = "data/processed/cleaned_readings.csv",
+    locations_path: str | Path = "data/external/locations.csv",
+    base_config_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Run an in-memory What-If routing simulation on allowlisted parameters vs. baseline."""
+    validated_overrides = validate_what_if_overrides(overrides)
+
+    sources: list[str] = []
+    scored_df = _load_scored_data(date, scored_path, readings_path, sources)
+    locs_df = _load_locations_data(locations_path, sources)
+    baseline_route, base_cfg = _load_baseline_route(
+        date, scored_df, locs_df, route_path, base_config_path, sources
+    )
+    return _run_what_if_simulation(
+        date,
+        validated_overrides,
+        baseline_route,
+        base_cfg,
+        scored_df,
+        locs_df,
+        sources,
+    )
 
 
 def dispatch_tool_call(
@@ -1025,13 +1316,18 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
     approval_hint = str(result.get("approval_hint", APPROVAL_HINT_TEXT))
 
     if tool == "get_tour_overview":
+        max_shift_info = ""
+        if "max_vehicle_shift_hours" in result and "max_shift_hours_limit" in result:
+            max_shift_info = (
+                f" (längste Schicht {result['max_vehicle_shift_hours']} h / Limit {result['max_shift_hours_limit']} h)"
+            )
         lines = [
             f"=== GlasRoute Copilot: Touren-Überblick ({result['date']}) ===",
             f"Stopps geplant:        {result['num_stops']} (von {result['total_critical_locations']} kritischen Standorten / {result['total_critical_pairs']} kritischen Containern)",
             f"Unbedient kritisch:    {result['unserved_critical_locations']}",
             f"Strecke geplant:       {result['planned_km']} km vs. volle Runde {result['full_round_km']} km (Ersparnis: {result['saved_km']} km / {result['saved_pct']} %)",
             f"Fahrzeuge / Runden:    {result['vehicles_needed']} Fahrzeug(e), {result['rounds']} Runde(n)",
-            f"Fahrzeugstunden/Menge: {result['shift_hours']} h gesamt, {result['t_collected']} t",
+            f"Fahrzeugstunden/Menge: {result['shift_hours']} h gesamt{max_shift_info}, {result['t_collected']} t",
             f"Freigabe-Status:       {result['approval_status']}",
         ]
         top_stops = result.get("top_stops", [])
@@ -1057,7 +1353,8 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
         lines = [
             f"=== GlasRoute Copilot: Container-Erklärung ({result['container_key']}, {result['date']}) ===",
             f"Identität:             Location_id={result['Location_id']}, material_type={result['material_type']}",
-            f"Letzte Messung:        {m['last_fill_level']:.1f}% am {m['last_date']} ({m['days_since_last']} Tage alt, {m['reading_count']} Messungen)",
+            f"Letzter Besuch:        {m['last_fill_level']:.1f}% vorgefunden und geleert am {m['last_date']} ({m['days_since_last']} Tage her, {m['reading_count']} Besuche)",
+            f"Füllstand jetzt:       ca. {m.get('est_fill_level', m['last_fill_level']):.0f}% geschätzt (Füllrate {m['avg_daily_increase']:.2f} %/Tag seit der Leerung)",
             f"Überlaufquote / Rate:  {m['overfull_rate'] * 100:.1f}% overfull, +{m['avg_daily_increase']:.2f} pp/Tag",
             f"Kritikalitäts-Score:   {m['score']:.3f} (kritisch: {'ja' if m['critical'] else 'nein'}, Schwelle {sb['critical_threshold']})",
             (

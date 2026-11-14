@@ -745,6 +745,7 @@ def plot_route(
             tooltip=route_data.get("comparison", "Planned route"),
         ).add_to(fmap)
 
+    stop_markers: list[dict[str, Any]] = []
     for stop in stops:
         simulated = _is_simulated(str(stop.get("source", "")), str(stop.get("confidence", "")))
         color = _score_color(float(stop["score"]))
@@ -758,7 +759,7 @@ def plot_route(
             f"Site: {site_kind}<br>"
             f"Cumulative: {stop.get('cumulative_km', '-')} km"
         )
-        folium.CircleMarker(
+        stop_marker = folium.CircleMarker(
             location=[float(stop["lat"]), float(stop["lon"])],
             radius=8,
             color="#111827" if not simulated else "#4b5563",
@@ -769,7 +770,17 @@ def plot_route(
             fill_opacity=0.45 if simulated else 0.9,
             popup=folium.Popup(popup_html, max_width=280),
             tooltip=f"#{stop['order']} ({stop['score']:.2f}) - {'SIM' if simulated else 'REAL'}",
-        ).add_to(fmap)
+        )
+        stop_marker.add_to(fmap)
+        if str(stop.get("stop_type", "collection")) == "collection":
+            stop_markers.append(
+                {
+                    "marker": stop_marker.get_name(),
+                    "loc": str(stop.get("Location_id", "")).strip(),
+                    "mat": str(stop.get("primary_material", "")).strip().lower(),
+                    "order": stop.get("order"),
+                }
+            )
 
     if forecast is not None and not forecast.empty and locations is not None:
         add_forecast_layers(fmap, forecast, locations, route_data)
@@ -788,7 +799,7 @@ def plot_route(
     </div>
     """
     fmap.get_root().html.add_child(folium.Element(legend_html))
-    _add_container_hash_handler(fmap, container_markers)
+    _add_container_hash_handler(fmap, container_markers, stop_markers=stop_markers)
     fmap.save(str(out))
     return out
 
@@ -796,18 +807,29 @@ def plot_route(
 def _add_container_hash_handler(
     fmap: folium.Map,
     container_markers: dict[str, tuple[str, str]],
+    stop_markers: list[dict[str, Any]] | None = None,
 ) -> None:
-    """Make heatmap container links focus and open their matching map marker."""
+    """Make heatmap links focus markers and emit click events for Copilot explain."""
     map_name = fmap.get_name()
     marker_lookup = json.dumps(
-        {key: {"marker": marker, "site": site} for key, (marker, site) in container_markers.items()}
+        {
+            key: {
+                "marker": marker,
+                "site": site,
+                "loc": key.rsplit("|", 1)[0],
+                "mat": key.rsplit("|", 1)[1] if "|" in key else "",
+            }
+            for key, (marker, site) in container_markers.items()
+        }
     )
+    stop_lookup = json.dumps(stop_markers or [])
     fmap.get_root().html.add_child(
         folium.Element(
             f"""
             <script>
               document.addEventListener("DOMContentLoaded", function() {{
                 var containerMarkers = {marker_lookup};
+                var stopMarkers = {stop_lookup};
                 var containerMap = {map_name};
                 var notice = document.createElement("div");
                 notice.style.cssText =
@@ -820,6 +842,39 @@ def _add_container_hash_handler(
                   notice.style.display = "block";
                   window.setTimeout(function() {{ notice.style.display = "none"; }}, 3500);
                 }}
+                function notifyParentExplain(loc, mat, order) {{
+                  if (!loc) return;
+                  if (window.parent && window.parent !== window) {{
+                    try {{
+                      window.parent.postMessage(
+                        {{
+                          type: "copilot-explain",
+                          loc: String(loc),
+                          mat: String(mat || ""),
+                          order: order === undefined ? null : order
+                        }},
+                        "*"
+                      );
+                    }} catch (e) {{}}
+                  }}
+                }}
+                Object.keys(containerMarkers).forEach(function(key) {{
+                  var entry = containerMarkers[key];
+                  var marker = window[entry.marker];
+                  if (marker && marker.on) {{
+                    marker.on("click", function() {{
+                      notifyParentExplain(entry.loc, entry.mat, null);
+                    }});
+                  }}
+                }});
+                stopMarkers.forEach(function(entry) {{
+                  var marker = window[entry.marker];
+                  if (marker && marker.on) {{
+                    marker.on("click", function() {{
+                      notifyParentExplain(entry.loc, entry.mat, entry.order);
+                    }});
+                  }}
+                }});
                 function focusFrom(locationId, material) {{
                   if (!locationId || !material) return;
                   var matNorm = String(material).toLowerCase().replace(/^glass_/, "");
@@ -843,6 +898,7 @@ def _add_container_hash_handler(
                   if (target.site === "simulated") {{
                     showNotice("Standortzuordnung simuliert.");
                   }}
+                  notifyParentExplain(locationId, matNorm, null);
                 }}
                 function focusFromHash() {{
                   var hash = new URLSearchParams(window.location.hash.slice(1));

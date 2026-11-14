@@ -397,3 +397,119 @@ def test_benchmark_summary_marks_nn_fallback() -> None:
     html = _build_benchmark_section_html(s)
     assert "NN-Reihenfolge behalten" in html
     assert "in 1 von 4 Fällen" in html
+
+
+def test_ui_copilot_overview_explain_whatif_ask_and_shift_limit(tmp_path: Path) -> None:
+    import re
+    import shutil
+    import subprocess
+
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    html_text = out.read_text(encoding="utf-8")
+
+    # 1. Overview box appears at the top of the route tab (before KPI cards & approval box).
+    route_start = html_text.index('id="view-route"')
+    overview_pos = html_text.index('id="copilot-overview-box"', route_start)
+    kpi_pos = html_text.index('class="kpi-grid"', route_start)
+    approve_pos = html_text.index('id="approve-route-btn"', route_start)
+    assert overview_pos < kpi_pos < approve_pos
+    assert 'id="copilot-overview-text"' in html_text
+    assert "Stopps geplant:" in html_text
+
+    # 2. Parse precomputed insights payload.
+    payload_match = re.search(
+        r'<script id="insights-payload" type="application/json">(.*?)</script>',
+        html_text,
+        flags=re.S,
+    )
+    assert payload_match is not None
+    insights = json.loads(payload_match.group(1).replace("<\\/", "</"))
+    assert "Stopps geplant:" in insights["overview_text"]
+    assert "Quellen:" in insights["overview_text"]
+
+    # Explain for every (Location_id, material) in scored data, Top-20 rows, stop rows, and map clicks.
+    container_explains = insights["container_explains"]
+    for key in ("L1:white", "L2:green", "L3:brown"):
+        assert key in container_explains
+        assert key in container_explains[key]["formatted"]
+        assert "Quellen:" in container_explains[key]["formatted"]
+    assert 'class="top20-row" data-loc="L1" data-mat="white"' in html_text
+    assert 'id="top20-explain-panel"' in html_text
+    assert 'data-loc="L1" data-mat="white"' in html_text
+    assert "copilot-explain" in html_text  # inside #route-map-frame srcdoc & outer script
+
+    # 3. What-if presets (shift_6h, truck_8t, plus_vehicle, stops_20, all_critical) and shift limit guard.
+    presets = insights["presets"]
+    assert [p["id"] for p in presets] == [
+        "shift_6h",
+        "truck_8t",
+        "plus_vehicle",
+        "stops_20",
+        "all_critical",
+    ]
+    for idx, preset in enumerate(presets):
+        assert f'data-preset="{idx}"' in html_text
+        base = preset["baseline"]
+        sim = preset["simulation"]
+        assert base["max_vehicle_shift_hours"] <= base["max_shift_hours_limit"] + 1e-9
+        assert sim["max_vehicle_shift_hours"] <= sim["max_shift_hours_limit"] + 1e-9
+        assert sim["num_stops"] >= 1
+
+    # 4. Ask box with input + 5 fixed precomputed (--no-llm) questions, no live server calls.
+    assert 'id="copilot-ask-input"' in html_text
+    assert 'id="copilot-ask-datalist"' in html_text
+    assert 'id="copilot-ask-output"' in html_text
+    ask_examples = insights["ask_examples"]
+    assert len(ask_examples) == 5
+    for idx, example in enumerate(ask_examples):
+        assert f'data-ask-idx="{idx}"' in html_text
+        assert example["mode"] == "deterministic_fallback"
+        assert example["answer"].strip()
+        assert "Quellen:" in example["answer"]
+    outer = html_text.split("</iframe>")[-1]
+    assert "fetch(" not in outer
+    assert "11434" not in outer
+
+    # 5. Approval controls remain intact in view-route.
+    assert 'id="dispatcher-name-input"' in html_text
+    assert 'id="approve-route-btn"' in html_text
+    assert 'id="approval-status-badge"' in html_text
+    assert 'id="approval-record-preview"' in html_text
+
+    # 6. Verify both map iframe script and main page script parse cleanly in Node (when available).
+    node = shutil.which("node")
+    if node is not None:
+        import html as html_lib
+
+        srcdoc_match = re.search(r'id="route-map-frame"[^>]*srcdoc="(.*?)"', html_text, flags=re.S)
+        assert srcdoc_match is not None
+        route_map_doc = html_lib.unescape(srcdoc_match.group(1))
+        for idx, script_body in enumerate(re.findall(r"<script[^>]*>(.*?)</script>", route_map_doc, flags=re.S)):
+            if not script_body.strip():
+                continue
+            js_file = tmp_path / f"map_{idx}.js"
+            js_file.write_text(script_body, encoding="utf-8")
+            check = subprocess.run([node, "--check", str(js_file)], capture_output=True, text=True)
+            assert check.returncode == 0, check.stderr
+
+
+def test_build_ui_explains_measure_and_empty(tmp_path: Path) -> None:
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    assert "schätzt den Füllstand und leert" in html
+    assert "Füllstand jetzt (geschätzt)" in html
+    assert "last_fill_level + avg_daily_increase" not in html  # old continuous-sensor formula

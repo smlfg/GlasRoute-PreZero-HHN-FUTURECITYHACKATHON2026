@@ -107,7 +107,7 @@ def render_forecast_timeline_map_html(
             popup = (
                 f"<b>ID:</b> {html.escape(str(row.Location_id))}<br>"
                 f"<b>Glasfarbe:</b> {html.escape(material)}<br>"
-                f"<b>Letzte Messung:</b> {float(row.last_fill_level):.1f}% ({last_date})<br>"
+                f"<b>Letzter Besuch:</b> {float(row.last_fill_level):.1f}% vorgefunden und geleert ({last_date})<br>"
                 f"<b>Täglicher Anstieg:</b> {float(row.avg_daily_increase):.2f}%/Tag<br>"
                 f"<b>Prognose ({html.escape(label)} / {html.escape(target_date_str)}):</b> "
                 f"{float(row.forecast_pct):.1f}%<br>"
@@ -479,6 +479,8 @@ def _build_route_section_html(
     route_map_html: str,
     route_bundle: dict[str, Any],
     what_if_html: str = "",
+    overview_html: str = "",
+    ask_html: str = "",
 ) -> str:
     metrics = route_bundle["metrics"]
     stops = metrics.get("stops", [])
@@ -495,8 +497,11 @@ def _build_route_section_html(
     stop_rows: list[str] = []
     for stop_idx, stop in enumerate(stops):
         stop_type = str(stop.get("stop_type", "collection"))
+        stop_loc = html.escape(str(stop.get("Location_id", "")), quote=True)
+        stop_mat = html.escape(str(stop.get("primary_material", "")).strip().lower(), quote=True)
         row_attr = (
-            f' class="stop-row" data-stop-idx="{stop_idx}" title="Klick: Warum dieser Stopp?"'
+            f' class="stop-row" data-stop-idx="{stop_idx}" data-loc="{stop_loc}" data-mat="{stop_mat}" '
+            f'title="Klick: Warum dieser Stopp?"'
             if stop_type == "collection"
             else ""
         )
@@ -507,6 +512,7 @@ def _build_route_section_html(
               <td>{html.escape(stop_type)}</td>
               <td><code>{html.escape(str(stop.get('Location_id', '-')))}</code></td>
               <td>{html.escape(str(stop.get('primary_material', '-')))}</td>
+              <td>{_format_num(stop.get('est_fill_level'), '%')}</td>
               <td>{_format_num(stop.get('last_fill_level'), '%')}</td>
               <td>{_format_num(stop.get('score'))}</td>
               <td>{html.escape(str(stop.get('source', '-')))} ({html.escape(str(stop.get('confidence', '-')))})</td>
@@ -540,6 +546,7 @@ def _build_route_section_html(
         <h2>Bestehende Route ({route_date})</h2>
         <p class="muted">{comparison_text}</p>
       </div>
+      {overview_html}
       {coverage_html}
       <div class="kpi-grid">{kpi_cards}</div>
 
@@ -557,11 +564,12 @@ def _build_route_section_html(
       </div>
 
       {what_if_html}
+      {ask_html}
 
       <div class="map-wrap">{route_iframe}</div>
 
       <h3>Stopp-Liste in Fahrreihenfolge</h3>
-      <p class="muted">Klick auf einen Stopp zeigt, warum er in der Tour ist (Score-Zerlegung aller Container am Standort).</p>
+      <p class="muted">Klick auf einen Stopp (Karte, Stopp-Liste oder Top-20) zeigt die vorberechnete Copilot-Erklärung für <code>(Location_id, material)</code>.</p>
       <div id="explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
         <table>
@@ -571,7 +579,8 @@ def _build_route_section_html(
               <th>Typ</th>
               <th>Location_id</th>
               <th>Material</th>
-              <th>Letzte Messung</th>
+              <th>Füllstand jetzt (geschätzt)</th>
+              <th>Beim letzten Besuch vorgefunden</th>
               <th>Score</th>
               <th>Ortsquelle</th>
               <th>Etappe</th>
@@ -579,7 +588,7 @@ def _build_route_section_html(
             </tr>
           </thead>
           <tbody>
-            {''.join(stop_rows) if stop_rows else '<tr><td colspan="9">Keine Stopps in route_data</td></tr>'}
+            {''.join(stop_rows) if stop_rows else '<tr><td colspan="10">Keine Stopps in route_data</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -833,8 +842,9 @@ def compute_route_insights(
     scored_df: pd.DataFrame,
     locations_df: pd.DataFrame,
     date: str,
+    readings_df: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
-    """Precompute what-if presets and per-stop explanations for the static website."""
+    """Precompute overview, container explains, what-if presets, and 5 Ask examples."""
     from prezero import copilot
 
     route_dict = (
@@ -843,20 +853,59 @@ def compute_route_insights(
         else dict(route_data)
     )
     try:
-        presets = copilot.precompute_what_if_presets(route_dict, scored_df, locations_df)
+        return copilot.precompute_ui_copilot_bundle(
+            route_dict,
+            scored_df,
+            locations_df,
+            date,
+            readings_df=readings_df,
+        )
     except Exception:  # noqa: BLE001 - UI must still render with partial inputs
-        presets = []
-    explains: dict[str, Any] = {}
-    for idx, stop in enumerate(route_dict.get("stops", [])):
-        if str(stop.get("stop_type", "collection")) != "collection":
-            continue
-        try:
-            explains[str(idx)] = copilot.explain_stop(
-                stop, scored_df, locations_df, date, max_stops=route_dict.get("max_stops")
-            )
-        except Exception:  # noqa: BLE001
-            continue
-    return {"presets": presets, "explains": explains}
+        return {
+            "overview_text": "",
+            "presets": [],
+            "explains": {},
+            "container_explains": {},
+            "ask_examples": [],
+        }
+
+
+def _build_overview_html(overview_text: str) -> str:
+    if not overview_text.strip():
+        return ""
+    return f"""
+      <div id="copilot-overview-box" class="copilot-box">
+        <strong>Copilot Touren-Überblick (vorberechnet, deterministisch):</strong>
+        <pre id="copilot-overview-text" class="copilot-pre">{html.escape(overview_text)}</pre>
+      </div>
+    """
+
+
+def _build_ask_html(ask_examples: list[dict[str, Any]]) -> str:
+    if not ask_examples:
+        return ""
+    options = "".join(
+        f'<option value="{html.escape(ex["question"], quote=True)}"></option>'
+        for ex in ask_examples
+    )
+    buttons = "".join(
+        f'<button type="button" class="copilot-ask-btn" data-ask-idx="{i}">{html.escape(ex["question"])}</button>'
+        for i, ex in enumerate(ask_examples)
+    )
+    first_question = html.escape(ask_examples[0]["question"], quote=True)
+    first_answer = html.escape(ask_examples[0]["answer"])
+    return f"""
+      <div id="copilot-ask-box" class="copilot-box">
+        <strong>Copilot Ask (--no-llm, 5 vorberechnete Beispielfragen, kein Live-Server):</strong>
+        <div class="ask-controls">
+          <input id="copilot-ask-input" type="text" list="copilot-ask-datalist" value="{first_question}" placeholder="Beispielfrage wählen oder Container-Key (<Location_id>:<material>) eingeben..." />
+          <datalist id="copilot-ask-datalist">{options}</datalist>
+          <button id="copilot-ask-submit" type="button">Antwort anzeigen</button>
+        </div>
+        <div class="ask-examples">{buttons}</div>
+        <pre id="copilot-ask-output" class="copilot-pre">{first_answer}</pre>
+      </div>
+    """
 
 
 def _build_what_if_html(presets: list[dict[str, Any]]) -> str:
@@ -902,6 +951,7 @@ def _build_heatmap_section_html(heatmap_src: str | None) -> str:
       <div class="section-head">
         <h2>Heatmap: Füllstand je Container und Woche</h2>
         <p class="muted">Ein Kästchen = ein Container (Standort &times; Glasfarbe). Wochen-Slider unten.
+        Wochen mit Besuch zeigen den vorgefundenen Stand (danach geleert), Wochen ohne Besuch den geschätzten Wiederanstieg ab 0&nbsp;%.
         Klick auf ein Kästchen springt in den Tab &bdquo;Route &amp; Freigabe&ldquo; und zeigt den Container auf der Karte.</p>
       </div>
     """
@@ -1182,7 +1232,10 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
     fig_errors.update_layout(title="Forecast vs. tatsächliche Messung", yaxis_title="Mittlerer Fehler (%)")
 
     top_rows = "".join(
-        f"<tr><td><code>{html.escape(row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'], row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
+        f'<tr class="top20-row" data-loc="{html.escape(row["Location_id"], quote=True)}" '
+        f'data-mat="{html.escape(row["material_type"].strip().lower(), quote=True)}" '
+        f'title="Klick: Copilot-Erklärung für ({html.escape(row["Location_id"], quote=True)}, {html.escape(row["material_type"].strip().lower(), quote=True)})">'
+        f"<td><code>{html.escape(row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'], row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
         for row in analysis["top_overfull"]
     )
     interval_values = [row["interval_days"] for row in intervals]
@@ -1202,6 +1255,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
       <div class="section-head">
         <h2>Daten: Reale Messungen</h2>
         <p class="muted">Echte PreZero-Messdaten · {analysis['container_count']:,} Container · Füllstand 110 % = übervoll</p>
+        <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung (je Tag mit Saisonfaktor), max. 110&nbsp;%.</div>
       </div>
       <div class="two-col">
         <div>{charts[0]}</div>
@@ -1209,7 +1263,10 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         <div>{charts[2]}</div>
         <div>{charts[3]}<p class="muted">Median des Scanintervalls: {"-" if median_interval is None else f"{median_interval:.1f} Tage"}.</p></div>
       </div>
-      <div class="section-head"><h3>Top 20 Container nach Übervoll-Häufigkeit</h3></div>
+      <div class="section-head"><h3>Top 20 Container nach Übervoll-Häufigkeit</h3>
+        <p class="muted">Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung für <code>(Location_id, material)</code>.</p>
+      </div>
+      <div id="top20-explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
         <table><thead><tr><th>Container</th><th>Material</th><th>Übervoll</th><th>Messungen</th><th>Anteil</th></tr></thead>
         <tbody>{top_rows or '<tr><td colspan="5">Keine Daten</td></tr>'}</tbody></table>
@@ -1255,12 +1312,25 @@ def build_ui(
 
     forecast_cards_html = _build_forecast_cards_html(forecast_summaries)
     forecast_iframe = _wrap_srcdoc_iframe(forecast_map_html, height_px=560, title="Forecast-Timeline")
-    insights = compute_route_insights(route_data, scored_df, locations_df, date)
+    insights = compute_route_insights(
+        route_data, scored_df, locations_df, date, readings_df=readings_df
+    )
     route_section_html = _build_route_section_html(
-        route_map_html, route_bundle, _build_what_if_html(insights["presets"])
+        route_map_html,
+        route_bundle,
+        _build_what_if_html(insights["presets"]),
+        overview_html=_build_overview_html(insights.get("overview_text", "")),
+        ask_html=_build_ask_html(insights.get("ask_examples", [])),
     )
     insights_json = _safe_json_for_html(
-        {"presets": insights["presets"], "explains": insights["explains"], "rows": WHAT_IF_ROWS}
+        {
+            "overview_text": insights.get("overview_text", ""),
+            "presets": insights.get("presets", []),
+            "explains": insights.get("explains", {}),
+            "container_explains": insights.get("container_explains", {}),
+            "ask_examples": insights.get("ask_examples", []),
+            "rows": WHAT_IF_ROWS,
+        }
     )
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
     upload_section_html = _build_upload_section_html(upload_check)
@@ -1363,6 +1433,7 @@ def build_ui(
     .card .sub {{ font-size: 12px; color: var(--muted); margin-top: 4px; }}
     .map-wrap {{ margin-bottom: 18px; }}
     .location-banner {{ background: #fef3c7; border-bottom: 1px solid #f59e0b; color: #78350f; padding: 8px 20px; font-size: 13px; }}
+    .process-note {{ background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 8px; padding: 10px 14px; margin: 8px 0 14px; font-size: 13px; }}
     .coverage-hint {{ background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }}
     .map-banner {{
       display: inline-block;
@@ -1449,12 +1520,52 @@ def build_ui(
       max-height: 220px;
       overflow: auto;
     }}
-    .whatif-box {{ background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }}
+    .whatif-box, .copilot-box {{ background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }}
+    .copilot-pre {{
+      white-space: pre-wrap;
+      margin: 8px 0 0;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-x: auto;
+    }}
+    .ask-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }}
+    .ask-controls input {{
+      flex: 1 1 320px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }}
+    .ask-controls button {{
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }}
+    .ask-examples {{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }}
+    .copilot-ask-btn {{
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }}
+    .copilot-ask-btn.active {{ border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }}
     .whatif-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }}
     .whatif-btn {{ border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }}
     .whatif-btn.active {{ background: var(--accent); color: #fff; }}
     .delta-better {{ color: #166534; font-weight: 600; }} .delta-worse {{ color: #b91c1c; font-weight: 600; }}
-    tr.stop-row {{ cursor: pointer; }} tr.stop-row:hover, tr.stop-row.selected {{ background: var(--accent-soft); }}
+    tr.stop-row, tr.top20-row {{ cursor: pointer; }}
+    tr.stop-row:hover, tr.stop-row.selected, tr.top20-row:hover, tr.top20-row.selected {{ background: var(--accent-soft); }}
     .explain-panel {{ background: #fff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; }}
     .dropzone {{
       border: 2px dashed #94a3b8;
@@ -1496,7 +1607,8 @@ def build_ui(
     <section id="view-forecast" class="view-panel">
       <div class="section-head">
         <h2>Forecast-Timeline (+0 / +7 / +14 / +21 Tage)</h2>
-        <p class="muted">Formel: last_fill_level + avg_daily_increase &times; Tage &times; Saisonfaktor, begrenzt auf 110 %.</p>
+        <p class="muted">Prognose = Füllrate &times; Tage seit der letzten Leerung bis zum Zieldatum (je Tag mit Saisonfaktor), begrenzt auf 110 %.</p>
+        <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung (je Tag mit Saisonfaktor), max. 110&nbsp;%.</div>
       </div>
       <div class="kpi-grid">{forecast_cards_html}</div>
       <div class="map-wrap">{forecast_iframe}</div>
@@ -1579,32 +1691,160 @@ def build_ui(
             rows + "</tbody></table></div>";
         }});
       }});
+      function normalizeMat(m) {{
+        var v = String(m || "").trim().toLowerCase().replace(/^glass_/, "");
+        if (v === "weiss" || v === "weiß" || v === "weissglas" || v === "weißglas") return "white";
+        if (v === "gruen" || v === "grün" || v === "gruenglas" || v === "grünglas") return "green";
+        if (v === "braun" || v === "braunglas") return "brown";
+        return v;
+      }}
+      function findContainerExplain(loc, mat) {{
+        var map = insights.container_explains || {{}};
+        var normMat = normalizeMat(mat);
+        if (normMat && map[loc + ":" + normMat]) return map[loc + ":" + normMat];
+        var keys = Object.keys(map);
+        for (var i = 0; i < keys.length; i++) {{
+          if (keys[i].indexOf(loc + ":") === 0) return map[keys[i]];
+        }}
+        return null;
+      }}
+      function findStopIdxByLoc(loc) {{
+        var explains = insights.explains || {{}};
+        var keys = Object.keys(explains);
+        for (var i = 0; i < keys.length; i++) {{
+          if (String(explains[keys[i]].Location_id) === String(loc)) return keys[i];
+        }}
+        return null;
+      }}
+      function showContainerExplain(loc, mat, stopIdx, panelId) {{
+        var panel = document.getElementById(panelId || "explain-panel");
+        var routePanel = document.getElementById("explain-panel");
+        var normMat = normalizeMat(mat);
+        var resolvedStopIdx = (stopIdx !== null && stopIdx !== undefined && stopIdx !== "") ? String(stopIdx) : findStopIdxByLoc(loc);
+        var e = resolvedStopIdx !== null ? (insights.explains || {{}})[resolvedStopIdx] : null;
+        var cExp = findContainerExplain(loc, normMat);
+
+        document.querySelectorAll("tr.stop-row").forEach(function(r) {{
+          r.classList.toggle("selected", resolvedStopIdx !== null && r.getAttribute("data-stop-idx") === resolvedStopIdx);
+        }});
+
+        var content = "";
+        if (!e && !cExp) {{
+          content = "Keine Erklärung verfügbar für (" + esc(loc) + ", " + esc(normMat || "-") + ").";
+        }} else {{
+          var title = e
+            ? ("<b>Stopp #" + esc(e.order) + " (" + esc(loc) + ", " + esc(normMat || "-") + ") – Copilot-Erklärung:</b> ")
+            : ("<b>Container (" + esc(loc) + ", " + esc(normMat || "-") + ") – Copilot-Erklärung:</b> ");
+          content += title;
+          if (cExp && cExp.formatted) {{
+            content += "<pre class='copilot-pre'>" + esc(cExp.formatted) + "</pre>";
+          }}
+          if (e) {{
+            var rows = e.containers.map(function(c) {{
+              return "<tr><td><code>" + esc(c.Location_id).slice(0, 8) + "…</code></td><td>" + esc(c.material_type) +
+                "</td><td>" + fmt(c.est_fill_level, " %") + "</td><td>" + c.last_fill_level + " %" + (c.days_since_last !== null && c.days_since_last !== undefined ? " (vor " + c.days_since_last + " d)" : "") + "</td><td>" + c.level_component + "</td><td>" + c.overfull_component +
+                "</td><td>" + c.season_component + "</td><td><b>" + c.score + "</b></td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
+            }}).join("");
+            content += "<div style='margin-top:8px'><b>Standort-Aufschlüsselung:</b> " + esc(e.reason) +
+              "<br><span class='muted'>" + esc(e.formula) + " · kritisch ab " + e.critical_threshold +
+              " · Ortsquelle " + esc(e.source) + " (" + esc(e.confidence) + ")</span>" +
+              "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glas</th><th>jetzt (geschätzt)</th><th>beim letzten Besuch</th><th>0,5·Füllstand jetzt</th>" +
+              "<th>0,3·Überlauf</th><th>0,2·Mat·Saison</th><th>Score</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div></div>";
+          }}
+        }}
+        if (panel) {{
+          panel.hidden = false;
+          panel.innerHTML = content;
+          panel.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
+        }}
+        if (routePanel && routePanel !== panel) {{
+          routePanel.hidden = false;
+          routePanel.innerHTML = content;
+        }}
+      }}
       document.querySelectorAll("tr.stop-row").forEach(function(row) {{
         row.addEventListener("click", function() {{
-          document.querySelectorAll("tr.stop-row").forEach(function(r) {{ r.classList.toggle("selected", r === row); }});
-          var e = insights.explains[row.getAttribute("data-stop-idx")];
-          var panel = document.getElementById("explain-panel");
-          if (!e) {{ panel.hidden = false; panel.textContent = "Keine Erklärung verfügbar."; return; }}
-          var rows = e.containers.map(function(c) {{
-            return "<tr><td><code>" + esc(c.Location_id).slice(0, 8) + "…</code></td><td>" + esc(c.material_type) +
-              "</td><td>" + c.last_fill_level + " %</td><td>" + c.level_component + "</td><td>" + c.overfull_component +
-              "</td><td>" + c.season_component + "</td><td><b>" + c.score + "</b></td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
-          }}).join("");
-          panel.hidden = false;
-          panel.innerHTML = "<b>Stopp #" + esc(e.order) + " – warum?</b> " + esc(e.reason) +
-            "<br><span class='muted'>" + esc(e.formula) + " · kritisch ab " + e.critical_threshold +
-            " · Ortsquelle " + esc(e.source) + " (" + esc(e.confidence) + ")</span>" +
-            "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glas</th><th>Füllstand</th><th>0,5·Füllstand</th>" +
-            "<th>0,3·Überlauf</th><th>0,2·Mat·Saison</th><th>Score</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
-          panel.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
+          showContainerExplain(
+            row.getAttribute("data-loc") || "",
+            row.getAttribute("data-mat") || "",
+            row.getAttribute("data-stop-idx"),
+            "explain-panel"
+          );
+        }});
+      }});
+      document.querySelectorAll("tr.top20-row").forEach(function(row) {{
+        row.addEventListener("click", function() {{
+          document.querySelectorAll("tr.top20-row").forEach(function(r) {{ r.classList.toggle("selected", r === row); }});
+          showContainerExplain(
+            row.getAttribute("data-loc") || "",
+            row.getAttribute("data-mat") || "",
+            null,
+            "top20-explain-panel"
+          );
         }});
       }});
 
-      // Heatmap click -> jump to the route map tab and focus the container marker.
+      var askInput = document.getElementById("copilot-ask-input");
+      var askSubmit = document.getElementById("copilot-ask-submit");
+      var askOutput = document.getElementById("copilot-ask-output");
+      var askBtns = document.querySelectorAll(".copilot-ask-btn");
+      function renderAskAnswer(idx) {{
+        var ex = (insights.ask_examples || [])[idx];
+        if (!ex || !askOutput) return;
+        askBtns.forEach(function(b) {{ b.classList.toggle("active", Number(b.getAttribute("data-ask-idx")) === idx); }});
+        if (askInput) askInput.value = ex.question;
+        askOutput.textContent = ex.answer;
+      }}
+      function resolveAskInput() {{
+        if (!askInput || !askOutput) return;
+        var raw = String(askInput.value || "").trim();
+        var lowered = raw.toLowerCase();
+        var list = insights.ask_examples || [];
+        for (var i = 0; i < list.length; i++) {{
+          if (list[i].question.toLowerCase() === lowered) {{
+            renderAskAnswer(i);
+            return;
+          }}
+        }}
+        askBtns.forEach(function(b) {{ b.classList.remove("active"); }});
+        var sep = raw.indexOf(":") !== -1 ? ":" : (raw.indexOf("|") !== -1 ? "|" : (raw.indexOf("/") !== -1 ? "/" : null));
+        if (sep) {{
+          var parts = raw.split(sep);
+          var cExp = findContainerExplain(parts[0].trim(), parts[1] || "");
+          if (cExp && cExp.formatted) {{
+            askOutput.textContent = cExp.formatted;
+            return;
+          }}
+        }}
+        askOutput.textContent = "Offline-Modus (--no-llm, kein Live-Server): Bitte eine der 5 vorberechneten Beispielfragen oder '<Location_id>:<material>' wählen.";
+      }}
+      askBtns.forEach(function(btn) {{
+        btn.addEventListener("click", function() {{
+          renderAskAnswer(Number(btn.getAttribute("data-ask-idx")));
+        }});
+      }});
+      if (askBtns.length > 0) askBtns[0].classList.add("active");
+      if (askSubmit) askSubmit.addEventListener("click", resolveAskInput);
+      if (askInput) {{
+        askInput.addEventListener("change", resolveAskInput);
+        askInput.addEventListener("keydown", function(evt) {{
+          if (evt.key === "Enter") {{
+            evt.preventDefault();
+            resolveAskInput();
+          }}
+        }});
+      }}
+
+      // Map / Heatmap messages -> update explain box and optionally focus route marker.
       window.addEventListener("message", function(evt) {{
         var d = evt.data || {{}};
+        if (d.type === "copilot-explain" && d.loc) {{
+          showContainerExplain(String(d.loc), String(d.mat || ""), null, "explain-panel");
+          return;
+        }}
         if (d.type !== "heatmap-select" || !d.loc) return;
         activateTab("view-route");
+        showContainerExplain(String(d.loc), String(d.mat || ""), null, "explain-panel");
         var routeFrame = document.getElementById("route-map-frame");
         if (!routeFrame || !routeFrame.contentWindow) return;
         var msg = {{ type: "focus-container", loc: String(d.loc), mat: String(d.mat || "") }};
