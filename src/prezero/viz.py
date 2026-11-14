@@ -679,10 +679,18 @@ def plot_route(
 
     folium.Marker(
         location=depot_coords,
-        popup="<b>Depot Heilbronn</b>",
-        tooltip="Depot Heilbronn",
+        popup="<b>Betriebshof</b>",
+        tooltip="Betriebshof",
         icon=folium.Icon(color="black", icon="home", prefix="fa"),
     ).add_to(fmap)
+    disposal = route_data.get("disposal_depot")
+    if disposal:
+        folium.Marker(
+            location=[float(disposal["lat"]), float(disposal["lon"])],
+            popup="<b>Glas-Entsorgungsplatz</b>",
+            tooltip="Glas-Entsorgungsplatz",
+            icon=folium.Icon(color="green", icon="recycle", prefix="fa"),
+        ).add_to(fmap)
 
     # Optional context layer of non-selected containers colored by score & site origin.
     if scored is not None and locations is not None and not scored.empty:
@@ -736,14 +744,25 @@ def plot_route(
         container_markers = {}
 
     if stops:
-        line_coords = [depot_coords] + [[float(s["lat"]), float(s["lon"])] for s in stops] + [depot_coords]
-        folium.PolyLine(
-            locations=line_coords,
-            color="#1d4ed8",
-            weight=3.5,
-            opacity=0.85,
-            tooltip=route_data.get("comparison", "Planned route"),
-        ).add_to(fmap)
+        prev = depot_coords
+        prev_veh = None
+        for stop in stops + [None]:
+            veh = None if stop is None else stop.get("vehicle", 1)
+            if stop is not None and veh != prev_veh and prev_veh is not None:
+                folium.PolyLine([prev, depot_coords], color="#1d4ed8", weight=3.5, opacity=0.85).add_to(fmap)
+                prev = depot_coords
+            cur = depot_coords if stop is None else [float(stop["lat"]), float(stop["lon"])]
+            to_unload = stop is not None and stop.get("stop_type") == "unload"
+            from_unload = prev == [float(disposal["lat"]), float(disposal["lon"])] if disposal else False
+            folium.PolyLine(
+                locations=[prev, cur],
+                color="#16a34a" if (to_unload or from_unload) else "#1d4ed8",
+                weight=3.5,
+                opacity=0.85,
+                dash_array="8, 8" if to_unload else None,
+                tooltip=route_data.get("comparison", "Planned route"),
+            ).add_to(fmap)
+            prev, prev_veh = cur, veh
 
     stop_markers: list[dict[str, Any]] = []
     for stop in stops:
@@ -776,6 +795,13 @@ def plot_route(
             tooltip=f"#{stop['order']} ({stop['score']:.2f}) - {'SIM' if simulated else 'REAL'}",
         )
         stop_marker.add_to(fmap)
+        folium.Marker(
+            location=[float(stop["lat"]), float(stop["lon"])],
+            icon=folium.DivIcon(
+                html=f'<div style="font:bold 11px sans-serif;color:#fff;text-align:center;'
+                f'margin:-7px 0 0 -7px;width:14px;">{stop["order"]}</div>'
+            ),
+        ).add_to(fmap)
         if str(stop.get("stop_type", "collection")) == "collection":
             stop_markers.append(
                 {
