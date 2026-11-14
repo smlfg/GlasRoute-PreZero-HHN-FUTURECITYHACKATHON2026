@@ -211,7 +211,7 @@ def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) 
         dtype={"Location_id": str, "material_type": str},
     )
     locations_df = locations.load_locations(locations_path)
-    matrix = build_heatmap_matrix(build_model(readings_df, locations_df), START_DATE, END_DATE)
+    matrix = build_heatmap_matrix(readings_df, START_DATE, END_DATE, locations=locations_df)
     week_starts = [pd.Timestamp(value) for value in matrix.attrs["week_starts"]]
     selected_index = next(
         index

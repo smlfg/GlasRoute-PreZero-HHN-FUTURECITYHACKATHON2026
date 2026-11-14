@@ -72,3 +72,23 @@ def test_real_dataset_has_all_449_containers() -> None:
     assert matrix.max().max() <= 110
     assert matrix.attrs["predicted"].shape == matrix.shape
     assert matrix.attrs["predicted"].map(lambda value: isinstance(value, bool)).all().all()
+
+
+def test_raw_material_series_keep_brown_and_green() -> None:
+    readings = pd.DataFrame(
+        {
+            "Location_id": ["L1", "L1", "L1"],
+            "material_type": ["white", "green", "brown"],
+            "date": ["2025-10-17", "2025-10-17", "2025-10-17"],
+            "fill_level_perc": [40, 60, 80],
+        }
+    )
+    locations = pd.DataFrame({"Location_id": ["L1"], "lat": [49.1], "lon": [9.1]})
+    matrix = build_heatmap_matrix(
+        readings,
+        "2025-10-17",
+        "2025-10-17",
+        locations=locations,
+    )
+    assert len(matrix) == 1
+    assert set(matrix.attrs["series_materials"]) == {"glass_white", "glass_green", "glass_brown"}

@@ -55,6 +55,9 @@ def plot_heatmap(
     if predicted is None:
         predicted = pd.DataFrame(False, index=matrix.index, columns=matrix.columns)
     materials = matrix.attrs.get("materials", pd.Series("unknown", index=matrix.index))
+    display_matrix = matrix.attrs.get("series_values", matrix)
+    display_predicted = matrix.attrs.get("series_predicted", predicted)
+    display_materials = matrix.attrs.get("series_materials", materials)
     selected_index = labels.index(selected_week) if selected_week in labels else 0
 
     colorscale = [
@@ -91,7 +94,7 @@ def plot_heatmap(
     material_names = ("glass_white", "glass_green", "glass_brown")
     material_labels = {"glass_white": "Weißglas", "glass_green": "Grünglas", "glass_brown": "Braunglas"}
     grid_columns = 25
-    group_sizes = [int((materials == material).sum()) for material in material_names]
+    group_sizes = [int((display_materials == material).sum()) for material in material_names]
     band_height = max(1, max((size + grid_columns - 1) // grid_columns for size in group_sizes)) + 1
     y_ticks = [index * band_height + (size / grid_columns) / 2 for index, size in enumerate(group_sizes)]
     y_ticktext = [f"{material_labels[material]} ({size})" for material, size in zip(material_names, group_sizes)]
@@ -106,11 +109,11 @@ def plot_heatmap(
         colors: list[str] = []
         hover_data: list[list[str]] = []
         for group, material in enumerate(material_names):
-            ids = list(matrix.index[materials == material])
-            ids.sort(key=lambda location_id: float(matrix.loc[location_id, label]), reverse=True)
+            ids = list(display_matrix.index[display_materials == material])
+            ids.sort(key=lambda location_id: float(display_matrix.loc[location_id, label]), reverse=True)
             for position, location_id in enumerate(ids):
-                value = float(matrix.loc[location_id, label])
-                is_predicted = bool(predicted.loc[location_id, label])
+                value = float(display_matrix.loc[location_id, label])
+                is_predicted = bool(display_predicted.loc[location_id, label])
                 status_color = FORECAST_STATUS_COLORS[_heatmap_status(value)]
                 x_values.append(position % grid_columns)
                 y_values.append(group * band_height + position // grid_columns)
@@ -157,15 +160,15 @@ def plot_heatmap(
     )
 
     def header(index: int) -> str:
-        values_at_week = matrix.iloc[:, index]
-        predicted_at_week = predicted.iloc[:, index]
+        values_at_week = display_matrix.iloc[:, index]
+        predicted_at_week = display_predicted.iloc[:, index]
         statuses = values_at_week.map(_heatmap_status)
         red = int((statuses == "red").sum())
         black = int((statuses == "black").sum())
         measured_count = int((~predicted_at_week).sum())
         return (
             f"{labels[index]}: {red} rot, {black} schwarz, "
-            f"{measured_count} gemessen / {len(matrix) - measured_count} prognostiziert"
+            f"{measured_count} gemessen / {len(display_matrix) - measured_count} prognostiziert"
         )
 
     static_trace_count = 1
@@ -218,7 +221,7 @@ def plot_heatmap(
                     },
                     {
                         "title.text": header(index),
-                        "xaxis.ticktext": [f"{labels[index]} – {len(matrix)} Container"],
+                        "xaxis.ticktext": [f"{labels[index]} – {len(matrix)} Standorte / {len(display_matrix)} Serien"],
                     },
                 ],
             }
