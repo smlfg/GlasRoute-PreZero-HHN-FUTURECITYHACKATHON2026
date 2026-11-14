@@ -1,6 +1,6 @@
 # Pitch-Notizen für Sonntag 13:00
 
-Stand: Samstag, 14.11.2026, 19:00 Uhr (Messen-und-Leeren, Dichte je Glasfarbe, LKW 11 t / 26 m³). Demo-Datum: **15.04.2026**.
+Stand: Samstag, 14.11.2026, 19:40 Uhr (Timer pro Container, ohne Saisonfaktor und Score-Faktoren). Demo-Datum: **15.04.2026**.
 Alle Zahlen sind gegen `route_2026-04-15.json`, `benchmark_results.csv`, die Website und `data/raw/` geprüft (Beleg: `Projek-Management/proof/A3_pitch_zahlen.txt`, Skript `verify_pitch_numbers.py`).
 
 ---
@@ -13,7 +13,7 @@ Quelle: `20261113_Readme Challenge PZ.docx` + `PreZero.pptx`.
 > „Emptying these containers usually takes place area by area. Then all containers in the area are emptied,
 > regardless of the actual fill level (‘you'll drive past there anyway')."
 
-→ Das ist **unser Status quo** (Benchmark B0/B1): alle Container des Gebiets leeren. Der Bedarfs-Effekt (81,0 %) ist genau das,
+→ Das ist **unser Status quo** (Benchmark B0/B1): alle Container des Gebiets leeren. Bedarfs-Effekt (29,9 % am 15.04., 29–67 % übers Jahr) und Braunglas-Rhythmus sind genau das,
 was er beschreibt. In den Pitch so aufmachen, es kommt aus seiner own Stimme.
 
 **Slide 1 — vier Schritte, alle abgedeckt:**
@@ -85,50 +85,48 @@ simulated"). Das ist Design, kein Bug.
 Nicht sagen: „126 echte / 323 Platzhalter" (veraltet), nicht „wir haben alle Standorte identifiziert".
 
 
-### 2. Die alten 24,1 % sind tot. Neue Zahlen und was sie bedeuten
+### 2. Die Effekte (fairer Vergleich) — Stand 19:40, Timer-Modell
 
-Die alte Zahl verglich eine Tour **mit** 11-t-Kapazität und Entladefahrten gegen eine „volle Runde“
-**ohne** Kapazität. Seit Stopps pro physischem Standort zählen (121 Punkte), zeigte sie 0 %. Jetzt
-gelten für alle Varianten dieselben Regeln: 11 t pro Runde, Entladung am Wertstoffhof, max. 8 h.
+Frühere Zahlen (24,1 %, 70,7 %, 81 %) sind ungültig: Sie beruhten auf Dauersensor-Annahme, festem
+Saisonfaktor und gewichteten Score-Faktoren. Jetzt gilt: **Fahrer misst und leert → Füllrate → Timer;
+fällig = geschätzt ≥ 80 %.** Alle Varianten mit denselben Regeln (11 t / 26 m³, Entladung, 8 h).
+Der Benchmark ist jetzt deterministisch (zwei Läufe, gleiche Zahlen).
 
-**Pitch-Zahlen aus dem fairen Benchmark** (`scripts/benchmark.py`, Stichtag 15.04.2026, Seed 42,
-Website-Tab „5. Fairer Vergleich“):
+Stichtag 15.04.2026, Zuordnungs-Seed 42 (Website-Tab „Fairer Vergleich“):
 
 | Variante | Standorte | km | Fahrzeugstunden | Runden |
 |---|---|---|---|---|
 | B0 Status quo, Listenreihenfolge | 121 | 1.795,91 | 170,99 h | 95 |
 | B1 Status quo, optimierte Reihenfolge | 121 | 1.662,70 | 166,66 h | 98 |
-| B2 nur kritische, Nearest Neighbor | 73 | 316,31 | 25,65 h | 14 |
-| **B4 nur kritische, OR-Tools** | **73** | **285,79** | **24,10 h** | **13** |
+| B2 nur fällige, Nearest Neighbor | 112 | 1.165,90 | 98,15 h | 67 |
+| **B4 nur fällige, OR-Tools** | **112** | **1.053,29** | **89,65 h** | **55** |
 
 | Effekt | Wert | Spanne (4 Stichtage × 3 Seeds) |
 |---|---|---|
-| **Bedarfs-Effekt** B1 → B2 (nur kritische anfahren) | **81,0 %** | 79,7–97,3 % |
-| **Routing-Effekt** B2 → B4 (gleiche Stopps, bessere Reihenfolge) | **9,6 %** | 0,0–13,0 % |
-| **Gesamt** vs. optimierter Status quo B1 | **82,8 %** | 80,7–97,3 % |
-| Gesamt vs. Papierliste B0 (obere Schranke) | 84,1 % | – |
+| **Bedarfs-Effekt** B1 → B2 (nur fällige Container leeren) | **29,9 %** | 28,6–67,1 % |
+| **Routing-Effekt** B2 → B4 (gleiche Stopps, bessere Reihenfolge) | **9,7 %** | 2,3–14,1 % |
+| **Gesamt** vs. optimierter Status quo B1 | **36,7 %** | 32,9–70,7 % |
+| Gesamt vs. Papierliste B0 (obere Schranke) | 41,4 % | – |
+
+**Warum der Bedarfs-Effekt am 15.04. klein ist:** Mitte April sind **509 von 1.269 Containern fällig**
+(488 überfällig), verteilt auf 106 von 121 Standorten. Wer fast überall hin muss, spart wenig durchs
+Weglassen. Über die 4 Stichtage liegt der Effekt bei 29–67 %. **Die stärkere Aussage ist der Rhythmus**
+(Kernbotschaft Braunglas oben): Braunglas wird zu oft, Weißglas teils zu selten geleert.
 
 **Richtig formulieren:**
-> „Wenn das ganze Gebiet geleert wird, wie heute, sind es 1.663 km. Fahren wir nur die 73 kritischen
-> Standorte an, sind es 316 km, also 81 % weniger. Der Solver holt bei gleichen Stopps noch etwa
-> 10 % raus: 286 km. Der Großteil kommt aus dem Bedarf, nicht aus dem Routing.“
+> „Heute Mitte April ist fast jeder Standort fällig, da spart Weglassen nur ein Drittel. Über das Jahr
+> sind es 30 bis 67 %. Der eigentliche Hebel ist der Rhythmus: Braunglas fahren wir doppelt so oft wie
+> nötig, Weißglas läuft über. Deshalb ein Timer pro Container.“
 
 **Ehrlich dazusagen:**
-- Status quo heißt hier „alle 121 Standorte mit allen Behältern auf einmal leeren“ (808,2 t, geschätzter Stand heute). Der echte
-  Plan verteilt das über Tage. Die Prozent gelten **pro kompletter Gebietsleerung**.
-- Die Spanne ist groß: Im Winter gibt es kaum kritische Standorte (Bedarfs-Effekt bis 97,3 %), im April
-  viele (ca. 80 %). 81,0 % am Demo-Tag liegt am unteren Ende.
-- B4 nutzt OR-Tools mit 30 s Zeitlimit. Ist der Solver schlechter als Nearest Neighbor, wird NN behalten
-  und in `benchmark_results.csv` als `nn_kept` markiert: B4 in 1 von 12 Fällen, B3 (2-opt) in 2 von 12,
-  in diesem Lauf B4 in 2, B3 in 3 von 12 Fällen; am Demo-Tag in keinem (B3 299,65 km, B4 285,79 km).
-- **Der Routing-Effekt ist instabil** (0–13 % über 12 Fälle, am Demo-Tag zwischen Läufen 1,5–9,6 %), weil
-  OR-Tools nach 30 s abbricht. Im Pitch „bis ca. 10 %“ sagen, nicht eine feste Zahl.
-  Die km können je Lauf leicht schwanken.
+- Status quo = alle 121 Standorte mit allen Behältern leeren (808,5 t geschätzter Stand heute).
+- Standorte sind selbst gescrapt, IDs zufällig verteilt: absolute km sind Illustration.
+- Wenn 2-opt oder Solver schlechter als Nearest Neighbor sind, wird NN behalten (`nn_kept`): B4 in 2,
+  B3 in 4 von 12 Fällen.
 
-**Die Tages-Tour im Tab „Route & Freigabe“** ist ein anderer Fall: Stopp-Limit 25, also **25 von 72
-kritischen Standorten** (47 bleiben offen). 125,21 km, 2 Fahrzeuge, 7 Runden, 63,6 t. Die 89,6 %
-auf der Karte vergleichen diese Teil-Tour mit „alles leeren“ und sind **keine Pitch-Zahl**.
-
+**Die Tages-Tour im Tab „Route & Freigabe“:** Stopp-Limit 25, also **25 von 106 fälligen Standorten**
+(81 offen): 249,9 km, 4 Fahrzeuge, 19 Runden, 142,8 t, längste Schicht 7,58 h. Die 79,2 % auf der Karte
+vergleichen diese Teil-Tour mit „alles leeren“ und sind **keine Pitch-Zahl**.
 
 ### 3. Zwei Agenten haben gleichzeitig committet
 
@@ -160,22 +158,15 @@ entscheidet heute aus dem Bauchgefühl, weil Füllstandsdaten nicht in Routen ü
 
 | Kennzahl | Wert |
 |---|---|
-| Kritische Standorte heute (physische Orte) | 72 (108 IDs, 118 Container) |
+| Fällige Container heute (Timer abgelaufen) | 509 von 1.269 (488 überfällig) |
+| Fällige Standorte (physische Orte) | 106 von 121 |
 | Status quo, ganzes Gebiet (B1) | 1.662,70 km · 98 Runden |
-| Nur kritische (B2 → B4 Solver) | 316,31 → **285,79 km** · 13 Runden |
-| **Bedarfs-Effekt** | **81,0 %** |
-| **Routing-Effekt** | **9,6 %** (instabil, 0–13 %) |
-| **Gesamt vs. Status quo** | **82,8 %** |
-| Tages-Tour (Stopp-Limit 25) | 125,21 km · 2 Fahrzeuge · längste Schicht 7,26 h · 63,6 t |
-
-
-**Saisonalität** (Anteil `overfull` je Monat, aus den Rohdaten):
-
-| Jan | Feb | **Mär** | Apr | Mai | Jun | Jul | Aug |
-|---|---|---|---|---|---|---|---|
-| 11,6 % | 12,9 % | **37,6 %** | 23,3 % | 22,7 % | 5,2 % | 5,0 % | 2,8 % |
-
-→ Planung muss **material- und standortspezifisch** sein: Weißglas im Frühjahr, Sommer anders.
+| Nur fällige (B2 → B4 Solver) | 1.165,90 → **1.053,29 km** · 55 Runden |
+| **Bedarfs-Effekt** | **29,9 %** (über das Jahr 29–67 %) |
+| **Routing-Effekt** | **9,7 %** |
+| **Gesamt vs. Status quo** | **36,7 %** |
+| Rhythmus | **Braunglas: ideal 95 Tage, heute 42 → 89 % zu oft geleert** |
+| Vorhersagbar? | ja: Fehler 19,9 pp gegen 22,3 pp (Durchschnitt bisher) |
 
 ### 4. Wie funktioniert's (40 Sek.)
 Ingest → Features (letzter Füllstand, Füllrate, Overfull-Quote, Saison) → Kritikalitäts-Score →
@@ -208,40 +199,40 @@ prezero-route approve --by "Disponentin (Heilbronn)"
 Erwartete Ausgabe:
 
 ```
-Pipeline complete for 2026-04-15: 72 critical physical sites (108 critical IDs, 118 containers).
-125.21 km planned (25 stops) vs. 1202.24 km full round (121 stops, same capacity rules)
+Pipeline complete for 2026-04-15: 106 critical physical sites (276 critical IDs, 509 containers).
+249.9 km planned (25 stops) vs. 1202.24 km full round (121 stops, same capacity rules)
 ```
 
 ```
 Route proposal for 2026-04-15
   stops:          25
-  planned:        125.21 km
-  saved:          1077.03 km (89.6 %)
-  vehicles:       2
-  vehicle hours:  10.51 (sum over all vehicles)
-  longest shift:  7.26 h
-  collected:      63.58 t
+  planned:        249.9 km
+  saved:          952.34 km (79.2 %)
+  vehicles:       4
+  vehicle hours:  22.68 (sum over all vehicles)
+  longest shift:  7.58 h
+  collected:      142.82 t
 Nothing is dispatched until a dispatcher approves it.
 ```
 
-Die 89,6 % hier sind die Teil-Tour (25 von 72) gegen „alles leeren“. Im Pitch die Benchmark-Zahlen nennen.
+Die 79,2 % hier sind die Teil-Tour (25 von 106) gegen „alles leeren“. Im Pitch die Benchmark-Zahlen nennen.
 
 **Website `ui_2026-04-15.html`** (liegt neben `heatmap.html`, beide im selben Ordner lassen):
 
 | Tab | Zeigen |
 |---|---|
 | 3. Heatmap | Klick auf ein Kästchen springt zur Karte im Tab „Route & Freigabe“ |
-| 4. Route & Freigabe | „25 von 72 kritischen“, What-if-Knöpfe, Klick auf Stopp = Begründung, Freigeben |
+| 4. Route & Freigabe | „25 von 106 kritischen“, Timer-Spalte, What-if-Knöpfe, Klick auf Stopp = Begründung, Freigeben |
 | 5. Fairer Vergleich | Bedarfs- vs. Routing-Effekt (die Pitch-Zahlen) |
 
-**What-if-Knöpfe (vorberechnet, Baseline 125,21 km / 2 Fahrzeuge / 7 Runden):**
+**What-if-Knöpfe (vorberechnet, Baseline 249,9 km / 4 Fahrzeuge / 19 Runden):**
 
 | Knopf | Ergebnis |
 |---|---|
-| Schicht 6 h | weiter 2 Fahrzeuge, längste Schicht 5,57 h, 128,72 km |
-| LKW 8 t | 2 Fahrzeuge, 10 statt 7 Runden, 177,53 km |
-| +1 Fahrzeug | 68 von 72 kritischen: 3 Fahrzeuge, 258,24 km, 4 offen |
-| Alle kritischen | 72 Standorte, 3 Fahrzeuge, 270,94 km |
+| Schicht 6 h | 5 Fahrzeuge, längste Schicht 5,42 h, 233,56 km |
+| LKW 8 t | 4 Fahrzeuge, 21 statt 19 Runden, 271,28 km |
+| +1 Fahrzeug | 43 statt 25 Standorte, 417,03 km, 63 fällige offen |
+| Alle fälligen | 106 Standorte, 12 Fahrzeuge, 900,29 km |
 
 Der alte Explainer-Fall „6 h → 8,83 h“ war die **Summe** der Fahrzeugstunden, als Schicht beschriftet.
 Jetzt stehen Fahrzeugstunden gesamt und längste Einzelschicht getrennt da.
@@ -265,10 +256,10 @@ prezero-route forecast --date 2026-04-15
 Erwartete Ausgabe (Kalenderwochen-Format, aktueller Stand):
 
 ```
-KW 16: 183 rot, 325 schwarz
+KW 16: 180 rot, 328 schwarz
 KW 17: 195 rot, 434 schwarz
 KW 18: 214 rot, 526 schwarz
-KW 19: 204 rot, 607 schwarz
+KW 19: 207 rot, 633 schwarz
 Forecast map: forecast_16.html
 ```
 
@@ -284,8 +275,8 @@ Die Prognose steht in der Website im Tab „2. Forecast-Timeline“ (+0/+7/+14/+
 |---|---|
 | Echte PreZero-Koordinaten | fehlen → alle 449 auf OSM-Punkten, Zuordnung `simulated_mapping` |
 | Route ist Luftlinien-Näherung | Umwegfaktor 1,35, kein Straßenrouting |
-| 81,0 % / 9,6 % | Bedarfs- vs. Routing-Effekt pro kompletter Gebietsleerung, gleiche Regeln (Tab „Fairer Vergleich“) |
-| Flottenoptimum | Tages-Tour: 2 Fahrzeuge, längste Schicht 7,26 h (Limit 8 h); mit 3 Fahrzeugen alle 72 kritischen (270,94 km) |
+| 29,9 % / 9,7 % | Bedarfs- vs. Routing-Effekt am 15.04. (über das Jahr 29–67 % / 2–14 %), gleiche Regeln |
+| Flottenoptimum | Tages-Tour: 4 Fahrzeuge, längste Schicht 7,58 h (Limit 8 h); alle 106 fälligen bräuchten 12 Fahrzeuge |
 
 ---
 
@@ -327,15 +318,15 @@ routing model"* — live demonstriert statt behauptet.
 ```bash
 # Vorher — mit unseren Annahmen (prezero_config.json = Defaults)
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 2 Fahrzeuge, 7 Runden, 10,5 h, 63,6 t, 125 km
+# → 4 Fahrzeuge, 19 Runden, 22,7 h, 142,8 t, 250 km
 
 # Nachher — Beispiel: Dichte 300 kg/m³, Umwegfaktor 1,2
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 2 Fahrzeuge, 5 Runden, 8,8 h, 47,7 t, 100 km
+# → 3 Fahrzeuge, 19 Runden, 21,6 h, 107,1 t, 214 km
 ```
 
 **Der Effekt ist sofort sichtbar:** Dichte 400 → 300 kg/m³ und Umwegfaktor 1,35 → 1,2 ergeben
-**5 statt 7 Runden und 100 statt 125 km** (h = Fahrzeugstunden gesamt). Das ist der stärkste Beweis im ganzen Pitch: das Tool
+**3 statt 4 Fahrzeuge und 214 statt 250 km** (h = Fahrzeugstunden gesamt). Das ist der stärkste Beweis im ganzen Pitch: das Tool
 ist nicht auf die Daten hineingebaut, sondern nimmt die Betriebsvariablen entgegen.
 
 **Vorbereitung:** Lege vor dem Pitch eine Datei `prezero_config.json` mit den **Default-Werten**
@@ -348,7 +339,7 @@ prezero-route route --date 2026-04-15 --config prezero_config.json
 ```
 
 **Falls die Zeit knapp wird:** Lass nur **eine** Variable live austauschen (z. B. `vehicle_max_weight_kg`
-11.000 → 7.500 → 3 Fahrzeuge, 13 Runden, 222 km). Das genügt als Beweis und dauert 20 Sekunden.
+11.000 → 7.500 → 4 Fahrzeuge, 21 Runden, 271 km). Das genügt als Beweis und dauert 20 Sekunden.
 
 **Konkrete Fragen, wenn er Zeit hat:**
 - „Wo liegt Ihr Betriebshof und Ihre Entsorgungsstelle?“

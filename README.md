@@ -40,8 +40,8 @@ Erzeugt `route_2026-04-15.json`, `map_2026-04-15.html`, `trends.png` und
 `data/processed/scored_2026-04-15.csv`. Erwartete Ausgabe:
 
 ```
-Pipeline complete for 2026-04-15: 72 critical physical sites (108 critical IDs, 118 containers).
-125.21 km planned (25 stops) vs. 1202.24 km full round (121 stops, same capacity rules)
+Pipeline complete for 2026-04-15: 106 critical physical sites (276 critical IDs, 509 containers).
+249.9 km planned (25 stops) vs. 1202.24 km full round (121 stops, same capacity rules)
 ```
 
 Dann der Human-Agent-Schritt — erst der Vorschlag, dann die Entscheidung:
@@ -56,12 +56,12 @@ Erwartete Ausgabe:
 ```
 Route proposal for 2026-04-15
   stops:          25
-  planned:        125.21 km
-  saved:          1077.03 km (89.6 %)
-  vehicles:       2
-  vehicle hours:  10.51 (sum over all vehicles)
-  longest shift:  7.26 h
-  collected:      63.58 t
+  planned:        249.9 km
+  saved:          952.34 km (79.2 %)
+  vehicles:       4
+  vehicle hours:  22.68 (sum over all vehicles)
+  longest shift:  7.58 h
+  collected:      142.82 t
 ```
 
 `approve` schreibt `data/processed/approval_2026-04-15.json` (Zeitstempel, Freigebende, Route,

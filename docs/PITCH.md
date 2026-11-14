@@ -18,8 +18,8 @@ während andere überlaufen.
 > regardless of the actual fill level ('you'll drive past there anyway')."
 
 → Das ist unser Status quo (Benchmark B1): alle 121 physischen Standorte leeren. Der Großteil der
-Ersparnis (Bedarfs-Effekt 81,0 %) kommt daher, **nur die kritischen anzufahren**; das Routing selbst
-bringt bei gleichen Stopps bis ca. 10 % (instabil: 0–13 % je nach Fall und Solver-Lauf).
+Ersparnis (Bedarfs-Effekt 29,9 % am 15.04., 29–67 % übers Jahr) kommt daher, **nur fällige Container
+anzufahren**; das Routing bringt bei gleichen Stopps weitere 9,7 % (2–14 %).
 
 **Belegt:** 11.701 Messungen, 449 Container, 1.192 `overfull`-Ereignisse — jeder vierte
 Überlauf-Fall betrifft Weißglas (731 von 1.192).
@@ -51,30 +51,33 @@ Stichtag 15.04.2026, Zuordnungs-Seed 42.
 | Variante | Standorte | km | Runden |
 |---|---|---|---|
 | B1 Status quo: alle Standorte, optimierte Reihenfolge | 121 | 1.662,70 | 98 |
-| B2 nur kritische, Nearest Neighbor | 73 | 316,31 | 14 |
-| B4 nur kritische, OR-Tools | 73 | **285,79** | 13 |
+| B2 nur fällige (Timer abgelaufen), Nearest Neighbor | 112 | 1.165,90 | 67 |
+| B4 nur fällige, OR-Tools | 112 | **1.053,29** | 55 |
 
 | Effekt | Wert | Spanne (4 Stichtage × 3 Seeds) |
 |---|---|---|
-| **Bedarfs-Effekt** (B1 → B2) | **81,0 %** | 79,7–97,3 % |
-| **Routing-Effekt** (B2 → B4) | **9,6 %** | 0,0–13,0 % |
-| **Gesamt** (B1 → B4) | **82,8 %** | 80,7–97,3 % |
+| **Bedarfs-Effekt** (B1 → B2) | **29,9 %** | 28,6–67,1 % |
+| **Routing-Effekt** (B2 → B4) | **9,7 %** | 2,3–14,1 % |
+| **Gesamt** (B1 → B4) | **36,7 %** | 32,9–70,7 % |
 
-Gilt pro kompletter Gebietsleerung (Status quo leert alle 808,2 t auf einmal). Alle Füllstände sind der geschätzte Stand heute: Der Fahrer misst beim Besuch und leert, danach füllt sich der Container wieder ab ca. 0 %. Die alte Zahl
-24,1 % (119,75 vs. 157,72 km) ist ungültig: Sie verglich eine Tour mit Kapazitätsgrenzen gegen eine
-volle Runde ohne.
+Modell: Der Fahrer misst beim Besuch und leert; Füllrate = vorgefundener Stand ÷ Tage seit der Leerung;
+ein Container ist **fällig, sobald Füllrate × Tage seit der letzten Leerung 80 % erreicht** (Timer).
+Keine Score-Faktoren, kein fester Saisonfaktor (der Backtest hat ihn widerlegt). Mitte April sind
+509 von 1.269 Containern fällig, darum ist der Bedarfs-Effekt an diesem Tag klein. Frühere Zahlen
+(24,1 %, 70,7 %, 81 %) sind ungültig.
 
 | Tages-Tour (Stopp-Limit 25) | Wert | Herkunft |
 |---|---|---|
-| Kritische Standorte | 72 physische Orte (108 IDs) | `route_2026-04-15.json` |
-| In dieser Tour | 25 von 72 (47 offen) | `route_2026-04-15.json` |
-| Strecke | 125,21 km | `route_2026-04-15.json` |
-| Fahrzeuge / Runden | 2 / 7 | `route_2026-04-15.json` |
-| Fahrzeugstunden gesamt / längste Schicht | 10,51 h / 7,26 h (Limit 8 h) | `route_2026-04-15.json` |
-| Sammelmenge | 63,6 t | `route_2026-04-15.json` |
+| Fällige Standorte | 106 physische Orte (509 Container) | `route_2026-04-15.json` |
+| In dieser Tour | 25 von 106 (81 offen) | `route_2026-04-15.json` |
+| Strecke | 249,9 km | `route_2026-04-15.json` |
+| Fahrzeuge / Runden | 4 / 19 | `route_2026-04-15.json` |
+| Fahrzeugstunden gesamt / längste Schicht | 22,68 h / 7,58 h (Limit 8 h) | `route_2026-04-15.json` |
+| Sammelmenge | 142,8 t | `route_2026-04-15.json` |
 
-Formulierung im Pitch: „Heute wird das ganze Gebiet geleert: 1.663 km. Nur die 73 kritischen
-Standorte: 316 km, 81 % weniger. Der Solver holt bei gleichen Stopps noch bis ca. 10 % raus: 286 km.“
+Formulierung im Pitch: „Mitte April ist fast jeder Standort fällig, da spart Weglassen ein Drittel
+(über das Jahr 30–67 %). Der eigentliche Hebel ist der Rhythmus: Braunglas fahren wir doppelt so
+oft wie nötig, Weißglas läuft über. Deshalb ein Timer pro Container.“
 
 **Saisonalität, belegt aus den Rohdaten** (Anteil `overfull` je Monat):
 
@@ -129,8 +132,8 @@ prezero-route approve --by "Disponentin"  # Freigabe + Beleg
 
 Erwartete Ausgabe:
 
-> Route proposal for 2026-04-15 — 25 stops · planned 125.21 km · vehicles 2 ·
-> vehicle hours 10.51 (longest shift 7.26 h) · collected 63.58 t
+> Route proposal for 2026-04-15 — 25 stops · planned 249.9 km · vehicles 4 ·
+> vehicle hours 22.68 (longest shift 7.58 h) · collected 142.82 t
 
 ## Live-Nachfrage an PreZero: die Betriebsvariablen
 
@@ -141,15 +144,15 @@ ersetzen"** markiert — das ist exakt seine Anforderung „incorporate configur
 ```bash
 # Vorher (Annahmen)
 prezero-route route --date 2026-04-15 --max-stops 25
-# → 2 Fahrzeuge, 7 Runden, 10,5 h, 63,6 t, 125 km
+# → 4 Fahrzeuge, 19 Runden, 22,7 h, 142,8 t, 250 km
 
 # Nachher (Zahlen von PreZero, z. B. Dichte 300, Umwegfaktor 1,2 in prezero_config.json)
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 2 Fahrzeuge, 5 Runden, 8,8 h, 47,7 t, 100 km
+# → 3 Fahrzeuge, 19 Runden, 21,6 h, 107,1 t, 214 km
 ```
 
 Live ausgetauscht (z. B. Dichte 400 → 300 kg/m³, Umwegfaktor 1,35 → 1,2) ändert sich das Ergebnis
-sichtbar: **5 statt 7 Runden, 100 statt 125 km**. Das belegt live, dass das Tool nicht auf die
+sichtbar: **3 statt 4 Fahrzeuge, 214 statt 250 km**. Das belegt live, dass das Tool nicht auf die
 Daten hineingebaut wurde, sondern konfigurierbar ist.
 
 ## Offene Punkte (bewusst offen)

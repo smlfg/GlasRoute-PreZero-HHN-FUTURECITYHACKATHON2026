@@ -16,10 +16,10 @@ from **276 critical IDs**. Every route uses `OperationalConfig`:
 | variant                   |   stops |      km |   vehicles |   rounds |      h |      t | nn_kept   |   runtime_s |
 |:--------------------------|--------:|--------:|-----------:|---------:|-------:|-------:|:----------|------------:|
 | B0 status quo             |     121 | 1795.91 |         95 |       95 | 170.99 | 808.54 | False     |       0.005 |
-| B1 status quo optimized   |     121 | 1662.7  |         98 |       98 | 166.66 | 808.54 | False     |       0.146 |
-| B2 demand-driven NN       |     112 | 1165.9  |         67 |       67 |  98.15 | 529.43 | False     |       0.126 |
-| B3 demand-driven + 2-opt  |     112 | 1165.9  |         67 |       67 |  98.15 | 529.43 | True      |       0.305 |
-| B4 demand-driven + solver |     112 | 1053.29 |         55 |       55 |  89.65 | 529.43 | False     |       0.314 |
+| B1 status quo optimized   |     121 | 1662.7  |         98 |       98 | 166.66 | 808.54 | False     |       0.141 |
+| B2 demand-driven NN       |     112 | 1165.9  |         67 |       67 |  98.15 | 529.43 | False     |       0.122 |
+| B3 demand-driven + 2-opt  |     112 | 1165.9  |         67 |       67 |  98.15 | 529.43 | True      |       0.301 |
+| B4 demand-driven + solver |     112 | 1053.29 |         55 |       55 |  89.65 | 529.43 | False     |       0.311 |
 
 Runtime is measured per route calculation; the OR-Tools solver stops deterministically after a fixed limit of 25 solutions (`solution_limit = 25`) for reproducible results. B0 is the
 paper-list order (ID sort), B1 is all-site nearest neighbor, B2 is critical-only nearest
@@ -38,11 +38,11 @@ Mean and min–max spread are shown for distance, hours, and runtime:
 
 | variant                   |   km_mean |   km_min |   km_max |   h_mean |   runtime_mean |   nn_kept_cases |   cases |   km_spread |
 |:--------------------------|----------:|---------:|---------:|---------:|---------------:|----------------:|--------:|------------:|
-| B0 status quo             |  1605.26  |  1446.99 |  1809.88 | 158.533  |     0.00583333 |               0 |      12 |      362.89 |
-| B1 status quo optimized   |  1352.65  |  1095.19 |  1662.7  | 148.317  |     0.146917   |               0 |      12 |      567.51 |
-| B2 demand-driven NN       |   691.509 |   380.47 |  1165.9  |  57.39   |     0.0844167  |               0 |      12 |      785.43 |
-| B3 demand-driven + 2-opt  |   684.87  |   364.68 |  1165.9  |  57.0692 |     0.196833   |               4 |      12 |      801.22 |
-| B4 demand-driven + solver |   643.165 |   333.73 |  1074.69 |  53.5958 |     0.203583   |               2 |      12 |      740.96 |
+| B0 status quo             |  1605.26  |  1446.99 |  1809.88 | 158.533  |      0.006     |               0 |      12 |      362.89 |
+| B1 status quo optimized   |  1352.65  |  1095.19 |  1662.7  | 148.317  |      0.145583  |               0 |      12 |      567.51 |
+| B2 demand-driven NN       |   691.509 |   380.47 |  1165.9  |  57.39   |      0.0831667 |               0 |      12 |      785.43 |
+| B3 demand-driven + 2-opt  |   684.87  |   364.68 |  1165.9  |  57.0692 |      0.195833  |               4 |      12 |      801.22 |
+| B4 demand-driven + solver |   643.165 |   333.73 |  1074.69 |  53.5958 |      0.205167  |               2 |      12 |      740.96 |
 
 ## Assumptions
 
