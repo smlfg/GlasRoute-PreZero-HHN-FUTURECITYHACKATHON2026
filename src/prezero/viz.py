@@ -28,8 +28,8 @@ FORECAST_STATUS_COLORS = {
     "black": "#111827",
 }
 
-TILE_URL = "https://tile.openstreetmap.de/{z}/{x}/{y}.png"
-TILE_ATTR = "© OpenStreetMap contributors, tile.openstreetmap.de"
+TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+TILE_ATTR = "© OpenStreetMap contributors, ODbL"
 
 
 def _heatmap_status(value: float) -> str:

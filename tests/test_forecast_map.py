@@ -114,8 +114,7 @@ def test_forecast_map_has_no_route_line(tmp_path: Path) -> None:
     html = out.read_text(encoding="utf-8")
     assert "forecast-week-selector" in html
     assert "L.polyline" not in html
-    assert "tile.openstreetmap.org" not in html
-    assert "basemaps.cartocdn.com" in html
+    assert "tile.openstreetmap.org" in html
 
 
 def test_placeholder_is_dashed_and_real_site_is_solid(tmp_path: Path) -> None:

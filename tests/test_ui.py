@@ -167,8 +167,7 @@ def test_forecast_timeline_map_has_no_route_polyline() -> None:
     assert "forecast-week-selector" in map_html
     assert "L.polyline" not in map_html
     assert "Letzte Leerung" not in map_html
-    assert "tile.openstreetmap.org" not in map_html
-    assert "basemaps.cartocdn.com" in map_html
+    assert "tile.openstreetmap.org" in map_html
 
 
 def test_build_ui_has_all_four_views_and_no_unbacked_claims(tmp_path: Path) -> None:
@@ -182,8 +181,7 @@ def test_build_ui_has_all_four_views_and_no_unbacked_claims(tmp_path: Path) -> N
     )
     assert out.is_file()
     html = out.read_text(encoding="utf-8")
-    assert "tile.openstreetmap.org" not in html
-    assert "basemaps.cartocdn.com" in html
+    assert "tile.openstreetmap.org" in html
 
     # All 4 views present (ordered Forecast -> Route -> Datacheck -> Upload)
     for view_id in ("view-forecast", "view-route", "view-datacheck", "view-upload"):
