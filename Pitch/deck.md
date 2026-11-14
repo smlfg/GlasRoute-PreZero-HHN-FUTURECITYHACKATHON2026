@@ -152,25 +152,26 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 
 ## Slide 5 — Live-Demo: Der Demo-Tag 15.04.2026
 
-- **Folie:** „Einsatzbereit: Tagestour Heilbronn"
+- **Folie:** „Einsatzbereit: Tagestour Heilbronn & A/B-Replay"
 - **Jury-Kriterium:** Feasibility
 - **Zeit:** 25 s
 
 ### Folien-Text
 
-- **Befehl:** `prezero-route run --date 2026-04-15` & `prezero-route approve --by "Disponentin"`
+- **Live-Simulation (Tab 11: „Bisher vs. Optimiert“):** Synchronisierter Split-Screen auf echter OpenStreetMap-Karte von Heilbronn (Status quo vs. bedarfsgesteuerte Tour).
+- **Befehl & Freigabe:** `prezero-route run --date 2026-04-15` & `prezero-route approve --by "Disponentin"`
 - **Ergebnis der Tagestour (Stopp-Limit 25 fälligste Standorte):**
   - **25 Standorte bedient** · **249,9 km Gesamtfahrstrecke**
   - **4 Fahrzeuge im Einsatz** · **19 Entleerungs-Runden**
   - **142,82 t Glas gesammelt** · max. Schichtdauer **7,58 h** (voll im 8-h-Limit)
-  - **−85,0 % km gespart** gegenüber einer ungefilterten Gebietsbefahrung (1.662,70 km)
-- **Drei Rollen im UI:** Fahrer (mobile Tourliste) · Disponentin (Freigabe-Cockpit) · Leitung (What-If & Analysen).
+  - **−85,0 % km gespart** (1.412,8 km weniger) gegenüber ungefilterter Gebietsbefahrung (1.662,70 km)
+- **UI mit Rollen & Replay:** Fahrer (mobile Tourliste) · Disponentin (Freigabe-Cockpit) · Leitung (What-If & Analysen) · **A/B-Replay auf echten Straßen**.
 
 ### Speaker Notes
 
-- **0–8 s:** „Ein Befehl erzeugt den Tagesplan für Heilbronn, hier für den 15. April 2026.“
+- **0–8 s:** „Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen.“
 - **8–17 s:** „Das System wählt die 25 kritischsten Standorte: 249,9 km Fahrstrecke mit 4 Fahrzeugen, 142 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht.“
-- **17–25 s:** „Im Vergleich zur vollen Gebietsabfahrt sparen wir an diesem Tag 85 % der Fahrtstrecke ein, während die Stadt sauber bleibt.“
+- **17–25 s:** „Im Replay sehen Sie live, wie die LKW fahren — und wie 85 % der Leerfahrten an diesem Tag wegfallen, während kein einziger Container überläuft.“
 
 ---
 
