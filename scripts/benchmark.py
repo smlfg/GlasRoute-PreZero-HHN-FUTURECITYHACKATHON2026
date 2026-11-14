@@ -14,7 +14,13 @@ import numpy as np
 import pandas as pd
 
 from prezero import features, locations, scoring
-from prezero.routing import OperationalConfig, haversine_km, road_distance_km, drive_time_min
+from prezero.routing import (
+    OperationalConfig,
+    density_for,
+    drive_time_min,
+    haversine_km,
+    road_distance_km,
+)
 
 try:
     from ortools.constraint_solver import pywrapcp, routing_enums_pb2
@@ -33,12 +39,13 @@ def _physical_sites(scored: pd.DataFrame, locs: pd.DataFrame, cfg: OperationalCo
     """Aggregate all material IDs sharing a coordinate into one physical stop."""
     work = scored.copy()
     work["critical"] = work.get("critical", work["score"] >= 0.7).astype(bool)
-    work["mass_kg"] = (
-        work.get("est_fill_level", work["last_fill_level"]).astype(float) / 100.0
+    work["volume_m3"] = (
+        work.get("est_fill_level", work["last_fill_level"]).astype(float).clip(lower=0.0) / 100.0
         * cfg.container_volume_m3
-        * cfg.density_kg_per_m3
     )
+    work["mass_kg"] = work["volume_m3"] * work["material_type"].map(lambda m: density_for(cfg, m))
     work["critical_mass_kg"] = work["mass_kg"].where(work["critical"], 0.0)
+    work["critical_volume_m3"] = work["volume_m3"].where(work["critical"], 0.0)
     merged = work.merge(locs[["Location_id", "lat", "lon"]], on="Location_id", how="inner")
     merged["lat"] = merged["lat"].round(6)
     merged["lon"] = merged["lon"].round(6)
@@ -52,6 +59,8 @@ def _physical_sites(scored: pd.DataFrame, locs: pd.DataFrame, cfg: OperationalCo
             score=("score", "max"),
             mass_kg=("mass_kg", "sum"),
             critical_mass_kg=("critical_mass_kg", "sum"),
+            volume_m3=("volume_m3", "sum"),
+            critical_volume_m3=("critical_volume_m3", "sum"),
         )
         .sort_values(["id", "lat", "lon"])
         .reset_index(drop=True)
@@ -123,6 +132,7 @@ def _solver_order(sites: pd.DataFrame, cfg: OperationalConfig) -> list[int] | No
     vehicles = max(
         1,
         math.ceil(float(sites["critical_mass_kg"].sum()) / cfg.vehicle_max_weight_kg),
+        math.ceil(float(sites["critical_volume_m3"].sum()) / cfg.vehicle_max_volume_m3),
         math.ceil(len(sites) * (cfg.stop_setup_min + cfg.lift_time_per_bin_min) / (cfg.max_shift_hours * 60)),
     )
     manager = pywrapcp.RoutingIndexManager(n, vehicles, 0)
@@ -137,6 +147,12 @@ def _solver_order(sites: pd.DataFrame, cfg: OperationalConfig) -> list[int] | No
     demands = [0] + [round(float(x)) for x in sites["critical_mass_kg"]]
     demand_cb = routing.RegisterUnaryTransitCallback(lambda i: demands[manager.IndexToNode(i)])
     routing.AddDimensionWithVehicleCapacity(demand_cb, 0, [round(cfg.vehicle_max_weight_kg)] * vehicles, True, "Weight")
+    # Volume in litres so the solver works with integers.
+    volumes = [0] + [round(float(x) * 1000) for x in sites["critical_volume_m3"]]
+    volume_cb = routing.RegisterUnaryTransitCallback(lambda i: volumes[manager.IndexToNode(i)])
+    routing.AddDimensionWithVehicleCapacity(
+        volume_cb, 0, [round(cfg.vehicle_max_volume_m3 * 1000)] * vehicles, True, "Volume"
+    )
     service = [0] + [
         round(cfg.stop_setup_min + max(1, int(x)) * cfg.lift_time_per_bin_min)
         for x in sites["critical_bins"]
@@ -183,16 +199,20 @@ def _plan(order: list[int], sites: pd.DataFrame, cfg: OperationalConfig) -> dict
     rounds: list[list[int]] = []
     current: list[int] = []
     weight = 0.0
+    volume = 0.0
     for idx in order:
         mass = float(sites.at[idx, "critical_mass_kg"])
+        vol = float(sites.at[idx, "critical_volume_m3"])
         if current and (
             weight + mass > cfg.vehicle_max_weight_kg
+            or volume + vol > cfg.vehicle_max_volume_m3
             or projected_hours(current + [idx]) > cfg.max_shift_hours
         ):
             rounds.append(current)
-            current, weight = [], 0.0
+            current, weight, volume = [], 0.0, 0.0
         current.append(idx)
         weight += mass
+        volume += vol
     if current:
         rounds.append(current)
 
@@ -232,7 +252,9 @@ def run_case(date: str, seed: int, cfg: OperationalConfig) -> list[dict[str, Any
     critical = sites[sites.critical].copy().reset_index(drop=True)
     # Status quo empties every bin: load all mass and lift all bins, not only critical ones.
     all_sites = sites.assign(
-        critical_mass_kg=sites["mass_kg"], critical_bins=sites["bins"]
+        critical_mass_kg=sites["mass_kg"],
+        critical_volume_m3=sites["volume_m3"],
+        critical_bins=sites["bins"],
     ).reset_index(drop=True)
     definitions = [
         ("B0 status quo", all_sites, lambda: list(all_sites.sort_values("id").index)),
@@ -304,7 +326,7 @@ Coordinates are rounded to 6 decimals and grouped before routing. At one point, 
 material bins are one stop and their masses are summed. On 2026-04-15 / seed 42 this leaves
 **{int(april.iloc[0].real_stops)} real stops** overall and **{int(april[april.variant.str.startswith('B2')].iloc[0].stops)} critical stops**,
 from **{int(april.iloc[0].critical_ids)} critical IDs**. Every route uses `OperationalConfig`:
-11 t vehicle capacity, 8 h shift, yard start/end, and unloading at `disposal_depot`.
+11 t and 26 m³ vehicle capacity, 8 h shift, yard start/end, and unloading at `disposal_depot`.
 
 ## 2026-04-15 table (seed 42)
 
