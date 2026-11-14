@@ -346,9 +346,10 @@
         <!-- Node 3: Tool Execution Layer -->
         <g id="node-tools" transform="translate(480, 90)">
           <rect class="box-node" width="120" height="100" fill="#1e293b" stroke="#334155" />
-          <text class="node-text" x="60" y="38">⚙️ Tools</text>
-          <text class="node-subtext" x="60" y="58">routing.py</text>
-          <text class="node-subtext" x="60" y="75">scoring.py</text>
+          <text class="node-text" x="60" y="34">⚙️ Tools</text>
+          <text class="node-subtext" x="60" y="54">copilot.py</text>
+          <text class="node-subtext" x="60" y="70">routing.py</text>
+          <text class="node-subtext" x="60" y="85">scoring.py</text>
         </g>
 
         <!-- Node 4: Ground Truth Data -->
@@ -386,25 +387,25 @@
       {
         num: 1,
         title: "1. Disponent stellt eine Frage (Prompt)",
-        desc: "Der Disponent möchte wissen, warum Container #144 angefahren wird, oder will eine What-If-Simulation durchführen. Er nutzt natürliche Sprache.",
-        code: `Disponent: "Warum ist Container 144 heute auf der Route und wie wirkt sich ein Schichtlimit von 6h aus?"`,
+        desc: "Der Disponent fragt nach einem konkreten Container (Standort + Glasfarbe, da ein Standort bis zu drei Container hat) oder nach einer What-If-Simulation mit Betriebsparametern.",
+        code: `Disponent: "Warum ist der Weißglas-Container an Standort 2f09e55b-... auf der Tour und was passiert bei max_shift_hours=6.0?"`,
         activeNodes: ["node-user"],
         activeLines: ["line-1"],
         pulseNode: "node-user"
       },
       {
         num: 2,
-        title: "2. Lokales LLM fungiert als Router (Keine Halluzination)",
-        desc: "Das LLM (z. B. Qwen 7B via Ollama) berechnet NICHT die Route im Prompt-Kontext. Stattdessen erkennt es die Absicht und generiert strukturierte Function-Calls (JSON) für unsere vorhandenen Python-Module.",
-        code: `// LLM Tool-Call Payload
+        title: "2. Lokales LLM fungiert als Tool-Router (Keine Halluzination)",
+        desc: "Das LLM (optional via Ollama, mit deterministischem Offline-Fallback) berechnet NICHT selbst und erfindet keine Entscheidungen. Es wählt nur aus den 3 erlaubten Tools (get_tour_overview, explain_container, simulate_what_if). approve_tour ist als Chat-Tool gesperrt.",
+        code: `// Tool 1: Zusammengesetzter Schlüssel (Location_id, material_type)
 {
-  "tool": "explain_container_priority",
-  "arguments": { "location_id": "144", "date": "2026-04-15" }
+  "tool": "explain_container",
+  "arguments": { "location_id": "2f09e55b-87ab-4117-bf52-63210c670a4f", "material": "white", "date": "2026-04-15" }
 }
-// Tool 2:
+// Tool 2: What-If nur mit Parametern aus WHAT_IF_ALLOWLIST
 {
-  "tool": "simulate_route",
-  "arguments": { "override_config": { "shift_hours": 6.0 } }
+  "tool": "simulate_what_if",
+  "arguments": { "date": "2026-04-15", "overrides": { "max_shift_hours": 6.0 } }
 }`,
         activeNodes: ["node-llm"],
         activeLines: ["line-2"],
@@ -412,28 +413,32 @@
       },
       {
         num: 3,
-        title: "3. Tool-Execution auf deterministischem Python-Code",
-        desc: "Der Tool-Runner führt unsere echten, getesteten Skripte aus (scoring.py, routing.py). Es gibt exakte Berechnungen: Haversine-Distanz, 11 konfigurierbare Betriebsvariablen, Füllstandsextrapolation.",
-        code: `def explain_container_priority(location_id, date):
-    row = scored_df.loc[scored_df['Location_id'] == location_id]
-    return {
-        "fill_level": row['last_fill_level'].values[0],     # 92%
-        "material": row['material_type'].values[0],        # Weißglas
-        "critical_score": row['critical_score'].values[0],  # 0.94
-        "overfull_rate": row['overfull_rate'].values[0]     # 35%
-    }`,
+        title: "3. Validierte Python-Ausführung (Allowlist & Composite Key)",
+        desc: "copilot.py prüft die Container-Identität (Location_id, material_type) sowie die WHAT_IF_ALLOWLIST (inkl. Wertebereiche) und ruft scoring.py / routing.py auf. What-If-Simulationen laufen rein im Speicher und überschreiben route_<date>.json nicht.",
+        code: `// 1. Eindeutige Container-Abfrage (Location_id + material_type)
+explain_container(location_id, material="white", date="2026-04-15")
+// -> ohne material: CopilotValidationError (mehrdeutig bei bis zu 3 Containern!)
+
+// 2. Strikt geprüfte Allowlist (kein freier Modellparameter aus dem LLM)
+WHAT_IF_ALLOWLIST = {"max_shift_hours", "max_stops", "vehicle_max_weight_kg", ...}
+simulate_what_if(date="2026-04-15", overrides={"max_shift_hours": 6.0})`,
         activeNodes: ["node-tools", "node-data"],
         activeLines: ["line-3"],
         pulseNode: "node-tools"
       },
       {
         num: 4,
-        title: "4. Rückgabe der Ground-Truth-Daten an das Modell",
-        desc: "Die echten Zahlen werden aus route_2026-04-15.json und scored.csv gezogen und als Tool-Output an das LLM zurückgegeben. Die Simulation mit 6h ergibt z.B. 19 statt 25 Stopps.",
-        code: `// Tool Output zurück an Ollama
+        title: "4. Autoritatives Tool-Ergebnis mit Quellen & Baseline-Vergleich",
+        desc: "Alle Zahlen stammen direkt aus route_2026-04-15.json, scored_2026-04-15.csv und locations.csv. What-If liefert immer Baseline, Simulation und Delta – inklusive expliziter Quellenangaben.",
+        code: `// Autoritativer Tool-Output (Auszug)
 {
-  "location_144": { "fill": "92%", "material": "Weißglas", "risk": "Hoch" },
-  "simulation_6h": { "stops": 19, "unserved_critical": 6, "distance_km": 88.4 }
+  "container_key": "2f09e55b-87ab-4117-bf52-63210c670a4f:white",
+  "metrics": { "last_fill_level": 110.0, "score": 1.0, "critical": true },
+  "baseline": { "num_stops": 25, "vehicles_needed": 2, "shift_hours": 15.47, "max_vehicle_shift_hours": 7.83, "planned_km": 194.54 },
+  "simulation": { "num_stops": 25, "vehicles_needed": 3, "shift_hours": 14.0, "max_vehicle_shift_hours": 5.55, "planned_km": 174.61 },
+  "delta": { "vehicles_needed_delta": 1, "max_vehicle_shift_hours_delta": -2.28, "planned_km_delta": -19.93 },
+  // shift_hours = Fahrzeugstunden gesamt (Summe), max_vehicle_shift_hours = längste Einzelschicht
+  "sources": ["data/processed/scored_2026-04-15.csv", "route_2026-04-15.json"]
 }`,
         activeNodes: ["node-tools", "node-llm"],
         activeLines: ["line-4"],
@@ -441,12 +446,14 @@
       },
       {
         num: 5,
-        title: "5. Disponenten-Antwort & Freigabe (Human-Agent Interface)",
-        desc: "Das LLM fasst die exakten Berechnungen verständlich zusammen. Der Disponent behält die Hoheit und kann den Tourenplan mit einem Klick freigeben ('prezero-route approve').",
-        code: `Copilot: "Container 144 ist wegen 92% Weißglas und 35% Überlaufhistorie priorisiert (Score 0.94).
-Bei Reduktion auf 6h Schichtlimit können nur 19 statt 25 Container bedient werden – 6 kritische Standorte blieben ungeleert!"
+        title: "5. Strukturierte Antwort & explizite Freigabe über approval.py",
+        desc: "Der Copilot zeigt die faktenbasierte Zusammenfassung mit Quellen und Baseline-Vergleich. Eine Freigabe erfolgt niemals über das Chat-LLM, sondern ausdrücklich durch den Disponenten per CLI ('prezero-route approve') oder UI-Button ('Freigeben') über approval.py.",
+        code: `Copilot: "Container 2f09e55b-...:white liegt bei 110.0% (Score 1.000, kritisch).
+What-If (max_shift_hours=6.0) vs. Baseline: +1 Fahrzeug, längste Schicht 5,55 h statt 7,83 h, Strecke −19,93 km.
+Quellen: data/processed/scored_2026-04-15.csv, route_2026-04-15.json"
 
-[ Tour mit 8h jetzt freigeben ] -> approval_2026-04-15.json generiert ✅`,
+// Explizite Fachaktion außerhalb des Chats (einziger Erzeuger von approval_<date>.json):
+$ prezero-route approve --by "Disponentin" -> data/processed/approval_2026-04-15.json ✅`,
         activeNodes: ["node-user", "node-llm"],
         activeLines: ["line-5"],
         pulseNode: "node-user"

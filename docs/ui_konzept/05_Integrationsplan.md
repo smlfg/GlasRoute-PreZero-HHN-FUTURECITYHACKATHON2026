@@ -1,5 +1,7 @@
 # GlasRoute — Integrationsplan (reMarkable UI-Konzept → `prezero-routing-hackathon-2026`)
 
+> **VERALTET (Stand 14.11.2026, 18:30):** Konzept-Dokument aus der Frühphase. Zahlen und Begriffe (z. B. 67,92 km / 260,82 km / −74 %, `osm_heuristic`, `synthetic_placeholder`, „338 Serien“) sind überholt. Gültig ist nur die Website `ui_2026-04-15.html` (`prezero-route run`) und `Pitch/NOTES.md`.
+
 **Stand:** Samstag, 14.11.2026 · **Ziel:** Nahtlose Integration des 3-stufigen UI-Konzepts aus der reMarkable-Skizze (`01_remarkable_skizze_original.png`) in das bestehende CLI-Projekt `prezero-routing-hackathon-2026`, ohne bestehende Tests oder CLI-Workflows zu brechen.
 
 ---

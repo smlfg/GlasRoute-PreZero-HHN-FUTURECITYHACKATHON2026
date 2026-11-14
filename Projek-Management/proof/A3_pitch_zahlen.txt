@@ -1,18 +1,58 @@
-# Every figure in docs/PITCH.md checked against route_2026-04-15.json
+# Pitch-Zahlen (NEU, Stand 14.11.2026) geprüft gegen die Pipeline-Ausgaben
+# Ersetzt den alten Stand (119,75 / 157,72 km / 24,1 %): der Vergleich war nicht gleichartig.
+# Erzeugt mit: python scripts/benchmark.py && prezero-route run --date 2026-04-15
 
-$ python3 - <<'PY' ... verify ... PY
+$ PYTHONPATH=src python Projek-Management/proof/verify_pitch_numbers.py
 
-OK       planned_km: got=119.75 expected=119.75
-OK       saved_km: got=37.97 expected=37.97
-OK       saved_pct: got=24.1 expected=24.1
+# route_2026-04-15.json (prezero-route run --date 2026-04-15, max_stops 25)
 OK       num_stops: got=25 expected=25
+OK       total_critical_locations: got=97 expected=97
+OK       total_active_locations: got=121 expected=121
+OK       planned_km: got=194.54 expected=194.54
 OK       vehicles_needed: got=2 expected=2
-OK       shift_hours: got=8.52 expected=8.52
-OK       t_collected: got=41.8 expected=41.8
-OK       total_critical_locations: got=169 expected=169
-OK       full_round_km: got=157.72 expected=157.72
+OK       rounds: got=11 expected=11
+OK       shift_hours: got=15.47 expected=15.47
+OK       max_vehicle_shift_hours: got=7.83 expected=7.83
+OK       t_collected: got=84.4 expected=84.4
+OK       full_round_km: got=1179.03 expected=1179.03
+OK       full_round_vehicles: got=20 expected=20
 
-raw rows=11701 ids=449 overfull=1192
+# benchmark_results.csv (scripts/benchmark.py), 2026-04-15 / seed 42
+OK       B0 km: got=1838.75 expected=1838.75
+OK       B1 km: got=1736.53 expected=1736.53
+OK       B2 km: got=508.36 expected=508.36
+OK       B4 km: got=475.43 expected=475.43
+OK       B1 stops: got=121 expected=121
+OK       B2 stops: got=95 expected=95
+OK       demand_pct: got=70.7 expected=70.7
+OK       routing_pct: got=6.5 expected=6.5
+OK       overall_vs_b1_pct: got=72.6 expected=72.6
+OK       overall_vs_b0_pct: got=74.1 expected=74.1
+OK       demand_pct span over 12 cases: got=(68.6, 97.8) expected=(68.6, 97.8)
+OK       routing_pct span over 12 cases: got=(1.1, 16.8) expected=(1.1, 16.8)
+OK       overall_vs_b1_pct span over 12 cases: got=(72.6, 97.9) expected=(72.6, 97.9)
+
+# What-if presets embedded in ui_2026-04-15.html
+OK       shift_6h.vehicles_needed: got=3 expected=3
+OK       shift_6h.max_vehicle_shift_hours: got=5.55 expected=5.55
+OK       shift_6h.planned_km: got=174.61 expected=174.61
+OK       truck_8t.vehicles_needed: got=3 expected=3
+OK       truck_8t.planned_km: got=218.87 expected=218.87
+OK       plus_vehicle.num_stops: got=48 expected=48
+OK       plus_vehicle.planned_km: got=244.32 expected=244.32
+OK       plus_vehicle.unserved_critical_locations: got=49 expected=49
+OK       all_critical.num_stops: got=97 expected=97
+OK       all_critical.planned_km: got=382.87 expected=382.87
+OK       all_critical.vehicles_needed: got=5 expected=5
+
+# data/raw/glass_fill_levels_anonymized_f.csv
+OK       raw rows: got=11701 expected=11701
+OK       raw ids: got=449 expected=449
+OK       raw overfull: got=1192 expected=1192
+
+RESULT: ALL MATCH
+
+# Monatsprofil aus data/raw (unverändert)
 month  n     mean   overfull  overfull%
 2025-10    741   55.6         3       0.4%
 2025-11    656   59.5        14       2.1%
@@ -26,5 +66,3 @@ month  n     mean   overfull  overfull%
 2026-07   1310   61.4        65       5.0%
 2026-08   1215   57.5        34       2.8%
 2026-09    858   64.1        91      10.6%
-
-RESULT: ALL MATCH

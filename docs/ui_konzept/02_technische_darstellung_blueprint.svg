@@ -6898,4 +6898,7 @@ z
    <rect x="0" y="0" width="1008" height="1296"/>
   </clipPath>
  </defs>
+
+ <rect x="0" y="0" width="1008" height="36" fill="#b91c1c"/>
+ <text x="504" y="24" fill="#ffffff" font-family="sans-serif" font-size="18" font-weight="bold" text-anchor="middle">VERALTET – Frühphase, Zahlen und Begriffe überholt (Stand 14.11.2026)</text>
 </svg>

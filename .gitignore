@@ -20,6 +20,9 @@ data/processed/
 /route_*.json
 /map_*.html
 /trends.png
+/ui_*.html
+/heatmap.html
+/forecast_*.html
 
 # Project management: keep reports, never the virtualenv
 Projek-Managment/.venv/
