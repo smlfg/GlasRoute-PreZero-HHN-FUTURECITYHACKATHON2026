@@ -28,6 +28,9 @@ FORECAST_STATUS_COLORS = {
     "black": "#111827",
 }
 
+TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+TILE_ATTR = "© OpenStreetMap contributors © CARTO"
+
 
 def _heatmap_status(value: float) -> str:
     if value >= 110:
@@ -293,10 +296,10 @@ def plot_forecast_map(
     center = [float(work["lat"].mean()), float(work["lon"].mean())] if not work.empty else [49.1427, 9.2109]
     fmap = folium.Map(location=center, zoom_start=12, tiles=None)
     folium.TileLayer(
-        tiles="OpenStreetMap",
+        tiles=TILE_URL,
         name="OpenStreetMap",
         control=False,
-        attr="© OpenStreetMap contributors",
+        attr=TILE_ATTR,
     ).add_to(fmap)
 
     layer_refs: list[tuple[str, str]] = []
@@ -589,7 +592,13 @@ def plot_route(
     depot_coords = [float(depot["lat"]), float(depot["lon"])]
     stops = route_data.get("stops", [])
 
-    fmap = folium.Map(location=depot_coords, zoom_start=12)
+    fmap = folium.Map(location=depot_coords, zoom_start=12, tiles=None)
+    folium.TileLayer(
+        tiles=TILE_URL,
+        name="OpenStreetMap",
+        control=False,
+        attr=TILE_ATTR,
+    ).add_to(fmap)
 
     folium.Marker(
         location=depot_coords,
