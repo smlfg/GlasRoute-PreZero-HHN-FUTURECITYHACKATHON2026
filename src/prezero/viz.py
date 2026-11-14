@@ -54,12 +54,6 @@ def plot_heatmap(
     materials = matrix.attrs.get("materials", pd.Series("unknown", index=matrix.index))
     selected_index = labels.index(selected_week) if selected_week in labels else 0
 
-    values = matrix.to_numpy(dtype=float)
-    predicted_values = values.copy()
-    measured_values = values.copy()
-    predicted_mask = predicted.to_numpy(dtype=bool)
-    measured_values[predicted_mask] = float("nan")
-    predicted_values[~predicted_mask] = float("nan")
     colorscale = [
         [0.0, "#16a34a"],
         [49.999 / 110, "#16a34a"],
@@ -91,38 +85,49 @@ def plot_heatmap(
         specs=[[{"type": "heatmap"}, {"type": "bar"}]],
         horizontal_spacing=0.08,
     )
-    hover = "ID: %{y}<br>Woche: %{x}<br>Füllstand: %{z:.1f}%<extra>gemessen</extra>"
-    fig.add_trace(
-        go.Heatmap(
-            z=measured_values,
-            x=list(range(len(labels))),
-            y=list(matrix.index),
-            zmin=0,
-            zmax=110,
-            colorscale=colorscale,
-            colorbar={"title": "%"},
-            hovertemplate=hover,
-            name="Gemessen",
-        ),
-        row=1,
-        col=1,
-    )
-    fig.add_trace(
-        go.Heatmap(
-            z=predicted_values,
-            x=list(range(len(labels))),
-            y=list(matrix.index),
-            zmin=0,
-            zmax=110,
-            colorscale=colorscale,
-            opacity=0.45,
-            hovertemplate=hover.replace("gemessen", "prognostiziert"),
-            name="Prognostiziert",
-            showscale=False,
-        ),
-        row=1,
-        col=1,
-    )
+    trace_count = 0
+    for index, label in enumerate(labels):
+        week_values = matrix.iloc[:, index].to_numpy(dtype=float)
+        week_predicted = predicted.iloc[:, index].to_numpy(dtype=bool)
+        measured_values = week_values.copy()
+        predicted_values = week_values.copy()
+        measured_values[week_predicted] = float("nan")
+        predicted_values[~week_predicted] = float("nan")
+        visible = index == selected_index
+        fig.add_trace(
+            go.Heatmap(
+                z=measured_values[:, None],
+                x=[0],
+                y=list(matrix.index),
+                zmin=0,
+                zmax=110,
+                colorscale=colorscale,
+                colorbar={"title": "%"} if index == 0 else None,
+                hovertemplate=f"ID: %{{y}}<br>Woche: {label}<br>Füllstand: %{{z:.1f}}%<extra>gemessen</extra>",
+                name="Gemessen",
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Heatmap(
+                z=predicted_values[:, None],
+                x=[0],
+                y=list(matrix.index),
+                zmin=0,
+                zmax=110,
+                colorscale=colorscale,
+                opacity=0.45,
+                hovertemplate=f"ID: %{{y}}<br>Woche: {label}<br>Füllstand: %{{z:.1f}}%<extra>prognostiziert</extra>",
+                name="Prognostiziert",
+                showscale=False,
+                visible=visible,
+            ),
+            row=1,
+            col=1,
+        )
+        trace_count += 2
     fig.add_trace(
         go.Bar(
             x=[f"{material.removeprefix('glass_')}" for material in ("glass_white", "glass_green", "glass_brown")],
@@ -149,42 +154,37 @@ def plot_heatmap(
 
     steps = []
     for index in range(len(labels)):
+        visibility = [False] * (trace_count + 1)
+        visibility[index * 2] = True
+        visibility[index * 2 + 1] = True
+        visibility[-1] = True
         steps.append(
             {
                 "label": labels[index],
-                "method": "relayout",
+                "method": "update",
                 "args": [
                     {
+                        "visible": visibility,
+                    },
+                    {
                         "title.text": header(index),
-                        "shapes": [
-                            {
-                                "type": "rect",
-                                "xref": "x",
-                                "yref": "paper",
-                                "x0": index - 0.5,
-                                "x1": index + 0.5,
-                                "y0": 0,
-                                "y1": 1,
-                                "fillcolor": "#60a5fa",
-                                "opacity": 0.16,
-                                "line": {"color": "#2563eb", "width": 2},
-                            }
-                        ],
-                    }
+                        "xaxis.ticktext": [labels[index]],
+                    },
                 ],
             }
         )
     fig.update_layout(
         title=header(selected_index),
         template="plotly_white",
-        height=max(700, len(matrix) * 2),
+        height=760,
         xaxis={
             "title": "Kalenderwoche",
             "tickmode": "array",
-            "tickvals": list(range(len(labels))),
-            "ticktext": labels,
+            "tickvals": [0],
+            "ticktext": [labels[selected_index]],
+            "range": [-0.5, 0.5],
         },
-        yaxis={"title": "Container", "autorange": "reversed"},
+        yaxis={"title": "Container (Mouseover für ID)", "autorange": "reversed", "dtick": 10},
         xaxis2={"title": "Glasfarbe", "tickangle": -45},
         yaxis2={"title": "Anteil übervoll", "tickformat": ".0%"},
         sliders=[
@@ -195,7 +195,6 @@ def plot_heatmap(
                 "steps": steps,
             }
         ],
-        shapes=steps[selected_index]["args"][0]["shapes"],
     )
     fig.write_html(str(out), include_plotlyjs="inline", full_html=True)
     return out
@@ -637,3 +636,6 @@ def plot_route(
     fmap.get_root().html.add_child(folium.Element(legend_html))
     fmap.save(str(out))
     return out
+
+
+from prezero.ui import build_ui, compute_data_check, compute_upload_check  # noqa: E402, F401
