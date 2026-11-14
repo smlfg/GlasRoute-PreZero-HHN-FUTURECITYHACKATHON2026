@@ -1,13 +1,21 @@
+// Standalone operational price, before comparisons of service quality.
+function collectionCost(s, a, days) {
+  const vehicle = s.vehicle_days * a.vehicle_day;
+  const crewHours = s.hours * a.crew;
+  const labor = crewHours * a.wage;
+  const drive = s.km * a.km_cost;
+  const total = vehicle + labor + drive;
+  const daily = total / days;
+  const tonnes = s.inventory.collected_kg / 1000;
+  return {vehicle, crewHours, labor, drive, total, daily, annual: daily * a.annual_days,
+          perTonne: tonnes ? total / tonnes : null};
+}
+
 // Shared by the static dashboard and the reproducible pitch calculation (Node).
 function economics(r, p, threshold = r.threshold_pct) {
   const opt = +threshold === r.threshold_pct ? r.optimized : r.threshold_options[threshold];
   function scenario(s, a) {
-    const vehicle = s.vehicle_days * a.vehicle_day, crewHours = s.hours * a.crew;
-    const labor = crewHours * a.wage, drive = s.km * a.km_cost;
-    const total = vehicle + labor + drive, daily = total / r.operating_days;
-    const tonnes = s.inventory.collected_kg / 1000;
-    return {vehicle, crewHours, labor, drive, total, daily, annual: daily*a.annual_days,
-            perTonne: tonnes ? total/tonnes : null};
+    return collectionCost(s, a, r.calendar_days ?? r.operating_days);
   }
   const h = scenario(r.historical, p), o = scenario(opt, p);
   const difference = h.total-o.total;
@@ -25,3 +33,4 @@ function economics(r, p, threshold = r.threshold_pct) {
       -difference / ((opt.inventory.collected_kg-r.historical.inventory.collected_kg)/1000) : null};
 }
 if (typeof module !== 'undefined') module.exports = economics;
+if (typeof module !== 'undefined') module.exports.collectionCost = collectionCost;

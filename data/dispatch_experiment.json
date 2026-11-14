@@ -1,0 +1,393 @@
+{
+  "opening_kg": 448129.0315537793,
+  "daily_inflow_kg": 23849.52324165657,
+  "start": "2026-07-01",
+  "end": "2026-09-30",
+  "bins": 1332,
+  "excluded_visits_unknown_at_start": 10,
+  "observed_overfull": 190,
+  "measured_A": {
+    "driving_days": 59,
+    "vehicle_days": 95,
+    "peak": 3,
+    "km": 5623.5999999999985,
+    "hours": 485.09999999999974,
+    "emptyings": 3373,
+    "fill_sum": 204920.0,
+    "collected_kg": 2049200.0,
+    "exceptions": 0,
+    "mean_fill": 60.75303883782983,
+    "deployment_cost": 47500,
+    "labor_and_km_cost": 34701.73999999998,
+    "cost": 82201.73999999998,
+    "eur_per_t": 40.11406402498535
+  },
+  "checkpoints": {
+    "2026-07-31": {
+      "A": {
+        "driving_days": 22,
+        "vehicle_days": 34,
+        "peak": 3,
+        "km": 2077.0899999999997,
+        "hours": 182.51000000000005,
+        "emptyings": 1305,
+        "fill_sum": 75528.30038662735,
+        "collected_kg": 755283.0038662736,
+        "exceptions": 0,
+        "mean_fill": 57.876092250289155,
+        "risk_bin_days": 2087,
+        "ending_kg": 432181.2481788596,
+        "overdue_bins": 63,
+        "excess_kg": 30750.508759751232,
+        "deployment_cost": 17000,
+        "labor_and_km_cost": 13030.748500000003,
+        "cost": 30030.7485,
+        "eur_per_t": 39.76092186143922
+      },
+      "B": {
+        "driving_days": 31,
+        "vehicle_days": 42,
+        "peak": 2,
+        "km": 3245.2999999999997,
+        "hours": 241.90999999999997,
+        "emptyings": 1191,
+        "fill_sum": 78527.71235824106,
+        "collected_kg": 785277.1235824106,
+        "exceptions": 8,
+        "mean_fill": 65.93426730330903,
+        "risk_bin_days": 58,
+        "ending_kg": 402187.12846272247,
+        "overdue_bins": 0,
+        "excess_kg": 0.0,
+        "deployment_cost": 21000,
+        "labor_and_km_cost": 17591.684999999998,
+        "cost": 38591.685,
+        "eur_per_t": 49.144033158569414
+      },
+      "B_weekday": {
+        "driving_days": 23,
+        "vehicle_days": 38,
+        "peak": 2,
+        "km": 2817.04,
+        "hours": 222.22000000000003,
+        "emptyings": 1178,
+        "fill_sum": 79208.79247908137,
+        "collected_kg": 792087.9247908137,
+        "exceptions": 0,
+        "mean_fill": 67.24006152723376,
+        "risk_bin_days": 58,
+        "ending_kg": 395376.3272543193,
+        "overdue_bins": 0,
+        "excess_kg": 0.0,
+        "deployment_cost": 19000,
+        "labor_and_km_cost": 16053.156000000003,
+        "cost": 35053.156,
+        "eur_per_t": 44.254122431240646
+      },
+      "C": {
+        "driving_days": 22,
+        "vehicle_days": 29,
+        "peak": 2,
+        "km": 1822.75,
+        "hours": 151.4,
+        "emptyings": 876,
+        "fill_sum": 71162.73934072806,
+        "collected_kg": 711627.3934072808,
+        "exceptions": 0,
+        "mean_fill": 81.2360038136165,
+        "risk_bin_days": 58,
+        "ending_kg": 475836.8586378525,
+        "overdue_bins": 0,
+        "excess_kg": 0.0,
+        "deployment_cost": 14500,
+        "labor_and_km_cost": 10874.3875,
+        "cost": 25374.387499999997,
+        "eur_per_t": 35.65684476887141
+      }
+    },
+    "2026-09-30": {
+      "A": {
+        "driving_days": 59,
+        "vehicle_days": 96,
+        "peak": 3,
+        "km": 5579.66,
+        "hours": 480.66,
+        "emptyings": 3373,
+        "fill_sum": 197997.22881195083,
+        "collected_kg": 1979972.2881195084,
+        "exceptions": 0,
+        "mean_fill": 58.700631133101346,
+        "risk_bin_days": 6874,
+        "ending_kg": 662312.8816666763,
+        "overdue_bins": 124,
+        "excess_kg": 100312.81861334587,
+        "deployment_cost": 48000,
+        "labor_and_km_cost": 34389.019,
+        "cost": 82389.019,
+        "eur_per_t": 41.61119804270064,
+        "service": {
+          "checks": {
+            "risk": true,
+            "overdue_count": true,
+            "overdue_mass": true,
+            "fleet": true
+          },
+          "acceptable": true,
+          "additional_ending_kg": 0.0,
+          "comparable_cost": true
+        }
+      },
+      "B": {
+        "driving_days": 92,
+        "vehicle_days": 129,
+        "peak": 2,
+        "km": 9704.270000000002,
+        "hours": 723.65,
+        "emptyings": 3595,
+        "fill_sum": 226052.885442935,
+        "collected_kg": 2260528.8544293502,
+        "exceptions": 26,
+        "mean_fill": 62.87980123586509,
+        "risk_bin_days": 58,
+        "ending_kg": 381756.31535683403,
+        "overdue_bins": 0,
+        "excess_kg": 0.0,
+        "deployment_cost": 64500,
+        "labor_and_km_cost": 52621.3755,
+        "cost": 117121.37550000001,
+        "eur_per_t": 51.811493257654625,
+        "service": {
+          "checks": {
+            "risk": true,
+            "overdue_count": true,
+            "overdue_mass": true,
+            "fleet": true
+          },
+          "acceptable": true,
+          "additional_ending_kg": 0.0,
+          "comparable_cost": true
+        }
+      },
+      "B_weekday": {
+        "driving_days": 66,
+        "vehicle_days": 113,
+        "peak": 2,
+        "km": 8135.549999999998,
+        "hours": 647.2899999999998,
+        "emptyings": 3496,
+        "fill_sum": 225361.35534081675,
+        "collected_kg": 2253613.5534081687,
+        "exceptions": 0,
+        "mean_fill": 64.46263024622905,
+        "risk_bin_days": 58,
+        "ending_kg": 388671.61637801636,
+        "overdue_bins": 0,
+        "excess_kg": 0.0,
+        "deployment_cost": 56500,
+        "labor_and_km_cost": 46714.66749999999,
+        "cost": 103214.6675,
+        "eur_per_t": 45.79963026221028,
+        "service": {
+          "checks": {
+            "risk": true,
+            "overdue_count": true,
+            "overdue_mass": true,
+            "fleet": true
+          },
+          "acceptable": true,
+          "additional_ending_kg": 0.0,
+          "comparable_cost": true
+        }
+      },
+      "C": {
+        "driving_days": 65,
+        "vehicle_days": 91,
+        "peak": 2,
+        "km": 5508.299999999999,
+        "hours": 455.8799999999999,
+        "emptyings": 2680,
+        "fill_sum": 214392.002356643,
+        "collected_kg": 2143920.0235664314,
+        "exceptions": 0,
+        "mean_fill": 79.99701580471753,
+        "risk_bin_days": 58,
+        "ending_kg": 498365.1462197527,
+        "overdue_bins": 0,
+        "excess_kg": 0.0,
+        "deployment_cost": 45500,
+        "labor_and_km_cost": 32756.714999999993,
+        "cost": 78256.715,
+        "eur_per_t": 36.50169509113461,
+        "service": {
+          "checks": {
+            "risk": true,
+            "overdue_count": true,
+            "overdue_mass": true,
+            "fleet": true
+          },
+          "acceptable": true,
+          "additional_ending_kg": 0.0,
+          "comparable_cost": true
+        }
+      }
+    }
+  },
+  "inflow_plus_20_percent": {
+    "A": {
+      "driving_days": 59,
+      "vehicle_days": 99,
+      "peak": 3,
+      "km": 5830.669999999998,
+      "hours": 499.68000000000006,
+      "emptyings": 3373,
+      "fill_sum": 225412.6659740315,
+      "collected_kg": 2254126.659740315,
+      "exceptions": 0,
+      "mean_fill": 66.82854016425482,
+      "risk_bin_days": 10712,
+      "ending_kg": 826989.7376923497,
+      "overdue_bins": 222,
+      "excess_kg": 161630.83797093778,
+      "deployment_cost": 49500,
+      "labor_and_km_cost": 35769.455500000004,
+      "cost": 85269.4555,
+      "eur_per_t": 37.828156253572466,
+      "service": {
+        "checks": {
+          "risk": true,
+          "overdue_count": true,
+          "overdue_mass": true,
+          "fleet": true
+        },
+        "acceptable": true,
+        "additional_ending_kg": 0.0,
+        "comparable_cost": true
+      }
+    },
+    "B": {
+      "driving_days": 92,
+      "vehicle_days": 152,
+      "peak": 2,
+      "km": 10491.529999999997,
+      "hours": 810.58,
+      "emptyings": 4254,
+      "fill_sum": 267762.9619038687,
+      "collected_kg": 2677629.619038687,
+      "exceptions": 26,
+      "mean_fill": 62.94380862808385,
+      "risk_bin_days": 60,
+      "ending_kg": 403486.7783939778,
+      "overdue_bins": 0,
+      "excess_kg": 0.0,
+      "deployment_cost": 76000,
+      "labor_and_km_cost": 58696.6145,
+      "cost": 134696.6145,
+      "eur_per_t": 50.3044235626428,
+      "service": {
+        "checks": {
+          "risk": true,
+          "overdue_count": true,
+          "overdue_mass": true,
+          "fleet": true
+        },
+        "acceptable": true,
+        "additional_ending_kg": 0.0,
+        "comparable_cost": true
+      }
+    },
+    "B_weekday": {
+      "driving_days": 66,
+      "vehicle_days": 122,
+      "peak": 2,
+      "km": 8800.33,
+      "hours": 729.55,
+      "emptyings": 4123,
+      "fill_sum": 268866.1591248992,
+      "collected_kg": 2688661.5912489924,
+      "exceptions": 0,
+      "mean_fill": 65.21129253575047,
+      "risk_bin_days": 60,
+      "ending_kg": 392454.8061836733,
+      "overdue_bins": 0,
+      "excess_kg": 0.0,
+      "deployment_cost": 61000,
+      "labor_and_km_cost": 52411.4145,
+      "cost": 113411.4145,
+      "eur_per_t": 42.18136446369057,
+      "service": {
+        "checks": {
+          "risk": true,
+          "overdue_count": true,
+          "overdue_mass": true,
+          "fleet": true
+        },
+        "acceptable": true,
+        "additional_ending_kg": 0.0,
+        "comparable_cost": true
+      }
+    },
+    "C": {
+      "driving_days": 66,
+      "vehicle_days": 101,
+      "peak": 2,
+      "km": 6659.459999999999,
+      "hours": 549.86,
+      "emptyings": 3210,
+      "fill_sum": 257983.14506559062,
+      "collected_kg": 2579831.4506559074,
+      "exceptions": 0,
+      "mean_fill": 80.36858101731795,
+      "risk_bin_days": 164,
+      "ending_kg": 501284.9467767575,
+      "overdue_bins": 0,
+      "excess_kg": 0.0,
+      "deployment_cost": 50500,
+      "labor_and_km_cost": 39519.689,
+      "cost": 90019.68900000001,
+      "eur_per_t": 34.89363189874789,
+      "service": {
+        "checks": {
+          "risk": true,
+          "overdue_count": true,
+          "overdue_mass": true,
+          "fleet": true
+        },
+        "acceptable": true,
+        "additional_ending_kg": 0.0,
+        "comparable_cost": true
+      }
+    }
+  },
+  "config": {
+    "density_kg_per_m3": 400.0,
+    "density_white_kg_per_m3": null,
+    "density_green_kg_per_m3": null,
+    "density_brown_kg_per_m3": null,
+    "container_volume_m3": 2.5,
+    "vehicle_max_weight_kg": 11000.0,
+    "vehicle_max_volume_m3": 26.0,
+    "road_detour_factor": 1.35,
+    "avg_speed_kmh": 25.0,
+    "yard_depot": [
+      49.1427,
+      9.2109
+    ],
+    "disposal_depot": [
+      49.178,
+      9.2085
+    ],
+    "max_shift_hours": 8.0,
+    "stop_setup_min": 2.0,
+    "lift_time_per_bin_min": 3.0,
+    "unload_time_min": 20.0,
+    "location_planning_radius_m": 500.0,
+    "location_planning_adoption_weeks": 8.0,
+    "location_planning_logistic_steepness": 1.0
+  },
+  "prices": {
+    "vehicle_day": 500,
+    "crew": 2,
+    "wage": 32,
+    "km_cost": 0.65
+  }
+}
