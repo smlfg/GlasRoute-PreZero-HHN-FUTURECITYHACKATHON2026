@@ -382,3 +382,18 @@ def test_build_ui_labels_units_and_simulated_mapping(tmp_path: Path) -> None:
     assert "Standort-Zuordnung simuliert" in html
     assert "kritische Container" in html
     assert "kritischen Standorten in dieser Tour" in html
+
+
+def test_benchmark_summary_marks_nn_fallback() -> None:
+    from prezero.ui import _build_benchmark_section_html, compute_benchmark_summary
+
+    rows = _benchmark_rows()
+    for r in rows:
+        r["nn_kept"] = r["variant"].startswith("B4") and r["seed"] == 42 and r["date"] == "2026-04-15"
+    s = compute_benchmark_summary(rows, "2026-04-15", 42)
+    assert s is not None
+    assert s["nn_kept_counts"]["B4"] == 1
+    assert next(v for v in s["variants"] if v["code"] == "B4")["nn_kept"] is True
+    html = _build_benchmark_section_html(s)
+    assert "NN-Reihenfolge behalten" in html
+    assert "in 1 von 4 Fällen" in html

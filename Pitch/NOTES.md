@@ -91,7 +91,9 @@ Website-Tab „5. Fairer Vergleich“):
 - Die Spanne ist groß: Im Winter gibt es kaum kritische Standorte (Bedarfs-Effekt bis 97,8 %), im März
   und April viele (ca. 70 %). 70,7 % am Demo-Tag ist das untere Ende.
 - B4 nutzt OR-Tools mit 30 s Zeitlimit. Ist der Solver schlechter als Nearest Neighbor, wird NN behalten
-  (so steht es im Code). Die km können je Lauf leicht schwanken.
+  und in `benchmark_results.csv` als `nn_kept` markiert: B4 in 1 von 12 Fällen, B3 (2-opt) in 2 von 12,
+  darunter der Demo-Tag (B3 = B2 = 508,36 km). Am Demo-Tag schlägt der Solver NN (475,43 km).
+  Die km können je Lauf leicht schwanken.
 
 **Die Tages-Tour im Tab „Route & Freigabe“** ist ein anderer Fall: Stopp-Limit 25, also **25 von 97
 kritischen Standorten** (72 bleiben offen). 194,54 km, 2 Fahrzeuge, 11 Runden, 84,4 t. Die 83,5 %

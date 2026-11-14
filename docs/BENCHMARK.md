@@ -13,13 +13,13 @@ from **169 critical IDs**. Every route uses `OperationalConfig`:
 
 ## 2026-04-15 table (seed 42)
 
-| variant                   |   stops |      km |   vehicles |   rounds |      h |     t |   runtime_s |
-|:--------------------------|--------:|--------:|-----------:|---------:|-------:|------:|------------:|
-| B0 status quo             |     121 | 1838.75 |        102 |      102 | 175.03 | 892.7 |       0.004 |
-| B1 status quo optimized   |     121 | 1736.53 |        103 |      103 | 171.28 | 892.7 |       0.158 |
-| B2 demand-driven NN       |      95 |  508.36 |         24 |       24 |  42.15 | 232.4 |       0.092 |
-| B3 demand-driven + 2-opt  |      95 |  508.36 |         24 |       24 |  42.15 | 232.4 |       0.218 |
-| B4 demand-driven + solver |      95 |  475.43 |         22 |       22 |  40.17 | 232.4 |       5.113 |
+| variant                   |   stops |      km |   vehicles |   rounds |      h |     t | nn_kept   |   runtime_s |
+|:--------------------------|--------:|--------:|-----------:|---------:|-------:|------:|:----------|------------:|
+| B0 status quo             |     121 | 1838.75 |        102 |      102 | 175.03 | 892.7 | False     |       0.004 |
+| B1 status quo optimized   |     121 | 1736.53 |        103 |      103 | 171.28 | 892.7 | False     |       0.164 |
+| B2 demand-driven NN       |      95 |  508.36 |         24 |       24 |  42.15 | 232.4 | False     |       0.096 |
+| B3 demand-driven + 2-opt  |      95 |  508.36 |         24 |       24 |  42.15 | 232.4 | True      |       0.207 |
+| B4 demand-driven + solver |      95 |  475.43 |         22 |       22 |  40.17 | 232.4 | False     |       5.124 |
 
 Runtime is measured per route calculation; solver time is capped at 30 seconds. B0 is the
 paper-list order (ID sort), B1 is all-site nearest neighbor, B2 is critical-only nearest
@@ -36,13 +36,13 @@ under 11 t and includes a disposal-depot unload and return.
 
 Mean and min–max spread are shown for distance, hours, and runtime:
 
-| variant                   |   km_mean |   km_min |   km_max |   h_mean |   runtime_mean |   km_spread |
-|:--------------------------|----------:|---------:|---------:|---------:|---------------:|------------:|
-| B0 status quo             |  1721.23  |  1655.08 |  1838.75 | 167.06   |      0.00475   |      183.67 |
-| B1 status quo optimized   |  1565.58  |  1440.54 |  1736.53 | 161.447  |      0.148417  |      295.99 |
-| B2 demand-driven NN       |   208.602 |    32.99 |   532.3  |  16.2142 |      0.0265833 |      499.31 |
-| B3 demand-driven + 2-opt  |   204.255 |    32.63 |   523.25 |  15.9858 |      0.061     |      490.62 |
-| B4 demand-driven + solver |   190.571 |    32.63 |   475.43 |  15.245  |      5.03483   |      442.8  |
+| variant                   |   km_mean |   km_min |   km_max |   h_mean |   runtime_mean |   nn_kept_cases |   cases |   km_spread |
+|:--------------------------|----------:|---------:|---------:|---------:|---------------:|----------------:|--------:|------------:|
+| B0 status quo             |  1721.23  |  1655.08 |  1838.75 | 167.06   |      0.00475   |               0 |      12 |      183.67 |
+| B1 status quo optimized   |  1565.58  |  1440.54 |  1736.53 | 161.447  |      0.14725   |               0 |      12 |      295.99 |
+| B2 demand-driven NN       |   208.602 |    32.99 |   532.3  |  16.2142 |      0.02675   |               0 |      12 |      499.31 |
+| B3 demand-driven + 2-opt  |   204.255 |    32.63 |   523.25 |  15.9858 |      0.0605833 |               2 |      12 |      490.62 |
+| B4 demand-driven + solver |   190.571 |    32.63 |   475.43 |  15.245  |      5.03642   |               1 |      12 |      442.8  |
 
 ## Assumptions
 
@@ -52,3 +52,6 @@ Mean and min–max spread are shown for distance, hours, and runtime:
 * A round ends at the disposal depot after collection and returns to the yard. This conservative
   model makes the 11 t and 8 h limits explicit.
 * B4 uses OR-Tools when installed; otherwise the documented fallback is B3 (2-opt).
+* `nn_kept = True` means the 2-opt (B3) or solver (B4) order packed into legal rounds was longer
+  than plain nearest neighbor, so the NN order was kept for that row. Its km then equal B2.
+  `nn_kept_cases` in the robustness table counts how often that happened per variant.

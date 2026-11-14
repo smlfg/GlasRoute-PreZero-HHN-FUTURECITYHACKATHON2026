@@ -670,6 +670,12 @@ BENCHMARK_VARIANT_LABELS: dict[str, str] = {
 }
 
 
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes"}
+    return bool(value) if value is not None and not pd.isna(value) else False
+
+
 def _pct_saving(before: float, after: float) -> float:
     return round((before - after) / before * 100.0, 1) if before > 0 else 0.0
 
@@ -726,6 +732,7 @@ def compute_benchmark_summary(
                 "h": round(float(r.get("h", 0.0)), 2),
                 "rounds": int(r.get("rounds", r.get("vehicles", 0))),
                 "t": round(float(r.get("t", 0.0)), 2),
+                "nn_kept": _as_bool(r.get("nn_kept", False)),
             }
         )
 
@@ -741,10 +748,17 @@ def compute_benchmark_summary(
             "mean": round(sum(values) / len(values), 1),
         }
 
+    nn_kept_counts: dict[str, int] = {}
+    if "nn_kept" in frame.columns:
+        flags = frame["nn_kept"].map(_as_bool)
+        for code in ("B3", "B4"):
+            nn_kept_counts[code] = int(flags[frame["code"] == code].sum())
+
     return {
         "date": date,
         "seed": int(seed),
         "variants": variants,
+        "nn_kept_counts": nn_kept_counts,
         "effects": main,
         "robustness": robustness,
         "cases": len(per_case),
@@ -773,8 +787,17 @@ def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
             f'<div class="card"><div class="label">Gesamt vs. Papierliste (B0)</div><div class="value">{e["overall_vs_b0_pct"]:.1f} %</div><div class="sub">obere Schranke, B0 ist nicht optimiert</div></div>',
         ]
     )
+    kept = summary.get("nn_kept_counts") or {}
+    nn_note = (
+        f"OR-Tools (B4) war in {kept.get('B4', 0)} von {summary['cases']} Fällen schlechter als Nearest Neighbor, "
+        f"2-opt (B3) in {kept.get('B3', 0)}; dann gilt die NN-Reihenfolge (Routing-Effekt dort 0 %)."
+        if kept
+        else ""
+    )
     rows = "".join(
-        f"<tr><td>{html.escape(v['label'])}</td><td>{v['stops']}</td><td>{v['km']:.2f} km</td>"
+        f"<tr><td>{html.escape(v['label'])}"
+        + (" <em>(Solver schlechter als NN, NN-Reihenfolge behalten)</em>" if v.get("nn_kept") else "")
+        + f"</td><td>{v['stops']}</td><td>{v['km']:.2f} km</td>"
         f"<td>{v['h']:.2f} h</td><td>{v['rounds']}</td><td>{v['t']:.2f} t</td></tr>"
         for v in summary["variants"]
     )
@@ -788,7 +811,8 @@ def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
         </table>
       </div>
       <p class="muted">Spannen über {summary['cases']} Fälle: Stichtage {html.escape(', '.join(summary['dates']))} &times; Seeds {html.escape(', '.join(map(str, summary['seeds'])))}.
-      Jede Runde braucht ein Fahrzeug für bis zu 8 h. Quelle: scripts/benchmark.py &rarr; benchmark_results.csv.</p>
+      Jede Runde braucht ein Fahrzeug für bis zu 8 h. Quelle: scripts/benchmark.py &rarr; benchmark_results.csv.
+      {nn_note}</p>
     """
 
 

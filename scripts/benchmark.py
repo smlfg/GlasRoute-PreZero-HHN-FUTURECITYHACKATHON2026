@@ -244,6 +244,7 @@ def run_case(date: str, seed: int, cfg: OperationalConfig) -> list[dict[str, Any
     rows = []
     for name, frame, make_order in definitions:
         started = time.perf_counter()
+        nn_kept = False
         order = make_order()
         if order is None:
             order = _two_opt(_nn(frame, cfg), frame, cfg)
@@ -253,14 +254,18 @@ def run_case(date: str, seed: int, cfg: OperationalConfig) -> list[dict[str, Any
             nn_order = _nn(frame, cfg)
             if _plan(order, frame, cfg)["km"] > _plan(nn_order, frame, cfg)["km"]:
                 order = nn_order
+                nn_kept = True
         elif name.startswith("B3"):
             # 2-opt optimizes the open tour; retain NN if disposal-aware packing is better.
             nn_order = _nn(frame, cfg)
             if _plan(order, frame, cfg)["km"] > _plan(nn_order, frame, cfg)["km"]:
                 order = nn_order
+                nn_kept = True
         result = _plan(order, frame, cfg)
         result.update(
             variant=name,
+            # True when the optimizer's result was worse than NN and NN's order was kept instead.
+            nn_kept=nn_kept,
             date=date,
             seed=seed,
             runtime_s=round(time.perf_counter() - started, 3),
@@ -273,7 +278,7 @@ def run_case(date: str, seed: int, cfg: OperationalConfig) -> list[dict[str, Any
 
 def _markdown(rows: pd.DataFrame, cfg: OperationalConfig) -> str:
     april = rows[(rows.date == "2026-04-15") & (rows.seed == 42)].copy()
-    display_cols = ["variant", "stops", "km", "vehicles", "rounds", "h", "t", "runtime_s"]
+    display_cols = ["variant", "stops", "km", "vehicles", "rounds", "h", "t", "nn_kept", "runtime_s"]
     table = april[display_cols].to_markdown(index=False)
     best = april.km.min()
     b = april.set_index("variant").km
@@ -285,6 +290,7 @@ def _markdown(rows: pd.DataFrame, cfg: OperationalConfig) -> str:
     grouped = rows.groupby("variant").agg(
         km_mean=("km", "mean"), km_min=("km", "min"), km_max=("km", "max"),
         h_mean=("h", "mean"), runtime_mean=("runtime_s", "mean"),
+        nn_kept_cases=("nn_kept", "sum"), cases=("nn_kept", "size"),
     ).reset_index()
     spread = grouped.assign(km_spread=grouped.km_max - grouped.km_min).to_markdown(index=False)
     return f"""# Fair route benchmark
@@ -329,6 +335,9 @@ Mean and min–max spread are shown for distance, hours, and runtime:
 * A round ends at the disposal depot after collection and returns to the yard. This conservative
   model makes the 11 t and 8 h limits explicit.
 * B4 uses OR-Tools when installed; otherwise the documented fallback is B3 (2-opt).
+* `nn_kept = True` means the 2-opt (B3) or solver (B4) order packed into legal rounds was longer
+  than plain nearest neighbor, so the NN order was kept for that row. Its km then equal B2.
+  `nn_kept_cases` in the robustness table counts how often that happened per variant.
 """
 
 
