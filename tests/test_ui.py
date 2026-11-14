@@ -321,3 +321,47 @@ def test_build_ui_has_benchmark_tab(tmp_path: Path) -> None:
     assert 'id="view-benchmark"' in html
     assert "Routing-Effekt" in html and "Bedarfs-Effekt" in html
     assert "33.3 %" in html and "10.0 %" in html
+
+
+def test_build_ui_has_what_if_and_explain_hooks(tmp_path: Path) -> None:
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    assert 'id="insights-payload"' in html
+    assert 'id="explain-panel"' in html
+    assert "Fahrzeugstunden gesamt" in html
+    assert "· Schicht:" not in html  # old misleading label (sum shown as one shift)
+
+
+def test_build_ui_inline_scripts_are_valid_js(tmp_path: Path) -> None:
+    """Guard against Python-escaping bugs that break the whole page script."""
+    import re
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if node is None:
+        import pytest
+
+        pytest.skip("node not installed")
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    outer = html.split("</iframe>")[-1]  # skip srcdoc maps, check the page's own scripts
+    for i, body in enumerate(re.findall(r"<script>(.*?)</script>", outer, flags=re.S)):
+        js = tmp_path / f"s{i}.js"
+        js.write_text(body, encoding="utf-8")
+        res = subprocess.run([node, "--check", str(js)], capture_output=True, text=True)
+        assert res.returncode == 0, res.stderr

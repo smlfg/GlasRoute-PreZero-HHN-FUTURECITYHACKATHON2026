@@ -203,6 +203,10 @@ def render_route_view_data(
         "rounds": route_dict.get("rounds"),
         "rounds_per_vehicle": route_dict.get("rounds_per_vehicle"),
         "shift_hours": route_dict.get("shift_hours"),
+        "max_vehicle_shift_hours": route_dict.get(
+            "max_vehicle_shift_hours", max(route_dict.get("shift_hours_per_vehicle") or [0.0])
+        ),
+        "max_shift_hours_limit": (route_dict.get("assumptions") or {}).get("max_shift_hours"),
         "t_collected": route_dict.get("t_collected"),
         "comparison": route_dict.get("comparison"),
         "stops": route_dict.get("stops", []),
@@ -469,7 +473,11 @@ def _build_forecast_cards_html(summaries: list[dict[str, Any]]) -> str:
     return "\n".join(cards)
 
 
-def _build_route_section_html(route_map_html: str, route_bundle: dict[str, Any]) -> str:
+def _build_route_section_html(
+    route_map_html: str,
+    route_bundle: dict[str, Any],
+    what_if_html: str = "",
+) -> str:
     metrics = route_bundle["metrics"]
     stops = metrics.get("stops", [])
 
@@ -477,17 +485,22 @@ def _build_route_section_html(route_map_html: str, route_bundle: dict[str, Any])
         [
             f'<div class="card"><div class="label">Geplante Tour ({metrics.get("num_stops", 0)} Stopps)</div><div class="value">{_format_num(metrics.get("planned_km"), " km")}</div><div class="sub">Volle Runde ({_format_num(metrics.get("total_active_locations"))} Standorte): {_format_num(metrics.get("full_round_km"), " km")}</div></div>',
             f'<div class="card"><div class="label">Bedarfs-Ersparnis</div><div class="value">{_format_num(metrics.get("saved_km"), " km")}</div><div class="sub">{_format_num(metrics.get("saved_pct"), " %")} gegenüber voller Runde</div></div>',
-            f'<div class="card"><div class="label">Fahrzeuge &amp; Runden</div><div class="value">{_format_num(metrics.get("vehicles_needed"))} Fahrzeuge</div><div class="sub">Runden: {_format_num(metrics.get("rounds"))} · Schicht: {_format_num(metrics.get("shift_hours"), " h")}</div></div>',
+            f'<div class="card"><div class="label">Fahrzeuge &amp; Runden</div><div class="value">{_format_num(metrics.get("vehicles_needed"))} Fahrzeuge</div><div class="sub">Runden: {_format_num(metrics.get("rounds"))} · Fahrzeugstunden gesamt: {_format_num(metrics.get("shift_hours"), " h")} · längste Schicht: {_format_num(metrics.get("max_vehicle_shift_hours"), " h")} (Limit {_format_num(metrics.get("max_shift_hours_limit"), " h")})</div></div>',
             f'<div class="card"><div class="label">Sammelmenge &amp; Kritisch</div><div class="value">{_format_num(metrics.get("t_collected"), " t")}</div><div class="sub">Kritische Standorte: {_format_num(metrics.get("total_critical_locations"))}</div></div>',
         ]
     )
 
     stop_rows: list[str] = []
-    for stop in stops:
+    for stop_idx, stop in enumerate(stops):
         stop_type = str(stop.get("stop_type", "collection"))
+        row_attr = (
+            f' class="stop-row" data-stop-idx="{stop_idx}" title="Klick: Warum dieser Stopp?"'
+            if stop_type == "collection"
+            else ""
+        )
         stop_rows.append(
             f"""
-            <tr>
+            <tr{row_attr}>
               <td>{html.escape(str(stop.get('order', '-')))}</td>
               <td>{html.escape(stop_type)}</td>
               <td><code>{html.escape(str(stop.get('Location_id', '-')))}</code></td>
@@ -528,9 +541,13 @@ def _build_route_section_html(route_map_html: str, route_bundle: dict[str, Any])
         <pre id="approval-record-preview" class="json-preview"></pre>
       </div>
 
+      {what_if_html}
+
       <div class="map-wrap">{route_iframe}</div>
 
       <h3>Stopp-Liste in Fahrreihenfolge</h3>
+      <p class="muted">Klick auf einen Stopp zeigt, warum er in der Tour ist (Score-Zerlegung aller Container am Standort).</p>
+      <div id="explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -757,6 +774,65 @@ def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
       </div>
       <p class="muted">Spannen über {summary['cases']} Fälle: Stichtage {html.escape(', '.join(summary['dates']))} &times; Seeds {html.escape(', '.join(map(str, summary['seeds'])))}.
       Jede Runde braucht ein Fahrzeug für bis zu 8 h. Quelle: scripts/benchmark.py &rarr; benchmark_results.csv.</p>
+    """
+
+
+WHAT_IF_ROWS: tuple[tuple[str, str, str], ...] = (
+    ("num_stops", "Stopps (Standorte)", ""),
+    ("unserved_critical_locations", "Kritische Standorte nicht in Tour", ""),
+    ("planned_km", "Strecke", " km"),
+    ("vehicles_needed", "Fahrzeuge", ""),
+    ("rounds", "Runden", ""),
+    ("shift_hours", "Fahrzeugstunden gesamt", " h"),
+    ("max_vehicle_shift_hours", "Längste Einzelschicht", " h"),
+    ("t_collected", "Sammelmenge", " t"),
+)
+
+
+def compute_route_insights(
+    route_data: Mapping[str, Any] | str | Path,
+    scored_df: pd.DataFrame,
+    locations_df: pd.DataFrame,
+    date: str,
+) -> dict[str, Any]:
+    """Precompute what-if presets and per-stop explanations for the static website."""
+    from prezero import copilot
+
+    route_dict = (
+        json.loads(Path(route_data).read_text(encoding="utf-8"))
+        if isinstance(route_data, (str, Path))
+        else dict(route_data)
+    )
+    try:
+        presets = copilot.precompute_what_if_presets(route_dict, scored_df, locations_df)
+    except Exception:  # noqa: BLE001 - UI must still render with partial inputs
+        presets = []
+    explains: dict[str, Any] = {}
+    for idx, stop in enumerate(route_dict.get("stops", [])):
+        if str(stop.get("stop_type", "collection")) != "collection":
+            continue
+        try:
+            explains[str(idx)] = copilot.explain_stop(
+                stop, scored_df, locations_df, date, max_stops=route_dict.get("max_stops")
+            )
+        except Exception:  # noqa: BLE001
+            continue
+    return {"presets": presets, "explains": explains}
+
+
+def _build_what_if_html(presets: list[dict[str, Any]]) -> str:
+    if not presets:
+        return ""
+    buttons = "".join(
+        f'<button type="button" class="whatif-btn" data-preset="{i}" title="{html.escape(p["description"], quote=True)}">{html.escape(p["label"])}</button>'
+        for i, p in enumerate(presets)
+    )
+    return f"""
+      <div class="whatif-box">
+        <strong>What-if (vorberechnet, ändert die Tour nicht):</strong>
+        <div class="whatif-controls">{buttons}</div>
+        <div id="whatif-result" class="muted">Szenario wählen: Baseline vs. Simulation.</div>
+      </div>
     """
 
 
@@ -1118,7 +1194,13 @@ def build_ui(
 
     forecast_cards_html = _build_forecast_cards_html(forecast_summaries)
     forecast_iframe = _wrap_srcdoc_iframe(forecast_map_html, height_px=560, title="Forecast-Timeline")
-    route_section_html = _build_route_section_html(route_map_html, route_bundle)
+    insights = compute_route_insights(route_data, scored_df, locations_df, date)
+    route_section_html = _build_route_section_html(
+        route_map_html, route_bundle, _build_what_if_html(insights["presets"])
+    )
+    insights_json = _safe_json_for_html(
+        {"presets": insights["presets"], "explains": insights["explains"], "rows": WHAT_IF_ROWS}
+    )
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
     upload_section_html = _build_upload_section_html(upload_check)
     heatmap_section_html = _build_heatmap_section_html(heatmap_src)
@@ -1303,6 +1385,13 @@ def build_ui(
       max-height: 220px;
       overflow: auto;
     }}
+    .whatif-box {{ background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }}
+    .whatif-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }}
+    .whatif-btn {{ border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }}
+    .whatif-btn.active {{ background: var(--accent); color: #fff; }}
+    .delta-better {{ color: #166534; font-weight: 600; }} .delta-worse {{ color: #b91c1c; font-weight: 600; }}
+    tr.stop-row {{ cursor: pointer; }} tr.stop-row:hover, tr.stop-row.selected {{ background: var(--accent-soft); }}
+    .explain-panel {{ background: #fff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; }}
     .dropzone {{
       border: 2px dashed #94a3b8;
       border-radius: 8px;
@@ -1370,6 +1459,7 @@ def build_ui(
   </main>
 
   <script id="proposal-payload" type="application/json">{proposal_json}</script>
+  <script id="insights-payload" type="application/json">{insights_json}</script>
   <script>
     (function() {{
       var buttons = document.querySelectorAll(".tab-btn");
@@ -1398,6 +1488,50 @@ def build_ui(
       buttons.forEach(function(btn) {{
         btn.addEventListener("click", function() {{
           activateTab(btn.getAttribute("data-target"));
+        }});
+      }});
+
+      var insights = JSON.parse(document.getElementById("insights-payload").textContent);
+      function esc(s) {{ return String(s).replace(/[&<>"']/g, function(c) {{ return {{"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}}[c]; }}); }}
+      function fmt(v, suf) {{ return (v === null || v === undefined) ? "-" : (String(v) + (suf || "")); }}
+      // Lower is better for every what-if metric except stops and tonnes collected.
+      var higherIsBetter = {{ num_stops: true, t_collected: true }};
+      document.querySelectorAll(".whatif-btn").forEach(function(btn) {{
+        btn.addEventListener("click", function() {{
+          document.querySelectorAll(".whatif-btn").forEach(function(b) {{ b.classList.toggle("active", b === btn); }});
+          var p = insights.presets[Number(btn.getAttribute("data-preset"))];
+          var rows = insights.rows.map(function(r) {{
+            var key = r[0], b = p.baseline[key], s = p.simulation[key];
+            var d = Math.round((Number(s) - Number(b)) * 100) / 100;
+            var cls = d === 0 ? "" : ((d > 0) === !!higherIsBetter[key] ? "delta-better" : "delta-worse");
+            return "<tr><td>" + esc(r[1]) + "</td><td>" + fmt(b, r[2]) + "</td><td>" + fmt(s, r[2]) +
+              "</td><td class='" + cls + "'>" + (d > 0 ? "+" : "") + d + esc(r[2]) + "</td></tr>";
+          }}).join("");
+          var ov = Object.keys(p.overrides).map(function(k) {{ return k + " = " + p.overrides[k]; }}).join(", ");
+          document.getElementById("whatif-result").innerHTML =
+            "<p><b>" + esc(p.label) + ":</b> " + esc(p.description) + " <code>" + esc(ov) + "</code></p>" +
+            "<div class='table-wrap'><table><thead><tr><th>Kennzahl</th><th>Baseline</th><th>Simulation</th><th>Delta</th></tr></thead><tbody>" +
+            rows + "</tbody></table></div>";
+        }});
+      }});
+      document.querySelectorAll("tr.stop-row").forEach(function(row) {{
+        row.addEventListener("click", function() {{
+          document.querySelectorAll("tr.stop-row").forEach(function(r) {{ r.classList.toggle("selected", r === row); }});
+          var e = insights.explains[row.getAttribute("data-stop-idx")];
+          var panel = document.getElementById("explain-panel");
+          if (!e) {{ panel.hidden = false; panel.textContent = "Keine Erklärung verfügbar."; return; }}
+          var rows = e.containers.map(function(c) {{
+            return "<tr><td><code>" + esc(c.Location_id).slice(0, 8) + "…</code></td><td>" + esc(c.material_type) +
+              "</td><td>" + c.last_fill_level + " %</td><td>" + c.level_component + "</td><td>" + c.overfull_component +
+              "</td><td>" + c.season_component + "</td><td><b>" + c.score + "</b></td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
+          }}).join("");
+          panel.hidden = false;
+          panel.innerHTML = "<b>Stopp #" + esc(e.order) + " – warum?</b> " + esc(e.reason) +
+            "<br><span class='muted'>" + esc(e.formula) + " · kritisch ab " + e.critical_threshold +
+            " · Ortsquelle " + esc(e.source) + " (" + esc(e.confidence) + ")</span>" +
+            "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glas</th><th>Füllstand</th><th>0,5·Füllstand</th>" +
+            "<th>0,3·Überlauf</th><th>0,2·Mat·Saison</th><th>Score</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+          panel.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
         }});
       }});
 

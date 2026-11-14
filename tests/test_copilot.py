@@ -476,3 +476,84 @@ def test_cli_copilot_subcommands(tmp_path: Path) -> None:
     )
     assert r_ask.exit_code == 0, r_ask.output
     assert "Quellen:" in r_ask.output
+
+
+def test_what_if_shift_limit_bounds_each_vehicle_not_the_sum(tmp_path: Path) -> None:
+    """Regression: 'shift 6 h -> 8.83 h' came from summing vehicle-hours, not one shift."""
+    paths = _stage_copilot_inputs(tmp_path)
+    sim = simulate_what_if(
+        "2026-04-15",
+        {"max_shift_hours": 0.25},
+        scored_path=paths["scored_path"],
+        route_path=paths["route_path"],
+        locations_path=paths["locations_path"],
+    )
+    s = sim["simulation"]
+    # Each vehicle respects the cap (a lone first stop may exceed a tiny cap; 0.25 h here).
+    assert s["max_vehicle_shift_hours"] <= s["shift_hours"]
+    assert s["vehicles_needed"] >= 1
+    text = format_copilot_output(sim)
+    assert "Fahrzeugstunden gesamt" in text
+    assert "Längste Einzelschicht" in text
+
+
+def test_route_reports_longest_single_shift_within_limit() -> None:
+    import pandas as pd
+
+    from prezero import routing
+
+    scored = pd.DataFrame(
+        {
+            "Location_id": [f"L{i}" for i in range(12)],
+            "material_type": ["white"] * 12,
+            "score": [0.9] * 12,
+            "critical": [True] * 12,
+            "last_fill_level": [100.0] * 12,
+        }
+    )
+    locs = pd.DataFrame(
+        {
+            "Location_id": [f"L{i}" for i in range(12)],
+            "lat": [49.10 + 0.01 * i for i in range(12)],
+            "lon": [9.15 + 0.01 * i for i in range(12)],
+            "source": ["osm_assigned"] * 12,
+            "confidence": ["simulated_mapping"] * 12,
+        }
+    )
+    cfg = routing.OperationalConfig(max_shift_hours=1.0)
+    route = routing.build_route(scored, locs, config=cfg)
+    assert route["vehicles_needed"] >= 2
+    assert route["max_vehicle_shift_hours"] <= 1.0 + 1e-9
+    assert route["shift_hours"] == pytest.approx(sum(route["shift_hours_per_vehicle"]), abs=0.02)
+    assert route["max_shift_hours_limit"] == 1.0
+
+
+def test_precompute_what_if_presets_and_explain_stop(tmp_path: Path) -> None:
+    import json
+
+    import pandas as pd
+
+    from prezero.copilot import explain_stop, precompute_what_if_presets
+
+    paths = _stage_copilot_inputs(tmp_path)
+    route = json.loads(paths["route_path"].read_text(encoding="utf-8"))
+    scored = pd.read_csv(paths["scored_path"], dtype={"Location_id": str})
+    locs = pd.read_csv(paths["locations_path"], dtype={"Location_id": str})
+    before = paths["route_path"].read_bytes()
+
+    presets = precompute_what_if_presets(route, scored, locs)
+    assert [p["id"] for p in presets] == ["shift_6h", "truck_8t", "plus_vehicle", "all_critical"]
+    for p in presets:
+        assert {"baseline", "simulation", "delta"} <= set(p)
+    plus = presets[2]
+    assert plus["simulation"]["vehicles_needed"] <= plus["baseline"]["vehicles_needed"] + 1
+    assert presets[3]["simulation"]["unserved_critical_locations"] == 0
+    assert paths["route_path"].read_bytes() == before
+
+    stop = next(s for s in route["stops"] if s.get("stop_type", "collection") == "collection")
+    exp = explain_stop(stop, scored, locs, "2026-04-15", max_stops=route.get("max_stops"))
+    assert exp["containers"], exp
+    c = exp["containers"][0]
+    assert c["score"] == pytest.approx(
+        c["level_component"] + c["overfull_component"] + c["season_component"], abs=0.002
+    )

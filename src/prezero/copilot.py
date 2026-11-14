@@ -397,7 +397,17 @@ def _summarize_route(route_data: Mapping[str, Any], total_critical_locations: in
         "saved_pct": saved_pct,
         "vehicles_needed": int(route_data.get("vehicles_needed", 0)),
         "rounds": int(route_data.get("rounds", 0)),
+        # Sum over all vehicles (vehicle-hours); the longest single shift is reported separately.
         "shift_hours": round(float(route_data.get("shift_hours", 0.0)), 2),
+        "max_vehicle_shift_hours": round(
+            float(
+                route_data.get(
+                    "max_vehicle_shift_hours",
+                    max(route_data.get("shift_hours_per_vehicle") or [0.0]),
+                )
+            ),
+            2,
+        ),
         "t_collected": round(float(route_data.get("t_collected", 0.0)), 2),
         "max_stops": None if raw_max_stops is None else int(raw_max_stops),
     }
@@ -668,6 +678,181 @@ def explain_container(
     }
 
 
+def compare_routes(
+    baseline_route: Mapping[str, Any],
+    sim_route: Mapping[str, Any],
+    total_critical_locations: int,
+) -> dict[str, Any]:
+    """Summarize baseline vs. simulated route and their delta (shared by CLI, chat and UI)."""
+    base_summary = _summarize_route(baseline_route, total_critical_locations)
+    sim_summary = _summarize_route(sim_route, total_critical_locations)
+
+    base_stop_ids = [str(s["Location_id"]) for s in _collection_stops(baseline_route)]
+    sim_stop_ids = [str(s["Location_id"]) for s in _collection_stops(sim_route)]
+    base_set = set(base_stop_ids)
+    sim_set = set(sim_stop_ids)
+
+    delta = {
+        "num_stops_delta": sim_summary["num_stops"] - base_summary["num_stops"],
+        "unserved_critical_locations_delta": (
+            sim_summary["unserved_critical_locations"] - base_summary["unserved_critical_locations"]
+        ),
+        "planned_km_delta": round(sim_summary["planned_km"] - base_summary["planned_km"], 2),
+        "saved_km_delta": round(sim_summary["saved_km"] - base_summary["saved_km"], 2),
+        "vehicles_needed_delta": sim_summary["vehicles_needed"] - base_summary["vehicles_needed"],
+        "rounds_delta": sim_summary["rounds"] - base_summary["rounds"],
+        "shift_hours_delta": round(sim_summary["shift_hours"] - base_summary["shift_hours"], 2),
+        "max_vehicle_shift_hours_delta": round(
+            sim_summary["max_vehicle_shift_hours"] - base_summary["max_vehicle_shift_hours"], 2
+        ),
+        "t_collected_delta": round(sim_summary["t_collected"] - base_summary["t_collected"], 2),
+        "added_stops": [loc for loc in sim_stop_ids if loc not in base_set],
+        "dropped_stops": [loc for loc in base_stop_ids if loc not in sim_set],
+    }
+    return {"baseline": base_summary, "simulation": sim_summary, "delta": delta}
+
+
+#: Dispatcher presets precomputed for the static website (id, label, description).
+WHAT_IF_PRESETS: tuple[tuple[str, str, str], ...] = (
+    ("shift_6h", "Schicht 6 h", "max_shift_hours = 6,0 (statt Annahme)"),
+    ("truck_8t", "LKW 8 t", "vehicle_max_weight_kg = 8000 (kleineres Fahrzeug)"),
+    ("plus_vehicle", "+1 Fahrzeug", "Mehr kritische Standorte, bis genau ein Fahrzeug mehr nötig ist"),
+    ("all_critical", "Alle kritischen", "max_stops = alle kritischen Standorte"),
+)
+
+
+def precompute_what_if_presets(
+    baseline_route: Mapping[str, Any],
+    scored_df: pd.DataFrame,
+    locs_df: pd.DataFrame,
+) -> list[dict[str, Any]]:
+    """Run the four dispatcher presets in memory against ``baseline_route`` (never writes files)."""
+    assumptions = baseline_route.get("assumptions")
+    base_cfg = (
+        routing.OperationalConfig.from_dict(assumptions)
+        if isinstance(assumptions, Mapping)
+        else routing.OperationalConfig()
+    )
+    total_crit = int(baseline_route.get("total_critical_locations", 0))
+    raw_max = baseline_route.get("max_stops")
+    base_max = None if raw_max is None else int(raw_max)
+    base_vehicles = int(baseline_route.get("vehicles_needed", 0))
+
+    def run(cfg: routing.OperationalConfig, max_stops: int | None) -> dict[str, Any]:
+        return routing.build_route(
+            scored_df, locs_df, depot=cfg.yard_depot, max_stops=max_stops, date=None, config=cfg
+        )
+
+    results: list[dict[str, Any]] = []
+    for preset_id, label, description in WHAT_IF_PRESETS:
+        overrides: dict[str, Any]
+        if preset_id == "shift_6h":
+            overrides = {"max_shift_hours": 6.0}
+            sim = run(replace(base_cfg, max_shift_hours=6.0), base_max)
+        elif preset_id == "truck_8t":
+            overrides = {"vehicle_max_weight_kg": 8000.0}
+            sim = run(replace(base_cfg, vehicle_max_weight_kg=8000.0), base_max)
+        elif preset_id == "plus_vehicle":
+            # Largest stop cap that needs at most one extra vehicle (binary search, vehicles grow with stops).
+            low = int(baseline_route.get("num_stops", 0))
+            high = max(low, total_crit)
+            best = run(base_cfg, low) if low > 0 else run(base_cfg, base_max)
+            best_n = low
+            while low < high:
+                mid = (low + high + 1) // 2
+                candidate = run(base_cfg, mid)
+                if int(candidate["vehicles_needed"]) <= base_vehicles + 1:
+                    best, best_n, low = candidate, mid, mid
+                else:
+                    high = mid - 1
+            sim = best
+            overrides = {"max_stops": best_n}
+        else:
+            overrides = {"max_stops": total_crit}
+            sim = run(base_cfg, None)
+        comparison = compare_routes(baseline_route, sim, total_crit)
+        results.append(
+            {
+                "id": preset_id,
+                "label": label,
+                "description": description,
+                "overrides": overrides,
+                **comparison,
+            }
+        )
+    return results
+
+
+def explain_stop(
+    stop: Mapping[str, Any],
+    scored_df: pd.DataFrame,
+    locs_df: pd.DataFrame,
+    date: str,
+    max_stops: int | None = None,
+) -> dict[str, Any]:
+    """Explain one physical route stop: every container at that coordinate with its score parts."""
+    lat = round(float(stop.get("lat", 0.0)), 6)
+    lon = round(float(stop.get("lon", 0.0)), 6)
+    locs = locs_df.copy()
+    locs["Location_id"] = locs["Location_id"].astype(str).str.strip()
+    same_point = locs[(locs["lat"].round(6) == lat) & (locs["lon"].round(6) == lon)]
+    ids = set(same_point["Location_id"]) or {str(stop.get("Location_id"))}
+
+    work = scored_df.copy()
+    work["Location_id"] = work["Location_id"].astype(str).str.strip()
+    rows = work[work["Location_id"].isin(ids)].sort_values("score", ascending=False)
+    containers = []
+    for _, r in rows.iterrows():
+        mat = _normalize_material(str(r["material_type"]))
+        last_fill = float(r["last_fill_level"])
+        overfull = min(1.0, max(0.0, float(r.get("overfull_rate", 0.0))))
+        season = float(r["season_factor"]) if "season_factor" in r else features.get_season_factor(date)
+        weight = float(scoring.MATERIAL_WEIGHTS.get(mat, 0.5))
+        level_c = 0.5 * min(1.0, max(0.0, last_fill / 110.0))
+        overfull_c = 0.3 * overfull
+        season_c = 0.2 * min(1.0, max(0.0, weight * min(1.0, max(0.0, season))))
+        score = float(r["score"])
+        containers.append(
+            {
+                "Location_id": str(r["Location_id"]),
+                "material_type": mat,
+                "last_fill_level": round(last_fill, 1),
+                "overfull_rate_pct": round(overfull * 100.0, 1),
+                "level_component": round(level_c, 3),
+                "overfull_component": round(overfull_c, 3),
+                "season_component": round(season_c, 3),
+                "score": round(score, 3),
+                "critical": bool(r.get("critical", score >= scoring.CRITICAL_THRESHOLD)),
+            }
+        )
+    n_crit = sum(1 for c in containers if c["critical"])
+    top = containers[0] if containers else None
+    if top is None:
+        reason = "Keine Score-Daten für diesen Standort."
+    else:
+        reason = (
+            f"{n_crit} von {len(containers)} Containern an diesem Standort sind kritisch "
+            f"(Score \u2265 {scoring.CRITICAL_THRESHOLD}). Höchster Score {top['score']:.3f} "
+            f"({top['material_type']}, {top['last_fill_level']:.0f} % Füllstand)."
+        )
+        if max_stops is not None:
+            reason += f" Die Tour nimmt die {max_stops} kritischsten Standorte (nach Score)."
+    return {
+        "order": stop.get("order"),
+        "Location_id": str(stop.get("Location_id")),
+        "lat": lat,
+        "lon": lon,
+        "vehicle": stop.get("vehicle"),
+        "round": stop.get("round"),
+        "source": stop.get("source"),
+        "confidence": stop.get("confidence"),
+        "formula": "Score = 0,5 \u00b7 Füllstand/110 + 0,3 \u00b7 Überlaufquote + 0,2 \u00b7 Material \u00b7 Saison",
+        "critical_threshold": scoring.CRITICAL_THRESHOLD,
+        "containers": containers,
+        "reason": reason,
+    }
+
+
 def simulate_what_if(
     date: str,
     overrides: Mapping[str, Any],
@@ -693,11 +878,11 @@ def simulate_what_if(
         if not scored_df.empty and "critical" in scored_df.columns
         else pd.DataFrame()
     )
-    total_critical_locations = (
-        int(crit_df["Location_id"].nunique())
-        if not crit_df.empty
-        else int(baseline_route.get("total_critical_locations", 0))
-    )
+    # Use the route's unit (physical sites) so stops and critical counts are comparable.
+    if baseline_route.get("total_critical_locations") is not None:
+        total_critical_locations = int(baseline_route["total_critical_locations"])
+    else:
+        total_critical_locations = int(crit_df["Location_id"].nunique()) if not crit_df.empty else 0
 
     raw_base_max_stops = baseline_route.get("max_stops", 25)
     base_max_stops = None if raw_base_max_stops is None else int(raw_base_max_stops)
@@ -720,28 +905,12 @@ def simulate_what_if(
     )
     sim_route["date"] = date
 
-    base_summary = _summarize_route(baseline_route, total_critical_locations)
-    sim_summary = _summarize_route(sim_route, total_critical_locations)
-
-    base_stop_ids = [str(s["Location_id"]) for s in _collection_stops(baseline_route)]
-    sim_stop_ids = [str(s["Location_id"]) for s in _collection_stops(sim_route)]
-    base_set = set(base_stop_ids)
-    sim_set = set(sim_stop_ids)
-
-    delta = {
-        "num_stops_delta": sim_summary["num_stops"] - base_summary["num_stops"],
-        "unserved_critical_locations_delta": (
-            sim_summary["unserved_critical_locations"] - base_summary["unserved_critical_locations"]
-        ),
-        "planned_km_delta": round(sim_summary["planned_km"] - base_summary["planned_km"], 2),
-        "saved_km_delta": round(sim_summary["saved_km"] - base_summary["saved_km"], 2),
-        "vehicles_needed_delta": sim_summary["vehicles_needed"] - base_summary["vehicles_needed"],
-        "rounds_delta": sim_summary["rounds"] - base_summary["rounds"],
-        "shift_hours_delta": round(sim_summary["shift_hours"] - base_summary["shift_hours"], 2),
-        "t_collected_delta": round(sim_summary["t_collected"] - base_summary["t_collected"], 2),
-        "added_stops": [loc for loc in sim_stop_ids if loc not in base_set],
-        "dropped_stops": [loc for loc in base_stop_ids if loc not in sim_set],
-    }
+    comparison = compare_routes(baseline_route, sim_route, total_critical_locations)
+    base_summary, sim_summary, delta = (
+        comparison["baseline"],
+        comparison["simulation"],
+        comparison["delta"],
+    )
 
     return {
         "tool": "simulate_what_if",
@@ -862,7 +1031,7 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             f"Unbedient kritisch:    {result['unserved_critical_locations']}",
             f"Strecke geplant:       {result['planned_km']} km vs. volle Runde {result['full_round_km']} km (Ersparnis: {result['saved_km']} km / {result['saved_pct']} %)",
             f"Fahrzeuge / Runden:    {result['vehicles_needed']} Fahrzeug(e), {result['rounds']} Runde(n)",
-            f"Schichtzeit / Menge:   {result['shift_hours']} h, {result['t_collected']} t",
+            f"Fahrzeugstunden/Menge: {result['shift_hours']} h gesamt, {result['t_collected']} t",
             f"Freigabe-Status:       {result['approval_status']}",
         ]
         top_stops = result.get("top_stops", [])
@@ -917,7 +1086,8 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             f"Strecke (km)           | {base['planned_km']:<13} | {sim['planned_km']:<13} | {_signed(delta['planned_km_delta'], ' km')}",
             f"Fahrzeuge              | {base['vehicles_needed']:<13} | {sim['vehicles_needed']:<13} | {_signed(delta['vehicles_needed_delta'])}",
             f"Runden                 | {base['rounds']:<13} | {sim['rounds']:<13} | {_signed(delta['rounds_delta'])}",
-            f"Schichtzeit (h)        | {base['shift_hours']:<13} | {sim['shift_hours']:<13} | {_signed(delta['shift_hours_delta'], ' h')}",
+            f"Fahrzeugstunden gesamt | {base['shift_hours']:<13} | {sim['shift_hours']:<13} | {_signed(delta['shift_hours_delta'], ' h')}",
+            f"Längste Einzelschicht  | {base['max_vehicle_shift_hours']:<13} | {sim['max_vehicle_shift_hours']:<13} | {_signed(delta['max_vehicle_shift_hours_delta'], ' h')}",
             f"Sammelmenge (t)        | {base['t_collected']:<13} | {sim['t_collected']:<13} | {_signed(delta['t_collected_delta'], ' t')}",
             f"Entfallene Stopps:     {', '.join(delta['dropped_stops']) or 'keine'}",
             f"Hinzugefügte Stopps:   {', '.join(delta['added_stops']) or 'keine'}",
