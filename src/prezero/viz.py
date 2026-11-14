@@ -220,6 +220,7 @@ def add_forecast_layers(
     route_layer.add_to(fmap)
 
     summaries: list[dict[str, Any]] = []
+    layer_refs: list[tuple[str, str]] = []
     offsets = sorted(int(value) for value in merged["offset_days"].dropna().unique())
     for index, offset in enumerate(offsets):
         layer_data = merged[merged["offset_days"] == offset]
@@ -258,6 +259,7 @@ def add_forecast_layers(
                 tooltip=f"{row.Location_id} | {float(row.forecast_pct):.0f}% ({status})",
             ).add_to(layer)
         layer.add_to(fmap)
+        layer_refs.append((label, layer.get_name()))
 
         counts = layer_data["status"].value_counts()
         summaries.append(
@@ -271,8 +273,52 @@ def add_forecast_layers(
         )
 
     folium.LayerControl(collapsed=False).add_to(fmap)
+    _add_forecast_selector(fmap, layer_refs)
     _add_forecast_header(fmap, summaries)
     return summaries
+
+
+def _add_forecast_selector(fmap: folium.Map, layer_refs: list[tuple[str, str]]) -> None:
+    """Add an exclusive client-side selector for forecast horizons."""
+    if not layer_refs:
+        return
+    map_name = fmap.get_name()
+    options = "".join(
+        f'<option value="{label}">{label}</option>' for label, _ in layer_refs
+    )
+    layers = ", ".join(f'"{label}": {layer_name}' for label, layer_name in layer_refs)
+    fmap.get_root().html.add_child(
+        folium.Element(
+            f"""
+            <div style="position: fixed; top: 10px; right: 10px; z-index: 9999;
+                        background: white; padding: 8px 10px; border-radius: 6px;
+                        border: 1px solid #ccc; font-size: 13px;">
+              <label for="forecast-week-selector"><b>Forecast:</b></label>
+              <select id="forecast-week-selector">{options}</select>
+            </div>
+            <script>
+              (function() {{
+                var forecastMap = {map_name};
+                var forecastLayers = {{{layers}}};
+                var selector = document.getElementById("forecast-week-selector");
+                function showForecastLayer(label) {{
+                  Object.keys(forecastLayers).forEach(function(key) {{
+                    var layer = forecastLayers[key];
+                    if (forecastMap.hasLayer(layer)) {{
+                      forecastMap.removeLayer(layer);
+                    }}
+                  }});
+                  forecastMap.addLayer(forecastLayers[label]);
+                }}
+                selector.addEventListener("change", function() {{
+                  showForecastLayer(selector.value);
+                }});
+                showForecastLayer(selector.value);
+              }})();
+            </script>
+            """
+        )
+    )
 
 
 def _add_forecast_header(fmap: folium.Map, summaries: list[dict[str, Any]]) -> None:

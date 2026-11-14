@@ -79,6 +79,8 @@ def test_forecast_layers_are_added_to_the_route_map(tmp_path: Path) -> None:
     assert "L.control.layers" in html
     for label in ("Heute", "+7 Tage", "+14 Tage", "+21 Tage"):
         assert label in html
+    assert 'id="forecast-week-selector"' in html
+    assert "forecastMap.removeLayer" in html
 
     # The planned route stays visible.
     assert "L.polyline" in html
