@@ -81,6 +81,7 @@ def test_forecast_layers_are_added_to_the_route_map(tmp_path: Path) -> None:
         assert label in html
     assert 'id="forecast-week-selector"' in html
     assert "forecastMap.removeLayer" in html
+    assert 'document.addEventListener("DOMContentLoaded"' in html
 
     # The planned route stays visible.
     assert "L.polyline" in html

@@ -299,7 +299,7 @@ def _add_forecast_selector(fmap: folium.Map, layer_refs: list[tuple[str, str]]) 
               <select id="forecast-week-selector">{options}</select>
             </div>
             <script>
-              (function() {{
+              document.addEventListener("DOMContentLoaded", function() {{
                 var forecastMap = {map_name};
                 var forecastLayers = {{{layers}}};
                 var selector = document.getElementById("forecast-week-selector");
@@ -316,7 +316,7 @@ def _add_forecast_selector(fmap: folium.Map, layer_refs: list[tuple[str, str]]) 
                   showForecastLayer(selector.value);
                 }});
                 showForecastLayer(selector.value);
-              }})();
+              }});
             </script>
             """
         )
