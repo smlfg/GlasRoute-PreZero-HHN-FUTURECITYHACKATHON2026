@@ -1,0 +1,188 @@
+{
+  "geography": "Orte simuliert, Besuchstage aus Daten.",
+  "start": "2025-10-17",
+  "end": "2026-09-30",
+  "operating_days": 229,
+  "threshold_pct": 80.0,
+  "fleet_limit": 3,
+  "cold_rate_pp_day": 2.0,
+  "assumptions": {
+    "density_kg_per_m3": 400.0,
+    "density_white_kg_per_m3": null,
+    "density_green_kg_per_m3": null,
+    "density_brown_kg_per_m3": null,
+    "container_volume_m3": 2.5,
+    "vehicle_max_weight_kg": 11000.0,
+    "vehicle_max_volume_m3": 26.0,
+    "road_detour_factor": 1.35,
+    "avg_speed_kmh": 25.0,
+    "yard_depot": [
+      49.1427,
+      9.2109
+    ],
+    "disposal_depot": [
+      49.178,
+      9.2085
+    ],
+    "max_shift_hours": 8.0,
+    "stop_setup_min": 2.0,
+    "lift_time_per_bin_min": 3.0,
+    "unload_time_min": 20.0,
+    "location_planning_radius_m": 500.0,
+    "location_planning_adoption_weeks": 8.0,
+    "location_planning_logistic_steepness": 1.0
+  },
+  "historical": {
+    "inventory": {
+      "beginning_kg": 0.0,
+      "admitted_kg": 775700.0,
+      "generated_kg": 9168848.256389298,
+      "collected_kg": 7917452.158787729,
+      "spill_kg": 1415233.079654397,
+      "ending_kg": 611863.0179471741
+    },
+    "emptyings": 11701,
+    "mean_fill_pct": 67.66474795989853,
+    "overflow_bin_days": 50894,
+    "km": 21006.050000000003,
+    "hours": 1778.0,
+    "vehicle_days": 353,
+    "rounds": 1000,
+    "peak": 3,
+    "due_backlog": 267
+  },
+  "optimized": {
+    "inventory": {
+      "beginning_kg": 0.0,
+      "admitted_kg": 775700.0,
+      "generated_kg": 9168848.256389298,
+      "collected_kg": 9433138.698727205,
+      "spill_kg": 6645.24722237636,
+      "ending_kg": 504764.3104397185
+    },
+    "emptyings": 11655,
+    "mean_fill_pct": 80.93641097149039,
+    "overflow_bin_days": 141,
+    "km": 27197.030000000002,
+    "hours": 2172.65,
+    "vehicle_days": 372,
+    "rounds": 1142,
+    "peak": 3,
+    "due_backlog": 0
+  },
+  "observed": {
+    "emptyings": 11701,
+    "mean_fill_pct": 65.97042987778822,
+    "median_fill_pct": 70.0,
+    "histogram": {
+      "0.0": 2,
+      "10.0": 450,
+      "20.0": 1090,
+      "30.0": 1091,
+      "40.0": 1019,
+      "50.0": 855,
+      "60.0": 1097,
+      "70.0": 870,
+      "80.0": 1114,
+      "90.0": 968,
+      "100.0": 1953,
+      "110.0": 1192
+    },
+    "overfull": 1192,
+    "estimated_kg": 7719200.0,
+    "colors": {
+      "brown": {
+        "emptyings": 3100,
+        "mean_fill_pct": 39.95161290322581,
+        "median_fill_pct": 30.0,
+        "histogram": {
+          "0.0": 1,
+          "10.0": 386,
+          "20.0": 864,
+          "30.0": 558,
+          "40.0": 357,
+          "50.0": 174,
+          "60.0": 178,
+          "70.0": 125,
+          "80.0": 105,
+          "90.0": 108,
+          "100.0": 140,
+          "110.0": 104
+        },
+        "overfull": 104,
+        "estimated_kg": 1238500.0,
+        "allocated_by_lifts": {
+          "modeled_km": 5187.249669281136,
+          "modeled_vehicle_hours": 450.1805605991673,
+          "modeled_vehicle_days": 89.8667555684583,
+          "modeled_rounds": 252.28127108044222
+        }
+      },
+      "green": {
+        "emptyings": 4169,
+        "mean_fill_pct": 68.06428400095946,
+        "median_fill_pct": 70.0,
+        "histogram": {
+          "0.0": 1,
+          "10.0": 44,
+          "20.0": 153,
+          "30.0": 414,
+          "40.0": 469,
+          "50.0": 418,
+          "60.0": 486,
+          "70.0": 359,
+          "80.0": 423,
+          "90.0": 372,
+          "100.0": 673,
+          "110.0": 357
+        },
+        "overfull": 357,
+        "estimated_kg": 2837600.0,
+        "allocated_by_lifts": {
+          "modeled_km": 7321.792798549253,
+          "modeled_vehicle_hours": 623.8484549346188,
+          "modeled_vehicle_days": 121.93042582743821,
+          "modeled_rounds": 341.702434066469
+        }
+      },
+      "white": {
+        "emptyings": 4432,
+        "mean_fill_pct": 82.19990974729242,
+        "median_fill_pct": 90.0,
+        "histogram": {
+          "10.0": 20,
+          "20.0": 73,
+          "30.0": 119,
+          "40.0": 193,
+          "50.0": 263,
+          "60.0": 433,
+          "70.0": 386,
+          "80.0": 586,
+          "90.0": 488,
+          "100.0": 1140,
+          "110.0": 731
+        },
+        "overfull": 731,
+        "estimated_kg": 3643100.0,
+        "allocated_by_lifts": {
+          "modeled_km": 8029.487532169609,
+          "modeled_vehicle_hours": 675.6809844662139,
+          "modeled_vehicle_days": 133.20281860410347,
+          "modeled_rounds": 369.0162948530889
+        }
+      }
+    },
+    "routes": {
+      "modeled_km": 20538.53,
+      "modeled_vehicle_hours": 1749.71,
+      "modeled_vehicle_days": 345.0,
+      "modeled_rounds": 963.0
+    }
+  },
+  "walk_forward": {
+    "model": 19.9,
+    "mean_past": 22.3,
+    "last_value": 26.1,
+    "visits": 9059
+  }
+}
