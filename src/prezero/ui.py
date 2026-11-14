@@ -86,7 +86,7 @@ def render_forecast_timeline_map_html(
         critical = int(layer_data["status"].isin(["red", "black"]).sum())
         layer = folium.FeatureGroup(name=f"{label}: {critical} kritisch", show=index == 0)
 
-        for row in layer_data.itertuples(index=False):
+        for row in layer_data.sort_values("forecast_pct", ascending=True, kind="mergesort").itertuples(index=False):
             if pd.isna(row.lat) or pd.isna(row.lon):
                 continue
             status = str(row.status)
