@@ -984,3 +984,33 @@ def test_dispatcher_and_driver_views_have_no_data_outside_0_to_21_days(tmp_path:
     assert "Weihnachten" not in driver.get_text()
     assert "Saisonalität" not in driver.get_text()
 
+
+def test_dispatcher_slideshow_renders_three_operational_slides(tmp_path: Path) -> None:
+    import json as _json
+    from bs4 import BeautifulSoup
+
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui_slideshow.html",
+    )
+    soup = BeautifulSoup(out.read_text(encoding="utf-8"), "html.parser")
+    slideshow = soup.find(id="dispatcher-slideshow")
+    assert slideshow is not None
+    assert slideshow.find(id="disp-slide-prev") is not None
+    assert slideshow.find(id="disp-slide-next") is not None
+    tabs = slideshow.find_all(class_="disp-slide-tab")
+    assert len(tabs) == 3
+    slides = slideshow.find_all(class_="disp-slide")
+    assert len(slides) == 3
+    assert "active" in (slides[0].get("class") or [])
+    for slide in slides:
+        assert slide.find("svg") is not None
+
+    snapshots = _json.loads(soup.find(id="date-snapshots-payload").string)
+    assert "today_by_material" in snapshots["2026-04-15"]
+
+

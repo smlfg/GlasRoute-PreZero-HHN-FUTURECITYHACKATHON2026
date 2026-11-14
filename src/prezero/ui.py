@@ -1894,7 +1894,21 @@ def _build_operational_container_lists(
         "excluded_overflow": excluded_overflow,
         "process_step": "Auswahl",
     }
-    return today_items[:15], week1_items[:15], len(today_items), today_overfull_count, hero_overflow
+    mat_order = ["Weißglas", "Grünglas", "Braunglas"]
+    mat_counts: dict[str, dict[str, int]] = {}
+    for item in today_items:
+        label = str(item.get("mat_label") or "Sonstiges")
+        bucket = mat_counts.setdefault(label, {"overfull": 0, "red": 0, "in_tour": 0, "total": 0})
+        if float(item["today_pct"]) >= 110.0:
+            bucket["overfull"] += 1
+        else:
+            bucket["red"] += 1
+        if str(item.get("in_tour", "")).startswith("Ja"):
+            bucket["in_tour"] += 1
+        bucket["total"] += 1
+    ordered_labels = [m for m in mat_order if m in mat_counts] + sorted(m for m in mat_counts if m not in mat_order)
+    today_by_material = [{"label": m, **mat_counts[m]} for m in ordered_labels]
+    return today_items[:15], week1_items[:15], len(today_items), today_overfull_count, hero_overflow, today_by_material
 
 
 def _build_driver_and_dispatcher_stops(
@@ -2017,7 +2031,7 @@ def _build_single_date_snapshot(
     """Build a complete date-anchored snapshot for consistent date switching."""
     metrics = route_bundle["metrics"]
     fc_df, horizons = _build_forecast_3w_horizons(scored_df, date_str)
-    today_list, week1_list, today_crit_cnt, today_overfull_cnt, hero_overflow = _build_operational_container_lists(
+    today_list, week1_list, today_crit_cnt, today_overfull_cnt, hero_overflow, today_by_material = _build_operational_container_lists(
         scored_df, fc_df, metrics, locations_df, street_lookup
     )
     driver_stops, dispatcher_stops, maps_url, maps_legs, gpx_xml = _build_driver_and_dispatcher_stops(
@@ -2110,6 +2124,7 @@ def _build_single_date_snapshot(
         "csv_rows": [row for _, row in tour.interleave(metrics)],
         "status_quo_km": status_quo_km,
         "hero": hero_overflow,
+        "today_by_material": today_by_material,
     }
 
 
@@ -2253,6 +2268,192 @@ def _render_dispatcher_stops_html(dispatcher_stops: list[dict[str, Any]]) -> str
     return "".join(rows) or '<tr><td colspan="5">Keine Stopps</td></tr>'
 
 
+def _svg_horizons_chart(horizons: list[dict[str, Any]]) -> str:
+    """Render stacked bar SVG for Heute (+0) through KW+3 (+21 days)."""
+    if not horizons:
+        return '<p class="muted">Keine 3-Wochen-Prognosedaten verfügbar.</p>'
+    w, h = 760, 260
+    pad_l, pad_r, pad_t, pad_b = 52, 24, 34, 52
+    plot_w = w - pad_l - pad_r
+    plot_h = h - pad_t - pad_b
+    max_val = max([int(item.get("critical", 0)) for item in horizons] + [1])
+    base_crit = int(horizons[0].get("critical", 0))
+    step = plot_w / len(horizons)
+    bar_w = min(84.0, step * 0.52)
+
+    parts = [
+        f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="3-Wochen-Prognose kritischer Container" '
+        f'style="width:100%;height:auto;max-height:300px;display:block;">'
+    ]
+    for tick_idx in range(5):
+        frac = tick_idx / 4
+        y = pad_t + plot_h * (1.0 - frac)
+        val = round(max_val * frac)
+        parts.append(f'<line x1="{pad_l}" y1="{y:.1f}" x2="{w - pad_r}" y2="{y:.1f}" stroke="#e2e8f0" stroke-width="1"/>')
+        parts.append(f'<text x="{pad_l - 8}" y="{y + 4:.1f}" text-anchor="end" font-size="11" fill="#64748b">{val}</text>')
+
+    for idx, item in enumerate(horizons):
+        crit = int(item.get("critical", 0))
+        black = int(item.get("black", 0))
+        red = max(0, crit - black)
+        cx = pad_l + step * (idx + 0.5)
+        x = cx - bar_w / 2
+        h_black = (black / max_val) * plot_h
+        h_red = (red / max_val) * plot_h
+        y_black = pad_t + plot_h - h_black
+        y_red = y_black - h_red
+        if h_black > 0:
+            parts.append(f'<rect x="{x:.1f}" y="{y_black:.1f}" width="{bar_w:.1f}" height="{h_black:.1f}" rx="3" fill="#b91c1c"/>')
+        if h_red > 0:
+            parts.append(f'<rect x="{x:.1f}" y="{y_red:.1f}" width="{bar_w:.1f}" height="{h_red:.1f}" rx="3" fill="#f97316"/>')
+        delta_txt = ""
+        if idx > 0:
+            d = crit - base_crit
+            delta_txt = f" ({'+' if d >= 0 else ''}{d})"
+        top_y = min(y_red, y_black) - 7
+        parts.append(
+            f'<text x="{cx:.1f}" y="{top_y:.1f}" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">'
+            f'{crit}{html.escape(delta_txt)}</text>'
+        )
+        short_title = "Heute (+0)" if idx == 0 else f"KW+{idx} (+{idx * 7} d)"
+        kw_str = f"KW {int(item.get('kw', 0)):02d} · {item.get('target_de', '')}"
+        parts.append(f'<text x="{cx:.1f}" y="{h - 28}" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">{html.escape(short_title)}</text>')
+        parts.append(f'<text x="{cx:.1f}" y="{h - 12}" text-anchor="middle" font-size="10.5" fill="#64748b">{html.escape(kw_str)}</text>')
+
+    parts.append('<rect x="52" y="8" width="12" height="12" rx="2" fill="#b91c1c"/>')
+    parts.append('<text x="69" y="18" font-size="11.5" fill="#334155">Übervoll (&ge;110 %)</text>')
+    parts.append('<rect x="200" y="8" width="12" height="12" rx="2" fill="#f97316"/>')
+    parts.append('<text x="217" y="18" font-size="11.5" fill="#334155">Rot (80&ndash;109 %)</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _svg_material_chart(by_material: list[dict[str, Any]]) -> str:
+    """Render horizontal breakdown of today's critical containers by glass colour & tour coverage."""
+    if not by_material:
+        return '<p class="muted">Heute keine kritischen Container nach Glasart.</p>'
+    w = 760
+    row_h = 68
+    pad_l, pad_r, pad_t, pad_b = 110, 120, 36, 16
+    h = pad_t + pad_b + row_h * len(by_material)
+    plot_w = w - pad_l - pad_r
+    max_val = max([int(item.get("total", 0)) for item in by_material] + [1])
+
+    parts = [
+        f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="Heute kritische Container nach Glasart" '
+        f'style="width:100%;height:auto;max-height:300px;display:block;">'
+    ]
+    parts.append('<rect x="110" y="8" width="12" height="12" rx="2" fill="#b91c1c"/>')
+    parts.append('<text x="127" y="18" font-size="11.5" fill="#334155">Übervoll (&ge;110 %)</text>')
+    parts.append('<rect x="255" y="8" width="12" height="12" rx="2" fill="#f97316"/>')
+    parts.append('<text x="272" y="18" font-size="11.5" fill="#334155">Rot (80&ndash;109 %)</text>')
+    parts.append('<rect x="395" y="8" width="12" height="12" rx="2" fill="#2563eb"/>')
+    parts.append('<text x="412" y="18" font-size="11.5" fill="#334155">In heutiger Tour</text>')
+
+    for idx, item in enumerate(by_material):
+        y0 = pad_t + idx * row_h
+        total = int(item.get("total", 0))
+        overfull = int(item.get("overfull", 0))
+        red = int(item.get("red", 0))
+        in_tour = min(total, int(item.get("in_tour", 0)))
+        w_over = (overfull / max_val) * plot_w
+        w_red = (red / max_val) * plot_w
+        w_total = (total / max_val) * plot_w
+        w_tour = (in_tour / max_val) * plot_w
+
+        parts.append(f'<text x="{pad_l - 12}" y="{y0 + 22}" text-anchor="end" font-size="13" font-weight="700" fill="#0f172a">{html.escape(str(item.get("label", "")))}</text>')
+        if w_over > 0:
+            parts.append(f'<rect x="{pad_l}" y="{y0 + 6}" width="{w_over:.1f}" height="20" rx="3" fill="#b91c1c"/>')
+        if w_red > 0:
+            parts.append(f'<rect x="{pad_l + w_over:.1f}" y="{y0 + 6}" width="{w_red:.1f}" height="20" rx="3" fill="#f97316"/>')
+        parts.append(
+            f'<text x="{pad_l + w_total + 8:.1f}" y="{y0 + 20}" font-size="12" font-weight="700" fill="#0f172a">'
+            f'{total} ({overfull} übervoll)</text>'
+        )
+        parts.append(f'<rect x="{pad_l}" y="{y0 + 32}" width="{w_total:.1f}" height="10" rx="3" fill="#e2e8f0"/>')
+        if w_tour > 0:
+            parts.append(f'<rect x="{pad_l}" y="{y0 + 32}" width="{w_tour:.1f}" height="10" rx="3" fill="#2563eb"/>')
+        parts.append(
+            f'<text x="{pad_l + w_total + 8:.1f}" y="{y0 + 41}" font-size="11" fill="#475569">'
+            f'{in_tour} in Tour</text>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _svg_variants_chart(variants: list[dict[str, Any]], active_id: str = "baseline") -> str:
+    """Render horizontal comparison of today's tour variants (km, stops, hours, tonnes)."""
+    if not variants:
+        return '<p class="muted">Keine Tourenvarianten verfügbar.</p>'
+    w = 760
+    row_h = 46
+    pad_l, pad_r, pad_t, pad_b = 205, 195, 28, 12
+    h = pad_t + pad_b + row_h * len(variants)
+    plot_w = w - pad_l - pad_r
+    max_km = max([float(v.get("metrics", {}).get("planned_km", 0.0)) for v in variants] + [1.0])
+
+    parts = [
+        f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="Tourenvarianten im Vergleich" '
+        f'style="width:100%;height:auto;max-height:300px;display:block;">'
+    ]
+    parts.append('<text x="205" y="16" font-size="11.5" font-weight="600" fill="#475569">Strecke (km) &amp; Kennzahlen (aktive Variante blau markiert)</text>')
+    for idx, variant in enumerate(variants):
+        vm = variant.get("metrics", {})
+        km = float(vm.get("planned_km", 0.0))
+        stops = int(vm.get("num_stops", 0))
+        hours = float(vm.get("shift_hours", 0.0))
+        tonnes = float(vm.get("t_collected", 0.0))
+        is_active = str(variant.get("id", "")) == active_id
+        fill = "#1d4ed8" if is_active else "#94a3b8"
+        weight = "700" if is_active else "500"
+        y0 = pad_t + idx * row_h
+        bar_w = max(4.0, (km / max_km) * plot_w) if km > 0 else 4.0
+        parts.append(
+            f'<text x="{pad_l - 10}" y="{y0 + 23}" text-anchor="end" font-size="12" font-weight="{weight}" fill="#0f172a">'
+            f'{html.escape(str(variant.get("label", "")))}</text>'
+        )
+        parts.append(f'<rect x="{pad_l}" y="{y0 + 7}" width="{bar_w:.1f}" height="22" rx="4" fill="{fill}"/>')
+        summary = f"{_fmt_de(km, 1)} km · {stops} Stopps · {_fmt_de(hours, 1)} h · {_fmt_de(tonnes, 1)} t"
+        parts.append(
+            f'<text x="{pad_l + bar_w + 8:.1f}" y="{y0 + 22}" font-size="11.5" font-weight="{weight}" fill="#0f172a">'
+            f'{html.escape(summary)}</text>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _build_dispatcher_slideshow_html(snapshot: dict[str, Any], date: str) -> str:
+    """Build the interactive 3-slide chart carousel for the Disponentin view."""
+    stand_de = snapshot["stand_de"]
+    slide0_svg = _svg_horizons_chart(snapshot.get("horizons", []))
+    slide1_svg = _svg_material_chart(snapshot.get("today_by_material", []))
+    slide2_svg = _svg_variants_chart(snapshot.get("variants", []), active_id="baseline")
+    return f"""
+      <div id="dispatcher-slideshow" class="dispatcher-box dispatcher-slideshow" tabindex="0" aria-label="Operative Visualisierungen als Slideshow">
+        <div class="disp-slide-header">
+          <div>
+            <strong id="disp-slide-title">1 / 3 · 3-Wochen-Prognose (Heute bis KW+3)</strong>
+            <div class="muted" id="disp-slide-subtitle" style="margin:2px 0 0;">Wie viele Container laufen in den nächsten 3 Wochen voll? &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+          </div>
+          <div class="disp-slide-controls">
+            <button type="button" class="secondary-btn disp-slide-btn" id="disp-slide-prev" aria-label="Vorheriger Graph">&lsaquo; Zurück</button>
+            <div class="disp-slide-tabs" role="tablist" aria-label="Graphen auswählen">
+              <button type="button" class="disp-slide-tab active" data-slide="0" role="tab" aria-selected="true">1. 3-Wochen-Prognose</button>
+              <button type="button" class="disp-slide-tab" data-slide="1" role="tab" aria-selected="false">2. Heute nach Glasart</button>
+              <button type="button" class="disp-slide-tab" data-slide="2" role="tab" aria-selected="false">3. Tourenvarianten</button>
+            </div>
+            <button type="button" class="secondary-btn disp-slide-btn" id="disp-slide-next" aria-label="Nächster Graph">Weiter &rsaquo;</button>
+          </div>
+        </div>
+        <div id="disp-slide-stage" class="disp-slide-stage">
+          <div class="disp-slide active" id="disp-slide-0" data-slide-idx="0">{slide0_svg}</div>
+          <div class="disp-slide" id="disp-slide-1" data-slide-idx="1">{slide1_svg}</div>
+          <div class="disp-slide" id="disp-slide-2" data-slide-idx="2">{slide2_svg}</div>
+        </div>
+      </div>
+    """
+
+
 def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
     """Build the Today-First operational views (Disponentin, Fahrer) plus role switcher."""
     stand_de = snapshot["stand_de"]
@@ -2346,6 +2547,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
 
     delta_w1 = snapshot["week1_new_delta"]
     delta_w1_str = f"+{delta_w1} gegenüber heute" if delta_w1 >= 0 else f"{delta_w1} gegenüber heute"
+    dispatcher_slideshow_html = _build_dispatcher_slideshow_html(snapshot, date)
 
     return f"""
     <section id="start-screen" class="role-screen" style="display:none;">
@@ -2402,6 +2604,8 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
           {horizon_cards_html}
         </div>
       </div>
+
+      {dispatcher_slideshow_html}
 
       <div class="two-col">
         <div>
@@ -3598,6 +3802,24 @@ def build_ui(
       background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
       padding: 12px 14px; margin-bottom: 16px;
     }}
+    .dispatcher-slideshow {{ padding: 14px 16px; }}
+    .disp-slide-header {{
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;
+    }}
+    .disp-slide-controls {{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }}
+    .disp-slide-tabs {{ display: flex; flex-wrap: wrap; gap: 4px; }}
+    .disp-slide-tab {{
+      border: 1px solid var(--border); background: #f8fafc; color: var(--muted);
+      padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }}
+    .disp-slide-tab.active {{
+      background: var(--accent); border-color: var(--accent); color: #ffffff;
+    }}
+    .disp-slide-btn {{ padding: 6px 10px; font-size: 12px; }}
+    .disp-slide-stage {{ min-height: 220px; }}
+    .disp-slide {{ display: none; }}
+    .disp-slide.active {{ display: block; }}
     .analysis-banner {{
       background: #eff6ff; border-bottom: 1px solid #bfdbfe; color: #1e3a8a;
       padding: 9px 20px; font-size: 13px;
@@ -3981,6 +4203,134 @@ def build_ui(
             fmtDe(vm.t_collected, 1) + ' t &middot; ' + fmtDe(snap.metrics.saved_pct, 1) + ' % gespart vs. alle leeren &middot; ' +
             '<span class="stand-label" data-stand-date="' + esc(snap.date) + '">' + esc(snap.stand_de) + '</span>';
         }}
+        renderDispatcherSlides(snap, variantId);
+      }}
+      var dispSlideIndex = 0;
+      var dispSlideMeta = [
+        {{ title: "1 / 3 · 3-Wochen-Prognose (Heute bis KW+3)", sub: "Wie viele Container laufen in den nächsten 3 Wochen voll?" }},
+        {{ title: "2 / 3 · Heute kritisch nach Glasart & Tour-Abdeckung", sub: "Welche Glasarten brennen heute und wie viel deckt die heutige Tour ab?" }},
+        {{ title: "3 / 3 · Tourenvarianten im Vergleich (Heute)", sub: "Strecke, Stopps, Schichtdauer und Tonnen je Variante" }}
+      ];
+      function setDispatcherSlide(idx) {{
+        dispSlideIndex = ((idx % 3) + 3) % 3;
+        document.querySelectorAll(".disp-slide").forEach(function(el, i) {{
+          el.classList.toggle("active", i === dispSlideIndex);
+        }});
+        document.querySelectorAll(".disp-slide-tab").forEach(function(btn, i) {{
+          var on = i === dispSlideIndex;
+          btn.classList.toggle("active", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        }});
+        var meta = dispSlideMeta[dispSlideIndex];
+        var tEl = document.getElementById("disp-slide-title");
+        if (tEl) tEl.textContent = meta.title;
+        var sEl = document.getElementById("disp-slide-subtitle");
+        var snap = dateSnapshots[currentDate];
+        if (sEl && snap) {{
+          sEl.innerHTML = esc(meta.sub) + ' &middot; <span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+      }}
+      function renderSvgHorizons(horizons) {{
+        if (!horizons || !horizons.length) return '<p class="muted">Keine 3-Wochen-Prognosedaten verfügbar.</p>';
+        var w = 760, h = 260, padL = 52, padR = 24, padT = 34, padB = 52;
+        var plotW = w - padL - padR, plotH = h - padT - padB;
+        var maxVal = Math.max.apply(null, horizons.map(function(x) {{ return Number(x.critical || 0); }}).concat([1]));
+        var baseCrit = Number(horizons[0].critical || 0);
+        var step = plotW / horizons.length;
+        var barW = Math.min(84, step * 0.52);
+        var p = ['<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="3-Wochen-Prognose kritischer Container" style="width:100%;height:auto;max-height:300px;display:block;">'];
+        for (var t = 0; t <= 4; t++) {{
+          var frac = t / 4, y = padT + plotH * (1 - frac), val = Math.round(maxVal * frac);
+          p.push('<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (w - padR) + '" y2="' + y.toFixed(1) + '" stroke="#e2e8f0" stroke-width="1"/>');
+          p.push('<text x="' + (padL - 8) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="#64748b">' + val + '</text>');
+        }}
+        horizons.forEach(function(item, idx) {{
+          var crit = Number(item.critical || 0), black = Number(item.black || 0), red = Math.max(0, crit - black);
+          var cx = padL + step * (idx + 0.5), x = cx - barW / 2;
+          var hB = (black / maxVal) * plotH, hR = (red / maxVal) * plotH;
+          var yB = padT + plotH - hB, yR = yB - hR;
+          if (hB > 0) p.push('<rect x="' + x.toFixed(1) + '" y="' + yB.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + hB.toFixed(1) + '" rx="3" fill="#b91c1c"/>');
+          if (hR > 0) p.push('<rect x="' + x.toFixed(1) + '" y="' + yR.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + hR.toFixed(1) + '" rx="3" fill="#f97316"/>');
+          var dTxt = idx > 0 ? (" (" + (crit - baseCrit >= 0 ? "+" : "") + (crit - baseCrit) + ")") : "";
+          p.push('<text x="' + cx.toFixed(1) + '" y="' + (Math.min(yR, yB) - 7).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">' + crit + esc(dTxt) + '</text>');
+          var sTitle = idx === 0 ? "Heute (+0)" : ("KW+" + idx + " (+" + (idx * 7) + " d)");
+          var kwStr = "KW " + (item.kw < 10 ? "0" + item.kw : item.kw) + " · " + (item.target_de || "");
+          p.push('<text x="' + cx.toFixed(1) + '" y="' + (h - 28) + '" text-anchor="middle" font-size="12" font-weight="600" fill="#0f172a">' + esc(sTitle) + '</text>');
+          p.push('<text x="' + cx.toFixed(1) + '" y="' + (h - 12) + '" text-anchor="middle" font-size="10.5" fill="#64748b">' + esc(kwStr) + '</text>');
+        }});
+        p.push('<rect x="52" y="8" width="12" height="12" rx="2" fill="#b91c1c"/><text x="69" y="18" font-size="11.5" fill="#334155">Übervoll (&ge;110 %)</text>');
+        p.push('<rect x="200" y="8" width="12" height="12" rx="2" fill="#f97316"/><text x="217" y="18" font-size="11.5" fill="#334155">Rot (80&ndash;109 %)</text></svg>');
+        return p.join("");
+      }}
+      function renderSvgMaterial(byMat) {{
+        if (!byMat || !byMat.length) return '<p class="muted">Heute keine kritischen Container nach Glasart.</p>';
+        var w = 760, rowH = 68, padL = 110, padR = 120, padT = 36, padB = 16;
+        var h = padT + padB + rowH * byMat.length, plotW = w - padL - padR;
+        var maxVal = Math.max.apply(null, byMat.map(function(x) {{ return Number(x.total || 0); }}).concat([1]));
+        var p = ['<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Heute kritische Container nach Glasart" style="width:100%;height:auto;max-height:300px;display:block;">'];
+        p.push('<rect x="110" y="8" width="12" height="12" rx="2" fill="#b91c1c"/><text x="127" y="18" font-size="11.5" fill="#334155">Übervoll (&ge;110 %)</text>');
+        p.push('<rect x="255" y="8" width="12" height="12" rx="2" fill="#f97316"/><text x="272" y="18" font-size="11.5" fill="#334155">Rot (80&ndash;109 %)</text>');
+        p.push('<rect x="395" y="8" width="12" height="12" rx="2" fill="#2563eb"/><text x="412" y="18" font-size="11.5" fill="#334155">In heutiger Tour</text>');
+        byMat.forEach(function(item, idx) {{
+          var y0 = padT + idx * rowH, total = Number(item.total || 0), over = Number(item.overfull || 0), red = Number(item.red || 0);
+          var inTour = Math.min(total, Number(item.in_tour || 0));
+          var wOver = (over / maxVal) * plotW, wRed = (red / maxVal) * plotW, wTot = (total / maxVal) * plotW, wTour = (inTour / maxVal) * plotW;
+          p.push('<text x="' + (padL - 12) + '" y="' + (y0 + 22) + '" text-anchor="end" font-size="13" font-weight="700" fill="#0f172a">' + esc(item.label || "") + '</text>');
+          if (wOver > 0) p.push('<rect x="' + padL + '" y="' + (y0 + 6) + '" width="' + wOver.toFixed(1) + '" height="20" rx="3" fill="#b91c1c"/>');
+          if (wRed > 0) p.push('<rect x="' + (padL + wOver).toFixed(1) + '" y="' + (y0 + 6) + '" width="' + wRed.toFixed(1) + '" height="20" rx="3" fill="#f97316"/>');
+          p.push('<text x="' + (padL + wTot + 8).toFixed(1) + '" y="' + (y0 + 20) + '" font-size="12" font-weight="700" fill="#0f172a">' + total + ' (' + over + ' übervoll)</text>');
+          p.push('<rect x="' + padL + '" y="' + (y0 + 32) + '" width="' + wTot.toFixed(1) + '" height="10" rx="3" fill="#e2e8f0"/>');
+          if (wTour > 0) p.push('<rect x="' + padL + '" y="' + (y0 + 32) + '" width="' + wTour.toFixed(1) + '" height="10" rx="3" fill="#2563eb"/>');
+          p.push('<text x="' + (padL + wTot + 8).toFixed(1) + '" y="' + (y0 + 41) + '" font-size="11" fill="#475569">' + inTour + ' in Tour</text>');
+        }});
+        p.push('</svg>');
+        return p.join("");
+      }}
+      function renderSvgVariants(variants, activeId) {{
+        if (!variants || !variants.length) return '<p class="muted">Keine Tourenvarianten verfügbar.</p>';
+        var w = 760, rowH = 46, padL = 205, padR = 195, padT = 28, padB = 12;
+        var h = padT + padB + rowH * variants.length, plotW = w - padL - padR;
+        var maxKm = Math.max.apply(null, variants.map(function(v) {{ return Number((v.metrics || {{}}).planned_km || 0); }}).concat([1]));
+        var p = ['<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Tourenvarianten im Vergleich" style="width:100%;height:auto;max-height:300px;display:block;">'];
+        p.push('<text x="205" y="16" font-size="11.5" font-weight="600" fill="#475569">Strecke (km) &amp; Kennzahlen (aktive Variante blau markiert)</text>');
+        variants.forEach(function(v, idx) {{
+          var vm = v.metrics || {{}}, km = Number(vm.planned_km || 0), stops = Number(vm.num_stops || 0);
+          var hrs = Number(vm.shift_hours || 0), ton = Number(vm.t_collected || 0);
+          var on = String(v.id || "") === String(activeId || "baseline");
+          var fill = on ? "#1d4ed8" : "#94a3b8", wt = on ? "700" : "500", y0 = padT + idx * rowH;
+          var barW = km > 0 ? Math.max(4, (km / maxKm) * plotW) : 4;
+          p.push('<text x="' + (padL - 10) + '" y="' + (y0 + 23) + '" text-anchor="end" font-size="12" font-weight="' + wt + '" fill="#0f172a">' + esc(v.label || "") + '</text>');
+          p.push('<rect x="' + padL + '" y="' + (y0 + 7) + '" width="' + barW.toFixed(1) + '" height="22" rx="4" fill="' + fill + '"/>');
+          var sum = fmtDe(km, 1) + ' km · ' + stops + ' Stopps · ' + fmtDe(hrs, 1) + ' h · ' + fmtDe(ton, 1) + ' t';
+          p.push('<text x="' + (padL + barW + 8).toFixed(1) + '" y="' + (y0 + 22) + '" font-size="11.5" font-weight="' + wt + '" fill="#0f172a">' + esc(sum) + '</text>');
+        }});
+        p.push('</svg>');
+        return p.join("");
+      }}
+      function renderDispatcherSlides(snap, activeVariantId) {{
+        if (!snap) return;
+        var s0 = document.getElementById("disp-slide-0");
+        if (s0) s0.innerHTML = renderSvgHorizons(snap.horizons || []);
+        var s1 = document.getElementById("disp-slide-1");
+        if (s1) s1.innerHTML = renderSvgMaterial(snap.today_by_material || []);
+        var s2 = document.getElementById("disp-slide-2");
+        if (s2) s2.innerHTML = renderSvgVariants(snap.variants || [], activeVariantId || "baseline");
+      }}
+      document.querySelectorAll(".disp-slide-tab").forEach(function(btn) {{
+        btn.addEventListener("click", function() {{
+          setDispatcherSlide(Number(btn.getAttribute("data-slide") || 0));
+        }});
+      }});
+      var dispPrevBtn = document.getElementById("disp-slide-prev");
+      if (dispPrevBtn) dispPrevBtn.addEventListener("click", function() {{ setDispatcherSlide(dispSlideIndex - 1); }});
+      var dispNextBtn = document.getElementById("disp-slide-next");
+      if (dispNextBtn) dispNextBtn.addEventListener("click", function() {{ setDispatcherSlide(dispSlideIndex + 1); }});
+      var dispSlideshowEl = document.getElementById("dispatcher-slideshow");
+      if (dispSlideshowEl) {{
+        dispSlideshowEl.addEventListener("keydown", function(ev) {{
+          if (ev.key === "ArrowLeft") setDispatcherSlide(dispSlideIndex - 1);
+          else if (ev.key === "ArrowRight") setDispatcherSlide(dispSlideIndex + 1);
+        }});
       }}
       function syncApprovalBadges() {{
         var approved = localStorage.getItem(approvalKey) === "true";
