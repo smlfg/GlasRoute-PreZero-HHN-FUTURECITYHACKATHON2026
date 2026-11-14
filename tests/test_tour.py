@@ -1,10 +1,11 @@
 import csv
 import math
+import xml.etree.ElementTree as ET
 
 import pandas as pd
 
 from prezero import routing, tour
-from tests.test_routing import _two_colour_site
+from test_routing import _two_colour_site
 
 
 def _route(tmp_path=None, **cfg):
@@ -51,3 +52,40 @@ def test_interleave_keeps_stop_indices_and_adds_yard_rows():
     assert rows[0][1]["stop_type"] == "depot_start" and rows[-1][1]["stop_type"] == "depot_end"
     assert [i for i, _ in rows if i is not None] == list(range(len(route["stops"])))
     assert math.isclose(rows[-1][1]["cumulative_km"], route["km"], abs_tol=0.05)
+
+
+def test_build_gpx_is_valid_and_contains_all_stops_in_order():
+    route = _route(vehicle_max_volume_m3=6.0)
+    gpx = tour.build_gpx(route)
+    root = ET.fromstring(gpx)
+    ns = {"g": "http://www.topografix.com/GPX/1/1"}
+    assert root.tag == "{http://www.topografix.com/GPX/1/1}gpx"
+    assert root.attrib.get("version") == "1.1"
+
+    rtepts = root.findall(".//g:rtept", ns)
+    names = [p.find("g:name", ns).text for p in rtepts]
+    assert names[0] == "Start Betriebshof"
+    assert names[-1] == "Ende Betriebshof"
+    assert any("Entladen" in n for n in names)
+    # Number of route points equals tour rows (start + stops/unloads + end).
+    tours = tour.build_tours(route)
+    assert len(rtepts) == sum(len(t["rows"]) for t in tours)
+
+
+def test_build_google_maps_legs_cover_all_stops_with_overlap():
+    route = _route(vehicle_max_volume_m3=6.0)
+    # Force splitting by using a tiny waypoint limit.
+    legs_by_vehicle = tour.build_google_maps_legs(route, max_waypoints=1)
+    assert legs_by_vehicle
+    for veh, legs in legs_by_vehicle.items():
+        assert len(legs) >= 1
+        # Every leg is a Google Maps directions URL.
+        for url in legs:
+            assert url.startswith("https://www.google.com/maps/dir/?api=1")
+            assert "origin=" in url
+            assert "destination=" in url
+        # Last destination of each leg equals next leg's origin (overlap).
+        for i in range(len(legs) - 1):
+            this_dest = legs[i].split("destination=")[1].split("&")[0]
+            next_origin = legs[i + 1].split("origin=")[1].split("&")[0]
+            assert this_dest == next_origin
