@@ -772,7 +772,7 @@ def plot_route(
         mat_raw = str(stop.get("primary_material", "-")).lower()
         mat_label = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas", "unload": "Entladung"}.get(mat_raw, stop.get("primary_material", "-"))
         loc_str = str(stop.get("Location_id", "-"))
-        loc_display = "Entsorgungshof (Wertstoffhof)" if loc_str == "disposal_depot" else (f"{loc_str[:8]}..." if len(loc_str) > 12 else loc_str)
+        loc_display = "Entsorgungshof (angenommen)" if loc_str == "disposal_depot" else (f"Standort #{stop['order']}" if stop.get("order") is not None else (f"{loc_str[:8]}..." if len(loc_str) > 12 else loc_str))
         popup_html = (
             f"<b>Stopp #{stop['order']}</b><br>"
             f"Standort: {loc_display}<br>"

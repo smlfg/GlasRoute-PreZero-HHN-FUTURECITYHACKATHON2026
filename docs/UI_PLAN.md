@@ -1,76 +1,72 @@
 # GlasRoute UI Plan (`docs/UI_PLAN.md`)
 
-> **User Story:** Als Fahrer möchte ich nach einer Freigabe meine heutige Tour auf dem Smartphone als große, geordnete Stoppliste sehen, je Glasfarbe den geschätzten und vorgefundenen Füllstand dokumentieren und eine CSV im Eingabeformat exportieren, damit die Rückmeldung wieder in den Forecast-Kreislauf (Scan → Schätzung → Prognose → Tour) einfließt. Als Disponentin möchte ich Tourvorschläge prüfen und freigeben; als Analyst möchte ich die bestehenden Daten-, Heatmap-, Forecast-, Fairer-Vergleich- und Copilot-Ansichten nutzen.
+> **Leitprinzip („Today-First“):** Einstiegspunkt der Oberfläche ist immer ein gewähltes **Stichtagsdatum** (Standard: **letzter Datentag** im Datensatz, im Demo-Lauf z. B. `30.09.2026`, bzw. das per `--date` gewählte Datum wie `15.04.2026`). Ganz oben befindet sich ein über alle Rollen und Tabs hinweg **persistenter Datums-Wähler** (`#global-date-picker`). **Jede Zahl auf der Oberfläche bezieht sich auf das gewählte Datum und benennt es explizit (`Stand 15.04.2026`).** Bei Datumswechsel werden alle Kennzahlen, Touren, 3-Wochen-Ausblicke und Exportdateien konsistent aktualisiert (im statischen Offline-Build über 5 vorberechnete Stichtage).
 
-**Status:** Minimal, verifizierbare 4-view UI (`src/prezero/ui.py` → `ui_<date>.html`)
-**Principle:** **Ausschließlich nachweisbare Pipeline-Daten** — keine Events, keine geschätzten Leerungsdaten und keine hartcodierten KPI-Zahlen ohne Datenquelle.
-
----
-
-## 1. Technology Decision: Self-Contained Folium / Leaflet HTML
-
-- **Output:** Single offline HTML file (`ui_<date>.html`) generated via `prezero-route ui --date <YYYY-MM-DD>` (`src/prezero/ui.py`, re-exported in `src/prezero/viz.py`).
-- **Zero new dependencies:** Reuses `folium`, `pandas`, `matplotlib`, and the existing modules (`features.py`, `forecast.py`, `scoring.py`, `routing.py`, `approval.py`, `viz.py`).
+**Implementierung:** Selbstenthaltene Offline-HTML (`src/prezero/ui.py` → `ui_<date>.html`)
+**Grundsatz:** **Ausschließlich nachweisbare Pipeline-Daten** — keine geschätzten Leerungsdaten außerhalb der Mess-/Timer-Logik, keine unbewiesenen Zahlen und strikte Trennung zwischen Tagesbetrieb und Jahresanalyse.
 
 ---
 
-## 2. The 4 UI Views (Verifiable Data Only)
+## 1. Die 3 User Stories & Ansichtsgrenzen
 
-### View 1 (`3. Forecast map` → Tab `1. Forecast-Timeline`)
-- **Purpose:** Interactive forecast timeline across horizons (`Heute`, `+7 Tage`, `+14 Tage`, `+21 Tage`) from `forecast.forecast_from_scored()`.
-- **Map Layer:** Standalone Folium/Leaflet map (**no route line** overlaid). Real/OSM sites drawn solid; synthetic placeholder sites drawn dashed and translucent.
-- **Fill-Level Scale (linear, capped at `110.0%`):**
-  - **Green:** `< 50%`
-  - **Yellow:** `50% – 80%`
-  - **Red:** `> 80%`
-  - **Black:** `>= 110%`
-- **Point Popup Fields (verifiable columns only):** `Location_id`, `material_type`, `last_fill_level` + `last_date`, `avg_daily_increase`, predicted fill (`forecast_pct` at `target_date`), `status`, and coordinate `source`/`confidence`. *(No emptying date, no event badges.)*
+### Story 1: Disponentin („Ich öffne das Tool am 15.04.“) → `#role-dispatcher`
+Als Disponentin öffne ich morgens das Tool für meinen gewählten Stichtag (z. B. `15.04.2026`) und sehe **sofort ohne Umwege auf einen Blick**:
+1. **Welche Container sind HEUTE voll (geschätzt, +0 Tage)?**
+   - Anzahl kritischer Container ($\ge 80\,\%$) und überfüllter Container ($\ge 110\,\%$) mit `Stand 15.04.2026` sowie Prioritätenliste der heute fälligen Behälter.
+2. **Welche Container werden DIESE WOCHE voll (+7 Tage, KW+1)?**
+   - Anzahl und Liste der Behälter, die bis `+7 Tage` (`22.04.2026`) die `80 %`-Schwelle erreichen oder überschreiten, inklusive erwarteter Zunahme gegenüber heute.
+3. **Tourvorschlag für heute → prüfen, ändern, freigeben:**
+   - Kompakte Touren-KPIs für heute (`Stopps`, `Strecke km`, `Fahrzeuge`, `Runden`, `Sammelmenge t`, Einsparung vs. volle Runde, `Stand 15.04.2026`).
+   - Möglichkeit, eine **Tourenvariante / Änderung zu wählen** (z. B. Standard 25 Stopps, Alle kritischen Standorte, Kürzere Schicht 6 h, Kleineres Fahrzeug 8 t, Max. 20 Stopps) und die Tour explizit mit **Human-in-the-Loop Freigabe** freizugeben (`#role-approve-route-btn`).
+4. **Zeitachse ausschließlich als „nächste 3 Wochen“ (`KW+1`, `KW+2`, `KW+3`):**
+   - Sichtbar sind ausschließlich `Heute (+0)`, `KW+1 (+7 Tage)`, `KW+2 (+14 Tage)` und `KW+3 (+21 Tage)`.
+   - **Harte Grenze:** Keine historische Zeitachse, keine Daten außerhalb `[date − 0 Tage, date + 21 Tage]`.
 
-### View 2 (`4. Tour proposal` → Tab `2. Bestehende Route`)
-- **Purpose:** Separate route inspection and dispatcher approval view built from `route_<date>.json` and `viz.plot_route()`.
-- **Displayed Metrics (read directly from `route_<date>.json`):** `planned_km`, `full_round_km`, `saved_km`, `saved_pct`, `num_stops`, `total_critical_locations`, `total_active_locations`, `vehicles_needed`, `rounds`, `shift_hours`, `t_collected`, `comparison`, and ordered `stops`.
-- **Human-in-the-Loop Action (`"Freigeben"`):** Generates and downloads `approval_<date>.json` in the exact `approval.propose_route()` / `approve_route()` schema with `EVIDENCE_FIELDS`.
+### Story 2: Fahrer („Ich starte meine Schicht am 15.04.“) → `#role-driver`
+Als Fahrer starte ich meine Schicht am gewählten Stichtag und sehe:
+1. **Ausschließlich die heute von der Disponentin freigegebene Tour**, Stopp für Stopp in **Fahrreihenfolge (nicht Score-Reihenfolge)**, inklusive `Stand 15.04.2026`.
+2. **Export / Druck & Rückmeldung:**
+   - Stoppliste als CSV (Fahrreihenfolge), Google-Maps-Link, Druckansicht / PDF und CSV-Export der Fahrerrückmeldung (`geleert` + vorgefundener Füllstand in `10er`-Schritten).
+3. **Harte Grenze:** **Keine Historie, keine Charts**, keine Daten außerhalb `[date − 0 Tage, date + 21 Tage]`.
 
-### View 3 (`2. Data check` → Tab `3. Datencheck`)
-- **Purpose:** Honest predictability check computed directly from `readings_df` (`compute_data_check()`).
-- **Computed Metrics:**
-  - Per-container `regularity_score` ($1 / (1 + \text{CV})$ of positive daily fill rates), dataset mean and median.
-  - Transition counts, step jumps `> 50 pp`, series with observation gaps `> 90 days`, and `overfull` (`>= 110%`) counts.
-  - Material averages, monthly averages, and embedded `trends.png` (`viz.plot_trends()`).
-
-### View 4 (`1. Upload` → Tab `4. Upload`)
-- **Purpose:** Dataset inspection summary preloaded from `cleaned_readings.csv` (`compute_upload_check()`) plus client-side `FileReader` drag-and-drop CSV validation.
-- **Checks:** Total rows, unique `Location_id` count, `(Location_id, material_type)` series count, date span (`min`–`max`), measurement days, missing/invalid values, and `overfull` count.
+### Story 3: Analyse / Management („Lohnt sich das? Sind die Daten vorhersagbar?“) → `.analysis-workspace`
+Als Analyst oder Management-Verantwortliche prüfe ich die Belastbarkeit und Wirtschaftlichkeit über das gesamte Jahr. **Nur hier** lebt die gesamte Zeitachse:
+1. **Heatmap über alle Wochen (`#view-heatmap`):** 49 Kalenderwochen, Messwerte und geschätzte Wiederanstiege mit Klick-Sprung in die Karte.
+2. **Saisonalität, Ereignisse & Verhalten (`#view-data`, `#view-datacheck`):** Monats- und Wochentrends, markierte Ereignisse (Weihnachten, Nachweihnachtsspitze, Oster-/Sommerferien, Heilbronner Weindorf), Verhaltensgruppen („Gleiches Verhalten“), Scanintervalle und Regularity Score.
+3. **Fairer Vergleich (`#view-benchmark`):** B0 (Papierliste) vs. B1 (Status quo NN) vs. B2 (bedarfsgesteuert NN) vs. B3 (2-opt) vs. B4 (OR-Tools) inkl. Bedarfs- und Routing-Effekt.
+4. **Vorhersagbarkeit: Forecast vs. tatsächliche Messung (`#view-data`, `#view-forecast`):** Historisches Backtesting (Timer-Modell vs. Durchschnitt bisher), Braunglas-Rhythmus und `+0/+7/+14/+21`-Prognosekarte.
+5. **Konfiguration, Copilot & Upload (`#view-route`, `#view-copilot`, `#view-variables`, `#view-upload`):** Detailansicht der Route, erklärender Offline-Copilot, Annahmen/Variablen (Spec 3/4) und lokaler CSV-Datencheck.
 
 ---
 
-## 3. Data Flow Diagram (Modules → UI Views)
+## 2. Persistenter Datums-Mechanismus & Offline-Architektur
+
+| Anforderung | Umsetzung in `src/prezero/ui.py` & `src/prezero/cli.py` |
+|---|---|
+| **Standarddatum** | Letzter Datentag im Datensatz (`readings_df["date"].max()`), sofern kein explizites `--date` (oder `latest`/`auto`) übergeben wird; explizites `--date` setzt den Start-Stichtag. |
+| **Persistenter Datums-Wähler** | `<select id="global-date-picker">` + Rollen-Umschalter dauerhaft im `<header>` über Disponentin, Fahrer und Analyse hinweg. |
+| **Konsistenter Stichtagswechsel** | `build_ui()` berechnet `4–6` Demo-Stichtage (Standard: `5`, immer inkl. Start-Stichtag und letztem Datentag) in `#date-snapshots-payload` vor. Ein Datumswechsel aktualisiert KPIs, `"Stand DD.MM.YYYY"`, `KW+1..+3`, Containerlisten, Tourenvorschläge, Stopplisten und Exporte synchron. |
+| **Datums-Nachweis (`Stand DD.MM.YYYY`)** | Jede KPI-Karte und Sektionsüberschrift trägt einen dynamisch mitaktualisierten Stichtags-Hinweis (`<span class="stand-label" data-stand-date="...">Stand DD.MM.YYYY</span>`). |
+| **Trennung Tagesbetrieb vs. Analyse** | `#role-dispatcher` und `#role-driver` rendern strikt nur Daten im Fenster `[date − 0 Tage, date + 21 Tage]` und enthalten keine Jahrescharts oder historischen Messdaten. |
+
+---
+
+## 3. Data Flow (Module → Rollen & Views)
 
 ```mermaid
 flowchart LR
-    RAW["cleaned_readings.csv"] --> CHECK["ui.py (compute_upload_check, compute_data_check)"]
-    LOC["locations.csv"] --> MAP3["ui.py (render_forecast_timeline_map_html)"]
-    SCORED["scored_<date>.csv"] --> FC["forecast.py (forecast_from_scored)"]
-    FC --> MAP3
+    RAW["cleaned_readings.csv"] --> DATES["5 Demo-Stichtage (inkl. letzter Datentag)"]
+    DATES --> SCORE["features.py + scoring.py"]
+    SCORE --> FC["forecast.py (+0 / +7 / +14 / +21)"]
+    SCORE --> ROUTE["routing.py + tour.py"]
+    LOC["locations.csv"] --> ROUTE
+    LOC --> FC
 
-    MAP3 --> V3["Tab 1: Forecast-Timeline (+0/+7/+14/+21)"]
+    FC --> DISP["Disponentin (Heute, +7, KW+1..+3)"]
+    ROUTE --> DISP
+    ROUTE --> DRV["Fahrer (heute freigegebene Tour)"]
 
-    ROUTE["route_<date>.json"] --> RV["ui.py (render_route_view_data)"]
-    ROUTE --> APPR["approval.py (propose_route / approve_route)"]
-    VIZ["viz.py (plot_route, plot_trends)"] --> RV
-    RV --> V4["Tab 2: Bestehende Route + Freigeben"]
-    APPR --> V4
-
-    CHECK --> V2["Tab 3: Datencheck (Regularity, >50pp, >90d, Trends)"]
-    VIZ --> V2
-    CHECK --> V1["Tab 4: Upload & Datensatzcheck"]
+    RAW --> ANA["Analyse / Management (ganze Zeitachse)"]
+    BENCH["benchmark_results.csv"] --> ANA
+    BACK["backtest_summary.json"] --> ANA
 ```
-
----
-
-## 4. Order of Implementation
-
-1. **View 3 (`Forecast-Timeline`)** — first priority.
-2. **View 4 (`Bestehende Route` + `Freigeben`)** — second priority.
-3. **View 2 (`Datencheck`)** — third priority.
-4. **View 1 (`Upload`)** — fourth priority.

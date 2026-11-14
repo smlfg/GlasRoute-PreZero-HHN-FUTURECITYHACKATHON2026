@@ -555,7 +555,7 @@ def build_route(
     depot: tuple[float, float] = DEFAULT_DEPOT,
     max_stops: int | None = None,
     date: str | None = None,
-    output_dir: str | Path = ".",
+    output_dir: str | Path | None = ".",
     config: OperationalConfig | None = None,
 ) -> dict[str, Any]:
     """Build a capacity- and shift-constrained nearest-neighbor route vs. full round."""
@@ -653,7 +653,7 @@ def build_route(
             "stops": stops,
         }
 
-    if date is not None:
+    if date is not None and output_dir is not None:
         out_path = Path(output_dir) / f"route_{date}.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(route_data, indent=2), encoding="utf-8")

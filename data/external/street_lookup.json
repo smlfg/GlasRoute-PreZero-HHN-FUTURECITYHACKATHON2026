@@ -1,0 +1,1091 @@
+{
+  "49.13935,9.21247": {
+    "road": "Achtungstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "0c6aa0da-7965-4801-a66b-00f874ac0c92"
+  },
+  "0c6aa0da-7965-4801-a66b-00f874ac0c92": {
+    "road": "Achtungstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13366,9.21719": {
+    "road": "Werderstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "0058ed93-88f5-4c25-8746-2e5ee87e5559"
+  },
+  "0058ed93-88f5-4c25-8746-2e5ee87e5559": {
+    "road": "Werderstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.19266,9.22853": {
+    "road": "Sulmstraße",
+    "suburb": "",
+    "loc_id": "0cac7e1d-e501-4934-b378-973d89debb4e"
+  },
+  "0cac7e1d-e501-4934-b378-973d89debb4e": {
+    "road": "Sulmstraße",
+    "suburb": ""
+  },
+  "49.18127,9.25783": {
+    "road": "Lilienweg",
+    "suburb": "",
+    "loc_id": "00e9e2cf-b6f7-4872-908b-fcf4c35f388a"
+  },
+  "00e9e2cf-b6f7-4872-908b-fcf4c35f388a": {
+    "road": "Lilienweg",
+    "suburb": ""
+  },
+  "49.15370,9.22402": {
+    "road": "Rauchstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "0c857438-b067-4f13-9b68-351f80e9b371"
+  },
+  "0c857438-b067-4f13-9b68-351f80e9b371": {
+    "road": "Rauchstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.15121,9.21994": {
+    "road": "Gaswerkstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "08876c79-3812-4dd2-9bd6-995030f46ce2"
+  },
+  "08876c79-3812-4dd2-9bd6-995030f46ce2": {
+    "road": "Gaswerkstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14427,9.22490": {
+    "road": "Schillerstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "09be393d-897d-4d1c-bb8e-f31d07f604ef"
+  },
+  "09be393d-897d-4d1c-bb8e-f31d07f604ef": {
+    "road": "Schillerstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14633,9.19429": {
+    "road": "Limesstraße",
+    "suburb": "Böckingen",
+    "loc_id": "0359f633-f6ea-4453-a7d3-5b05d99ab45a"
+  },
+  "0359f633-f6ea-4453-a7d3-5b05d99ab45a": {
+    "road": "Limesstraße",
+    "suburb": "Böckingen"
+  },
+  "49.14852,9.23916": {
+    "road": "Haller Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "090a084c-283f-4d9e-ad0b-3f11749e1c96"
+  },
+  "090a084c-283f-4d9e-ad0b-3f11749e1c96": {
+    "road": "Haller Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.14386,9.23034": {
+    "road": "Schillerstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "05e819c6-5952-4124-82b8-f6a775f42acd"
+  },
+  "05e819c6-5952-4124-82b8-f6a775f42acd": {
+    "road": "Schillerstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14463,9.23642": {
+    "road": "Pfühlstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "062fc323-beb1-4472-86d5-225788fd714e"
+  },
+  "062fc323-beb1-4472-86d5-225788fd714e": {
+    "road": "Pfühlstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13220,9.20772": {
+    "road": "Liebigstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "0cca41e4-de9d-4f52-a49f-af3dd8e8bda6"
+  },
+  "0cca41e4-de9d-4f52-a49f-af3dd8e8bda6": {
+    "road": "Liebigstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13108,9.22346": {
+    "road": "Schmollerstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "0bf1d759-3079-479a-93ab-202f8d2e524d"
+  },
+  "0bf1d759-3079-479a-93ab-202f8d2e524d": {
+    "road": "Schmollerstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13315,9.23690": {
+    "road": "Lothringer Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "056d8e27-62fe-4919-b022-de28eeedebc4"
+  },
+  "056d8e27-62fe-4919-b022-de28eeedebc4": {
+    "road": "Lothringer Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.14585,9.17672": {
+    "road": "Sinsheimer Straße",
+    "suburb": "Böckingen",
+    "loc_id": "09b56d50-59f6-4b11-925a-48b07f46da33"
+  },
+  "09b56d50-59f6-4b11-925a-48b07f46da33": {
+    "road": "Sinsheimer Straße",
+    "suburb": "Böckingen"
+  },
+  "49.14116,9.22807": {
+    "road": "Friedensplatz",
+    "suburb": "Kernstadt",
+    "loc_id": "05c3c6dc-d1cc-4a7f-95a0-2c0eb20cb1d4"
+  },
+  "05c3c6dc-d1cc-4a7f-95a0-2c0eb20cb1d4": {
+    "road": "Friedensplatz",
+    "suburb": "Kernstadt"
+  },
+  "49.14011,9.19097": {
+    "road": "Im Haselter",
+    "suburb": "Böckingen",
+    "loc_id": "069a9ed6-7343-418f-804a-edc02b5d7cdb"
+  },
+  "069a9ed6-7343-418f-804a-edc02b5d7cdb": {
+    "road": "Im Haselter",
+    "suburb": "Böckingen"
+  },
+  "49.13690,9.19015": {
+    "road": "Friedrichstraße",
+    "suburb": "Böckingen",
+    "loc_id": "09a33df0-b1d5-46f1-8240-4225e56df6a5"
+  },
+  "09a33df0-b1d5-46f1-8240-4225e56df6a5": {
+    "road": "Friedrichstraße",
+    "suburb": "Böckingen"
+  },
+  "49.19889,9.14776": {
+    "road": "Hahnenäckerstraße",
+    "suburb": "Biberach",
+    "loc_id": "0408b512-94ac-4a7f-b6b4-3b886d81cff0"
+  },
+  "0408b512-94ac-4a7f-b6b4-3b886d81cff0": {
+    "road": "Hahnenäckerstraße",
+    "suburb": "Biberach"
+  },
+  "49.13170,9.19053": {
+    "road": "Klingenberger Straße",
+    "suburb": "Böckingen",
+    "loc_id": "06209e37-33ba-4db3-a820-800b4902d0b7"
+  },
+  "06209e37-33ba-4db3-a820-800b4902d0b7": {
+    "road": "Klingenberger Straße",
+    "suburb": "Böckingen"
+  },
+  "49.22978,9.19795": {
+    "road": "Saline",
+    "suburb": "Jagstfeld",
+    "loc_id": "05e5ef70-aefa-488c-a77b-cdc2e0b426a1"
+  },
+  "05e5ef70-aefa-488c-a77b-cdc2e0b426a1": {
+    "road": "Saline",
+    "suburb": "Jagstfeld"
+  },
+  "49.12174,9.20499": {
+    "road": "Max-Planck-Straße",
+    "suburb": "Sontheim",
+    "loc_id": "09a94ce5-32a2-4cb6-9293-0808837cc566"
+  },
+  "09a94ce5-32a2-4cb6-9293-0808837cc566": {
+    "road": "Max-Planck-Straße",
+    "suburb": "Sontheim"
+  },
+  "49.11845,9.20652": {
+    "road": "Robert-Bosch-Straße",
+    "suburb": "Sontheim",
+    "loc_id": "009c98f3-c93a-4d55-abfe-79f7acf2a0ff"
+  },
+  "009c98f3-c93a-4d55-abfe-79f7acf2a0ff": {
+    "road": "Robert-Bosch-Straße",
+    "suburb": "Sontheim"
+  },
+  "49.22919,9.15150": {
+    "road": "Rappenauer Straße",
+    "suburb": "Wimpfen am Berg",
+    "loc_id": "0004c095-29ec-4894-81a8-05f3a7a55650"
+  },
+  "0004c095-29ec-4894-81a8-05f3a7a55650": {
+    "road": "Rappenauer Straße",
+    "suburb": "Wimpfen am Berg"
+  },
+  "49.09452,9.27116": {
+    "road": "Amselstraße",
+    "suburb": "",
+    "loc_id": "014b2715-639e-46d5-8484-b94fbf5dbc59"
+  },
+  "014b2715-639e-46d5-8484-b94fbf5dbc59": {
+    "road": "Amselstraße",
+    "suburb": ""
+  },
+  "49.11678,9.20659": {
+    "road": "Staufenbergstraße",
+    "suburb": "Sontheim",
+    "loc_id": "01371af2-75b4-4b9a-9e74-be20129483d5"
+  },
+  "01371af2-75b4-4b9a-9e74-be20129483d5": {
+    "road": "Staufenbergstraße",
+    "suburb": "Sontheim"
+  },
+  "49.21421,9.19872": {
+    "road": "Otto-Hahn-Straße",
+    "suburb": "",
+    "loc_id": "0164cb28-7dd7-4487-ad31-0021250c85e4"
+  },
+  "0164cb28-7dd7-4487-ad31-0021250c85e4": {
+    "road": "Otto-Hahn-Straße",
+    "suburb": ""
+  },
+  "49.14795,9.13118": {
+    "road": "Maybachstraße",
+    "suburb": "Großgartach",
+    "loc_id": "03d28884-7b96-4c82-9dae-3a7966c05ff5"
+  },
+  "03d28884-7b96-4c82-9dae-3a7966c05ff5": {
+    "road": "Maybachstraße",
+    "suburb": "Großgartach"
+  },
+  "49.13602,9.25740": {
+    "road": "Schirrmannstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "03e128b2-1e5f-4a60-85bc-4c20f01791f8"
+  },
+  "03e128b2-1e5f-4a60-85bc-4c20f01791f8": {
+    "road": "Schirrmannstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14461,9.18238": {
+    "road": "Bruchsaler Straße",
+    "suburb": "Böckingen",
+    "loc_id": "0474cefc-8101-42c1-a476-18c83f54b6dd"
+  },
+  "0474cefc-8101-42c1-a476-18c83f54b6dd": {
+    "road": "Bruchsaler Straße",
+    "suburb": "Böckingen"
+  },
+  "49.16372,9.20098": {
+    "road": "Stettiner Straße",
+    "suburb": "Neckargartach",
+    "loc_id": "0786a63c-31fa-4a51-80b5-956e37f73d99"
+  },
+  "0786a63c-31fa-4a51-80b5-956e37f73d99": {
+    "road": "Stettiner Straße",
+    "suburb": "Neckargartach"
+  },
+  "49.17049,9.22124": {
+    "road": "Schönbeinstraße",
+    "suburb": "",
+    "loc_id": "09e512a9-e0e8-4ed9-8446-0ceeaa05e86d"
+  },
+  "09e512a9-e0e8-4ed9-8446-0ceeaa05e86d": {
+    "road": "Schönbeinstraße",
+    "suburb": ""
+  },
+  "49.10100,9.20155": {
+    "road": "Theodor-Heuss-Straße",
+    "suburb": "",
+    "loc_id": "0e2e0c4c-5bd4-4d40-96c7-e09c6b3b5d9a"
+  },
+  "0e2e0c4c-5bd4-4d40-96c7-e09c6b3b5d9a": {
+    "road": "Theodor-Heuss-Straße",
+    "suburb": ""
+  },
+  "49.15341,9.23179": {
+    "road": "Schickhardtstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "0e87bab4-f739-4269-b217-2c4fb48c1719"
+  },
+  "0e87bab4-f739-4269-b217-2c4fb48c1719": {
+    "road": "Schickhardtstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.12006,9.21170": {
+    "road": "Max-von-Laue-Straße",
+    "suburb": "Sontheim",
+    "loc_id": "0ef4e394-ec65-47fe-803c-efd5dbdc03f4"
+  },
+  "0ef4e394-ec65-47fe-803c-efd5dbdc03f4": {
+    "road": "Max-von-Laue-Straße",
+    "suburb": "Sontheim"
+  },
+  "49.14484,9.18651": {
+    "road": "Heidelberger Straße",
+    "suburb": "Böckingen",
+    "loc_id": "1328bc96-0de7-48d3-b573-afb4ed199ac5"
+  },
+  "1328bc96-0de7-48d3-b573-afb4ed199ac5": {
+    "road": "Heidelberger Straße",
+    "suburb": "Böckingen"
+  },
+  "49.12553,9.22689": {
+    "road": "Happenbacher Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "153c7328-a7a5-446a-9778-e5d0d5dc758f"
+  },
+  "153c7328-a7a5-446a-9778-e5d0d5dc758f": {
+    "road": "Happenbacher Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.12713,9.22164": {
+    "road": "Hohenstaufenstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "158a2d2d-706a-4751-a2a4-f467e1391d0a"
+  },
+  "158a2d2d-706a-4751-a2a4-f467e1391d0a": {
+    "road": "Hohenstaufenstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.11745,9.15265": {
+    "road": "Am Wasserturm",
+    "suburb": "Klingenberg",
+    "loc_id": "15e365a2-9e60-41bf-a355-cbcefceee250"
+  },
+  "15e365a2-9e60-41bf-a355-cbcefceee250": {
+    "road": "Am Wasserturm",
+    "suburb": "Klingenberg"
+  },
+  "49.13848,9.24698": {
+    "road": "Am Seelesberg",
+    "suburb": "Kernstadt",
+    "loc_id": "15fd35c4-0254-48b4-bd86-ba900c0303c1"
+  },
+  "15fd35c4-0254-48b4-bd86-ba900c0303c1": {
+    "road": "Am Seelesberg",
+    "suburb": "Kernstadt"
+  },
+  "49.14335,9.21762": {
+    "road": "Lohtorstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "16878d32-9b24-4f22-a336-be6c4f44d020"
+  },
+  "16878d32-9b24-4f22-a336-be6c4f44d020": {
+    "road": "Lohtorstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14125,9.23413": {
+    "road": "Kernerstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "173e6902-897a-460d-9639-a3b4b4e5777d"
+  },
+  "173e6902-897a-460d-9639-a3b4b4e5777d": {
+    "road": "Kernerstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.10279,9.19925": {
+    "road": "Dieselstraße",
+    "suburb": "",
+    "loc_id": "1837183a-e83e-448b-aea1-74ae77ac8ae8"
+  },
+  "1837183a-e83e-448b-aea1-74ae77ac8ae8": {
+    "road": "Dieselstraße",
+    "suburb": ""
+  },
+  "49.15079,9.22656": {
+    "road": "Lessingstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "188f27d2-fb1c-4d53-b67f-4e623028ec2d"
+  },
+  "188f27d2-fb1c-4d53-b67f-4e623028ec2d": {
+    "road": "Lessingstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.12554,9.20826": {
+    "road": "Robert-Bosch-Straße",
+    "suburb": "Sontheim",
+    "loc_id": "18f62831-3ed0-4c73-9d20-7f5cef253a00"
+  },
+  "18f62831-3ed0-4c73-9d20-7f5cef253a00": {
+    "road": "Robert-Bosch-Straße",
+    "suburb": "Sontheim"
+  },
+  "49.16430,9.16672": {
+    "road": "Maihaldenstraße",
+    "suburb": "Frankenbach",
+    "loc_id": "19a170ea-694d-415b-8ead-0f2b1f7e1de8"
+  },
+  "19a170ea-694d-415b-8ead-0f2b1f7e1de8": {
+    "road": "Maihaldenstraße",
+    "suburb": "Frankenbach"
+  },
+  "49.13158,9.22952": {
+    "road": "Blücherstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "19c89409-ab0c-4ea1-af0d-cc259c78fc13"
+  },
+  "19c89409-ab0c-4ea1-af0d-cc259c78fc13": {
+    "road": "Blücherstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.15762,9.17450": {
+    "road": "Dörnlestraße",
+    "suburb": "Frankenbach",
+    "loc_id": "1a1377dc-e7da-4980-8e6f-9e0a356e95f5"
+  },
+  "1a1377dc-e7da-4980-8e6f-9e0a356e95f5": {
+    "road": "Dörnlestraße",
+    "suburb": "Frankenbach"
+  },
+  "49.19536,9.19619": {
+    "road": "Südstraße",
+    "suburb": "",
+    "loc_id": "1a774ebc-3c45-4e63-b098-9c94f8d29e74"
+  },
+  "1a774ebc-3c45-4e63-b098-9c94f8d29e74": {
+    "road": "Südstraße",
+    "suburb": ""
+  },
+  "49.09471,9.21636": {
+    "road": "Gottlob-Steinmetz-Straße",
+    "suburb": "",
+    "loc_id": "1bb9643a-77ee-418f-a058-8a54d1836e47"
+  },
+  "1bb9643a-77ee-418f-a058-8a54d1836e47": {
+    "road": "Gottlob-Steinmetz-Straße",
+    "suburb": ""
+  },
+  "49.16658,9.20473": {
+    "road": "Böckinger Straße",
+    "suburb": "Neckargartach",
+    "loc_id": "1bf06791-99ad-40a1-af19-780b3f07a8c9"
+  },
+  "1bf06791-99ad-40a1-af19-780b3f07a8c9": {
+    "road": "Böckinger Straße",
+    "suburb": "Neckargartach"
+  },
+  "49.13967,9.20800": {
+    "road": "Weststraße",
+    "suburb": "Kernstadt",
+    "loc_id": "1c52c3ea-99aa-465a-a815-fcf4c5df9e3f"
+  },
+  "1c52c3ea-99aa-465a-a815-fcf4c5df9e3f": {
+    "road": "Weststraße",
+    "suburb": "Kernstadt"
+  },
+  "49.15531,9.22764": {
+    "road": "Friedrich-Ebert-Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "1cdc8b7e-e90f-4af5-a1c8-e3553b6992ce"
+  },
+  "1cdc8b7e-e90f-4af5-a1c8-e3553b6992ce": {
+    "road": "Friedrich-Ebert-Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.12404,9.22446": {
+    "road": "Herbert-Hoover-Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "1d4f4d33-026e-4ab2-be32-5be6b895c598"
+  },
+  "1d4f4d33-026e-4ab2-be32-5be6b895c598": {
+    "road": "Herbert-Hoover-Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.12878,9.20673": {
+    "road": "Friedrich-Dürr-Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "1dee2cdf-9eb3-47b5-803d-8993243d184d"
+  },
+  "1dee2cdf-9eb3-47b5-803d-8993243d184d": {
+    "road": "Friedrich-Dürr-Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.11339,9.16872": {
+    "road": "Hossäckerweg",
+    "suburb": "Horkheim",
+    "loc_id": "1e82edc0-0448-420e-b04f-c12e92cd1091"
+  },
+  "1e82edc0-0448-420e-b04f-c12e92cd1091": {
+    "road": "Hossäckerweg",
+    "suburb": "Horkheim"
+  },
+  "49.18628,9.23313": {
+    "road": "Mozartstraße",
+    "suburb": "",
+    "loc_id": "201db3ed-cd74-4f7b-9689-a4995ddf935f"
+  },
+  "201db3ed-cd74-4f7b-9689-a4995ddf935f": {
+    "road": "Mozartstraße",
+    "suburb": ""
+  },
+  "49.17410,9.20095": {
+    "road": "Böllinger Straße",
+    "suburb": "Neckargartach",
+    "loc_id": "20546698-6c2e-4e4e-b8e1-3b93cb489bfb"
+  },
+  "20546698-6c2e-4e4e-b8e1-3b93cb489bfb": {
+    "road": "Böllinger Straße",
+    "suburb": "Neckargartach"
+  },
+  "49.18664,9.22910": {
+    "road": "Friedenstraße",
+    "suburb": "",
+    "loc_id": "20e4dd82-8b36-403b-aedd-b0c4a2ad42a7"
+  },
+  "20e4dd82-8b36-403b-aedd-b0c4a2ad42a7": {
+    "road": "Friedenstraße",
+    "suburb": ""
+  },
+  "49.10261,9.26281": {
+    "road": "Rieslingstraße",
+    "suburb": "",
+    "loc_id": "2130decf-1f6d-4b4c-93c0-4746fa6bdb79"
+  },
+  "2130decf-1f6d-4b4c-93c0-4746fa6bdb79": {
+    "road": "Rieslingstraße",
+    "suburb": ""
+  },
+  "49.21192,9.21615": {
+    "road": "Schultheiß-Seeber-Straße",
+    "suburb": "Kochendorf",
+    "loc_id": "2231bcad-6c42-4b83-b613-10481995272d"
+  },
+  "2231bcad-6c42-4b83-b613-10481995272d": {
+    "road": "Schultheiß-Seeber-Straße",
+    "suburb": "Kochendorf"
+  },
+  "49.15076,9.23075": {
+    "road": "Wartbergstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "22450866-10d5-4a21-9428-ae36432cba96"
+  },
+  "22450866-10d5-4a21-9428-ae36432cba96": {
+    "road": "Wartbergstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14208,9.18033": {
+    "road": "Bruchsaler Straße",
+    "suburb": "Böckingen",
+    "loc_id": "23231ba1-9a4d-4ed1-a38b-babc717c1c2a"
+  },
+  "23231ba1-9a4d-4ed1-a38b-babc717c1c2a": {
+    "road": "Bruchsaler Straße",
+    "suburb": "Böckingen"
+  },
+  "49.13650,9.22273": {
+    "road": "Steinstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "25742696-42b5-46f5-9937-119511584154"
+  },
+  "25742696-42b5-46f5-9937-119511584154": {
+    "road": "Steinstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13365,9.22022": {
+    "road": "Urbanstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "25accc9c-7d44-4d22-8a58-779a571c3544"
+  },
+  "25accc9c-7d44-4d22-8a58-779a571c3544": {
+    "road": "Urbanstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13997,9.17635": {
+    "road": "Helmholtzstraße",
+    "suburb": "Böckingen",
+    "loc_id": "2601fed9-9c88-4303-a446-c53a945bcaec"
+  },
+  "2601fed9-9c88-4303-a446-c53a945bcaec": {
+    "road": "Helmholtzstraße",
+    "suburb": "Böckingen"
+  },
+  "49.12225,9.19551": {
+    "road": "Bottwarbahnstraße",
+    "suburb": "Sontheim",
+    "loc_id": "264591e7-afff-42a7-abe5-ae051f414eb1"
+  },
+  "264591e7-afff-42a7-abe5-ae051f414eb1": {
+    "road": "Bottwarbahnstraße",
+    "suburb": "Sontheim"
+  },
+  "49.19989,9.22844": {
+    "road": "Hezenbergstraße",
+    "suburb": "",
+    "loc_id": "27627007-470d-4092-ae6b-6f7933b32094"
+  },
+  "27627007-470d-4092-ae6b-6f7933b32094": {
+    "road": "Hezenbergstraße",
+    "suburb": ""
+  },
+  "49.15076,9.18542": {
+    "road": "Hofweg",
+    "suburb": "Böckingen",
+    "loc_id": "2956d959-a199-4c4e-a20a-8b73483d13c1"
+  },
+  "2956d959-a199-4c4e-a20a-8b73483d13c1": {
+    "road": "Hofweg",
+    "suburb": "Böckingen"
+  },
+  "49.11720,9.15366": {
+    "road": "Theodor-Heuss-Straße",
+    "suburb": "Klingenberg",
+    "loc_id": "2a91cfc0-cda2-454b-bfd1-bbf0035a2c06"
+  },
+  "2a91cfc0-cda2-454b-bfd1-bbf0035a2c06": {
+    "road": "Theodor-Heuss-Straße",
+    "suburb": "Klingenberg"
+  },
+  "49.21197,9.24663": {
+    "road": "Schwabenweg",
+    "suburb": "",
+    "loc_id": "2b5245ce-f1c6-4dc6-8272-1ea3d7ed786a"
+  },
+  "2b5245ce-f1c6-4dc6-8272-1ea3d7ed786a": {
+    "road": "Schwabenweg",
+    "suburb": ""
+  },
+  "49.15374,9.18675": {
+    "road": "Maasstraße",
+    "suburb": "Neckargartach",
+    "loc_id": "2e222be0-ba0a-47b7-9b41-a9fba39b1e5e"
+  },
+  "2e222be0-ba0a-47b7-9b41-a9fba39b1e5e": {
+    "road": "Maasstraße",
+    "suburb": "Neckargartach"
+  },
+  "49.15371,9.27605": {
+    "road": "Heilbronner Straße",
+    "suburb": "",
+    "loc_id": "33011488-c462-4012-b721-2d928f8178d5"
+  },
+  "33011488-c462-4012-b721-2d928f8178d5": {
+    "road": "Heilbronner Straße",
+    "suburb": ""
+  },
+  "49.11770,9.18921": {
+    "road": "Hauptstraße",
+    "suburb": "Sontheim",
+    "loc_id": "3311e7fb-0b77-4cfa-8c4e-dc4d3efca0a1"
+  },
+  "3311e7fb-0b77-4cfa-8c4e-dc4d3efca0a1": {
+    "road": "Hauptstraße",
+    "suburb": "Sontheim"
+  },
+  "49.14586,9.21933": {
+    "road": "Turmstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "331bf5ad-d369-48d2-8b2e-ff44d20894ef"
+  },
+  "331bf5ad-d369-48d2-8b2e-ff44d20894ef": {
+    "road": "Turmstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14023,9.22460": {
+    "road": "Bismarckstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "3629bb94-5035-46dc-811a-1bf2ba146387"
+  },
+  "3629bb94-5035-46dc-811a-1bf2ba146387": {
+    "road": "Bismarckstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.22297,9.15212": {
+    "road": "Erhard-Schnepf-Straße",
+    "suburb": "Wimpfen am Berg",
+    "loc_id": "37390019-ffe3-4a0c-a13b-7492754a2523"
+  },
+  "37390019-ffe3-4a0c-a13b-7492754a2523": {
+    "road": "Erhard-Schnepf-Straße",
+    "suburb": "Wimpfen am Berg"
+  },
+  "49.11802,9.19703": {
+    "road": "Staufenbergstraße",
+    "suburb": "Sontheim",
+    "loc_id": "37a212db-f689-49fb-92b5-d300dfef9b61"
+  },
+  "37a212db-f689-49fb-92b5-d300dfef9b61": {
+    "road": "Staufenbergstraße",
+    "suburb": "Sontheim"
+  },
+  "49.09294,9.27779": {
+    "road": "Obergruppenbacher Straße",
+    "suburb": "",
+    "loc_id": "38ff2db8-53b7-4276-9ca2-18c96ddca3cd"
+  },
+  "38ff2db8-53b7-4276-9ca2-18c96ddca3cd": {
+    "road": "Obergruppenbacher Straße",
+    "suburb": ""
+  },
+  "49.10646,9.26665": {
+    "road": "Donnbronner Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "3a468e80-27df-4a94-ba2f-2acf0532fc27"
+  },
+  "3a468e80-27df-4a94-ba2f-2acf0532fc27": {
+    "road": "Donnbronner Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.18695,9.22306": {
+    "road": "Schillerstraße",
+    "suburb": "",
+    "loc_id": "3a681d40-19ec-4216-8222-e082d85ee19c"
+  },
+  "3a681d40-19ec-4216-8222-e082d85ee19c": {
+    "road": "Schillerstraße",
+    "suburb": ""
+  },
+  "49.15543,9.17561": {
+    "road": "Brechhausstraße",
+    "suburb": "Frankenbach",
+    "loc_id": "3eebdc41-03d1-4b5d-9546-4b4423fed974"
+  },
+  "3eebdc41-03d1-4b5d-9546-4b4423fed974": {
+    "road": "Brechhausstraße",
+    "suburb": "Frankenbach"
+  },
+  "49.13903,9.21771": {
+    "road": "Rollwagstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "441c3cac-8d10-4796-bc00-fce46f9768c1"
+  },
+  "441c3cac-8d10-4796-bc00-fce46f9768c1": {
+    "road": "Rollwagstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.22631,9.16022": {
+    "road": "Deimlingstraße",
+    "suburb": "Wimpfen am Berg",
+    "loc_id": "4776173b-f725-444c-a025-3fc3bdad7605"
+  },
+  "4776173b-f725-444c-a025-3fc3bdad7605": {
+    "road": "Deimlingstraße",
+    "suburb": "Wimpfen am Berg"
+  },
+  "49.14987,9.22310": {
+    "road": "Pestalozzistraße",
+    "suburb": "Kernstadt",
+    "loc_id": "4a96689f-7853-4826-921d-9d6b0db5e274"
+  },
+  "4a96689f-7853-4826-921d-9d6b0db5e274": {
+    "road": "Pestalozzistraße",
+    "suburb": "Kernstadt"
+  },
+  "49.14723,9.18896": {
+    "road": "Holunderweg",
+    "suburb": "Böckingen",
+    "loc_id": "4abf4082-8432-4bd9-9493-6709e28b5c82"
+  },
+  "4abf4082-8432-4bd9-9493-6709e28b5c82": {
+    "road": "Holunderweg",
+    "suburb": "Böckingen"
+  },
+  "49.19199,9.20294": {
+    "road": "Austraße",
+    "suburb": "",
+    "loc_id": "5019e652-1559-47d8-822a-37c66041c6d8"
+  },
+  "5019e652-1559-47d8-822a-37c66041c6d8": {
+    "road": "Austraße",
+    "suburb": ""
+  },
+  "49.13678,9.20742": {
+    "road": "Kornacherstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "50358b29-03ec-4e86-bf8d-b5b6592b930d"
+  },
+  "50358b29-03ec-4e86-bf8d-b5b6592b930d": {
+    "road": "Kornacherstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.11413,9.17227": {
+    "road": "Nussäckerstraße",
+    "suburb": "Horkheim",
+    "loc_id": "5651c7c4-d422-40a4-ba9b-26f57ab79d93"
+  },
+  "5651c7c4-d422-40a4-ba9b-26f57ab79d93": {
+    "road": "Nussäckerstraße",
+    "suburb": "Horkheim"
+  },
+  "49.11849,9.18017": {
+    "road": "Amsterdamer Straße",
+    "suburb": "Horkheim",
+    "loc_id": "57569c06-cf0a-4dee-8bac-faae67a15ba6"
+  },
+  "57569c06-cf0a-4dee-8bac-faae67a15ba6": {
+    "road": "Amsterdamer Straße",
+    "suburb": "Horkheim"
+  },
+  "49.13756,9.17730": {
+    "road": "Längelterstraße",
+    "suburb": "Böckingen",
+    "loc_id": "5889de14-e14c-4fa0-bc07-e0acbafe1997"
+  },
+  "5889de14-e14c-4fa0-bc07-e0acbafe1997": {
+    "road": "Längelterstraße",
+    "suburb": "Böckingen"
+  },
+  "49.14019,9.23422": {
+    "road": "Bismarckstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "589e8bf8-ea0a-4c4c-9254-005d061baa8c"
+  },
+  "589e8bf8-ea0a-4c4c-9254-005d061baa8c": {
+    "road": "Bismarckstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.15637,9.20099": {
+    "road": "Im Fleischbeil",
+    "suburb": "Neckargartach",
+    "loc_id": "58e1250f-5a8a-45de-b7f5-68f599560ef0"
+  },
+  "58e1250f-5a8a-45de-b7f5-68f599560ef0": {
+    "road": "Im Fleischbeil",
+    "suburb": "Neckargartach"
+  },
+  "49.13391,9.23332": {
+    "road": "Alexanderstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "595ce4a2-a10c-451a-b758-e8f0d58f50ae"
+  },
+  "595ce4a2-a10c-451a-b758-e8f0d58f50ae": {
+    "road": "Alexanderstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.13735,9.17051": {
+    "road": "Längelterstraße",
+    "suburb": "Böckingen",
+    "loc_id": "5982062c-8928-4f10-b95e-025965a5d3cb"
+  },
+  "5982062c-8928-4f10-b95e-025965a5d3cb": {
+    "road": "Längelterstraße",
+    "suburb": "Böckingen"
+  },
+  "49.12844,9.21023": {
+    "road": "Merkurstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "5e5da1af-009c-448b-bdc0-4c27fe9b3714"
+  },
+  "5e5da1af-009c-448b-bdc0-4c27fe9b3714": {
+    "road": "Merkurstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.16762,9.19728": {
+    "road": "Widmannstraße",
+    "suburb": "Neckargartach",
+    "loc_id": "60af9299-7199-4e54-a483-3efa3d730879"
+  },
+  "60af9299-7199-4e54-a483-3efa3d730879": {
+    "road": "Widmannstraße",
+    "suburb": "Neckargartach"
+  },
+  "49.10810,9.14126": {
+    "road": "Bahnhofstraße",
+    "suburb": "",
+    "loc_id": "65c6ad0a-565d-49ec-b734-b9333ef0c833"
+  },
+  "65c6ad0a-565d-49ec-b734-b9333ef0c833": {
+    "road": "Bahnhofstraße",
+    "suburb": ""
+  },
+  "49.13984,9.24019": {
+    "road": "Im Wannental",
+    "suburb": "Kernstadt",
+    "loc_id": "67634892-777b-40fd-8dd6-e01131715599"
+  },
+  "67634892-777b-40fd-8dd6-e01131715599": {
+    "road": "Im Wannental",
+    "suburb": "Kernstadt"
+  },
+  "49.10236,9.19998": {
+    "road": "Seeäckerstraße",
+    "suburb": "",
+    "loc_id": "717233a7-c54a-4664-8fed-2649582e8942"
+  },
+  "717233a7-c54a-4664-8fed-2649582e8942": {
+    "road": "Seeäckerstraße",
+    "suburb": ""
+  },
+  "49.22366,9.16237": {
+    "road": "Ignaz-von-Beecke-Straße",
+    "suburb": "Wimpfen am Berg",
+    "loc_id": "73eac5c5-2882-436d-8ea4-bf4fca3cd503"
+  },
+  "73eac5c5-2882-436d-8ea4-bf4fca3cd503": {
+    "road": "Ignaz-von-Beecke-Straße",
+    "suburb": "Wimpfen am Berg"
+  },
+  "49.19944,9.24395": {
+    "road": "Neubergstraße",
+    "suburb": "",
+    "loc_id": "75b4177f-e09d-4649-ae31-3da061a6021c"
+  },
+  "75b4177f-e09d-4649-ae31-3da061a6021c": {
+    "road": "Neubergstraße",
+    "suburb": ""
+  },
+  "49.14759,9.18213": {
+    "road": "Heidelberger Straße",
+    "suburb": "Böckingen",
+    "loc_id": "77ba55cc-1f1d-4014-9705-e10ac1d469aa"
+  },
+  "77ba55cc-1f1d-4014-9705-e10ac1d469aa": {
+    "road": "Heidelberger Straße",
+    "suburb": "Böckingen"
+  },
+  "49.10463,9.13521": {
+    "road": "Sportgelände Breibach",
+    "suburb": "",
+    "loc_id": "7965fa90-a770-405a-885a-29c1512ade52"
+  },
+  "7965fa90-a770-405a-885a-29c1512ade52": {
+    "road": "Sportgelände Breibach",
+    "suburb": ""
+  },
+  "49.21486,9.20071": {
+    "road": "Drosselweg",
+    "suburb": "",
+    "loc_id": "7aade748-7945-4d10-8231-1f761dcbc7c6"
+  },
+  "7aade748-7945-4d10-8231-1f761dcbc7c6": {
+    "road": "Drosselweg",
+    "suburb": ""
+  },
+  "49.19994,9.23074": {
+    "road": "Damaschkestraße",
+    "suburb": "",
+    "loc_id": "7ba5ab81-61f0-4993-8d34-e58fb0598691"
+  },
+  "7ba5ab81-61f0-4993-8d34-e58fb0598691": {
+    "road": "Damaschkestraße",
+    "suburb": ""
+  },
+  "49.13972,9.24034": {
+    "road": "Im Wannental",
+    "suburb": "Kernstadt",
+    "loc_id": "80dae88b-dd74-417d-805f-c8f06e80dc62"
+  },
+  "80dae88b-dd74-417d-805f-c8f06e80dc62": {
+    "road": "Im Wannental",
+    "suburb": "Kernstadt"
+  },
+  "49.12888,9.18738": {
+    "road": "Hofstattstraße",
+    "suburb": "Böckingen",
+    "loc_id": "8407541b-ef36-46ba-8dce-f4464340e324"
+  },
+  "8407541b-ef36-46ba-8dce-f4464340e324": {
+    "road": "Hofstattstraße",
+    "suburb": "Böckingen"
+  },
+  "49.18316,9.22945": {
+    "road": "Carmauxstraße",
+    "suburb": "",
+    "loc_id": "853e962e-a55e-4f25-9eea-ea596ae6377c"
+  },
+  "853e962e-a55e-4f25-9eea-ea596ae6377c": {
+    "road": "Carmauxstraße",
+    "suburb": ""
+  },
+  "49.09346,9.27458": {
+    "road": "Starenweg",
+    "suburb": "",
+    "loc_id": "86deacd3-3cd0-48b8-b89b-3e01ac962c97"
+  },
+  "86deacd3-3cd0-48b8-b89b-3e01ac962c97": {
+    "road": "Starenweg",
+    "suburb": ""
+  },
+  "49.15888,9.19612": {
+    "road": "Marienburger Straße",
+    "suburb": "Neckargartach",
+    "loc_id": "96112372-56a8-4f9b-8b8f-064f05579798"
+  },
+  "96112372-56a8-4f9b-8b8f-064f05579798": {
+    "road": "Marienburger Straße",
+    "suburb": "Neckargartach"
+  },
+  "49.11941,9.19342": {
+    "road": "Zwirnereistraße",
+    "suburb": "Sontheim",
+    "loc_id": "a16d5940-ec30-4a96-ad76-b2feff794172"
+  },
+  "a16d5940-ec30-4a96-ad76-b2feff794172": {
+    "road": "Zwirnereistraße",
+    "suburb": "Sontheim"
+  },
+  "49.13312,9.24449": {
+    "road": "Reutlinger Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "a759bfe7-d9ca-4243-986f-06386251625a"
+  },
+  "a759bfe7-d9ca-4243-986f-06386251625a": {
+    "road": "Reutlinger Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.13392,9.21114": {
+    "road": "Schoettlestraße",
+    "suburb": "Kernstadt",
+    "loc_id": "b3ebe810-724a-454e-83c5-68467048b3ec"
+  },
+  "b3ebe810-724a-454e-83c5-68467048b3ec": {
+    "road": "Schoettlestraße",
+    "suburb": "Kernstadt"
+  },
+  "49.17496,9.26843": {
+    "road": "Weinstraße",
+    "suburb": "",
+    "loc_id": "b43c4ac9-0f83-49a3-a8d0-088505b31d85"
+  },
+  "b43c4ac9-0f83-49a3-a8d0-088505b31d85": {
+    "road": "Weinstraße",
+    "suburb": ""
+  },
+  "49.13180,9.18988": {
+    "road": "Hohlstraße",
+    "suburb": "Böckingen",
+    "loc_id": "bed9e6c0-3cbe-44ea-83fe-291cd65b13df"
+  },
+  "bed9e6c0-3cbe-44ea-83fe-291cd65b13df": {
+    "road": "Hohlstraße",
+    "suburb": "Böckingen"
+  },
+  "49.12308,9.20009": {
+    "road": "Mauerstraße",
+    "suburb": "Sontheim",
+    "loc_id": "c754c24a-6eb6-4364-bc37-51fd248a66db"
+  },
+  "c754c24a-6eb6-4364-bc37-51fd248a66db": {
+    "road": "Mauerstraße",
+    "suburb": "Sontheim"
+  },
+  "49.14148,9.20948": {
+    "road": "Mozartstraße",
+    "suburb": "Kernstadt",
+    "loc_id": "d19a61b5-0418-468e-8135-3534e5738607"
+  },
+  "d19a61b5-0418-468e-8135-3534e5738607": {
+    "road": "Mozartstraße",
+    "suburb": "Kernstadt"
+  },
+  "49.20627,9.20179": {
+    "road": "In den Scheibigswiesen",
+    "suburb": "",
+    "loc_id": "d2b21e88-0dd5-464b-bf73-7202e1debba4"
+  },
+  "d2b21e88-0dd5-464b-bf73-7202e1debba4": {
+    "road": "In den Scheibigswiesen",
+    "suburb": ""
+  },
+  "49.13405,9.24901": {
+    "road": "Badener Straße",
+    "suburb": "Kernstadt",
+    "loc_id": "ebd4c2a7-5951-4edf-8472-1be26ed8f546"
+  },
+  "ebd4c2a7-5951-4edf-8472-1be26ed8f546": {
+    "road": "Badener Straße",
+    "suburb": "Kernstadt"
+  },
+  "49.12593,9.20146": {
+    "road": "Kolpingstraße",
+    "suburb": "Sontheim",
+    "loc_id": "f019215f-08c4-439d-946c-fb34f479020c"
+  },
+  "f019215f-08c4-439d-946c-fb34f479020c": {
+    "road": "Kolpingstraße",
+    "suburb": "Sontheim"
+  }
+}

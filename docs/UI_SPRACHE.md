@@ -27,8 +27,8 @@ Im Entsorgungskontext bedeuten die realen Domänenkonzepte:
 | Nr. | Bereich / Wo | Technischer Ist-Zustand (Leckage) | Kategorie | Sprache des Fahrers / Disponenten (Soll) | Heuristischer Verstoß & Auswirkung |
 |---|---|---|---|---|---|
 | **1** | Fahrer-Ansicht (`#driver-tour`) | `<td>white</td>` (25×) | Enum (Englisch) | `<td>Weißglas</td>` (bzw. Braunglas / Grünglas) | Fahrer muss englische Farb-Enums geistig übersetzen. Verstoß gegen vertraute Domänensprache. |
-| **2** | Fahrer-Ansicht (`#driver-tour`) | `<strong>disposal_depot</strong><br><code>disposal_depot</code>` | snake_case / System-ID | `<strong>Entsorgungshof / Wertstoffhof</strong>` | Technischer Dummy-Key statt verständlichem Entladeziel. Hohe Verwirrung beim Fahrer. |
-| **3** | Fahrer-Ansicht (`#driver-tour`) | `<strong>UUID</strong><br><code>UUID</code>` (doppelt gerendert) | UUID / Schlüssel-Leak | `<strong>Stopp #X · Wertwiesenpark</strong>` (Titel zuerst, ID `b3ebe810` in Klammern) | 36-stellige Datenbank-UUID ohne Lesbarkeit. Fahrer kann Standort im Stadtgebiet nicht zuordnen. |
+| **2** | Fahrer-Ansicht (`#driver-tour`) | `<strong>disposal_depot</strong><br><code>disposal_depot</code>` | snake_case / System-ID | `<strong>Entsorgungshof</strong><br>Entladestelle (angenommen)` | Technischer Dummy-Key statt verständlichem Entladeziel. Keine Behauptung eines bestätigten Wertstoffhofs. |
+| **3** | Fahrer-Ansicht (`#driver-tour`) | `<strong>UUID</strong><br><code>UUID</code>` (doppelt gerendert) | UUID / Schlüssel-Leak | `<strong>Standort #1</strong><br>Achtungstraße (Kernstadt)` | 36-stellige Datenbank-UUID ohne Lesbarkeit. Fahrer benötigt Stoppnummer und echten Straßennamen. ID nur unter Details. |
 | **4** | Fahrer-Rückmeldung (`#driver-tour`) | „gleiche Spalten wie cleaned_readings.csv“ | Dateiname / Interna | „im Standard-Tabellenformat für Tourenrückmeldungen“ | Exponiert interne Pipeline-Dateinamen gegenüber dem Fahrer. |
 | **5** | Disponenten-Freigabe (`#role-dispatcher` & `#view-route`) | `<input value="dispatcher">` | Englisch / Code-Default | `<input value="Disponent/in" placeholder="Name">` | Englischsprachiges technisches Standard-Token statt echter Rolle. |
 | **6** | Route Stopp-Tabelle (`#view-route`) | Spaltenüberschrift `<th>Location_id</th>` | snake_case / DB-Spalte | `<th>Standort / Adresse</th>` | Datenbankspaltenname statt Anwenderbegriff. |
@@ -38,14 +38,14 @@ Im Entsorgungskontext bedeuten die realen Domänenkonzepte:
 | **10** | Route Stopp-Tabelle (`#view-route`) | Etappe / Kumulativ: `1.318 km`, `10.481 km` | Roh-Float / Dezimalpunkt | `1,3 km`, `10,5 km` (deutsches Zahlenformat) | Scheinpräzision auf Millimeter-Ebene und englisches Punkt-Format. |
 | **11** | Route Stopp-Tabelle (`#view-route`) | Score: `0.8333`, `0.8845` | Roh-Float / Fehlende Einheit | `0,83 (Priorität: hoch)` | Unbeschriftete Kennzahl ohne Wertebereich oder Skalierung. |
 | **12** | Route & Daten Hinweise (`#view-route`, `#view-data`) | `Erklärung für (Location_id, material)` | snake_case / Tuple-Syntax | `Erklärung für Standort und Glasart` | Python-Tupelsyntax in Anwender-Hinweistexten. |
-| **13** | Copilot Tab (`#view-copilot`) | Container-Select: `Stopp #1: b3ebe810... (white)` | UUID & Enum | `Stopp #1: Weißglas (Standort b3ebe810...)` | Dropdown unlesbar wegen 36-stelliger Hexadezimal-Strings. |
-| **14** | Copilot Tab (`#view-copilot`) | Top-20 Select: `Top-20: 0004c095... (white)` | UUID & Enum | `Top-20: Weißglas (0004c095...)` | Unübersichtliche Auswahlliste ohne Farb-/Ortsübersetzung. |
+| **13** | Copilot Tab (`#view-copilot`) | Container-Select: `Stopp #1: b3ebe810... (white)` | UUID & Enum | `Stopp #1 · Achtungstraße · Weißglas` | Dropdown unlesbar wegen 36-stelliger Hexadezimal-Strings. Gekürzte IDs gehören nur unter Details. |
+| **14** | Copilot Tab (`#view-copilot`) | Top-20 Select: `Top-20: 0004c095... (white)` | UUID & Enum | `Häufig überfüllt · Rappenauer Straße · Weißglas` | Unübersichtliche Auswahlliste ohne Farb-/Ortsübersetzung. |
 | **15** | Copilot Tab (`#view-copilot`) | Überschrift: `Container-Erklärung (explain_container)` | Code / Funktionsname | `Container-Detailerklärung` | Python-Funktionsname als UI-Label exponiert. |
 | **16** | Copilot Tab (`#view-copilot`) | Header: `--no-llm, vorberechnet beim UI-Build` | CLI-Flag / Tech-Jargon | `Offline-Assistent (vorberechnete Pipeline-Analysen)` | CLI-Kommandozeilenflag im UI-Kopfbereich. |
 | **17** | Copilot Beispielfragen (`#view-copilot`) | `Schichtlimit max_shift_hours=6?` | snake_case / Zuweisung | `Schichtlimit auf 6 Stunden verkürzen?` | Programmiercode-Zuweisung in einem Klick-Button. |
 | **18** | Copilot Beispielfragen (`#view-copilot`) | `8 t Fahrzeug (vehicle_max_weight_kg=8000)?` | snake_case / Zuweisung | `Fahrzeugkapazität auf 8 t begrenzen?` | Interne Variablennamen und Einheitenkonvertierung sichtbar. |
 | **19** | Copilot Beispielfragen (`#view-copilot`) | `Was passiert bei max_stops=20?` | snake_case / Zuweisung | `Tour auf maximal 20 Stopps begrenzen?` | Variablensyntax statt fachlicher Fragestellung. |
-| **20** | Copilot Ask Eingabe (`#view-copilot`) | Placeholder: `(<Location_id>:<material>)` | snake_case / Schema | `(Standort-ID : Glasart, z. B. b3ebe810 : weiss)` | Abstrakte Platzhaltersyntax verwirrt Nutzer. |
+| **20** | Copilot Ask Eingabe (`#view-copilot`) | Placeholder: `(<Location_id>:<material>)` | snake_case / Schema | `Standort #1 · Weißglas` | Abstrakte Platzhaltersyntax und UUID-Beispiele verwirren Nutzer. |
 | **21** | Copilot What-If Ergebnis (`#view-copilot`) | `max_shift_hours = 6, vehicle_max_weight_kg = ...` | snake_case / Code | `Schichtlimit: 6 h, Maximalgewicht: 8 t` | Code-Parameter-Dump im Ergebnisbereich. |
 | **22** | Tab 1 Daten (`#view-data`) | Top 20 Tabelle Spalte Material: `white`, `brown` | Enum (Englisch) | `Weißglas`, `Braunglas` | Inkonsistente Benennung gegenüber Diagrammen. |
 | **23** | Tab 8 Datencheck (`#view-datacheck`) | Tabellenkopf: `Overfull (>=110%)` & `Overfull` | Englisch / Code-Begriff | `Überfüllt (≥ 110 %)` & `Überfüllungen` | Denglisch / technisches Schlüsselwort statt deutscher Fachbegriff. |
@@ -96,3 +96,5 @@ Zur dauerhaften Sicherung gegen Regressionen prüft der Test `test_ui_visible_te
 3. Keine rohen englischen Enums (`white`, `brown`, `green`, `collection`) in Tabellenzellen.
 4. Keine unformatierten Booleans (`True` / `False`) in sichtbaren Statustexten.
 5. Keine Roh-Floats mit mehr als 2 Nachkommastellen bei Distanzen oder Scores.
+6. Keine gekürzten IDs (`[0-9a-f]{8}...`) in primären Benutzeroberflächen (Fahrertabelle, Routentabelle, Dropdowns, Beispielfragen, Platzhalter). IDs befinden sich ausschließlich unter „Details“.
+7. Weder „Wertstoffhof“ noch „bestätigt“ für angenommene Standorte; korrekte Ausweisung als „angenommen“ bzw. „Entladestelle (angenommen)“.

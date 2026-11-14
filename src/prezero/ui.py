@@ -14,7 +14,7 @@ import folium
 import pandas as pd
 import plotly.graph_objects as go
 
-from prezero import approval, forecast, tour
+from prezero import approval, copilot, features, forecast, routing, scoring, tour
 
 
 def _safe_json_for_html(payload: Any) -> str:
@@ -65,11 +65,57 @@ SOURCE_LABELS: dict[str, str] = {
 }
 
 CONFIDENCE_LABELS: dict[str, str] = {
-    "high": "bestätigt",
+    "high": "angenommen",
     "simulated_mapping": "simulierte Zuordnung",
     "low": "unbestätigt",
     "synthetic": "synthetisch",
 }
+
+
+def _load_street_lookup() -> dict[str, dict[str, str]]:
+    p = Path("data/external/street_lookup.json")
+    if p.is_file():
+        try:
+            with open(p, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _get_street_name(
+    loc_id: str,
+    lat: float | None = None,
+    lon: float | None = None,
+    street_lookup: dict[str, dict[str, str]] | None = None,
+    location_info: dict[str, Any] | None = None,
+) -> str:
+    if loc_id == "disposal_depot":
+        return "Entladestelle (angenommen)"
+    if loc_id == "yard":
+        return "Betriebshof"
+
+    if street_lookup is None:
+        street_lookup = _load_street_lookup()
+
+    if loc_id in street_lookup and street_lookup[loc_id].get("road"):
+        return str(street_lookup[loc_id]["road"])
+
+    if lat is not None and lon is not None:
+        try:
+            key = f"{float(lat):.5f},{float(lon):.5f}"
+            if key in street_lookup and street_lookup[key].get("road"):
+                return str(street_lookup[key]["road"])
+        except (ValueError, TypeError):
+            pass
+
+    if location_info:
+        for field in ("address", "site", "name", "street"):
+            val = location_info.get(field)
+            if val and str(val).strip() and str(val).strip() != loc_id:
+                return str(val).strip()
+
+    return ""
 
 
 def render_forecast_timeline_map_html(
@@ -522,6 +568,7 @@ def _build_route_section_html(
 ) -> str:
     metrics = route_bundle["metrics"]
     stops = metrics.get("stops", [])
+    street_lookup = _load_street_lookup()
 
     kpi_cards = "\n".join(
         [
@@ -555,10 +602,13 @@ def _build_route_section_html(
         order_num = stop.get('order', '-')
         loc_raw = str(stop.get('Location_id', '-'))
         if loc_raw == "disposal_depot":
-            loc_cell = '<strong>Entsorgungshof</strong><br><span class="muted" style="font-size:11px;">(Wertstoffhof)</span>'
+            loc_cell = '<strong>Entsorgungshof</strong><br><span class="muted" style="font-size:11px;">(angenommen)</span>'
         else:
-            short_id = loc_raw[:8] + "..." if len(loc_raw) > 12 else loc_raw
-            loc_cell = f'<strong>Standort #{order_num}</strong><br><span class="muted" style="font-size:11px;">(ID: <code>{html.escape(short_id)}</code>)</span>'
+            street_name = _get_street_name(loc_raw, stop.get('lat'), stop.get('lon'), street_lookup)
+            sub_text = html.escape(street_name) if street_name else ""
+            loc_cell = f'<strong>Standort #{order_num}</strong>'
+            if sub_text:
+                loc_cell += f'<br><span class="muted" style="font-size:11px;">{sub_text}</span>'
 
         if raw_mat == "unload" or stop_type == "unload":
             mat_cell = "Entladung"
@@ -623,7 +673,7 @@ def _build_route_section_html(
 
     return f"""
       <div class="section-head">
-        <h2>Bestehende Route ({route_date})</h2>
+        <h2>Bestehende Route ({route_date}) <span class="badge stand-badge stand-label" data-stand-date="{route_date}">{_fmt_stand_de(str(metrics.get("date") or "2026-04-15"))}</span></h2>
         <p class="muted">{comparison_text}</p>
       </div>
       {overview_html}
@@ -701,16 +751,22 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
         f"<tr><td>{html.escape(MATERIAL_LABELS.get(r['material_type'].lower(), r['material_type']))}</td><td>{r['reading_count']}</td><td>{r['mean_fill_pct']:.1f}%</td><td>{r['overfull_count']}</td></tr>"
         for r in data_check["material_summary"]
     )
+    street_lookup = _load_street_lookup()
     outlier_rows_list: list[str] = []
     for r in data_check["outlier_series"]:
         loc_str = str(r["Location_id"])
-        short_loc = loc_str[:8] + "..." if len(loc_str) > 12 else loc_str
+        street_name = _get_street_name(loc_str, street_lookup=street_lookup)
+        loc_display = (
+            f"<strong>Standort</strong><br><span class=\"muted\" style=\"font-size:11px;\">{html.escape(street_name)}</span>"
+            if street_name
+            else "<strong>Standort</strong>"
+        )
         mat_label = MATERIAL_LABELS.get(r["material_type"].lower(), r["material_type"])
         reg_val = r.get("regularity_score")
         reg_str = "-" if reg_val is None else f"{float(reg_val):.2f}".replace(".", ",")
         outlier_rows_list.append(
-            f"<tr title='ID: {html.escape(loc_str, quote=True)}'>"
-            f"<td><code>{html.escape(short_loc)}</code></td>"
+            f"<tr title='Standort-ID: {html.escape(loc_str, quote=True)}'>"
+            f"<td>{loc_display}</td>"
             f"<td>{html.escape(mat_label)}</td>"
             f"<td>{r['reading_count']}</td>"
             f"<td>{reg_str}</td>"
@@ -750,7 +806,7 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
         <table>
           <thead>
             <tr>
-              <th>Standort-ID</th>
+              <th>Standort</th>
               <th>Glasart</th>
               <th>Messungen</th>
               <th>Regelmäßigkeit (Regularity Score)</th>
@@ -875,7 +931,7 @@ def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
     head = """
       <div class="section-head">
         <h2>Fairer Vergleich: Routing-Effekt vs. Bedarfs-Effekt</h2>
-        <p class="muted">Alle Varianten mit denselben Regeln: 11 t pro Runde, Entladung am Wertstoffhof, max. 8 h pro Runde, Start/Ende Betriebshof.
+        <p class="muted">Alle Varianten mit denselben Regeln: 11 t pro Runde, Entladung am Entsorgungshof (angenommen), max. 8 h pro Runde, Start/Ende Betriebshof.
         Ein Stopp = ein physischer Standort (alle Glasfarben dort zusammen).
         Standorte sind selbst gescrapt und zufällig zugeordnet (nicht von PreZero): absolute km sind Illustration, die Prozent-Effekte sind die Aussage.</p>
       </div>
@@ -994,7 +1050,7 @@ def _build_ask_html(ask_examples: list[dict[str, Any]]) -> str:
       <div id="copilot-ask-box" class="copilot-box">
         <strong>Copilot Fragestellung (vorberechnete Antworten aus Pipeline-Daten, offline):</strong>
         <div class="ask-controls">
-          <input id="copilot-ask-input" type="text" list="copilot-ask-datalist" value="{first_question}" placeholder="Beispielfrage wählen oder Standort und Glasfarbe eingeben (z. B. b3ebe810 : weiss)..." />
+          <input id="copilot-ask-input" type="text" list="copilot-ask-datalist" value="{first_question}" placeholder="Beispielfrage wählen oder Standort und Glasfarbe eingeben (z. B. Standort #1 · Weißglas)..." />
           <datalist id="copilot-ask-datalist">{options}</datalist>
           <button id="copilot-ask-submit" type="button">Antwort anzeigen</button>
         </div>
@@ -1029,6 +1085,7 @@ def _build_copilot_section_html(
     top_overfull: list[dict[str, Any]] | None = None,
 ) -> str:
     """Render the dedicated Disponenten-Copilot view (Overview, What-if, Ask, Explain)."""
+    street_lookup = _load_street_lookup()
     options: list[str] = []
     seen_keys: set[str] = set()
     for stop in stops:
@@ -1044,8 +1101,11 @@ def _build_copilot_section_html(
         seen_keys.add(key)
         order = stop.get("order", "-")
         mat_label = MATERIAL_LABELS.get(mat, mat)
-        short_loc = f"{loc[:8]}..." if len(loc) > 12 else loc
-        label = f"Stopp #{order}: {mat_label} (Standort {short_loc})"
+        street = _get_street_name(loc, stop.get("lat"), stop.get("lon"), street_lookup)
+        if street:
+            label = f"Standort #{order} · {street} · {mat_label}"
+        else:
+            label = f"Standort #{order} · {mat_label}"
         options.append(
             f'<option value="{html.escape(key, quote=True)}">{html.escape(label)}</option>'
         )
@@ -1059,8 +1119,11 @@ def _build_copilot_section_html(
             continue
         seen_keys.add(key)
         mat_label = MATERIAL_LABELS.get(mat, mat)
-        short_loc = f"{loc[:8]}..." if len(loc) > 12 else loc
-        label = f"Top-20: {mat_label} (Standort {short_loc})"
+        street = _get_street_name(loc, None, None, street_lookup)
+        if street:
+            label = f"Häufig überfüllt · {street} · {mat_label}"
+        else:
+            label = f"Häufig überfüllt · {mat_label}"
         options.append(
             f'<option value="{html.escape(key, quote=True)}">{html.escape(label)}</option>'
         )
@@ -1076,7 +1139,7 @@ def _build_copilot_section_html(
 
     return f"""
       <div class="section-head">
-        <h2>Disponenten-Copilot ({html.escape(route_date)})</h2>
+        <h2>Disponenten-Copilot ({html.escape(route_date)}) <span class="badge stand-badge stand-label" data-stand-date="{html.escape(route_date)}">{html.escape(_fmt_stand_de(route_date))}</span></h2>
         <p class="muted">Deterministischer, quellengestützter Assistent (offline, vorberechnet beim UI-Build). Alle Kennzahlen stammen direkt aus verifizierten Pipeline-Daten.</p>
       </div>
       {overview_html}
@@ -1186,6 +1249,16 @@ def _fmt_de(value: Any, digits: int = 1) -> str:
     if value is None:
         return "-"
     return f"{float(value):,.{digits}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _fmt_stand_de(date_str: str) -> str:
+    try:
+        parts = date_str.strip().split("-")
+        if len(parts) == 3:
+            return f"Stand: {parts[2]}.{parts[1]}.{parts[0]}"
+    except Exception:
+        pass
+    return f"Stand: {date_str}"
 
 
 def _build_variables_section_html(route_data: Mapping[str, Any] | str | Path) -> str:
@@ -1307,42 +1380,277 @@ def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
     """
 
 
-def _build_role_start_html(
-    route_bundle: dict[str, Any], locations_df: pd.DataFrame, date: str
-) -> str:
-    """Build the offline role selector and the operational driver/dispatcher views."""
-    location_lookup = {}
-    if "Location_id" in locations_df.columns:
+def _last_data_day(readings_df: pd.DataFrame, fallback: str = "2026-04-15") -> str:
+    """Return the latest valid measurement date in readings_df as YYYY-MM-DD."""
+    if readings_df is not None and not readings_df.empty and "date" in readings_df.columns:
+        valid = pd.to_datetime(readings_df["date"], errors="coerce").dropna()
+        if not valid.empty:
+            return valid.max().strftime("%Y-%m-%d")
+    return fallback
+
+
+def _resolve_target_date(date: str | None, readings_df: pd.DataFrame) -> str:
+    """Resolve UI target date (defaulting to the last data day when None/'auto'/'latest')."""
+    if date is None or str(date).strip().lower() in ("", "auto", "latest"):
+        return _last_data_day(readings_df)
+    try:
+        return pd.Timestamp(str(date)).strftime("%Y-%m-%d")
+    except Exception:
+        return _last_data_day(readings_df)
+
+
+def _fmt_date_de(date_str: str) -> str:
+    """Format YYYY-MM-DD as DD.MM.YYYY."""
+    try:
+        return pd.Timestamp(date_str).strftime("%d.%m.%Y")
+    except Exception:
+        return str(date_str)
+
+
+def _fmt_stand_de(date_str: str) -> str:
+    """Format canonical 'Stand DD.MM.YYYY' badge label."""
+    return f"Stand {_fmt_date_de(date_str)}"
+
+
+def _fmt_short_de(date_str: str) -> str:
+    """Format YYYY-MM-DD as DD.MM."""
+    try:
+        return pd.Timestamp(date_str).strftime("%d.%m.")
+    except Exception:
+        return str(date_str)
+
+
+def _timer_text_windowed(days: Any, due: Any, base_date: str) -> str:
+    """Format timer relative days while suppressing dates outside [base_date, base_date + 21d]."""
+    if days is None or (isinstance(days, float) and pd.isna(days)):
+        return "-"
+    days_int = int(days)
+    when = ""
+    if due:
+        try:
+            delta = (pd.Timestamp(str(due)).normalize() - pd.Timestamp(base_date).normalize()).days
+            if 0 <= delta <= 21:
+                when = f" ({_fmt_date_de(str(due))})"
+        except Exception:
+            when = ""
+    if days_int < 0:
+        return f"überfällig seit {-days_int} d{when}"
+    if days_int == 0:
+        return f"heute fällig{when}"
+    return f"fällig in {days_int} d{when}"
+
+
+def _select_demo_dates(
+    selected_date: str,
+    readings_df: pd.DataFrame,
+    target_count: int = 5,
+) -> list[str]:
+    """Select 4-6 representative demo dates including selected_date and last data day."""
+    candidates: set[str] = {selected_date}
+    min_dt: pd.Timestamp | None = None
+    max_dt: pd.Timestamp | None = None
+    if readings_df is not None and not readings_df.empty and "date" in readings_df.columns:
+        valid = pd.to_datetime(readings_df["date"], errors="coerce").dropna()
+        if not valid.empty:
+            min_dt = valid.min().normalize()
+            max_dt = valid.max().normalize()
+            candidates.add(max_dt.strftime("%Y-%m-%d"))
+
+    upper_bound = max(max_dt, pd.Timestamp(selected_date).normalize()) if max_dt is not None else pd.Timestamp(selected_date).normalize()
+    milestones = ("2026-01-15", "2026-03-01", "2026-04-15", "2026-07-15", "2026-09-15")
+    for m in milestones:
+        ts = pd.Timestamp(m)
+        if min_dt is not None and ts <= min_dt:
+            continue
+        if ts <= upper_bound:
+            candidates.add(m)
+
+    if len(candidates) < target_count and min_dt is not None and upper_bound > min_dt:
+        span_days = (upper_bound - min_dt).days
+        for frac in (0.35, 0.55, 0.72, 0.85, 0.92):
+            if len(candidates) >= target_count:
+                break
+            step_days = max(3, int(round(span_days * frac)))
+            cand_ts = min_dt + pd.Timedelta(days=step_days)
+            if cand_ts <= upper_bound:
+                candidates.add(cand_ts.strftime("%Y-%m-%d"))
+
+    ordered = sorted(candidates)
+    if len(ordered) > target_count:
+        must_keep = {selected_date}
+        if max_dt is not None:
+            must_keep.add(max_dt.strftime("%Y-%m-%d"))
+        kept = set(must_keep)
+        others = [d for d in ordered if d not in kept]
+        needed = max(0, target_count - len(kept))
+        if needed > 0 and others:
+            step = max(1, len(others) / needed)
+            for idx in range(needed):
+                pick = others[min(len(others) - 1, int(idx * step))]
+                kept.add(pick)
+        ordered = sorted(kept)
+    return ordered
+
+
+def _build_forecast_3w_horizons(
+    scored_df: pd.DataFrame,
+    base_date: str,
+    forecast_df: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
+    """Compute strict +0/+7/+14/+21 day horizons ('Heute', 'KW+1', 'KW+2', 'KW+3')."""
+    fc_df = forecast_df if forecast_df is not None else forecast.forecast_from_scored(scored_df, base_date)
+    horizons: list[dict[str, Any]] = []
+    today_crit = 0
+    for offset in (0, 7, 14, 21):
+        target_ts = pd.Timestamp(base_date) + pd.Timedelta(days=offset)
+        target_iso = target_ts.date().isoformat()
+        target_de = target_ts.strftime("%d.%m.%Y")
+        kw = int(target_ts.isocalendar().week)
+        sub = fc_df[fc_df["offset_days"] == offset] if not fc_df.empty else pd.DataFrame()
+        counts = sub["status"].value_counts() if not sub.empty else pd.Series(dtype=int)
+        red = int(counts.get("red", 0))
+        black = int(counts.get("black", 0))
+        yellow = int(counts.get("yellow", 0))
+        green = int(counts.get("green", 0))
+        crit = red + black
+        if offset == 0:
+            today_crit = crit
+            week_tag = "Heute (+0)"
+            title = "Heute (+0 Tage)"
+        else:
+            kw_idx = offset // 7
+            week_tag = f"KW+{kw_idx}"
+            title = f"KW+{kw_idx} (+{offset} Tage)"
+        horizons.append(
+            {
+                "offset_days": offset,
+                "week_tag": week_tag,
+                "title": title,
+                "target_date": target_iso,
+                "target_de": target_de,
+                "kw": kw,
+                "red": red,
+                "black": black,
+                "yellow": yellow,
+                "green": green,
+                "critical": crit,
+                "delta_vs_today": crit - today_crit,
+                "total": int(len(sub)),
+            }
+        )
+    return fc_df, horizons
+
+
+def _build_operational_container_lists(
+    scored_df: pd.DataFrame,
+    forecast_df: pd.DataFrame,
+    route_metrics: Mapping[str, Any],
+    locations_df: pd.DataFrame,
+    street_lookup: dict[str, dict[str, str]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int, int]:
+    """Build today-full (+0) and this-week-full (+7) operational container tables without past dates."""
+    if scored_df.empty:
+        return [], [], 0, 0
+
+    stop_order_by_loc: dict[str, int] = {}
+    for stop in route_metrics.get("stops", []):
+        if str(stop.get("stop_type", "collection")) == "collection":
+            loc = str(stop.get("Location_id", "")).strip()
+            if loc and loc not in stop_order_by_loc:
+                stop_order_by_loc[loc] = int(stop.get("order", 0) or 0)
+
+    loc_coords: dict[str, dict[str, Any]] = {}
+    if locations_df is not None and not locations_df.empty and "Location_id" in locations_df.columns:
+        for _, row in locations_df.iterrows():
+            loc_coords[str(row["Location_id"]).strip()] = row.to_dict()
+
+    fc0_map: dict[tuple[str, str], float] = {}
+    fc7_map: dict[tuple[str, str], float] = {}
+    if not forecast_df.empty:
+        for row in forecast_df[forecast_df["offset_days"] == 0].itertuples(index=False):
+            fc0_map[(str(row.Location_id).strip(), str(row.material_type).strip().lower())] = float(row.forecast_pct)
+        for row in forecast_df[forecast_df["offset_days"] == 7].itertuples(index=False):
+            fc7_map[(str(row.Location_id).strip(), str(row.material_type).strip().lower())] = float(row.forecast_pct)
+
+    combined: list[dict[str, Any]] = []
+    for row in scored_df.itertuples(index=False):
+        loc_id = str(getattr(row, "Location_id", "")).strip()
+        mat = str(getattr(row, "material_type", "")).strip().lower()
+        mat_label = MATERIAL_LABELS.get(mat, mat)
+        est_today = getattr(row, "est_fill_level", None)
+        fc0 = fc0_map.get((loc_id, mat), float(est_today) if est_today is not None and not pd.isna(est_today) else 0.0)
+        if est_today is not None and not pd.isna(est_today):
+            today_pct = float(est_today)
+        else:
+            today_pct = fc0
+        week1_pct = fc7_map.get((loc_id, mat), today_pct)
+        is_crit_today = bool(getattr(row, "critical", False)) or today_pct >= 80.0
+        is_crit_week1 = week1_pct >= 80.0 or is_crit_today
+        order_num = stop_order_by_loc.get(loc_id)
+        loc_info = loc_coords.get(loc_id, {})
+        street = _get_street_name(loc_id, loc_info.get("lat"), loc_info.get("lon"), street_lookup, loc_info)
+        site_title = f"Standort #{order_num}" if order_num else "Standort (vorgemerkt)"
+        if street:
+            site_title = f"{site_title} · {street}" if order_num else street
+        combined.append(
+            {
+                "site_title": site_title,
+                "mat_label": mat_label,
+                "today_pct": round(today_pct, 1),
+                "week1_pct": round(week1_pct, 1),
+                "is_crit_today": is_crit_today,
+                "is_crit_week1": is_crit_week1,
+                "score": float(getattr(row, "score", 0.0) or 0.0),
+                "in_tour": f"Ja (Stopp #{order_num})" if order_num else "Offen",
+            }
+        )
+
+    today_items = [c for c in combined if c["is_crit_today"]]
+    today_items.sort(key=lambda c: (-c["today_pct"], -c["score"], c["site_title"]))
+    today_overfull_count = sum(1 for c in today_items if c["today_pct"] >= 110.0)
+
+    week1_items = [c for c in combined if c["is_crit_week1"]]
+    # Highlight containers newly crossing >= 80% this week (+7) alongside critical ones
+    week1_items.sort(
+        key=lambda c: (0 if (not c["is_crit_today"] and c["week1_pct"] >= 80.0) else 1, -c["week1_pct"], c["site_title"])
+    )
+    return today_items[:15], week1_items[:15], len(today_items), today_overfull_count
+
+
+def _build_driver_and_dispatcher_stops(
+    route_metrics: Mapping[str, Any],
+    locations_df: pd.DataFrame,
+    street_lookup: dict[str, dict[str, str]],
+    base_date: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str]:
+    """Build stop lists for driver (#role-driver) and dispatcher (#role-dispatcher) without past dates or raw UUIDs."""
+    location_lookup: dict[str, dict[str, Any]] = {}
+    if locations_df is not None and not locations_df.empty and "Location_id" in locations_df.columns:
         for _, row in locations_df.iterrows():
             location_lookup[str(row["Location_id"])] = row.to_dict()
 
-    rows: list[str] = []
+    driver_stops: list[dict[str, Any]] = []
+    dispatcher_stops: list[dict[str, Any]] = []
     map_points: list[str] = []
-    for stop_idx, stop in tour.interleave(route_bundle["metrics"]):
+
+    for stop_idx, stop in tour.interleave(route_metrics):
         if stop_idx is None:
-            note = f' <span class="muted">({html.escape(stop["note"])})</span>' if stop.get("note") else ""
-            rows.append(
-                f'<tr class="yard-row"><td>&ndash;</td><td colspan="5"><strong>{html.escape(stop["label"])}</strong>{note}'
-                f' &middot; {stop["leg_km"]:.1f} km &middot; {stop["leg_min"]:.0f} min</td></tr>'
-            )
+            note = f" ({stop['note']})" if stop.get("note") else ""
+            yard_text = f"{stop['label']}{note} · {stop['leg_km']:.1f} km · {stop['leg_min']:.0f} min"
+            driver_stops.append({"is_yard": True, "summary": yard_text})
+            dispatcher_stops.append({"is_yard": True, "summary": yard_text})
             continue
+
         loc_id = str(stop.get("Location_id", ""))
         location = location_lookup.get(loc_id, {})
-        site = (
-            location.get("address")
-            or location.get("site")
-            or location.get("name")
-        )
-        order_val = stop.get("order", len(rows) + 1)
+        order_val = stop.get("order", len(driver_stops) + 1)
         if loc_id == "disposal_depot":
             site_title = "Entsorgungshof"
-            site_subtitle = "Wertstoffhof (Entladung)"
-        elif site and str(site).strip() != loc_id:
-            site_title = str(site)
-            site_subtitle = f"Standort-ID: {loc_id[:8]}..."
+            site_subtitle = "Entladestelle (angenommen)"
         else:
+            street_name = _get_street_name(loc_id, stop.get("lat"), stop.get("lon"), street_lookup, location)
             site_title = f"Standort #{order_val}"
-            site_subtitle = f"ID: {loc_id[:8]}..."
+            site_subtitle = street_name if street_name else "Glascontainer"
 
         raw_mat = str(stop.get("primary_material") or stop.get("material_type") or "-")
         if raw_mat == "unload" or stop.get("stop_type") == "unload":
@@ -1354,56 +1662,472 @@ def _build_role_start_html(
         try:
             level_text = "-" if level is None else f"{float(level):g} %"
         except (TypeError, ValueError):
-            level_text = html.escape(str(level))
+            level_text = str(level)
+
         lat, lon = stop.get("lat"), stop.get("lon")
         if lat is not None and lon is not None:
             map_points.append(f"{float(lat):.6f},{float(lon):.6f}")
-        rows.append(
-            f"""
-            <tr class="driver-stop" data-loc="{html.escape(loc_id, quote=True)}"
-                data-mat="{html.escape(raw_mat, quote=True)}"
-                data-lat="{html.escape(str(lat or ''), quote=True)}"
-                data-lon="{html.escape(str(lon or ''), quote=True)}"
-                title="Standort-ID: {html.escape(loc_id, quote=True)}">
-              <td>{html.escape(str(order_val))}</td>
-              <td><strong>{html.escape(site_title)}</strong><br><span class="muted" style="font-size:12px;">{html.escape(site_subtitle)}</span></td>
-              <td>{html.escape(mat_display)}</td>
-              <td>{html.escape(level_text)}</td>
+
+        score_val = stop.get("score")
+        score_de = f"{float(score_val):.2f}".replace(".", ",") if score_val is not None else "-"
+        timer_win = _timer_text_windowed(stop.get("days_until_due"), stop.get("due_date"), base_date)
+        prio_text = (
+            "Entladung"
+            if loc_id == "disposal_depot"
+            else (f"Score {score_de}" if timer_win == "-" else f"Score {score_de} · {timer_win}")
+        )
+
+        driver_stops.append(
+            {
+                "is_yard": False,
+                "order": str(order_val),
+                "loc_id": loc_id,
+                "raw_mat": raw_mat,
+                "lat": "" if lat is None else str(lat),
+                "lon": "" if lon is None else str(lon),
+                "site_title": site_title,
+                "site_subtitle": site_subtitle,
+                "mat_display": mat_display,
+                "level_text": level_text,
+            }
+        )
+        dispatcher_stops.append(
+            {
+                "is_yard": False,
+                "order": str(order_val),
+                "site_title": site_title,
+                "site_subtitle": site_subtitle,
+                "mat_display": mat_display,
+                "level_text": level_text,
+                "prio_text": prio_text,
+            }
+        )
+
+    maps_url = ""
+    if map_points:
+        waypoints = "|".join(map_points[1:-1])
+        maps_url = (
+            f"https://www.google.com/maps/dir/?api=1&origin={map_points[0]}"
+            f"&destination={map_points[-1]}&waypoints={waypoints}"
+        )
+    return driver_stops, dispatcher_stops, maps_url
+
+
+def _build_single_date_snapshot(
+    date_str: str,
+    is_last_day: bool,
+    scored_df: pd.DataFrame,
+    locations_df: pd.DataFrame,
+    route_bundle: dict[str, Any],
+    presets: list[dict[str, Any]],
+    street_lookup: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    """Build a complete date-anchored snapshot for consistent date switching."""
+    metrics = route_bundle["metrics"]
+    fc_df, horizons = _build_forecast_3w_horizons(scored_df, date_str)
+    today_list, week1_list, today_crit_cnt, today_overfull_cnt = _build_operational_container_lists(
+        scored_df, fc_df, metrics, locations_df, street_lookup
+    )
+    driver_stops, dispatcher_stops, maps_url = _build_driver_and_dispatcher_stops(
+        metrics, locations_df, street_lookup, date_str
+    )
+
+    h0 = horizons[0]
+    h1 = horizons[1]
+    h2 = horizons[2]
+    h3 = horizons[3]
+    today_critical_containers = max(h0["critical"], today_crit_cnt)
+    today_overfull = max(h0["black"], today_overfull_cnt)
+
+    variant_options: list[dict[str, Any]] = [
+        {
+            "id": "baseline",
+            "label": "Standardvorschlag (aktuell)",
+            "description": str(metrics.get("comparison") or "Aktueller Tourenvorschlag"),
+            "metrics": {
+                "num_stops": metrics.get("num_stops", 0),
+                "planned_km": metrics.get("planned_km", 0.0),
+                "vehicles_needed": metrics.get("vehicles_needed", 0),
+                "rounds": metrics.get("rounds", 0),
+                "shift_hours": metrics.get("shift_hours", 0.0),
+                "t_collected": metrics.get("t_collected", 0.0),
+            },
+        }
+    ]
+    for p in presets:
+        sim = p.get("simulation") or {}
+        variant_options.append(
+            {
+                "id": str(p.get("id", "")),
+                "label": str(p.get("label", "")),
+                "description": str(p.get("description", "")),
+                "metrics": {
+                    "num_stops": sim.get("num_stops", 0),
+                    "planned_km": sim.get("planned_km", 0.0),
+                    "vehicles_needed": sim.get("vehicles_needed", 0),
+                    "rounds": sim.get("rounds", 0),
+                    "shift_hours": sim.get("shift_hours", 0.0),
+                    "t_collected": sim.get("t_collected", 0.0),
+                },
+            }
+        )
+
+    return {
+        "date": date_str,
+        "date_de": _fmt_date_de(date_str),
+        "stand_de": _fmt_stand_de(date_str),
+        "short_de": _fmt_short_de(date_str),
+        "is_last_data_day": is_last_day,
+        "metrics": {
+            "date": date_str,
+            "num_stops": metrics.get("num_stops", 0),
+            "total_critical_locations": metrics.get("total_critical_locations", 0),
+            "total_active_locations": metrics.get("total_active_locations", 0),
+            "planned_km": metrics.get("planned_km", 0.0),
+            "full_round_km": metrics.get("full_round_km", 0.0),
+            "saved_km": metrics.get("saved_km", 0.0),
+            "saved_pct": metrics.get("saved_pct", 0.0),
+            "vehicles_needed": metrics.get("vehicles_needed", 0),
+            "rounds": metrics.get("rounds", 0),
+            "shift_hours": metrics.get("shift_hours", 0.0),
+            "max_vehicle_shift_hours": metrics.get("max_vehicle_shift_hours", 0.0),
+            "max_shift_hours_limit": metrics.get("max_shift_hours_limit", 8.0),
+            "t_collected": metrics.get("t_collected", 0.0),
+            "comparison": metrics.get("comparison", "-"),
+            "max_stops": metrics.get("max_stops"),
+        },
+        "today_critical_containers": today_critical_containers,
+        "today_overfull_containers": today_overfull,
+        "today_red_containers": h0["red"],
+        "week1_critical_containers": h1["critical"],
+        "week1_new_delta": h1["critical"] - h0["critical"],
+        "week1_date_de": h1["target_de"],
+        "week1_kw": h1["kw"],
+        "week1_black": h1["black"],
+        "week3_end_de": h3["target_de"],
+        "horizons": [h0, h1, h2, h3],
+        "today_full_list": today_list,
+        "week1_full_list": week1_list,
+        "driver_stops": driver_stops,
+        "dispatcher_stops": dispatcher_stops,
+        "maps_url": maps_url,
+        "proposal": route_bundle["proposal"],
+        "variants": variant_options,
+        "csv_rows": [row for _, row in tour.interleave(metrics)],
+    }
+
+
+def _build_date_snapshots(
+    selected_date: str,
+    readings_df: pd.DataFrame,
+    primary_scored_df: pd.DataFrame,
+    locations_df: pd.DataFrame,
+    primary_route_bundle: dict[str, Any],
+    primary_presets: list[dict[str, Any]],
+    street_lookup: dict[str, dict[str, str]],
+) -> tuple[list[str], dict[str, dict[str, Any]]]:
+    """Precompute 4-6 date snapshots around selected_date and last data day."""
+    dates = _select_demo_dates(selected_date, readings_df, target_count=5)
+    last_day = _last_data_day(readings_df, fallback=selected_date)
+    primary_metrics = primary_route_bundle["metrics"]
+    raw_max_stops = primary_metrics.get("max_stops", 25)
+    max_stops_val = None if raw_max_stops is None else int(raw_max_stops)
+    raw_assumptions = primary_metrics.get("assumptions")
+    cfg = (
+        routing.OperationalConfig.from_dict(raw_assumptions)
+        if isinstance(raw_assumptions, Mapping) and raw_assumptions
+        else routing.load_config()
+    )
+
+    snapshots: dict[str, dict[str, Any]] = {}
+    for d in dates:
+        if d == selected_date:
+            snapshots[d] = _build_single_date_snapshot(
+                date_str=d,
+                is_last_day=(d == last_day),
+                scored_df=primary_scored_df,
+                locations_df=locations_df,
+                route_bundle=primary_route_bundle,
+                presets=primary_presets,
+                street_lookup=street_lookup,
+            )
+            continue
+
+        scored_d = (
+            scoring.score_containers(features.build_features(readings_df, d))
+            if readings_df is not None and not readings_df.empty
+            else primary_scored_df.copy()
+        )
+        route_d = routing.build_route(
+            scored_d,
+            locations_df,
+            depot=cfg.yard_depot,
+            max_stops=max_stops_val,
+            date=d,
+            output_dir=None,
+            config=cfg,
+        )
+        route_bundle_d = {
+            "proposal": approval.propose_route(route_d),
+            "metrics": route_d,
+        }
+        try:
+            presets_d = copilot.precompute_what_if_presets(
+                route_d, scored_d, locations_df, include_stops_20=True
+            )
+        except Exception:  # noqa: BLE001
+            presets_d = []
+        snapshots[d] = _build_single_date_snapshot(
+            date_str=d,
+            is_last_day=(d == last_day),
+            scored_df=scored_d,
+            locations_df=locations_df,
+            route_bundle=route_bundle_d,
+            presets=presets_d,
+            street_lookup=street_lookup,
+        )
+    return dates, snapshots
+
+
+def _render_driver_rows_html(driver_stops: list[dict[str, Any]]) -> str:
+    rows: list[str] = []
+    for s in driver_stops:
+        if s.get("is_yard"):
+            rows.append(
+                f'<tr class="yard-row"><td>&ndash;</td><td colspan="5"><strong>{html.escape(s["summary"])}</strong></td></tr>'
+            )
+        else:
+            rows.append(
+                f"""
+            <tr class="driver-stop" data-loc="{html.escape(s['loc_id'], quote=True)}"
+                data-mat="{html.escape(s['raw_mat'], quote=True)}"
+                data-lat="{html.escape(s['lat'], quote=True)}"
+                data-lon="{html.escape(s['lon'], quote=True)}">
+              <td>{html.escape(s['order'])}</td>
+              <td><strong>{html.escape(s['site_title'])}</strong><br><span class="muted" style="font-size:12px;">{html.escape(s['site_subtitle'])}</span></td>
+              <td>{html.escape(s['mat_display'])}</td>
+              <td>{html.escape(s['level_text'])}</td>
               <td><label class="driver-check"><input class="emptied" type="checkbox"> geleert</label></td>
               <td><input class="found-level" type="number" min="0" max="110" step="10"
                   placeholder="10er-Schritte" aria-label="Füllstand vorgefunden"></td>
             </tr>
             """
-        )
-    waypoints = "|".join(map_points[1:-1])
-    maps_link = ""
-    if map_points:
-        maps_link = (
-            '<a class="secondary-btn" target="_blank" rel="noopener" '
-            f'href="https://www.google.com/maps/dir/?api=1&origin={map_points[0]}'
-            f'&destination={map_points[-1]}&waypoints={waypoints}">Google Maps öffnen</a>'
-        )
+            )
+    return "".join(rows) or '<tr><td colspan="6">Keine freigegebenen Stopps</td></tr>'
+
+
+def _render_dispatcher_stops_html(dispatcher_stops: list[dict[str, Any]]) -> str:
+    rows: list[str] = []
+    for s in dispatcher_stops:
+        if s.get("is_yard"):
+            rows.append(
+                f'<tr class="yard-row"><td>&ndash;</td><td colspan="4"><strong>{html.escape(s["summary"])}</strong></td></tr>'
+            )
+        else:
+            rows.append(
+                f"<tr><td>{html.escape(s['order'])}</td>"
+                f"<td><strong>{html.escape(s['site_title'])}</strong><br><span class=\"muted\" style=\"font-size:12px;\">{html.escape(s['site_subtitle'])}</span></td>"
+                f"<td>{html.escape(s['mat_display'])}</td>"
+                f"<td>{html.escape(s['level_text'])}</td>"
+                f"<td>{html.escape(s['prio_text'])}</td></tr>"
+            )
+    return "".join(rows) or '<tr><td colspan="5">Keine Stopps</td></tr>'
+
+
+def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
+    """Build the Today-First operational views (Disponentin, Fahrer) plus role switcher."""
+    stand_de = snapshot["stand_de"]
+    short_de = snapshot["short_de"]
+    m = snapshot["metrics"]
+    h0, h1, h2, h3 = snapshot["horizons"]
+
+    horizon_cards_html = "".join(
+        f"""
+        <div class="card">
+          <div class="label">{html.escape(h['title'])} &middot; KW {h['kw']:02d} ({html.escape(h['target_de'])})</div>
+          <div class="value">{h['critical']} kritisch</div>
+          <div class="sub">Rot (&gt;80 %): {h['red']} &middot; Übervoll (&ge;110 %): {h['black']} &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+        </div>
+        """
+        for h in snapshot["horizons"]
+    )
+
+    today_rows_html = "".join(
+        f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
+        f"<td>{_fmt_de(r['today_pct'], 0)} %</td>"
+        f"<td>{'Überfüllt' if r['today_pct'] >= 110 else 'Kritisch'}</td>"
+        f"<td>{html.escape(r['in_tour'])}</td></tr>"
+        for r in snapshot["today_full_list"]
+    ) or '<tr><td colspan="5">Heute keine kritischen Container</td></tr>'
+
+    week1_rows_html = "".join(
+        f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
+        f"<td>{_fmt_de(r['today_pct'], 0)} %</td><td>{_fmt_de(r['week1_pct'], 0)} %</td>"
+        f"<td>{'Überfüllt' if r['week1_pct'] >= 110 else 'Voll (+7 Tage)'}</td></tr>"
+        for r in snapshot["week1_full_list"]
+    ) or '<tr><td colspan="5">Keine Behälter bis +7 Tage voll</td></tr>'
+
+    variant_options_html = "".join(
+        f'<option value="{html.escape(v["id"], quote=True)}">{html.escape(v["label"])}</option>'
+        for v in snapshot["variants"]
+    )
+    default_var = snapshot["variants"][0]["metrics"]
+    default_var_summary = (
+        f"{default_var['num_stops']} Stopps &middot; {_fmt_de(default_var['planned_km'], 1)} km &middot; "
+        f"{default_var['vehicles_needed']} Fahrzeug(e) &middot; {default_var['rounds']} Runden &middot; "
+        f"{_fmt_de(default_var['shift_hours'], 1)} h &middot; {_fmt_de(default_var['t_collected'], 1)} t"
+    )
+
+    driver_rows_html = _render_driver_rows_html(snapshot["driver_stops"])
+    dispatcher_rows_html = _render_dispatcher_stops_html(snapshot["dispatcher_stops"])
+
+    maps_url = snapshot.get("maps_url") or ""
+    maps_link = (
+        f'<a id="driver-maps-link" class="secondary-btn" target="_blank" rel="noopener" '
+        f'href="{html.escape(maps_url, quote=True)}">Google Maps öffnen</a>'
+        if maps_url
+        else '<a id="driver-maps-link" class="secondary-btn" target="_blank" rel="noopener" hidden>Google Maps öffnen</a>'
+    )
+
+    delta_w1 = snapshot["week1_new_delta"]
+    delta_w1_str = f"+{delta_w1} gegenüber heute" if delta_w1 >= 0 else f"{delta_w1} gegenüber heute"
+
     return f"""
-    <section id="start-screen" class="role-screen">
+    <section id="start-screen" class="role-screen" style="display:none;">
       <div class="role-hero">
-        <p class="eyebrow">GlasRoute · {html.escape(date)}</p>
+        <p class="eyebrow">GlasRoute &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></p>
         <h2>Welche Ansicht brauchst du?</h2>
-        <p>Die Tour bleibt offline im Browser. Die Disponentin gibt sie frei, der Fahrer dokumentiert die Rückmeldung, Analyse zeigt die Datengrundlage.</p>
+        <p>Einstieg ist immer das gewählte Stichtagsdatum. Disponentin plant heute + nächste 3 Wochen, Fahrer fährt nur die heute freigegebene Tour, Analyse enthält die gesamte Jahres-Zeitachse.</p>
       </div>
       <div class="role-cards">
-        <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Tour fahren, leeren und Rückmeldung exportieren</span></button>
-        <button type="button" class="role-card" data-role="dispatcher"><strong>Disponentin</strong><span>Tour auswählen, prüfen und freigeben</span></button>
-        <button type="button" class="role-card" data-role="analysis"><strong>Analyse</strong><span>Daten, Heatmap, Forecast, Fairer Vergleich, Copilot</span></button>
+        <button type="button" class="role-card" data-role="dispatcher"><strong>Disponentin</strong><span>Heute voll (+0), diese Woche (+7), nächste 3 Wochen &amp; Tourenfreigabe</span></button>
+        <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Nur heutige freigegebene Tour, Stopp für Stopp &amp; Rückmeldung</span></button>
+        <button type="button" class="role-card" data-role="analysis"><strong>Analyse</strong><span>Gesamte Zeitachse: Heatmap, Saisonalität, Fairer Vergleich, Backtest</span></button>
+      </div>
+    </section>
+
+    <section id="role-dispatcher" class="role-panel active">
+      <div class="section-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>Disponentin &middot; Tagesübersicht &amp; Tourvorschlag (<span class="js-short-date">{html.escape(short_de)}</span>)</h2>
+          <p class="muted">&bdquo;Ich öffne das Tool am <span class="js-short-date">{html.escape(short_de)}</span>&ldquo; &ndash; Was ist <strong>heute</strong> voll, was wird <strong>diese Woche (+7)</strong> voll, und welche Tour fahren wir heute? Ausschließlich nächste 3 Wochen (KW+1 bis KW+3). <strong class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</strong>.</p>
+        </div>
+        <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+      </div>
+
+      <div id="dispatcher-kpi-grid" class="kpi-grid">
+        <div class="card">
+          <div class="label">Heute voll (geschätzt, +0 Tage)</div>
+          <div class="value" id="disp-kpi-today-val">{snapshot['today_critical_containers']} Container</div>
+          <div class="sub" id="disp-kpi-today-sub">{snapshot['today_red_containers']} Rot (&gt;80 %) &middot; {snapshot['today_overfull_containers']} Übervoll (&ge;110 %) &middot; {m['total_critical_locations']} krit. Standorte &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Diese Woche voll (+7 Tage, KW+1)</div>
+          <div class="value" id="disp-kpi-w1-val">{snapshot['week1_critical_containers']} Container</div>
+          <div class="sub" id="disp-kpi-w1-sub">{html.escape(delta_w1_str)} bis {html.escape(snapshot['week1_date_de'])} (KW {snapshot['week1_kw']:02d}) &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Tourvorschlag für heute</div>
+          <div class="value" id="disp-kpi-tour-val">{m['num_stops']} Stopps &middot; {_fmt_de(m['planned_km'], 1)} km</div>
+          <div class="sub" id="disp-kpi-tour-sub">{m['vehicles_needed']} Fahrzeug(e) &middot; {m['rounds']} Runden &middot; {_fmt_de(m['t_collected'], 1)} t &middot; {_fmt_de(m['saved_pct'], 1)} % gespart vs. alle leeren &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Zeitachse: nächste 3 Wochen</div>
+          <div class="value" id="disp-kpi-3w-val">KW+1: {h1['critical']} &middot; KW+2: {h2['critical']} &middot; KW+3: {h3['critical']}</div>
+          <div class="sub" id="disp-kpi-3w-sub">Vorausschau bis {html.escape(snapshot['week3_end_de'])} (kein Jahresverlauf) &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+        </div>
+      </div>
+
+      <div id="dispatcher-horizon-3w" class="dispatcher-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+          <strong>Zeitachse nächste 3 Wochen (KW+1, KW+2, KW+3)</strong>
+          <span class="muted stand-label" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        </div>
+        <div id="dispatcher-horizon-cards" class="kpi-grid" style="margin-bottom:0;">
+          {horizon_cards_html}
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+            <h3 style="margin:0;">Heute voll (geschätzt, Top 15)</h3>
+            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+          </div>
+          <div class="table-wrap">
+            <table id="dispatcher-today-full-table">
+              <thead><tr><th>Standort</th><th>Glasart</th><th>Heute</th><th>Status</th><th>Tour heute</th></tr></thead>
+              <tbody id="dispatcher-today-full-body">{today_rows_html}</tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+            <h3 style="margin:0;">Diese Woche voll (+7 Tage, KW+1)</h3>
+            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+          </div>
+          <div class="table-wrap">
+            <table id="dispatcher-week-full-table">
+              <thead><tr><th>Standort</th><th>Glasart</th><th>Heute</th><th>In +7 d</th><th>Status KW+1</th></tr></thead>
+              <tbody id="dispatcher-week-full-body">{week1_rows_html}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="approval-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+          <strong>Tourvorschlag für heute prüfen, ändern &amp; freigeben</strong>
+          <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;">
+          <label for="dispatcher-tour-variant-select">Tour anpassen:</label>
+          <select id="dispatcher-tour-variant-select" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+            {variant_options_html}
+          </select>
+          <span id="dispatcher-variant-summary" class="muted" style="margin:0;">{default_var_summary} &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></span>
+        </div>
+        <div class="approval-controls">
+          <label for="role-dispatcher-name">Freigegeben durch</label>
+          <input id="role-dispatcher-name" type="text" value="Disponent/in" placeholder="Name">
+          <button type="button" class="primary-btn" id="role-approve-route-btn">Tour freigeben</button>
+          <span id="role-approval-status" class="badge pending">Status: Vorgeschlagen</span>
+        </div>
+      </div>
+
+      <div class="approval-box">
+        <strong>Fahrer-Rückmeldung übernehmen</strong>
+        <p class="muted">Die exportierte CSV enthält die Tourenstopps mit der optionalen Rückmeldespalte <code>geleert</code>. Der Browser bleibt offline; der CLI-Befehl erzeugt daraus die aktualisierten Daten und die nächste Tour.</p>
+        <input id="feedback-file-input" type="file" accept=".csv,text/csv">
+        <span id="feedback-upload-status" class="muted">Noch keine Rückmeldung ausgewählt.</span>
+        <div class="command-box"><code id="feedback-command">prezero-route run --input &lt;feedback.csv&gt;</code><button type="button" class="secondary-btn" id="copy-feedback-command">Befehl kopieren</button></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        <h3 style="margin:0;">Heutiger Tourvorschlag (Stoppliste in Fahrreihenfolge)</h3>
+        <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Standort</th><th>Glas</th><th>Geschätzt heute</th><th>Priorität / Timer</th></tr></thead>
+          <tbody id="dispatcher-stops-tbody">{dispatcher_rows_html}</tbody>
+        </table>
       </div>
     </section>
 
     <section id="role-driver" class="role-panel driver-panel">
-      <div class="section-head">
-        <h2>Fahrer · heutige Tour</h2>
-        <p class="muted">Stoppliste in <strong>Fahrreihenfolge (nicht Dringlichkeits-Reihenfolge)</strong>. Nur von der Disponentin freigegebene Touren werden angezeigt.</p>
+      <div class="section-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>Fahrer &middot; heutige Tour (<span class="js-short-date">{html.escape(short_de)}</span>)</h2>
+          <p class="muted">Stoppliste in <strong>Fahrreihenfolge (nicht Dringlichkeits-Reihenfolge)</strong>. Nur die heute von der Disponentin freigegebene Tour &ndash; ohne Historie und ohne Charts. <strong class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</strong>.</p>
+        </div>
+        <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
       </div>
-      <div id="driver-locked" class="coverage-hint">Diese Tour ist noch nicht freigegeben.</div>
+      <div id="driver-locked" class="coverage-hint">Diese Tour (<span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>) ist noch nicht freigegeben.</div>
       <div id="driver-tour" hidden>
+        <div id="driver-summary-strip" class="kpi-grid" style="margin-bottom:12px;">
+          <div class="card"><div class="label">Heutige Schicht</div><div class="value" id="drv-kpi-stops">{m['num_stops']} Stopps &middot; {_fmt_de(m['planned_km'], 1)} km</div><div class="sub" id="drv-kpi-meta">{m['vehicles_needed']} Fahrzeug(e) &middot; {m['rounds']} Runden &middot; {_fmt_de(m['t_collected'], 1)} t &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div></div>
+        </div>
         <div class="driver-actions">
           {maps_link}
           <button type="button" class="secondary-btn" id="driver-download-stops-csv-btn">Stoppliste als CSV (Fahrreihenfolge)</button>
@@ -1413,33 +2137,11 @@ def _build_role_start_html(
         <div class="table-wrap">
           <table class="driver-table">
             <thead><tr><th>#</th><th>Adresse / Standort</th><th>Glasfarbe</th><th>Geschätzt</th><th>leer</th><th>Füllstand vorgefunden</th></tr></thead>
-            <tbody>{''.join(rows) or '<tr><td colspan="6">Keine freigegebenen Stopps</td></tr>'}</tbody>
+            <tbody id="driver-stops-tbody">{driver_rows_html}</tbody>
           </table>
         </div>
         <p id="export-status" class="muted" aria-live="polite"></p>
       </div>
-    </section>
-
-    <section id="role-dispatcher" class="role-panel">
-      <div class="section-head">
-        <h2>Disponentin · Auswahl &amp; Freigabe</h2>
-        <p class="muted">Vorschlag prüfen und explizit freigeben. Erst danach erscheint die Tour beim Fahrer.</p>
-      </div>
-      <div class="approval-box">
-        <label for="role-dispatcher-name">Freigegeben durch</label>
-        <input id="role-dispatcher-name" type="text" value="Disponent/in" placeholder="Name">
-        <button type="button" class="primary-btn" id="role-approve-route-btn">Tour freigeben</button>
-        <span id="role-approval-status" class="badge pending">Status: Vorgeschlagen</span>
-      </div>
-      <div class="approval-box">
-        <strong>Fahrer-Rückmeldung übernehmen</strong>
-        <p class="muted">Die exportierte CSV enthält die Tourenstopps mit der optionalen Rückmeldespalte <code>geleert</code>. Der Browser bleibt offline; der CLI-Befehl erzeugt daraus die aktualisierten Daten und die nächste Tour.</p>
-        <input id="feedback-file-input" type="file" accept=".csv,text/csv">
-        <span id="feedback-upload-status" class="muted">Noch keine Rückmeldung ausgewählt.</span>
-        <div class="command-box"><code id="feedback-command">prezero-route run --input &lt;feedback.csv&gt;</code><button type="button" class="secondary-btn" id="copy-feedback-command">Befehl kopieren</button></div>
-      </div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>Standort</th><th>Glas</th><th>Priorität</th></tr></thead>
-        <tbody>{''.join(rows) or '<tr><td colspan="4">Keine Stopps</td></tr>'}</tbody></table></div>
     </section>
     """
 
@@ -1823,6 +2525,7 @@ def _add_event_markers_to_weekly_fig(fig: go.Figure, weeks: list[str]) -> None:
 
 def _build_data_section_html(analysis: dict[str, Any]) -> str:
     """Render the real-measurement dashboard without any map or location data."""
+    street_lookup = _load_street_lookup()
     distribution = analysis["distribution"]
     fig_distribution = go.Figure()
     for material in ("white", "green", "brown"):
@@ -1891,7 +2594,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
                 marker={"color": meta["color"], "size": 7, "opacity": 0.72},
                 text=[
                     (
-                        f"Standort {str(p['Location_id'])[:8]}… · "
+                        f"Standort{(' ' + _get_street_name(str(p['Location_id']), street_lookup=street_lookup)) if _get_street_name(str(p['Location_id']), street_lookup=street_lookup) else ''} · "
                         f"{MATERIAL_LABELS.get(str(p['material_type']).lower(), p['material_type'])}<br>"
                         f"Gruppe: {grp_name}<br>"
                         f"Füllrate: {_fmt_de(p['daily_rate_pp'], 2)} pp/Tag · "
@@ -1925,11 +2628,15 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
     )
     fig_errors.update_layout(title="Forecast vs. tatsächliche Messung", yaxis_title="Mittlerer Fehler (%)")
 
+    street_lookup = _load_street_lookup()
     top_rows = "".join(
         f'<tr class="top20-row" data-loc="{html.escape(row["Location_id"], quote=True)}" '
         f'data-mat="{html.escape(row["material_type"].strip().lower(), quote=True)}" '
         f'title="Klick: Copilot-Erklärung für ({html.escape(row["Location_id"], quote=True)}, {html.escape(row["material_type"].strip().lower(), quote=True)})">'
-        f"<td><code>{html.escape(row['Location_id'][:8] + '...' if len(row['Location_id']) > 12 else row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'].strip().lower(), row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
+        f"<td><strong>Standort</strong>"
+        f"{('<br><span class=\"muted\" style=\"font-size:11px;\">' + html.escape(_get_street_name(row['Location_id'], street_lookup=street_lookup)) + '</span>') if _get_street_name(row['Location_id'], street_lookup=street_lookup) else ''}</td>"
+        f"<td>{html.escape(MATERIAL_LABELS.get(row['material_type'].strip().lower(), row['material_type']))}</td>"
+        f"<td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
         for row in analysis["top_overfull"]
     )
     behavior_rows = "".join(
@@ -2028,7 +2735,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
 
 
 def build_ui(
-    date: str,
+    date: str | None,
     readings_df: pd.DataFrame,
     scored_df: pd.DataFrame,
     locations_df: pd.DataFrame,
@@ -2040,6 +2747,7 @@ def build_ui(
     backtest_summary: Mapping[str, Any] | None = None,
 ) -> Path:
     """Build the single self-contained website ui_<date>.html from verifiable data."""
+    date = _resolve_target_date(date, readings_df)
     out = Path(output_path) if output_path is not None else Path(f"ui_{date}.html")
     out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -2096,9 +2804,29 @@ def build_ui(
     variables_section_html = _build_variables_section_html(route_data)
     backtest_section_html = _build_backtest_section_html(backtest_summary)
     data_section_html = _build_data_section_html(measurement_analysis)
-    role_start_html = _build_role_start_html(route_bundle, locations_df, date)
+
+    street_lookup = _load_street_lookup()
+    stand_de = _fmt_stand_de(date)
+    demo_dates, date_snapshots = _build_date_snapshots(
+        selected_date=date,
+        readings_df=readings_df,
+        primary_scored_df=scored_df,
+        locations_df=locations_df,
+        primary_route_bundle=route_bundle,
+        primary_presets=insights.get("presets", []),
+        street_lookup=street_lookup,
+    )
+    date_options_html = "".join(
+        f'<option value="{html.escape(d, quote=True)}"{" selected" if d == date else ""}>'
+        f'{html.escape(_fmt_date_de(d))}'
+        f'{" (Letzter Datentag)" if date_snapshots[d].get("is_last_data_day") else ""}'
+        f"</option>"
+        for d in demo_dates
+    )
+    role_start_html = _build_role_start_html(date_snapshots[date], date)
 
     proposal_json = _safe_json_for_html(route_bundle["proposal"])
+    snapshots_json = _safe_json_for_html(date_snapshots)
     approval_filename = f"approval_{date}.json"
 
     document_html = f"""<!DOCTYPE html>
@@ -2362,7 +3090,7 @@ def build_ui(
     .role-card strong {{ display: block; font-size: 20px; margin-bottom: 8px; }}
     .role-card span {{ color: var(--muted); }}
     .role-panel {{ display: none; }}
-    .role-panel.active {{ display: block; }}
+    .role-panel.active {{ display: block; max-width: 1280px; margin: 0 auto; padding: 18px 20px 32px; }}
     .analysis-workspace {{ display: none; }}
     .analysis-workspace.active {{ display: block; }}
     .driver-panel {{ padding-top: 12px; }}
@@ -2380,6 +3108,36 @@ def build_ui(
     .secondary-btn {{ border: 1px solid var(--border); background: var(--surface); color: var(--text); }}
     .command-box {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }}
     .command-box code {{ flex: 1 1 360px; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 10px 12px; }}
+    .topbar-controls {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }}
+    .date-picker-group {{
+      display: flex; align-items: center; gap: 6px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 5px 10px;
+    }}
+    .date-picker-group label {{ font-size: 12px; color: #cbd5e1; font-weight: 600; }}
+    .date-picker-group select {{
+      background: #0f172a; color: #ffffff; border: 1px solid #475569;
+      border-radius: 4px; padding: 4px 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }}
+    .role-switcher {{ display: flex; flex-wrap: wrap; gap: 6px; }}
+    .role-nav-btn {{
+      border: 1px solid #475569; background: #1e293b; color: #e2e8f0;
+      padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }}
+    .role-nav-btn.active {{ background: #2563eb; border-color: #60a5fa; color: #ffffff; }}
+    .stand-badge {{
+      display: inline-block; background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd;
+      border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 700;
+    }}
+    header .stand-badge {{ background: #1d4ed8; color: #ffffff; border-color: #60a5fa; }}
+    .dispatcher-box {{
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 14px; margin-bottom: 16px;
+    }}
+    .analysis-banner {{
+      background: #eff6ff; border-bottom: 1px solid #bfdbfe; color: #1e3a8a;
+      padding: 9px 20px; font-size: 13px;
+    }}
+    .yard-row td {{ background: #f8fafc; color: var(--muted); }}
     @media print {{
       body:not(.print-route-stops) > *:not(#role-driver) {{ display: none !important; }}
       body:not(.print-route-stops) #role-driver, body:not(.print-route-stops) #role-driver #driver-tour {{ display: block !important; }}
@@ -2393,14 +3151,37 @@ def build_ui(
   </style>
 </head>
 <body>
-  <header>
-    <h1>GlasRoute – PreZero Demo UI ({html.escape(date)})</h1>
-    <div class="meta">Nur nachweisbare Pipeline-Daten · {upload_check['container_count']} Standorte · {upload_check['row_count']} Messungen</div>
+  <header class="topbar">
+    <div>
+      <h1>GlasRoute &ndash; PreZero Demo UI (<span id="header-date-iso">{html.escape(date)}</span>)</h1>
+      <div class="meta">
+        <span class="stand-badge stand-label" id="current-stand-badge" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        &middot; Nur nachweisbare Pipeline-Daten &middot; {upload_check['container_count']} Standorte &middot; {upload_check['row_count']} Messungen &middot; Alle Orts- und Annahmewerte sind angenommen
+      </div>
+    </div>
+    <div class="topbar-controls">
+      <div class="date-picker-group">
+        <label for="global-date-picker">Stichtag:</label>
+        <select id="global-date-picker" aria-label="Stichtag wählen">
+          {date_options_html}
+        </select>
+      </div>
+      <nav class="role-switcher" aria-label="Arbeitsbereich wählen">
+        <button type="button" class="role-nav-btn active" data-role="dispatcher">Disponentin (Heute)</button>
+        <button type="button" class="role-nav-btn" data-role="driver">Fahrer (Schicht)</button>
+        <button type="button" class="role-nav-btn" data-role="analysis">Analyse / Management</button>
+      </nav>
+    </div>
   </header>
 
   {location_banner_html}
 
   {role_start_html}
+
+  <div id="analysis-overview-banner" class="analysis-workspace analysis-banner">
+    <strong>Analyse / Management (<span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>):</strong>
+    Lohnt sich das? Sind die Daten vorhersagbar? Hier lebt die gesamte Jahres-Zeitachse (Heatmap über alle Wochen, Saisonalität, Fairer Vergleich, Forecast vs. reale Messung).
+  </div>
 
   <nav class="tabs analysis-workspace" role="tablist">
     <button type="button" class="tab-btn active" data-target="view-data">1. Daten</button>
@@ -2421,7 +3202,10 @@ def build_ui(
 
     <section id="view-forecast" class="view-panel">
       <div class="section-head">
-        <h2>Forecast-Timeline (+0 / +7 / +14 / +21 Tage)</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Forecast-Timeline (+0 / +7 / +14 / +21 Tage)</h2>
+          <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        </div>
         <p class="muted">Prognose = Füllrate &times; Tage seit der letzten Leerung bis zum Zieldatum, begrenzt auf 110 %.
         <b>Timer:</b> Ein Container ist fällig, sobald die Schätzung 80 % erreicht. Kein fester Saisonfaktor: der Backtest hat ihn widerlegt.</p>
         {backtest_section_html}
@@ -2462,6 +3246,7 @@ def build_ui(
 
   <script id="proposal-payload" type="application/json">{proposal_json}</script>
   <script id="insights-payload" type="application/json">{insights_json}</script>
+  <script id="date-snapshots-payload" type="application/json">{snapshots_json}</script>
   <script>
     (function() {{
       var buttons = document.querySelectorAll(".tab-btn");
@@ -2493,22 +3278,32 @@ def build_ui(
         }});
       }});
 
+      var insights = JSON.parse(document.getElementById("insights-payload").textContent);
+      var dateSnapshots = JSON.parse(document.getElementById("date-snapshots-payload").textContent);
+      var currentDate = {json.dumps(date)};
       var startScreen = document.getElementById("start-screen");
       var rolePanels = {{
         driver: document.getElementById("role-driver"),
         dispatcher: document.getElementById("role-dispatcher")
       }};
+      var roleNavBtns = document.querySelectorAll(".role-nav-btn");
       var analysisWorkspace = document.querySelectorAll(".analysis-workspace");
-      var approvalKey = "glasroute-approved-" + {json.dumps(date)};
+      var approvalKey = "glasroute-approved-" + currentDate;
       function showRole(role) {{
         if (startScreen) startScreen.style.display = "none";
         Object.keys(rolePanels).forEach(function(key) {{
           if (rolePanels[key]) rolePanels[key].classList.toggle("active", key === role);
         }});
+        roleNavBtns.forEach(function(btn) {{
+          btn.classList.toggle("active", btn.getAttribute("data-role") === role);
+        }});
         analysisWorkspace.forEach(function(node) {{
           node.classList.toggle("active", role === "analysis");
         }});
         if (role === "driver") updateDriverAccess();
+        if (role === "analysis") {{
+          setTimeout(function() {{ window.dispatchEvent(new Event("resize")); }}, 50);
+        }}
       }}
       function updateDriverAccess() {{
         var approved = localStorage.getItem(approvalKey) === "true";
@@ -2517,13 +3312,212 @@ def build_ui(
         if (locked) locked.hidden = approved;
         if (tour) tour.hidden = !approved;
       }}
+      roleNavBtns.forEach(function(btn) {{
+        btn.addEventListener("click", function() {{ showRole(btn.getAttribute("data-role")); }});
+      }});
       document.querySelectorAll(".role-card").forEach(function(card) {{
         card.addEventListener("click", function() {{ showRole(card.getAttribute("data-role")); }});
       }});
-
-      var insights = JSON.parse(document.getElementById("insights-payload").textContent);
       function esc(s) {{ return String(s).replace(/[&<>"']/g, function(c) {{ return {{"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}}[c]; }}); }}
       function fmt(v, suf) {{ return (v === null || v === undefined) ? "-" : (String(v) + (suf || "")); }}
+      function fmtDe(v, dec) {{
+        if (v === null || v === undefined || isNaN(Number(v))) return "-";
+        return Number(v).toFixed(dec || 0).replace(".", ",");
+      }}
+      function renderHorizonCardsHtml(horizons, standDe, dateIso) {{
+        return (horizons || []).map(function(h) {{
+          var kwStr = String(h.kw < 10 ? "0" + h.kw : h.kw);
+          return '<div class="card">' +
+            '<div class="label">' + esc(h.title) + ' &middot; KW ' + kwStr + ' (' + esc(h.target_de) + ')</div>' +
+            '<div class="value">' + esc(h.critical) + ' kritisch</div>' +
+            '<div class="sub">Rot (&gt;80 %): ' + esc(h.red) + ' &middot; Übervoll (&ge;110 %): ' + esc(h.black) +
+            ' &middot; <span class="stand-label" data-stand-date="' + esc(dateIso) + '">' + esc(standDe) + '</span></div>' +
+            '</div>';
+        }}).join("");
+      }}
+      function renderTodayRowsHtml(rows) {{
+        if (!rows || !rows.length) return '<tr><td colspan="5">Heute keine kritischen Container</td></tr>';
+        return rows.map(function(r) {{
+          var statusTxt = Number(r.today_pct) >= 110 ? "Überfüllt" : "Kritisch";
+          return '<tr><td>' + esc(r.site_title) + '</td><td>' + esc(r.mat_label) + '</td>' +
+            '<td>' + fmtDe(r.today_pct, 0) + ' %</td><td>' + statusTxt + '</td><td>' + esc(r.in_tour) + '</td></tr>';
+        }}).join("");
+      }}
+      function renderWeek1RowsHtml(rows) {{
+        if (!rows || !rows.length) return '<tr><td colspan="5">Keine Behälter bis +7 Tage voll</td></tr>';
+        return rows.map(function(r) {{
+          var statusTxt = Number(r.week1_pct) >= 110 ? "Überfüllt" : "Voll (+7 Tage)";
+          return '<tr><td>' + esc(r.site_title) + '</td><td>' + esc(r.mat_label) + '</td>' +
+            '<td>' + fmtDe(r.today_pct, 0) + ' %</td><td>' + fmtDe(r.week1_pct, 0) + ' %</td><td>' + statusTxt + '</td></tr>';
+        }}).join("");
+      }}
+      function renderDispatcherStopsHtml(stops) {{
+        if (!stops || !stops.length) return '<tr><td colspan="5">Keine Stopps</td></tr>';
+        return stops.map(function(s) {{
+          if (s.is_yard) {{
+            return '<tr class="yard-row"><td>&ndash;</td><td colspan="4"><strong>' + esc(s.summary) + '</strong></td></tr>';
+          }}
+          return '<tr><td>' + esc(s.order) + '</td>' +
+            '<td><strong>' + esc(s.site_title) + '</strong><br><span class="muted" style="font-size:12px;">' + esc(s.site_subtitle) + '</span></td>' +
+            '<td>' + esc(s.mat_display) + '</td><td>' + esc(s.level_text) + '</td><td>' + esc(s.prio_text) + '</td></tr>';
+        }}).join("");
+      }}
+      function renderDriverStopsHtml(stops) {{
+        if (!stops || !stops.length) return '<tr><td colspan="6">Keine freigegebenen Stopps</td></tr>';
+        return stops.map(function(s) {{
+          if (s.is_yard) {{
+            return '<tr class="yard-row"><td>&ndash;</td><td colspan="5"><strong>' + esc(s.summary) + '</strong></td></tr>';
+          }}
+          return '<tr class="driver-stop" data-loc="' + esc(s.loc_id) + '" data-mat="' + esc(s.raw_mat) + '" data-lat="' + esc(s.lat) + '" data-lon="' + esc(s.lon) + '">' +
+            '<td>' + esc(s.order) + '</td>' +
+            '<td><strong>' + esc(s.site_title) + '</strong><br><span class="muted" style="font-size:12px;">' + esc(s.site_subtitle) + '</span></td>' +
+            '<td>' + esc(s.mat_display) + '</td>' +
+            '<td>' + esc(s.level_text) + '</td>' +
+            '<td><label class="driver-check"><input class="emptied" type="checkbox"> geleert</label></td>' +
+            '<td><input class="found-level" type="number" min="0" max="110" step="10" placeholder="10er-Schritte" aria-label="Füllstand vorgefunden"></td>' +
+            '</tr>';
+        }}).join("");
+      }}
+      function updateVariantSummary(snap, variantId) {{
+        var vars = snap.variants || [];
+        var chosen = vars[0];
+        for (var i = 0; i < vars.length; i++) {{
+          if (String(vars[i].id) === String(variantId)) {{ chosen = vars[i]; break; }}
+        }}
+        if (!chosen) return;
+        var vm = chosen.metrics || {{}};
+        var sumEl = document.getElementById("dispatcher-variant-summary");
+        if (sumEl) {{
+          sumEl.innerHTML = esc(vm.num_stops) + ' Stopps &middot; ' + fmtDe(vm.planned_km, 1) + ' km &middot; ' +
+            esc(vm.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(vm.rounds) + ' Runden &middot; ' +
+            fmtDe(vm.shift_hours, 1) + ' h &middot; ' + fmtDe(vm.t_collected, 1) + ' t &middot; ' +
+            '<span class="stand-label" data-stand-date="' + esc(snap.date) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+        var tv = document.getElementById("disp-kpi-tour-val");
+        if (tv) tv.textContent = vm.num_stops + " Stopps · " + fmtDe(vm.planned_km, 1) + " km";
+        var ts = document.getElementById("disp-kpi-tour-sub");
+        if (ts) {{
+          ts.innerHTML = esc(vm.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(vm.rounds) + ' Runden &middot; ' +
+            fmtDe(vm.t_collected, 1) + ' t &middot; ' + fmtDe(snap.metrics.saved_pct, 1) + ' % gespart vs. alle leeren &middot; ' +
+            '<span class="stand-label" data-stand-date="' + esc(snap.date) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+      }}
+      function syncApprovalBadges() {{
+        var approved = localStorage.getItem(approvalKey) === "true";
+        var roleBadge = document.getElementById("role-approval-status");
+        var mainBadge = document.getElementById("approval-status-badge");
+        var txt = approved ? "Freigegeben" : "Status: Vorgeschlagen";
+        [roleBadge, mainBadge].forEach(function(b) {{
+          if (!b) return;
+          b.textContent = txt;
+          b.classList.toggle("approved", approved);
+          b.classList.toggle("pending", !approved);
+        }});
+      }}
+      function applySelectedDate(newDate) {{
+        var snap = dateSnapshots[newDate];
+        if (!snap) return;
+        currentDate = newDate;
+        approvalKey = "glasroute-approved-" + currentDate;
+        document.title = "GlasRoute UI – " + currentDate;
+        var hIso = document.getElementById("header-date-iso");
+        if (hIso) hIso.textContent = currentDate;
+        document.querySelectorAll(".stand-label").forEach(function(el) {{
+          el.textContent = snap.stand_de;
+          el.setAttribute("data-stand-date", currentDate);
+        }});
+        document.querySelectorAll(".js-short-date").forEach(function(el) {{
+          el.textContent = snap.short_de;
+        }});
+        var m = snap.metrics || {{}};
+        var h = snap.horizons || [];
+        var todayVal = document.getElementById("disp-kpi-today-val");
+        if (todayVal) todayVal.textContent = snap.today_critical_containers + " Container";
+        var todaySub = document.getElementById("disp-kpi-today-sub");
+        if (todaySub) {{
+          todaySub.innerHTML = esc(snap.today_red_containers) + ' Rot (&gt;80 %) &middot; ' +
+            esc(snap.today_overfull_containers) + ' Übervoll (&ge;110 %) &middot; ' +
+            esc(m.total_critical_locations) + ' krit. Standorte &middot; ' +
+            '<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+        var w1Val = document.getElementById("disp-kpi-w1-val");
+        if (w1Val) w1Val.textContent = snap.week1_critical_containers + " Container";
+        var w1Sub = document.getElementById("disp-kpi-w1-sub");
+        if (w1Sub) {{
+          var dStr = (snap.week1_new_delta >= 0 ? "+" : "") + snap.week1_new_delta + " gegenüber heute";
+          var kwS = String(snap.week1_kw < 10 ? "0" + snap.week1_kw : snap.week1_kw);
+          w1Sub.innerHTML = esc(dStr) + ' bis ' + esc(snap.week1_date_de) + ' (KW ' + kwS + ') &middot; ' +
+            '<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+        var k3Val = document.getElementById("disp-kpi-3w-val");
+        if (k3Val && h.length >= 4) {{
+          k3Val.textContent = "KW+1: " + h[1].critical + " · KW+2: " + h[2].critical + " · KW+3: " + h[3].critical;
+        }}
+        var k3Sub = document.getElementById("disp-kpi-3w-sub");
+        if (k3Sub) {{
+          k3Sub.innerHTML = 'Vorausschau bis ' + esc(snap.week3_end_de) + ' (kein Jahresverlauf) &middot; ' +
+            '<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+        var hCards = document.getElementById("dispatcher-horizon-cards");
+        if (hCards) hCards.innerHTML = renderHorizonCardsHtml(h, snap.stand_de, currentDate);
+        var todayBody = document.getElementById("dispatcher-today-full-body");
+        if (todayBody) todayBody.innerHTML = renderTodayRowsHtml(snap.today_full_list);
+        var weekBody = document.getElementById("dispatcher-week-full-body");
+        if (weekBody) weekBody.innerHTML = renderWeek1RowsHtml(snap.week1_full_list);
+        var varSel = document.getElementById("dispatcher-tour-variant-select");
+        if (varSel) {{
+          varSel.innerHTML = (snap.variants || []).map(function(v) {{
+            return '<option value="' + esc(v.id) + '">' + esc(v.label) + '</option>';
+          }}).join("");
+          updateVariantSummary(snap, "baseline");
+        }} else {{
+          updateVariantSummary(snap, "baseline");
+        }}
+        var dispStopsBody = document.getElementById("dispatcher-stops-tbody");
+        if (dispStopsBody) dispStopsBody.innerHTML = renderDispatcherStopsHtml(snap.dispatcher_stops);
+        var drvStopsEl = document.getElementById("drv-kpi-stops");
+        if (drvStopsEl) drvStopsEl.textContent = m.num_stops + " Stopps · " + fmtDe(m.planned_km, 1) + " km";
+        var drvMetaEl = document.getElementById("drv-kpi-meta");
+        if (drvMetaEl) {{
+          drvMetaEl.innerHTML = esc(m.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(m.rounds) + ' Runden &middot; ' +
+            fmtDe(m.t_collected, 1) + ' t &middot; <span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+        var drvBody = document.getElementById("driver-stops-tbody");
+        if (drvBody) drvBody.innerHTML = renderDriverStopsHtml(snap.driver_stops);
+        var mapsEl = document.getElementById("driver-maps-link");
+        if (mapsEl) {{
+          if (snap.maps_url) {{
+            mapsEl.setAttribute("href", snap.maps_url);
+            mapsEl.hidden = false;
+          }} else {{
+            mapsEl.removeAttribute("href");
+            mapsEl.hidden = true;
+          }}
+        }}
+        var lockedEl = document.getElementById("driver-locked");
+        if (lockedEl) {{
+          lockedEl.innerHTML = 'Diese Tour (<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>) ist noch nicht freigegeben.';
+        }}
+        if (snap.csv_rows) insights.csv_rows = snap.csv_rows;
+        if (snap.proposal && snap.proposal.stops) insights.stops = snap.proposal.stops;
+        var previewEl = document.getElementById("approval-record-preview");
+        if (previewEl) previewEl.style.display = "none";
+        syncApprovalBadges();
+        updateDriverAccess();
+      }}
+      var globalDatePicker = document.getElementById("global-date-picker");
+      if (globalDatePicker) {{
+        globalDatePicker.addEventListener("change", function() {{
+          applySelectedDate(globalDatePicker.value);
+        }});
+      }}
+      var dispVariantSelect = document.getElementById("dispatcher-tour-variant-select");
+      if (dispVariantSelect) {{
+        dispVariantSelect.addEventListener("change", function() {{
+          var snap = dateSnapshots[currentDate];
+          if (snap) updateVariantSummary(snap, dispVariantSelect.value);
+        }});
+      }}
       // Lower is better for every what-if metric except stops and tonnes collected.
       var higherIsBetter = {{ num_stops: true, t_collected: true }};
       document.querySelectorAll(".whatif-btn").forEach(function(btn) {{
@@ -2608,9 +3602,11 @@ def build_ui(
         if (!e && !cExp) {{
           content = "Keine Erklärung verfügbar für (" + esc(loc) + ", " + esc(normMat || "-") + ").";
         }} else {{
+          var titleMatLabels = {{ white: "Weißglas", green: "Grünglas", brown: "Braunglas", weiss: "Weißglas", gruen: "Grünglas", braun: "Braunglas" }};
+          var titleMatName = titleMatLabels[normMat] || esc(normMat || "-");
           var title = e
-            ? ("<b>Stopp #" + esc(e.order) + " (" + esc(loc) + ", " + esc(normMat || "-") + ") – Copilot-Erklärung:</b> ")
-            : ("<b>Container (" + esc(loc) + ", " + esc(normMat || "-") + ") – Copilot-Erklärung:</b> ");
+            ? ("<b>Stopp #" + esc(e.order) + " · " + titleMatName + " – Copilot-Erklärung:</b> ")
+            : ("<b>Standort · " + titleMatName + " – Copilot-Erklärung:</b> ");
           content += title;
           if (cExp && cExp.formatted) {{
             content += "<pre class='copilot-pre'>" + esc(cExp.formatted) + "</pre>";
@@ -2626,7 +3622,7 @@ def build_ui(
                 "</td><td>" + esc(c.overflow_date || "-") + "</td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
             }}).join("");
             var srcMap = {{ osm_assigned: "OSM-Standort", prezero_supplied: "PreZero-Standort", config: "Betriebskonfiguration" }};
-            var confMap = {{ simulated_mapping: "simulierte Zuordnung", high: "bestätigt", low: "unbestätigt" }};
+            var confMap = {{ simulated_mapping: "simulierte Zuordnung", high: "angenommen", low: "unbestätigt" }};
             var srcText = srcMap[e.source] || esc(e.source);
             var confText = confMap[e.confidence] || esc(e.confidence);
             content += "<div style='margin-top:8px'><b>Standort-Aufschlüsselung:</b> " + esc(e.reason) +
@@ -2765,12 +3761,19 @@ def build_ui(
       var proposalRaw = document.getElementById("proposal-payload").textContent;
 
       function approveTour(approver) {{
-        var record = JSON.parse(proposalRaw);
+        var snapProposal = dateSnapshots[currentDate] && dateSnapshots[currentDate].proposal;
+        var record = snapProposal ? JSON.parse(JSON.stringify(snapProposal)) : JSON.parse(proposalRaw);
         record.status = "approved";
         record.approved = true;
         record.approved_by = approver;
         record.approved_at = new Date().toISOString().replace(/\\.\\d{{3}}Z$/, "+00:00");
         localStorage.setItem(approvalKey, "true");
+        [badge, document.getElementById("role-approval-status")].forEach(function(b) {{
+          if (!b) return;
+          b.textContent = "Freigegeben durch " + approver;
+          b.classList.remove("pending");
+          b.classList.add("approved");
+        }});
         updateDriverAccess();
         return record;
       }}
@@ -2780,10 +3783,6 @@ def build_ui(
           var approver = (nameInput.value || "").trim() || "Disponent/in";
           var record = approveTour(approver);
 
-          badge.textContent = "Freigegeben durch " + approver;
-          badge.classList.remove("pending");
-          badge.classList.add("approved");
-
           var text = JSON.stringify(record, null, 2);
           preview.textContent = text;
           preview.style.display = "block";
@@ -2792,7 +3791,7 @@ def build_ui(
           var url = URL.createObjectURL(blob);
           var link = document.createElement("a");
           link.href = url;
-          link.download = {json.dumps(approval_filename)};
+          link.download = "approval_" + currentDate + ".json";
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -2804,10 +3803,6 @@ def build_ui(
         roleApproveBtn.addEventListener("click", function() {{
           var roleName = (document.getElementById("role-dispatcher-name").value || "").trim() || "Disponent/in";
           approveTour(roleName);
-          var roleBadge = document.getElementById("role-approval-status");
-          roleBadge.textContent = "Freigegeben durch " + roleName;
-          roleBadge.classList.remove("pending");
-          roleBadge.classList.add("approved");
         }});
       }}
 
@@ -2828,7 +3823,7 @@ def build_ui(
             if (input) input.setCustomValidity("");
             var level = raw === "" ? "" : String(value);
             var overfull = raw !== "" && value >= 110 ? "True" : "False";
-            var cells = [row.dataset.loc, row.dataset.mat, {json.dumps(date)}, level === "110" ? "overfull" : level, level, overfull];
+            var cells = [row.dataset.loc, row.dataset.mat, currentDate, level === "110" ? "overfull" : level, level, overfull];
             lines.push(cells.map(function(cell) {{
               var text = String(cell === undefined ? "" : cell);
               return '"' + text.replace(/"/g, '""') + '"';
@@ -2838,7 +3833,7 @@ def build_ui(
           var url = URL.createObjectURL(blob);
           var link = document.createElement("a");
           link.href = url;
-          link.download = "tour_feedback_" + {json.dumps(date)} + ".csv";
+          link.download = "tour_feedback_" + currentDate + ".csv";
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -2892,7 +3887,7 @@ def build_ui(
         var url = URL.createObjectURL(blob);
         var link = document.createElement("a");
         link.href = url;
-        link.download = "stoppliste_fahrreihenfolge_" + {json.dumps(date)} + ".csv";
+        link.download = "stoppliste_fahrreihenfolge_" + currentDate + ".csv";
         document.body.appendChild(link);
         link.click();
         link.remove();

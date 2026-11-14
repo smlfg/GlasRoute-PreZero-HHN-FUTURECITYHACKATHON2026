@@ -1040,6 +1040,24 @@ def _run_what_if_simulation(
     }
 
 
+def _get_street_for_copilot(loc_id: str, lat: float | None = None, lon: float | None = None) -> str:
+    p = Path("data/external/street_lookup.json")
+    if not p.is_file():
+        return ""
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+        if loc_id in data and data[loc_id].get("road"):
+            return str(data[loc_id]["road"])
+        if lat is not None and lon is not None:
+            key = f"{float(lat):.5f},{float(lon):.5f}"
+            if key in data and data[key].get("road"):
+                return str(data[key]["road"])
+    except Exception:
+        pass
+    return ""
+
+
 def precompute_ui_copilot_bundle(
     route_data: Mapping[str, Any],
     scored_df: pd.DataFrame,
@@ -1150,10 +1168,22 @@ def precompute_ui_copilot_bundle(
         floc, fmat = focus_key.split(":", 1)
         mat_map = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
         fmat_de = mat_map.get(fmat.lower(), fmat)
-        short_loc = floc[:8] + "..." if len(floc) > 12 else floc
-        focus_label = f"{fmat_de} (Standort {short_loc})"
+        focus_stop = loc_stop_map.get(floc)
+        if focus_stop:
+            ord_val = focus_stop.get("order", 1)
+            street = _get_street_for_copilot(floc, focus_stop.get("lat"), focus_stop.get("lon"))
+            if street:
+                focus_label = f"Standort #{ord_val} · {street} · {fmat_de}"
+            else:
+                focus_label = f"Standort #{ord_val} · {fmat_de}"
+        else:
+            street = _get_street_for_copilot(floc)
+            if street:
+                focus_label = f"Standort · {street} · {fmat_de}"
+            else:
+                focus_label = f"Standort · {fmat_de}"
     elif focus_key:
-        focus_label = f"Standort {focus_key[:8]}..."
+        focus_label = "Standort #1"
 
     assumptions = route_data.get("assumptions")
     base_cfg = (
@@ -1164,7 +1194,7 @@ def precompute_ui_copilot_bundle(
     fixed_questions = [
         "Wie sieht der Touren-Überblick für den Stichtag aus?",
         (
-            f"Warum ist Container {focus_label} in der Tour?"
+            f"Warum ist {focus_label} in der Tour?"
             if focus_key
             else "Welche kritischen Stopps sind in der Tour?"
         ),
@@ -1177,7 +1207,7 @@ def precompute_ui_copilot_bundle(
         tool_name, args = _route_question_deterministically(question, date)
         if tool_name == "get_tour_overview":
             answer = overview_text
-        elif tool_name == "explain_container" or (focus_key and "Warum ist Container" in question):
+        elif tool_name == "explain_container" or (focus_key and "Warum ist" in question):
             if focus_key and focus_key in container_explains:
                 answer = container_explains[focus_key]["formatted"]
             else:
@@ -1366,15 +1396,20 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             mat_map = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
             for stop in top_stops:
                 ck = str(stop["container_key"])
+                ord_val = stop.get("order", 1)
+                lat, lon = stop.get("lat"), stop.get("lon")
+                street = _get_street_for_copilot(stop.get("Location_id", ""), lat, lon)
                 if ":" in ck:
                     loc_part, mat_part = ck.split(":", 1)
                     mat_de = mat_map.get(mat_part.lower(), mat_part)
-                    short_l = loc_part[:8] + "..." if len(loc_part) > 12 else loc_part
-                    ck_display = f"{mat_de} (Standort {short_l})"
+                    if street:
+                        ck_display = f"Standort #{ord_val} · {street} · {mat_de}"
+                    else:
+                        ck_display = f"Standort #{ord_val} · {mat_de}"
                 else:
                     ck_display = ck
                 lines.append(
-                    f"  #{stop['order']}: {ck_display} | Füllstand {stop['last_fill_level']:.0f} % | "
+                    f"  #{ord_val}: {ck_display} | Füllstand {stop['last_fill_level']:.0f} % | "
                     f"Dringlichkeit {stop['score']:.2f} | Fzg {stop['vehicle']} Runde {stop['round']}"
                 )
         lines.append(f"Freigabe: {approval_hint}")

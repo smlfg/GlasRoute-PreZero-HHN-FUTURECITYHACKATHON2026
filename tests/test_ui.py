@@ -654,16 +654,19 @@ def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
     for tag in soup(["script", "style", "svg"]):
         tag.decompose()
 
-    # 1. Driver & Dispatcher tour: no raw UUID, no disposal_depot, no English color enum, no True/False
+    # 1. Driver & Dispatcher tour: no raw or shortened UUID, no disposal_depot, no English color enum, no True/False
     driver_panel = soup.find(id="role-driver")
     assert driver_panel is not None
     driver_text = driver_panel.get_text()
     assert re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", driver_text) is None
+    assert re.search(r"\b[0-9a-f]{8}\.{3}", driver_text) is None
     assert "disposal_depot" not in driver_text
+    assert "Wertstoffhof" not in driver_text
     assert "white" not in driver_text.split()
     assert "True" not in driver_text.split()
     assert "False" not in driver_text.split()
     assert "Weißglas" in driver_text
+    assert "Standort #1" in driver_text
 
     # 2. Route view (view-route) table
     route_panel = soup.find(id="view-route")
@@ -672,6 +675,9 @@ def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
     assert route_table is not None
     table_text = route_table.get_text()
     assert re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", table_text) is None
+    assert re.search(r"\b[0-9a-f]{8}\.{3}", table_text) is None
+    assert "disposal_depot" not in table_text
+    assert "Wertstoffhof" not in table_text
     assert "collection" not in table_text.split()
     assert "Leerung" in table_text
     assert "Entladung" in table_text
@@ -683,6 +689,7 @@ def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
     assert "simulierte Zuordnung" in table_text
     assert "0.8333" not in table_text
     assert "0,83" in table_text
+    assert "Standort #1" in table_text
 
     # 3. Copilot view
     copilot_panel = soup.find(id="view-copilot")
@@ -693,6 +700,24 @@ def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
     assert "max_shift_hours=" not in copilot_text
     assert "vehicle_max_weight_kg=" not in copilot_text
     assert "max_stops=" not in copilot_text
+    assert "b3ebe810" not in copilot_text
+    assert re.search(r"\b[0-9a-f]{8}\.{3}", copilot_text) is None
+    assert "Wertstoffhof" not in copilot_text
+
+    # Check dropdown options and question buttons
+    copilot_select = soup.find(id="copilot-container-select")
+    if copilot_select:
+        for opt in copilot_select.find_all("option"):
+            opt_text = opt.get_text()
+            assert re.search(r"\b[0-9a-f]{8}\.{3}", opt_text) is None
+            assert "Standort" in opt_text or "Häufig" in opt_text
+
+    # Check ask buttons & placeholder
+    ask_input = soup.find(id="copilot-ask-input")
+    if ask_input:
+        placeholder = ask_input.get("placeholder", "")
+        assert "b3ebe810" not in placeholder
+        assert re.search(r"\b[0-9a-f]{8}\b", placeholder) is None
 
     # 4. Datacheck view
     datacheck_panel = soup.find(id="view-datacheck")
@@ -701,11 +726,14 @@ def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
     assert "Overfull" not in datacheck_text
     assert "Überfüllt" in datacheck_text
 
-    # 5. No raw boolean literals across visible text
+    # 5. No raw boolean literals across visible text, no Wertstoffhof, no bestätigt (except unbestätigt)
     all_text = soup.get_text()
     words = set(all_text.split())
     assert "True" not in words
     assert "False" not in words
+    assert "Wertstoffhof" not in all_text
+    assert re.search(r"\bbestätigt\b", all_text) is None
+    assert "angenommen" in all_text
 
 
 def test_compute_measurement_analysis_includes_behavior_groups() -> None:
@@ -756,3 +784,120 @@ def test_build_ui_shows_timer_and_backtest(tmp_path: Path) -> None:
     assert "Ist der Füllstand vorhersagbar?" in html and "19,9 pp" in html
     assert "Braunglas" in html and "95 Tage" in html and "89,1 %" in html
     assert "Saisonfaktor)" not in html
+
+
+def test_ui_plan_documents_today_first_user_stories() -> None:
+    plan_path = Path(__file__).resolve().parents[1] / "docs" / "UI_PLAN.md"
+    assert plan_path.exists()
+    content = plan_path.read_text(encoding="utf-8")
+    for token in ("Disponentin", "Fahrer", "Analyse / Management", "Stand DD.MM.YYYY", "KW+1", "KW+3", "+ 21 Tage"):
+        assert token in content, f"missing {token} in docs/UI_PLAN.md"
+
+
+def test_ui_today_first_date_picker_stand_labels_and_snapshots(tmp_path: Path) -> None:
+    import json as _json
+    from bs4 import BeautifulSoup
+
+    out = build_ui(
+        date=None,
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui_auto.html",
+    )
+    html_text = out.read_text(encoding="utf-8")
+    soup = BeautifulSoup(html_text, "html.parser")
+
+    # Default resolves to last data day of _sample_readings() -> 2026-04-12
+    assert soup.find(id="header-date-iso").get_text(strip=True) == "2026-04-12"
+    stand_badge = soup.find(id="current-stand-badge")
+    assert stand_badge is not None and stand_badge.get_text(strip=True) == "Stand 12.04.2026"
+
+    picker = soup.find(id="global-date-picker")
+    assert picker is not None
+    selected_opt = picker.find("option", selected=True)
+    assert selected_opt is not None and selected_opt.get("value") == "2026-04-12"
+    assert "Letzter Datentag" in selected_opt.get_text()
+    assert len(picker.find_all("option")) >= 3
+
+    snapshots = _json.loads(soup.find(id="date-snapshots-payload").string)
+    assert "2026-04-12" in snapshots
+    snap = snapshots["2026-04-12"]
+    assert snap["stand_de"] == "Stand 12.04.2026"
+    assert [h["title"] for h in snap["horizons"]] == ["Heute (+0 Tage)", "KW+1 (+7 Tage)", "KW+2 (+14 Tage)", "KW+3 (+21 Tage)"]
+    assert len(snap["variants"]) >= 1
+
+    # Landing view is Disponentin; Analyse workspace starts hidden
+    dispatcher = soup.find(id="role-dispatcher")
+    driver = soup.find(id="role-driver")
+    assert dispatcher is not None and "active" in (dispatcher.get("class") or [])
+    assert driver is not None and "active" not in (driver.get("class") or [])
+    analysis_nav = soup.find("nav", class_="analysis-workspace")
+    assert analysis_nav is not None and "active" not in (analysis_nav.get("class") or [])
+
+    # Disponentin has 3-week horizon cards (no KW+4), Today/+7 tables, variant modifier and approval button
+    horizon_text = soup.find(id="dispatcher-horizon-3w").get_text()
+    assert "KW+1" in horizon_text and "KW+2" in horizon_text and "KW+3" in horizon_text
+    assert "KW+4" not in horizon_text
+    assert soup.find(id="dispatcher-today-full-table") is not None
+    assert soup.find(id="dispatcher-week-full-table") is not None
+    assert soup.find(id="dispatcher-tour-variant-select") is not None
+    assert soup.find(id="role-approve-route-btn") is not None
+
+
+def test_dispatcher_and_driver_views_have_no_data_outside_0_to_21_days(tmp_path: Path) -> None:
+    import re
+    from datetime import date as _date, timedelta
+    from bs4 import BeautifulSoup
+
+    base = _date.fromisoformat("2026-04-15")
+    horizon_max = base + timedelta(days=21)
+
+    route = dict(_sample_route())
+    route["stops"] = [dict(s) for s in route["stops"]]
+    # Inject an overdue past due_date and a far-future >21d due_date to ensure both are masked in operational views
+    for idx, s in enumerate(route["stops"]):
+        if s.get("stop_type", "collection") == "collection":
+            if idx == 0:
+                s["days_until_due"] = -14
+                s["due_date"] = "2026-04-01"
+            else:
+                s["days_until_due"] = 45
+                s["due_date"] = "2026-05-30"
+
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=route,
+        output_path=tmp_path / "ui_window.html",
+    )
+    soup = BeautifulSoup(out.read_text(encoding="utf-8"), "html.parser")
+
+    for section_id in ("role-dispatcher", "role-driver"):
+        section = soup.find(id=section_id)
+        assert section is not None
+        for tag in section.find_all(["script", "style", "svg"]):
+            tag.decompose()
+        visible = section.get_text(" ", strip=True)
+        assert "Stand 15.04.2026" in visible
+        for iso in re.findall(r"\b(\d{4}-\d{2}-\d{2})\b", visible):
+            parsed = _date.fromisoformat(iso)
+            assert base <= parsed <= horizon_max, f"{section_id} leaked out-of-window ISO date {iso}"
+        for de_str in re.findall(r"\b(\d{2}\.\d{2}\.\d{4})\b", visible):
+            day, mon, yr = map(int, de_str.split("."))
+            parsed = _date(yr, mon, day)
+            assert base <= parsed <= horizon_max, f"{section_id} leaked out-of-window DE date {de_str}"
+
+    # Driver view must contain no charts and no historical tables
+    driver = soup.find(id="role-driver")
+    assert driver.find("iframe") is None
+    assert driver.find("svg") is None
+    assert driver.find("img") is None
+    assert driver.find("canvas") is None
+    assert not driver.find_all(class_="js-plotly-plot")
+    assert "Weihnachten" not in driver.get_text()
+    assert "Saisonalität" not in driver.get_text()
+

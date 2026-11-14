@@ -284,7 +284,7 @@ def visualize_cmd(
 
 
 @cli.command("run")
-@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option("--date", "-d", default=None, help="Target date (YYYY-MM-DD, default: last data day).")
 @click.option(
     "--raw",
     "--input",
@@ -316,7 +316,7 @@ def visualize_cmd(
 )
 @click.option("--output-dir", default=".", show_default=True, help="Output directory for artifacts.")
 def run_cmd(
-    date: str,
+    date: str | None,
     raw: str,
     cleaned: str,
     locations_path: str,
@@ -328,10 +328,15 @@ def run_cmd(
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     cleaned_df = ingest.ingest(raw, cleaned)
-    feat_df = features.build_features(cleaned_df, date)
+    if not date or str(date).strip().lower() in ("auto", "latest"):
+        valid_dates = pd.to_datetime(cleaned_df["date"], errors="coerce").dropna() if not cleaned_df.empty else pd.Series(dtype="datetime64[ns]")
+        target_date = valid_dates.max().strftime("%Y-%m-%d") if not valid_dates.empty else "2026-04-15"
+    else:
+        target_date = str(date)
+    feat_df = features.build_features(cleaned_df, target_date)
     scored_df = scoring.score_containers(feat_df)
 
-    scored_out = Path(cleaned).parent / f"scored_{date}.csv"
+    scored_out = Path(cleaned).parent / f"scored_{target_date}.csv"
     scored_out.parent.mkdir(parents=True, exist_ok=True)
     scored_df.to_csv(scored_out, index=False)
 
@@ -342,17 +347,17 @@ def run_cmd(
         locs_df,
         depot=cfg.yard_depot,
         max_stops=max_stops,
-        date=date,
+        date=target_date,
         output_dir=out_dir,
         config=cfg,
     )
-    stops_out = Path(cleaned).parent / f"stops_{date}.csv"
+    stops_out = Path(cleaned).parent / f"stops_{target_date}.csv"
     routing.export_stops_csv(route_data, stops_out)
-    tour.export_tour_csv(route_data, Path(cleaned).parent / f"tour_{date}.csv")
+    tour.export_tour_csv(route_data, Path(cleaned).parent / f"tour_{target_date}.csv")
     trends_path = viz.plot_trends(cleaned_df, out_dir / "trends.png")
     map_path = viz.plot_route(
         route_data,
-        out_dir / f"map_{date}.html",
+        out_dir / f"map_{target_date}.html",
         scored=scored_df,
         locations=locs_df,
         container_keys=cleaned_df[["Location_id", "material_type"]],
@@ -363,7 +368,7 @@ def run_cmd(
     week_starts = [pd.Timestamp(v) for v in heatmap_matrix.attrs.get("week_starts", [])]
     selected_week = labels[0] if labels else None
     try:
-        selected_ts = pd.Timestamp(date)
+        selected_ts = pd.Timestamp(target_date)
         for idx, ws in enumerate(week_starts):
             if ws <= selected_ts <= ws + pd.Timedelta(days=6):
                 selected_week = labels[idx]
@@ -374,16 +379,16 @@ def run_cmd(
         heatmap_matrix,
         out_dir / "heatmap.html",
         selected_week=selected_week,
-        map_date=date,
+        map_date=target_date,
     )
 
     site_path = viz.build_ui(
-        date=date,
+        date=target_date,
         readings_df=cleaned_df,
         scored_df=scored_df,
         locations_df=locs_df,
         route_data=route_data,
-        output_path=out_dir / f"ui_{date}.html",
+        output_path=out_dir / f"ui_{target_date}.html",
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
         benchmark_rows=_load_benchmark_rows(out_dir),
@@ -392,12 +397,12 @@ def run_cmd(
 
     crit = scored_df[scored_df["critical"]]
     click.echo(
-        f"Pipeline complete for {date}: {route_data.get('total_critical_locations', 0)} critical "
+        f"Pipeline complete for {target_date}: {route_data.get('total_critical_locations', 0)} critical "
         f"physical sites ({crit['Location_id'].nunique()} critical IDs, {len(crit)} containers)."
     )
     click.echo(route_data["comparison"])
     click.echo(
-        f"Outputs: {out_dir / f'route_{date}.json'}, {stops_out}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
+        f"Outputs: {out_dir / f'route_{target_date}.json'}, {stops_out}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
     )
 
 
@@ -483,7 +488,7 @@ def approve_cmd(
 
 
 @cli.command("ui")
-@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option("--date", "-d", default=None, help="Target date (YYYY-MM-DD, default: last data day).")
 @click.option(
     "--readings",
     default="data/processed/cleaned_readings.csv",
@@ -509,7 +514,7 @@ def approve_cmd(
 )
 @click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html.")
 def ui_cmd(
-    date: str,
+    date: str | None,
     readings: str,
     scored: str | None,
     locations_path: str,
@@ -528,27 +533,32 @@ def ui_cmd(
         parse_dates=["date"],
         dtype={"Location_id": str, "material_type": str},
     )
+    if not date or str(date).strip().lower() in ("auto", "latest"):
+        valid_dates = pd.to_datetime(readings_df["date"], errors="coerce").dropna() if not readings_df.empty else pd.Series(dtype="datetime64[ns]")
+        target_date = valid_dates.max().strftime("%Y-%m-%d") if not valid_dates.empty else "2026-04-15"
+    else:
+        target_date = str(date)
     locs_df = locations.load_locations(locations_path)
 
     scored_df: pd.DataFrame | None = None
     scored_candidates = (
         [Path(scored)]
         if scored is not None
-        else [out_dir / "data" / "processed" / f"scored_{date}.csv", Path("data/processed") / f"scored_{date}.csv"]
+        else [out_dir / "data" / "processed" / f"scored_{target_date}.csv", Path("data/processed") / f"scored_{target_date}.csv"]
     )
     for candidate in scored_candidates:
         if candidate.is_file():
             scored_df = pd.read_csv(candidate, dtype={"Location_id": str, "material_type": str})
             break
     if scored_df is None:
-        feat_df = features.build_features(readings_df, date)
+        feat_df = features.build_features(readings_df, target_date)
         scored_df = scoring.score_containers(feat_df)
 
     route_data: dict | None = None
     route_candidates = (
         [Path(route)]
         if route is not None
-        else [out_dir / f"route_{date}.json", Path(f"route_{date}.json")]
+        else [out_dir / f"route_{target_date}.json", Path(f"route_{target_date}.json")]
     )
     for candidate in route_candidates:
         if candidate.is_file():
@@ -560,14 +570,14 @@ def ui_cmd(
             scored_df,
             locs_df,
             depot=cfg.yard_depot,
-            date=date,
+            date=target_date,
             output_dir=out_dir,
             config=cfg,
         )
 
     trends_candidate = out_dir / "trends.png"
     trends_path = trends_candidate if trends_candidate.is_file() else viz.plot_trends(readings_df, out_dir / "trends.png")
-    map_path = out_dir / f"map_{date}.html"
+    map_path = out_dir / f"map_{target_date}.html"
     if not map_path.is_file():
         viz.plot_route(route_data, map_path, scored=scored_df, locations=locs_df, container_keys=readings_df[["Location_id", "material_type"]])
     heatmap_path = out_dir / "heatmap.html"
@@ -577,22 +587,22 @@ def ui_cmd(
         week_starts = [pd.Timestamp(v) for v in heatmap_matrix.attrs.get("week_starts", [])]
         selected_week = labels[0] if labels else None
         try:
-            selected_ts = pd.Timestamp(date)
+            selected_ts = pd.Timestamp(target_date)
             for idx, ws in enumerate(week_starts):
                 if ws <= selected_ts <= ws + pd.Timedelta(days=6):
                     selected_week = labels[idx]
                     break
         except Exception:
             pass
-        viz.plot_heatmap(heatmap_matrix, heatmap_path, selected_week=selected_week, map_date=date)
+        viz.plot_heatmap(heatmap_matrix, heatmap_path, selected_week=selected_week, map_date=target_date)
 
     out_path = viz.build_ui(
-        date=date,
+        date=target_date,
         readings_df=readings_df,
         scored_df=scored_df,
         locations_df=locs_df,
         route_data=route_data,
-        output_path=out_dir / f"ui_{date}.html",
+        output_path=out_dir / f"ui_{target_date}.html",
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
         benchmark_rows=_load_benchmark_rows(out_dir),
