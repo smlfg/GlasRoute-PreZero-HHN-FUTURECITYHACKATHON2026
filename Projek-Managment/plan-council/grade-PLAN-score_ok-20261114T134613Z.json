@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "mode": "live",
+  "provider": "opencode",
+  "model": "opencode-go/kimi-k3",
+  "plan_path": "PLAN.md",
+  "plan_sha256": "f6ebe443dfb3b49f3a790a1ce3af63b03738e4c341faaa150deb67e94d5a0d6b",
+  "threshold": 0.75,
+  "overall": 0.938,
+  "per_metric": {
+    "intelligence": 1.0,
+    "feasibility": 1.0,
+    "ease": 0.75,
+    "efficiency": 1.0
+  },
+  "verdict": "SCORE_OK",
+  "judges": 1,
+  "judge_results": [
+    {
+      "model": "opencode-go/kimi-k3",
+      "scores": {
+        "intelligence": 1.0,
+        "feasibility": 1.0,
+        "ease": 0.75,
+        "efficiency": 1.0
+      },
+      "reasons": {
+        "intelligence": "Goal is precise (one coordinate per 449 Location_ids with source/confidence); the core assumption is explicitly checked \u2014 OSM-to-anonymous-ID mapping is declared an 'unbewiesene Heuristik' capped at confidence=low, and drift is fenced off via named non-goals (no 1:1 claims, no GIS bloat, no routing/dashboard expansion) plus scope-creep freeze times.",
+        "feasibility": "Boundaries are a tight path whitelist; upstream-first is satisfied with \u22653 reuse candidates mandated in UPSTREAM_SEARCH.md plus live Overpass/open-data verification; DoD is measurable (exactly 449 rows, ID-set equality, uniqueness, WGS84 ranges, required columns, mocked timeout/HTTP/schema tests, working import).",
+        "ease": "Slice is coherent and resume works through deterministic file artifacts (seed 2026, canonical locations.csv, swap via drop-in real CSV), but it bundles fetcher, resolver, refresh script, sanity HTML, two docs and full unit+E2E tests into one slice \u2014 splitting fetch from resolver would be smaller.",
+        "efficiency": "Budget is bounded (single documented BBox query, 10s/30s timeouts, max one retry, stdlib HTTP, no new dependencies, no config changes) and write fanout is constrained by the explicit whitelist plus data/external/ and Projek-Managment/ only \u2014 no explosion."
+      },
+      "overall": 0.938
+    }
+  ],
+  "aggregation": "single-judge",
+  "ordinal_aggregation": "identity",
+  "completion_cost": 0.0,
+  "note": "live OpenCode Go single judge; plan body graded; degraded redundancy",
+  "degraded": true,
+  "graded_at": "20261114T134613Z"
+}

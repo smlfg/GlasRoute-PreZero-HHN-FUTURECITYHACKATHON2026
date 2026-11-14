@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "mode": "live",
+  "provider": "opencode",
+  "model": "opencode-go/kimi-k3",
+  "plan_path": "PLAN.md",
+  "plan_sha256": "cd0c6e4c27c9f6eccf76dd56d9466a1d73320cc49d5744263fd0eafa6fe735ec",
+  "threshold": 0.75,
+  "overall": 0.938,
+  "per_metric": {
+    "intelligence": 1.0,
+    "feasibility": 1.0,
+    "ease": 0.75,
+    "efficiency": 1.0
+  },
+  "verdict": "SCORE_OK",
+  "judges": 1,
+  "judge_results": [
+    {
+      "model": "opencode-go/kimi-k3",
+      "scores": {
+        "intelligence": 1.0,
+        "feasibility": 1.0,
+        "ease": 0.75,
+        "efficiency": 1.0
+      },
+      "reasons": {
+        "intelligence": "Ziel ist pr\u00e4zise (449 IDs, genau eine Koordinate mit Herkunft/Verl\u00e4sslichkeit); die Kernannahme OSM-zu-anonym-ID wird explizit als unbewiesene Heuristik markiert und auf confidence=low gedeckelt; Drift-Risiken (Scope Creep, M\u00fcdigkeit) sind benannt und mit Freeze-Gegenma\u00dfnahmen versehen.",
+        "feasibility": "Boundaries (nur Mission-Pfade, pandas/requests/folium, keine L\u00f6schungen/Secrets/Pushes), Upstream-First-Gate (\u22653 Kandidaten in UPSTREAM_SEARCH.md) und hart messbares DoD (genau 449 eindeutige IDs, g\u00fcltige WGS84-Werte, Pflichtspalten source/confidence/match_reason, funktionierender Import) sind alle vorhanden; Overpass-Ausfall ist durch kontrollierten Fallback statt Abbruch abgesichert.",
+        "ease": "Der Slice (Geo-Positions-Modul) ist ein sinnvoll kleiner Ausschnitt des Gesamtplans und Resume ist \u00fcber die feste Datei-Priorit\u00e4t (real_path \u2192 locations_real.csv \u2192 Matches/Synthetik) plus codefreiem Swap gegeben; mit sechs Umsetzungsschritten (Recherche, Fetch, Resolve, Refresh, Swap, Doku) ist er jedoch eher untere Obergrenze als minimalster Schnitt.",
+        "efficiency": "Budget ist eng gebunden (Zeitplan mit hartem Freeze 11:00, ein Fahrzeug, Seed 2026, drei Dependencies); Write-Fanout bleibt minimal: eine kanonische locations.csv, atomare Writes, ein Resolver-API ohne zweiten Matching-Algorithmus, Statistiken und Karte aus demselben Lauf."
+      },
+      "overall": 0.938
+    }
+  ],
+  "aggregation": "single-judge",
+  "ordinal_aggregation": "identity",
+  "completion_cost": 0.0,
+  "note": "live OpenCode Go single judge; plan body graded; degraded redundancy",
+  "degraded": true,
+  "graded_at": "20261114T134151Z"
+}

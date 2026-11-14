@@ -1,0 +1,1894 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-14T14:32:07Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 274101738,
+  "lat": 49.1318022,
+  "lon": 9.1898811,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 274344431,
+  "lat": 49.1230768,
+  "lon": 9.2000950,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 278245878,
+  "lat": 49.1023607,
+  "lon": 9.1999849,
+  "tags": {
+    "addr:city": "Flein",
+    "addr:country": "DE",
+    "addr:housename": "Dieselstraße",
+    "addr:housenumber": "5",
+    "addr:postcode": "74223",
+    "addr:street": "Seeäckerstraße",
+    "amenity": "recycling",
+    "name": "Recyclinghof Flein",
+    "recycling:batteries": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling_type": "centre"
+  }
+},
+{
+  "type": "node",
+  "id": 290497483,
+  "lat": 49.1046274,
+  "lon": 9.1352056,
+  "tags": {
+    "amenity": "recycling",
+    "mapillary": "369955191032990",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container",
+    "survey:date": "2018-10-14"
+  }
+},
+{
+  "type": "node",
+  "id": 291426846,
+  "lat": 49.1184891,
+  "lon": 9.1801714,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-01-21",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 291446994,
+  "lat": 49.1174531,
+  "lon": 9.1526494,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 309941413,
+  "lat": 49.1360171,
+  "lon": 9.2574021,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 318185041,
+  "lat": 49.1433533,
+  "lon": 9.2176173,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2024-03-15",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container",
+    "wheelchair": "no"
+  }
+},
+{
+  "type": "node",
+  "id": 318200123,
+  "lat": 49.1458591,
+  "lon": 9.2193279,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 319759578,
+  "lat": 49.1401876,
+  "lon": 9.2342150,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 319832472,
+  "lat": 49.1340534,
+  "lon": 9.2490080,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-02-08",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 322009910,
+  "lat": 49.1322041,
+  "lon": 9.2077220,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 322010169,
+  "lat": 49.1287809,
+  "lon": 9.2067300,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "no",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 325790962,
+  "lat": 49.1749618,
+  "lon": 9.2684294,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 338945247,
+  "lat": 49.1336598,
+  "lon": 9.2171919,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 339597247,
+  "lat": 49.1339221,
+  "lon": 9.2111399,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-02-14",
+    "contact:phone": "+49 7131 99 44 33",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 339686348,
+  "lat": 49.1259269,
+  "lon": 9.2014570,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-11-14",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 349168657,
+  "lat": 49.1396704,
+  "lon": 9.2080009,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-02-14",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 354583809,
+  "lat": 49.1412476,
+  "lon": 9.2341343,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2025-11-16",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 354856663,
+  "lat": 49.1255439,
+  "lon": 9.2082596,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2024-08-08",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "no",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 360772430,
+  "lat": 49.1336515,
+  "lon": 9.2202231,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 360773224,
+  "lat": 49.1365029,
+  "lon": 9.2227257,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-08-15",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 362483409,
+  "lat": 49.1315840,
+  "lon": 9.2295212,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 362493743,
+  "lat": 49.1331222,
+  "lon": 9.2444936,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 362495213,
+  "lat": 49.1384758,
+  "lon": 9.2469845,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 364638587,
+  "lat": 49.1222509,
+  "lon": 9.1955142,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 370052097,
+  "lat": 49.1141283,
+  "lon": 9.1722666,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 373103550,
+  "lat": 49.1442668,
+  "lon": 9.2248975,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 373243691,
+  "lat": 49.1200618,
+  "lon": 9.2116980,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 376040481,
+  "lat": 49.1399716,
+  "lon": 9.1763468,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 378067924,
+  "lat": 49.1390289,
+  "lon": 9.2177088,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2024-12-13",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 383713660,
+  "lat": 49.1369004,
+  "lon": 9.1901524,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 385088107,
+  "lat": 49.1184491,
+  "lon": 9.2065173,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 385089384,
+  "lat": 49.1167806,
+  "lon": 9.2065860,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 385090511,
+  "lat": 49.1180192,
+  "lon": 9.1970266,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 385298629,
+  "lat": 49.1176980,
+  "lon": 9.1892053,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:batteries": "no",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "no",
+    "recycling:shoes": "yes",
+    "recycling:tyres": "no",
+    "recycling:wood": "no",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 402905133,
+  "lat": 49.1240373,
+  "lon": 9.2244640,
+  "tags": {
+    "amenity": "recycling",
+    "check_date": "2024-11-01",
+    "check_date:recycling": "2024-11-01",
+    "mapillary": "508346647186657",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 406089241,
+  "lat": 49.1367827,
+  "lon": 9.2074241,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 409670315,
+  "lat": 49.1446337,
+  "lon": 9.2364224,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 409678409,
+  "lat": 49.1411566,
+  "lon": 9.2280659,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-08-23",
+    "location": "overground",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 413478668,
+  "lat": 49.1402276,
+  "lon": 9.2246023,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2025-09-28",
+    "location": "overground",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 416814317,
+  "lat": 49.1317043,
+  "lon": 9.1905340,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 418147034,
+  "lat": 49.1507558,
+  "lon": 9.1854197,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 418149299,
+  "lat": 49.1458465,
+  "lon": 9.1767206,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 418150856,
+  "lat": 49.1446126,
+  "lon": 9.1823769,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 432498337,
+  "lat": 49.1538711,
+  "lon": 9.2135997,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 440296920,
+  "lat": 49.1331485,
+  "lon": 9.2368989,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 444481306,
+  "lat": 49.1498671,
+  "lon": 9.2230951,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 471123620,
+  "lat": 49.1373470,
+  "lon": 9.1705079,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 472317877,
+  "lat": 49.1081006,
+  "lon": 9.1412572,
+  "tags": {
+    "amenity": "recycling",
+    "mapillary": "174768241083895",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container",
+    "survey:date": "2018-10-14"
+  }
+},
+{
+  "type": "node",
+  "id": 475086448,
+  "lat": 49.1554312,
+  "lon": 9.1756068,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 484626154,
+  "lat": 49.1271341,
+  "lon": 9.2216410,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2025-06-15",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 484630184,
+  "lat": 49.1255292,
+  "lon": 9.2268891,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 485598737,
+  "lat": 49.1284379,
+  "lon": 9.2102314,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 493176626,
+  "lat": 49.1472262,
+  "lon": 9.1889590,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 526959115,
+  "lat": 49.1866412,
+  "lon": 9.2290951,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 540377904,
+  "lat": 49.1026104,
+  "lon": 9.2628150,
+  "tags": {
+    "amenity": "recycling",
+    "note:de": "nur Grün- und Braunglas",
+    "note:en": "only green and brown glass (no white glass)",
+    "opening_hours": "Mo-Sa 08:00-19:00; Su off",
+    "recycling:glass": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "source": "Bing Sat"
+  }
+},
+{
+  "type": "node",
+  "id": 567379449,
+  "lat": 49.1665831,
+  "lon": 9.2047297,
+  "tags": {
+    "amenity": "recycling",
+    "mapillary": "742561843079605",
+    "recycling:cardboard": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 570227076,
+  "lat": 49.1637191,
+  "lon": 9.2009805,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 583533355,
+  "lat": 49.1708685,
+  "lon": 9.1980043,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 597295284,
+  "lat": 49.1576176,
+  "lon": 9.1744986,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 715836489,
+  "lat": 49.1438557,
+  "lon": 9.2303428,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 799288430,
+  "lat": 49.1643009,
+  "lon": 9.1667222,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 928238595,
+  "lat": 49.1741038,
+  "lon": 9.2009512,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 969762418,
+  "lat": 49.1988909,
+  "lon": 9.1477591,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:batteries": "no",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 974840559,
+  "lat": 49.1475937,
+  "lon": 9.1821280,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1108696566,
+  "lat": 49.1448354,
+  "lon": 9.1865124,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1269377701,
+  "lat": 49.1563719,
+  "lon": 9.2009935,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1271531430,
+  "lat": 49.0934648,
+  "lon": 9.2745822,
+  "tags": {
+    "FIXME": "check on site",
+    "FIXME:de": "vor Ort prüfen",
+    "amenity": "recycling",
+    "mapillary": "326924925526168",
+    "recycling:cans": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container",
+    "source": "Bing Sat",
+    "survey:date": "2016-05-26"
+  }
+},
+{
+  "type": "node",
+  "id": 1297367742,
+  "lat": 49.1064600,
+  "lon": 9.2666491,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:cans": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container",
+    "source": "Bing Sat / own video"
+  }
+},
+{
+  "type": "node",
+  "id": 1408605515,
+  "lat": 49.0947144,
+  "lon": 9.2163612,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1431719928,
+  "lat": 49.1536960,
+  "lon": 9.2240177,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1431732999,
+  "lat": 49.1553078,
+  "lon": 9.2276378,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1431752340,
+  "lat": 49.1534054,
+  "lon": 9.2317928,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-11-05",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1559105166,
+  "lat": 49.1926599,
+  "lon": 9.2285316,
+  "tags": {
+    "amenity": "recycling",
+    "mapillary": "264478332082375",
+    "recycling:batteries": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container",
+    "survey:date": "2018-11-18"
+  }
+},
+{
+  "type": "node",
+  "id": 1572987758,
+  "lat": 49.2291935,
+  "lon": 9.1514984,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "no",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 1580678499,
+  "lat": 49.0929435,
+  "lon": 9.2777854,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container",
+    "source": "local knowledge"
+  }
+},
+{
+  "type": "node",
+  "id": 1617958187,
+  "lat": 49.1588840,
+  "lon": 9.1961246,
+  "tags": {
+    "amenity": "recycling",
+    "mapillary": "133730228748004",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container",
+    "survey:date": "2018-03-18"
+  }
+},
+{
+  "type": "node",
+  "id": 1671785238,
+  "lat": 49.1862796,
+  "lon": 9.2331300,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "yes",
+    "recycling:glass": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1842522586,
+  "lat": 49.1339054,
+  "lon": 9.2333228,
+  "tags": {
+    "amenity": "recycling",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 2609534315,
+  "lat": 49.1194148,
+  "lon": 9.1934216,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2024-01-09",
+    "location": "overground",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3014927961,
+  "lat": 49.2062650,
+  "lon": 9.2017893,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3131198719,
+  "lat": 49.2263119,
+  "lon": 9.1602227,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3149407863,
+  "lat": 49.1704942,
+  "lon": 9.2212441,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3149407864,
+  "lat": 49.1831617,
+  "lon": 9.2294529,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3387410124,
+  "lat": 49.2119216,
+  "lon": 9.2161522,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3629245665,
+  "lat": 49.1998915,
+  "lon": 9.2284435,
+  "tags": {
+    "amenity": "recycling",
+    "check_date": "2021-07-07",
+    "check_date:recycling": "2024-02-23",
+    "recycling:cans": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3629245666,
+  "lat": 49.1999370,
+  "lon": 9.2307428,
+  "tags": {
+    "amenity": "recycling",
+    "check_date": "2021-07-06",
+    "recycling:cans": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3644277628,
+  "lat": 49.2297782,
+  "lon": 9.1979457,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3743047195,
+  "lat": 49.1133944,
+  "lon": 9.1687181,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-01-17",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 3836234117,
+  "lat": 49.2229683,
+  "lon": 9.1521238,
+  "tags": {
+    "amenity": "recycling",
+    "check_date": "2025-08-07",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "no",
+    "recycling_type": "container",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 3845745998,
+  "lat": 49.1171997,
+  "lon": 9.1536626,
+  "tags": {
+    "amenity": "recycling",
+    "colour": "silver",
+    "opening_hours": "24/7",
+    "recycling:cans": "no",
+    "recycling:cardboard": "no",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "no",
+    "recycling_type": "container",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4400813293,
+  "lat": 49.1393468,
+  "lon": 9.2124687,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 4584010058,
+  "lat": 49.1953649,
+  "lon": 9.1961892,
+  "tags": {
+    "amenity": "recycling",
+    "opening_hours": "24/7",
+    "recycling:cans": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling:scrap_metal": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 4629408961,
+  "lat": 49.0945198,
+  "lon": 9.2711604,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 6060014777,
+  "lat": 49.1217442,
+  "lon": 9.2049900,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 6073933393,
+  "lat": 49.1322347,
+  "lon": 9.2242634,
+  "tags": {
+    "amenity": "recycling",
+    "location": "underground",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 6349725246,
+  "lat": 49.1485190,
+  "lon": 9.2391607,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 7124463155,
+  "lat": 49.1512124,
+  "lon": 9.2199423,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 7476121413,
+  "lat": 49.1288763,
+  "lon": 9.1873796,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-10-31",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 7523989878,
+  "lat": 49.1537371,
+  "lon": 9.1867523,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8386507575,
+  "lat": 49.1010018,
+  "lon": 9.2015494,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8411620876,
+  "lat": 49.1676153,
+  "lon": 9.1972773,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8456798056,
+  "lat": 49.1375577,
+  "lon": 9.1772962,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8456798076,
+  "lat": 49.1401078,
+  "lon": 9.1909687,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8457202723,
+  "lat": 49.1420832,
+  "lon": 9.1803271,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8536887985,
+  "lat": 49.2148586,
+  "lon": 9.2007136,
+  "tags": {
+    "amenity": "recycling",
+    "location": "underground",
+    "recycling:cans": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 8536941888,
+  "lat": 49.2142104,
+  "lon": 9.1987222,
+  "tags": {
+    "amenity": "recycling",
+    "location": "underground",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 9028809314,
+  "lat": 49.2119681,
+  "lon": 9.2466289,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:cans": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 9524707838,
+  "lat": 49.1479536,
+  "lon": 9.1311808,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 10732930974,
+  "lat": 49.1310833,
+  "lon": 9.2234580,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-05-05",
+    "recycling:glass": "no",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 11559038697,
+  "lat": 49.1414793,
+  "lon": 9.2094754,
+  "tags": {
+    "amenity": "recycling",
+    "check_date:recycling": "2026-02-14",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 12651966250,
+  "lat": 49.1507641,
+  "lon": 9.2307544,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 13265233331,
+  "lat": 49.1880230,
+  "lon": 9.2476941,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling:plastic_packaging": "yes",
+    "recycling:waste": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 13406252059,
+  "lat": 49.1994437,
+  "lon": 9.2439506,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "node",
+  "id": 14364815480,
+  "lat": 49.1463284,
+  "lon": 9.1942906,
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "way",
+  "id": 36905530,
+  "center": {
+    "lat": 49.2101292,
+    "lon": 9.2263779
+  },
+  "nodes": [
+    429206896,
+    1554587665,
+    429206897,
+    429206898,
+    1554587661,
+    429206899,
+    1554587659,
+    429206892,
+    2496966721,
+    2496966722,
+    2496966723,
+    429206900,
+    429206896
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "name": "Recyclinghof",
+    "opening_hours": "We 14:00-17:00, Fr 14:00-17:00, Sa 09:00-13:00",
+    "recycling:batteries": "yes",
+    "recycling:cans": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling:scrap_metal": "yes",
+    "recycling_type": "centre"
+  }
+},
+{
+  "type": "way",
+  "id": 101957628,
+  "center": {
+    "lat": 49.1398361,
+    "lon": 9.2401867
+  },
+  "nodes": [
+    1177092946,
+    1177093152,
+    1177092902,
+    1177093148,
+    1177093005,
+    1177092935,
+    1177093002,
+    1177092675,
+    1103399497,
+    1177092898,
+    1177092882,
+    1177092698,
+    1177092832,
+    1041219927,
+    1041219923,
+    1177092946
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "check_date:opening_hours": "2025-12-11",
+    "name": "Recyclinghof-Ost",
+    "opening_hours": "We,Fr 14:00-18:00; Th 08:00-12:00; Sa 08:00-16:00",
+    "operator": "Entsorgungsbetriebe der Stadt Heilbronn",
+    "recycling:batteries": "yes",
+    "recycling:cartons": "yes",
+    "recycling:clothes": "yes",
+    "recycling:electrical_appliances": "yes",
+    "recycling:garden_waste": "yes",
+    "recycling:glass": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:green_waste": "yes",
+    "recycling:paper": "yes",
+    "recycling:plastic": "yes",
+    "recycling:scrap_metal": "yes",
+    "recycling:shoes": "yes",
+    "recycling:small_appliances": "yes",
+    "recycling_type": "centre",
+    "website": "https://www.heilbronn.de/bue_rat/virtuell/entsorgung/recyclinghoefe/adressen_recyclinghoefe/"
+  }
+},
+{
+  "type": "way",
+  "id": 162587811,
+  "center": {
+    "lat": 49.1507902,
+    "lon": 9.2265551
+  },
+  "nodes": [
+    1744504397,
+    1744504392,
+    1744504395,
+    1744504402,
+    1744504397
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "recycling:clothes": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:shoes": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "way",
+  "id": 236045437,
+  "center": {
+    "lat": 49.1397223,
+    "lon": 9.2403393
+  },
+  "nodes": [
+    1041219923,
+    1177092954,
+    1177092940,
+    1177092946,
+    1041219923
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass_bottles": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "way",
+  "id": 293831989,
+  "center": {
+    "lat": 49.2236566,
+    "lon": 9.1623717
+  },
+  "nodes": [
+    2974137032,
+    2974137031,
+    2974137028,
+    2974137029,
+    2974137032
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "way",
+  "id": 307750593,
+  "center": {
+    "lat": 49.1812748,
+    "lon": 9.2578278
+  },
+  "nodes": [
+    3129521956,
+    9760460072,
+    3129521954,
+    3129521951,
+    9760460022,
+    3129521952,
+    3129521956
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "fee": "no",
+    "recycling:clothes": "no",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "way",
+  "id": 310843427,
+  "center": {
+    "lat": 49.1919903,
+    "lon": 9.2029430
+  },
+  "nodes": [
+    3163358767,
+    3163358768,
+    3163358769,
+    3163358772,
+    3163358771,
+    3163358770,
+    3163358763,
+    3163358764,
+    3163358767
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "name": "Recyclinghof",
+    "opening_hours": "Oct-Mar: Sa 09:00-13:00; Oct-Mar: Th 13:00-16:00; Apr-Sep: Sa 09:00-13:00; Apr-Sep: Th 16:00-19:00",
+    "recycling:batteries": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:paper": "yes",
+    "recycling_type": "centre"
+  }
+},
+{
+  "type": "way",
+  "id": 332573332,
+  "center": {
+    "lat": 49.1869480,
+    "lon": 9.2230618
+  },
+  "nodes": [
+    3397192849,
+    3397192846,
+    3397192843,
+    3397192847,
+    3397192849
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "recycling:glass": "yes",
+    "recycling_type": "container"
+  }
+},
+{
+  "type": "way",
+  "id": 993643134,
+  "center": {
+    "lat": 49.1027926,
+    "lon": 9.1992544
+  },
+  "nodes": [
+    9180064683,
+    9180064682,
+    3183065336,
+    9180064686,
+    3183065361,
+    9180064681,
+    9180064680,
+    9180064677,
+    9180064679,
+    9180064683
+  ],
+  "tags": {
+    "amenity": "recycling",
+    "barrier": "fence",
+    "check_date": "2024-08-28",
+    "landuse": "commercial",
+    "name": "Recyclinghof Flein",
+    "opening_hours": "Mo-We,Su off; Th-Fr 15:00-18:00; Sa 09:00-13:00",
+    "recycling:aluminium": "yes",
+    "recycling:beverage_cartons": "yes",
+    "recycling:cans": "yes",
+    "recycling:cardboard": "yes",
+    "recycling:clothes": "yes",
+    "recycling:glass": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:paper": "yes",
+    "recycling:plastic": "yes",
+    "recycling:plastic_bottles": "yes",
+    "recycling:plastic_packaging": "yes",
+    "recycling:scrap_metal": "yes",
+    "recycling:shoes": "yes",
+    "recycling:tetrapak": "yes",
+    "recycling:textiles": "yes",
+    "recycling_type": "centre"
+  }
+},
+{
+  "type": "way",
+  "id": 1225413999,
+  "center": {
+    "lat": 49.1537095,
+    "lon": 9.2760495
+  },
+  "nodes": [
+    1191670567,
+    1191670456,
+    1191670428,
+    1191670430,
+    1165755869,
+    1191655819,
+    1165755999,
+    1165756098,
+    1165756270,
+    1191670567
+  ],
+  "tags": {
+    "addr:city": "Weinsberg",
+    "addr:country": "DE",
+    "addr:housenumber": "73",
+    "addr:postcode": "74189",
+    "addr:street": "Heilbronner Straße",
+    "amenity": "recycling",
+    "barrier": "fence",
+    "landuse": "commercial",
+    "name": "Recyclinghof Weinsberg",
+    "opening_hours": "Th 16:00-19:00; Fr 15:00-18:00; Sa 09:00-13:00",
+    "recycling:PET": "yes",
+    "recycling:aluminium": "yes",
+    "recycling:batteries": "yes",
+    "recycling:cans": "yes",
+    "recycling:cardboard": "yes",
+    "recycling:clothes": "yes",
+    "recycling:coffee_capsules": "yes",
+    "recycling:cork": "yes",
+    "recycling:glass_bottles": "yes",
+    "recycling:lamps": "yes",
+    "recycling:paper": "yes",
+    "recycling:plastic": "yes",
+    "recycling:plastic_bottles": "yes",
+    "recycling:plastic_packaging": "yes",
+    "recycling:scrap_metal": "yes",
+    "recycling:shoes": "yes",
+    "recycling:small_appliances": "yes",
+    "recycling_type": "centre",
+    "website": "https://www.weinsberg.de/leben-und-wohnen/muell-und-recycling/"
+  }
+}
+
+  ]
+}

@@ -1,24 +1,44 @@
 # Geo-Datenquellen – Glascontainer Heilbronn
 
-Stand: 2026-11-14. Ziel: reale, materialbeschriebene Glascontainer-Koordinaten für 449 anonymisierte `Location_id`s finden. Ergebnis: **keine verifizierte reale Zuordnung möglich**; Pipeline liefert reproduzierbare, klar markierte Platzhalter.
+Stand: 2026-11-14, 15:40 Uhr. Ziel: reale, materialbeschriebene Glascontainer-Koordinaten für 449
+anonymisierte `Location_id`s finden. Ergebnis: **keine verifizierte reale Zuordnung möglich**; die
+Pipeline liefert reale OSM-Standorte mit explizit unbestätigter Zuordnung plus benannte Platzhalter.
 
 ## Geprüfte Quellen
 
 | Quelle | Abruf | Befund | Nutzbarkeit / Lizenz |
 |---|---|---|---|
-| Stadt Heilbronn / EBS Altglas | [Altglas-Seite](https://abfallwirtschaft.heilbronn.de/abfallentsorgung/abfallannahme/depotcontainer/altglas), [Amtlicher Stadtplan mit Altglas-Ebene](https://karten.heilbronn.de/heilbronn/index.php?lang=de&zl=33&x=515975.5&y=5443108&bl=stadtplan&bo=1&lo=1&layers=altglascontainerstandorte&service=heilbronn), [Layer-Tree](https://karten.heilbronn.de/heilbronn/ajax/get_tree.php?lang=de&service=heilbronn&c=66021760) | Offizielle Referenz: „über 100 Altglas-Standorte“ und POI-Ebene `altglascontainerstandorte` (ID 413) sind belegt. Getestete GeoJSON-Endpunkte (`qidstr=altglascontainerstandorte`, `qidstr=413`) lieferten HTTP 200 mit leerem Body; **keine einzelnen Koordinaten/Adressen/Materialfelder extrahierbar**. | Kein offener, verifizierter Bulk-Download. Kartenhinweis: „© Stadtplan, Luftbilder und Geodaten: Stadt Heilbronn“; nicht als offene Daten übernehmen. |
+| Stadt Heilbronn / EBS Altglas | [Altglas-Seite](https://abfallwirtschaft.heilbronn.de/abfallentsorgung/abfallannahme/depotcontainer/altglas), [Amtlicher Stadtplan mit Altglas-Ebene](https://karten.heilbronn.de/heilbronn/index.php?lang=de&zl=33&x=515975.5&y=5443108&bl=stadtplan&bo=1&lo=1&layers=altglascontainerstandorte&service=heilbronn) | Offizielle Referenz: „über 100 Altglas-Standorte“ und POI-Ebene `altglascontainerstandorte` sind belegt. Getestete GeoJSON-Endpunkte lieferten HTTP 200 mit leerem Body; **keine einzelnen Koordinaten/Adressen/Materialfelder extrahierbar**. | Kein offener, verifizierter Bulk-Download. Kartenhinweis: „© Stadtplan, Luftbilder und Geodaten: Stadt Heilbronn“; nicht als offene Daten übernehmen. |
 | Offene Daten Heilbronn | [Suche „altglas“](https://opendata.heilbronn.de/search?query=altglas), [Kategorie Abfall](https://opendata.heilbronn.de/search/type/dataset/topic/abfall-511?sort_by=changed) | Suche: keine Treffer. Abfallkategorie enthält nur Abfallmengen-Statistiken, **keinen Standortdatensatz**. | n/a |
-| OpenStreetMap / Overpass | [amenity=recycling](https://wiki.openstreetmap.org/wiki/Tag:amenity%3Drecycling), [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API), [ODbL/Copyright](https://www.openstreetmap.org/copyright) | Erfolgreicher Abruf am 2026-11-14 über `overpass-api.de` mit der vorgegebenen Area-Query (`admin_level` 6; `admin_level` 8 nur als Fallback) und 90-s-Timeout: **126 OSM-Punkte**. Die Mirrors `overpass.kumi.systems` und `overpass.private.coffee` liefen bei einem späteren Kontrollversuch in den Read-Timeout; der erfolgreiche Treffer blieb erhalten. | OSM-Daten: ODbL 1.0, Attribution „© OpenStreetMap contributors“. Alle 449 anonymen IDs werden deterministisch mit Seed 2026 auf reale OSM-Standorte abgebildet und ausdrücklich als `source=osm_assigned`, `confidence=simulated_mapping` markiert. |
+| OpenStreetMap / Overpass | [amenity=recycling](https://wiki.openstreetmap.org/wiki/Tag:amenity%3Drecycling), [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API), [ODbL/Copyright](https://www.openstreetmap.org/copyright) | **126 reale Glascontainer-Standorte** in Heilbronn gefunden (`recycling:glass_bottles`, `recycling:glass`), inkl. benannter Depots („Recyclinghof“, „Recyclinghof-Ost“, „Recyclinghof Flein“). Area-Query (`admin_level` 6/8) scheitert unter Last regelmäßig an HTTP 400/502/Timeout; die **BBox-Query über denselben Endpunkt** liefert zuverlässig. | OSM-Daten: ODbL 1.0, Attribution „© OpenStreetMap contributors“ – in `location_sanity_check.html` und in den Docs gesetzt. |
+
+## Abruf-Logik
+
+`scripts/fetch_locations.py` versucht in Reihenfolge:
+
+1. Area-Query `admin_level` 6, dann 8, über drei Mirrors (90 s Read-Timeout, 1 Retry).
+2. **BBox-Fallback** über denselben Endpunkt mit den dokumentierten Koordinaten
+   `49.09–49.23 N, 9.13–9.28 E` — deutlich billiger, deshalb unter Last deutlich robuster.
+
+Bei Treffer wird der Rohpayload in `data/external/osm_glass_raw.json` gespeichert (D1).
+Ohne Treffer bleibt `data/external/locations.csv` **unverändert**; die Pipeline läuft mit Platzhaltern weiter.
 
 ## Matching-Grenzen
 
-- Anonyme PreZero-IDs haben keinen belegten Fremdschlüssel zu Stadtplan- oder OSM-Objekten. Eine Zuordnung über Material, Anzahl oder Nähe wäre **nur eine Heuristik** und darf nicht als reale 1:1-Identität ausgegeben werden.
-- Bei OSM-Treffern werden reale Standorte mit Seed 2026 deterministisch simuliert zugeordnet: `source=osm_assigned`, `confidence=simulated_mapping`, `match_reason="real OSM site, ID assignment simulated"`. Mehrere IDs dürfen denselben Standort teilen. Direkte PreZero-Mappings erhalten `confidence=high`, `source=prezero_supplied` und haben Vorrang.
+- Anonyme PreZero-IDs haben keinen belegten Fremdschlüssel zu Stadtplan- oder OSM-Objekten. Eine
+  Zuordnung über Material, Anzahl oder Nähe wäre **nur eine Heuristik** und darf nicht als reale
+  1:1-Identität ausgegeben werden.
+- Der Resolver vergibt deshalb für OSM-Heuristiken höchstens `confidence=low`, `source=osm_heuristic`
+  und einen begründeten `match_reason` mit „UNVERIFIED“. Direkte PreZero-Mappings erhalten
+  `confidence=high`, `source=prezero_supplied`.
+- **126 reale Standorte können nicht 449 IDs eindeutig abdecken.** Eine 1:1-Zuordnung ist damit
+  unmöglich; verbleibende IDs erhalten benannte Platzhalter (Seed 2026, BBox Heilbronn).
 
 ## Aktueller Lauf
 
-- `data/external/locations_real_attempt.csv`: 126 reale OSM-Glasstandorte.
-- `data/external/osm_glass_raw.json`: liegt mangels erfolgreichem erneuten Raw-Download nicht vor; der erfolgreiche Kandidaten-Snapshot ist in `locations_real_attempt.csv` erhalten.
-- `data/external/locations_matched.csv` / `data/external/locations.csv`: 449/449 IDs, alle `osm_assigned` / `simulated_mapping` mit deterministischer Zuordnung (Seed 2026).
-- `data/external/location_sanity_check.html`: alle 449 simulierten Zuordnungen, nach Quelle eingefärbt.
-- Austauschpfad bleibt vorbereitet: echte `Location_id,lat,lon`-Daten in `locations_real.csv` haben automatisch Vorrang vor OSM und Synthetik.
+- `data/external/osm_glass_raw.json`: Rohpayload des erfolgreichen Abrufs.
+- `data/external/locations_real_attempt.csv`: 126 Kandidaten aus OSM.
+- `data/external/locations.csv` / `locations_matched.csv`: 449/449 IDs, identisch, je Zeile `source`,
+  `confidence`, `match_reason`; `location_sanity_check.html` enthält alle 449 IDs mit Attribution.
+- Austauschpfad ist vorbereitet: echte `Location_id,lat,lon`-Daten in `data/external/locations_real.csv`
+  legen und `scripts/refresh_locations.py --real …` laufen lassen — ohne Codeänderung priorisiert.

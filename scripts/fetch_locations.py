@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from prezero.locations import (  # noqa: E402
     DEFAULT_REAL,
+    HEILBRONN_BBOX,
     assign_osm_sites,
     complete_locations,
     load_locations,
@@ -159,6 +160,21 @@ def _element_count(payload: bytes) -> int:
     return len(elements) if isinstance(elements, list) else 0
 
 
+def bbox_query(bbox: tuple[float, float, float, float] = HEILBRONN_BBOX) -> str:
+    """Query the documented Heilbronn bbox directly, without an area lookup.
+
+    The area query is heavier and hits Overpass capacity limits far more
+    often; the bbox form stays cheap enough to succeed under load.
+    """
+    south, west, north, east = bbox
+    return (
+        f'[out:json][timeout:90];\n'
+        f'( nwr["amenity"="recycling"]["recycling:glass_bottles"="yes"]({south},{west},{north},{east});\n'
+        f'  nwr["amenity"="recycling"]["recycling:glass"="yes"]({south},{west},{north},{east}); );\n'
+        f'out center;'
+    )
+
+
 def fetch_real_candidates(
     mirrors: tuple[str, ...] = OVERPASS_MIRRORS,
     transport: Transport | None = None,
@@ -191,6 +207,38 @@ def fetch_real_candidates(
     return pd.DataFrame(columns=CANDIDATE_COLUMNS), None, errors
 
 
+def fetch_real_candidates_bbox(
+    bbox: tuple[float, float, float, float] = HEILBRONN_BBOX,
+    mirrors: tuple[str, ...] = OVERPASS_MIRRORS,
+    transport: Transport | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> tuple[pd.DataFrame, bytes | None, list[str]]:
+    """Fallback fetch using the cheap bbox query; same contract as the area fetch."""
+    transport = transport or _post_overpass
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+        "User-Agent": "prezero-routing-hackathon/0.1 (one-off Heilbronn research)",
+        "Accept": "application/json",
+    }
+    errors: list[str] = []
+    body = urlencode({"data": bbox_query(bbox)}).encode("utf-8")
+    for mirror_number, endpoint in enumerate(mirrors, start=1):
+        try:
+            payload = transport(endpoint, body, headers, CONNECT_TIMEOUT, READ_TIMEOUT)
+            count = _element_count(payload)
+            if count:
+                return parse_overpass_payload(payload), payload, errors
+            errors.append(f"bbox, mirror {mirror_number} {endpoint}: 0 elements")
+        except (OverpassError, TimeoutError, OSError, ValueError) as exc:
+            detail = str(exc)
+            if "HTTP 400" in detail:
+                detail = "query rejected (HTTP 400)"
+            errors.append(f"bbox, mirror {mirror_number} {endpoint}: {detail}")
+        if mirror_number < len(mirrors):
+            sleep(1.0)
+    return pd.DataFrame(columns=CANDIDATE_COLUMNS), None, errors
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw", default=ROOT / "data/raw/glass_fill_levels_anonymized_f.csv", type=Path)
@@ -205,6 +253,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None, transport: Transport | None = None) -> dict[str, int]:
     args = build_parser().parse_args(argv)
     candidates, raw_payload, errors = fetch_real_candidates(transport=transport)
+    if raw_payload is None:
+        # The area query is heavier and often hits Overpass capacity limits;
+        # fall back to the cheap bbox query before giving up.
+        candidates, raw_payload, bbox_errors = fetch_real_candidates_bbox(transport=transport)
+        errors.extend(bbox_errors)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     candidates.to_csv(args.output, index=False)
     for error in errors:
