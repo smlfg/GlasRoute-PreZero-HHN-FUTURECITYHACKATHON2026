@@ -31,6 +31,7 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | [`analysen/01…36`](analysen/) | Datengrundlage der Pitch-Aussagen (Ausnahmen sind dort markiert) | **aktuell**, außer als „archiviert“ markiert |
 | [`copilot_visual_explainer.html`](copilot_visual_explainer.html) | Interaktiver Erklärartefakt zum Copilot-Tab | **aktuell**, kein Abgabebestandteil |
 | [`pipeline_explainer.html`](pipeline_explainer.html) | Interaktiver 1-Seiten-Explainer der Datenpipeline (CSV bis Fahrertour, Echt vs. Annahme) | **aktuell** |
+| [`Mathe/codex_dispatch_kritik.md`](Mathe/codex_dispatch_kritik.md) | Mathematische & methodische Prüfung des Q3-Quartalsexperiments (`€/t` vs. Überlauf) | **aktuell** |
 
 ## Projekt-Steuerung
 
