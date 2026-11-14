@@ -24,3 +24,7 @@ Thumbs.db
 
 __pycache__/
 *.pyc
+
+# Challenge-Daten (können vertraulich sein) — nicht committen
+/data/*
+!/data/README.md
