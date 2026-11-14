@@ -1,0 +1,35 @@
+# Demo-Fakten für Pitch und Website
+# Single source of truth — jede Zahl im Deck/Website/Pitch muss hierher passen.
+# Demo-Tag: 2026-04-15
+# Quelle: route_2026-04-15.json, benchmark_results.csv (B1)
+# Letzte Verifizierung: siehe Projek-Management/proof/verify_demo_day.py
+
+Demo-Tag: 2026-04-15
+Kritische physische Standorte: 106
+Kritische Container (ID × Glasfarbe): 509
+Davon überfällig (geschätzt ≥ 110 %): 488
+
+Stopps in Tour (max_stops=25): 25
+Kritische Standorte nicht in Tour: 81
+
+Geplante Tour: 249.9 km
+Volle Runde (Status quo, alle 121 Standorte, gleiche Regeln): 1202.24 km
+Status quo optimiert (B1): 1662.70 km
+Eingespart (Tour vs. volle Runde): 952.34 km (79.2 %)
+Eingespart (B1 → B4 Solver): 36.7 %
+
+Fahrzeuge: 4
+Runden: 19
+Fahrzeugstunden gesamt: 22.68
+Längste Einzelschicht: 7.58 h
+Schichtlimit: 8.0 h
+
+Sammelmenge: 142.82 t
+LKW-Maximalgewicht: 11 t
+LKW-Maximalvolumen: 26 m³
+Container-Volumen: 2.5 m³
+Glasdichte (Annahme): 400 kg/m³
+
+Bedarfs-Effekt (B1 → B2): 29.9 %
+Routing-Effekt (B2 → B4): 9.7 %
+Gesamt vs. optimierter Status quo (B1): 36.7 %

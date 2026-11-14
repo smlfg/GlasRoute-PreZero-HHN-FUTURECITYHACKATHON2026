@@ -19,13 +19,13 @@
 | `docs/TODO.md` | offene Aufgaben bis Freeze/Abgabe, ROADMAP-Abschnitt |
 | `Projek-Management/proof/A3_pitch_zahlen.txt` | Verifikation gegen Pipeline: **ALL MATCH** |
 | `data/raw/glass_fill_levels_anonymized_f.csv` | 11.701 Messungen, 449 IDs, 1.192 `overfull` |
-| `data/processed/route_2026-04-15.json` | Tages-Tour: 25 Stopps, 125,21 km, 2 Fahrzeuge, 7 Runden, 10,51 h, 63,58 t |
+| `data/processed/route_2026-04-15.json` | Tages-Tour: 25 Stopps, 249,9 km, 4 Fahrzeuge, 19 Runden, 7,58 h, 142,82 t |
 
-**Belegt im aktuellen Zahlenstand (nach „Messen und Leeren"-Fix, Commits `52fbedf`, `085b816`, `759ab31`):**
+**Belegt im aktuellen Zahlenstand (nach „Messen und Leeren"-Fix, Commit `1577c74`, verifiziert auf `abd9ca2`):**
 
 - **11.701 reale Messungen** · **449 Container** · **1.338 Standort-Material-Zeitreihen** · **1.192 `overfull`-Ereignisse** · 731 davon **Weißglas** (61,3 %)
-- **Bedarfs-Effekt: 81,0 %** (nur kritische Container anfahren) · **Routing-Effekt: 9,6 %** (instabil: 0–13 %) · **Gesamt: 82,8 %** (B1→B4) bzw. **84,1 %** (B0→B4)
-- **Tages-Tour (Stopp-Limit 25):** **125,21 km** vs. **1.202,24 km** Vollkette → **−89,6 %** (1077,03 km gespart)
+- **Bedarfs-Effekt: 29,9 %** (B1 → B2, nur fällige Standorte) · **Routing-Effekt: 9,7 %** (B2 → B4) · **Gesamt: 36,7 %** (B1 → B4)
+- **Tages-Tour (Stopp-Limit 25):** **249,9 km** vs. **1.662,70 km** optimierter Status quo (B1) → **−85,0 %** (1.412,8 km gespart)
 
 ---
 
@@ -38,7 +38,7 @@
 | 3 | Data | Ist es vorhersagbar? | Understanding | 25 s |
 | 4 | Solution | Daten → kritische Container → Freigabe → Tour | Technology | 30 s |
 | 5 | Live Demo | Fahrer · Disponentin · Analyse | Feasibility | 30 s |
-| 6 | Result | −84,1 % km (fair: B0 → B4) | Problem & Benefit | 20 s |
+| 6 | Result | −36,7 % km (fair: B1 → B4) | Problem & Benefit | 20 s |
 | 7 | Honesty | Echte Füllstände, simulierte Orte | Reliability | 15 s |
 | 8 | Closed Loop | Fahrer-Feedback → neue Prognose | Technology | 15 s |
 | 9 | Roadmap | Was als Nächstes kommt | Feasibility | 10 s |
@@ -195,14 +195,14 @@ prezero-route run --date 2026-04-15
 prezero-route propose
 prezero-route approve --by "Disponentin (Heilbronn)"
 ```
-- **Erwartete Ausgabe:** 25 Stopps · **125,21 km** · 2 Fahrzeuge · 7 Runden · **10,51 h** · **63,58 t** · saved **1077,03 km (89,6 %)**.
+- **Erwartete Ausgabe:** 25 Stopps · **249,9 km** · 4 Fahrzeuge · 19 Runden · **7,58 h** längste Schicht · **142,82 t** · saved **952,34 km (79,2 % gegen volle Runde)**.
 - UI mit Rollen: **Fahrer / Disponentin / Analyse** (Forecast-Timeline, Bestehende Route + Freigabe, Datencheck, Upload, Copilot).
 
 ### Speaker Notes
 
 - **0–8 s:** Live-Demo-Start: Pipeline + propose.
 - **8–16 s:** Freigabe durch Disponentin.
-- **16–24 s:** Ergebnis: 25 Stopps, 125,21 km, 2 Fahrzeuge, saved 89,6 %.
+- **16–24 s:** Ergebnis: 25 Stopps, 249,9 km, 4 Fahrzeuge, 19 Runden, 142,82 t.
 - **24–30 s:** Rollen im UI: Fahrer sieht Tour, Disponentin entscheidet, Analyst prüft Daten.
 
 ### Quellen / Zahlenstand
@@ -213,36 +213,38 @@ prezero-route approve --by "Disponentin (Heilbronn)"
 
 ## Slide 6 — Result
 
-- **Folie:** „Ersparnis: −84,1 % km (fair: B0 → B4)"
+- **Folie:** „Ersparnis: −36,7 % km (fair: B1 → B4)"
 - **Jury-Kriterium:** Problem & Benefit
 - **Zeit:** **20 s**
 
 ### Folien-Text
 
-| Variante | Standorte | km |
-|---|---:|---:|
-| **B0 Status quo** (Papierliste) | 121 | **1.795,91** |
-| **B4 kritisch + OR-Tools** | **73** | **285,79** |
+| Variante | Standorte | km | Runden |
+|---|---|---:|---:|
+| **B0 Status quo** (Papierliste) | 121 | **1.795,91** | 95 |
+| **B1 Status quo optimiert** | 121 | **1.662,70** | 98 |
+| **B2 nur fällige, NN** | 112 | **1.165,90** | 67 |
+| **B4 nur fällige + OR-Tools** | **112** | **1.053,29** | **55** |
 
-- **Ersparnis: −84,1 %** (B0 Status quo → B4 kritisch + OR-Tools).
-- Davon **Bedarfs-Effekt (Auswahl): 81,0 %** (B1 → B2, nur kritische Container angefahren) · **Routing-Effekt (gleiche Stopps): 9,6 %** (B2 → B4; instabil: 0–13 %).
-- Gesamt **−82,8 %** (B1 optimierter Status quo → B4; größter Teil kommt aus der **Auswahl**, Routing „nur ca. 10 %").
+- **Ersparnis: −36,7 %** (B1 optimierter Status quo → B4).
+- Davon **Bedarfs-Effekt (Auswahl): 29,9 %** (B1 → B2, nur fällige Standorte) · **Routing-Effekt (gleiche Stopps): 9,7 %** (B2 → B4).
+- Gesamt **−41,4 %** (B0 Papierliste → B4).
 
-- Tages-Tour (Stopp-Limit 25): **125,21 km** vs. **1.202,24 km** Vollkette → **−89,6 %** · saved **1077,03 km** · 63,58 t · 2 Fahrzeuge.
+- Tages-Tour (Stopp-Limit 25): **249,9 km** vs. **1.662,70 km** B1 → **−85,0 %** · 142,82 t · 4 Fahrzeuge · längste Schicht 7,58 h.
 
 ### Speaker Notes
 
-- **0–7 s:** Fairer Vergleich: B0 Status quo (Papierliste) 1.795,91 km vs. B4 kritisch + OR-Tools 285,79 km.
-- **7–12 s:** → **−84,1 %** km gespart. Davon Auswahl **81,0 %**, Routing **9,6 %**.
-- **12–17 s:** Gesamt **−82,8 %** (B1 → B4) — großer Teil aus der Auswahl, Routing nur „bis ca. 10 %".
-- **17–20 s:** Tages-Tour: **−89,6 %** (125,21 vs. 1.202,24 km Vollkette).
+- **0–7 s:** Fairer Vergleich: B1 optimierter Status quo 1.662,70 km vs. B4 nur fällige + OR-Tools 1.053,29 km.
+- **7–12 s:** → **−36,7 %** km gespart. Davon Auswahl **29,9 %**, Routing **9,7 %**.
+- **12–17 s:** Gesamt **−41,4 %** (B0 Papierliste → B4).
+- **17–20 s:** Tages-Tour: 249,9 km vs. 1.662,70 km B1 → 85,0 % gespart.
 
 ### Quellen / Zahlenstand
 
 - `docs/BENCHMARK.md`, `benchmark_results.csv`, `Projek-Management/proof/A3_pitch_zahlen.txt` (**ALL MATCH**).
-- **Belegt:** **81,0 % ✓**, **9,6 % ✓**, **82,8 % ✓**, **84,1 % ✓**.
+- **Belegt:** **29,9 % ✓**, **9,7 % ✓**, **36,7 % ✓**, **41,4 % ✓**.
 
-**Hinweis (Zahlenstand):** Die in der Aufgabenstellung genannten Kürzel **−81,5 % km**, **81,2 % Auswahl**, **1,5 % Routing** sind als zusammengesetzte Kennzahl **nicht** aus den Repo-Quellen belegt → **[TODO]**. Im Repo belegt sind: Bedarfs-**81,0 %**, Routing-**9,6 %**, Gesamt-**82,8 %** (B1→B4) bzw. **84,1 %** (B0→B4).
+**Hinweis (Zahlenstand):** Ältere Deck-Versionen nannten **−84,1 % km**, **81,0 % Auswahl**, **9,6 % Routing**; diese Werte stammen aus einem früheren Modellstand und sind nicht mehr belegt. Aktueller Stand (Commits `1577c74` / `abd9ca2`): Bedarfs-**29,9 %**, Routing-**9,7 %**, Gesamt-**36,7 %** (B1→B4) bzw. **41,4 %** (B0→B4).
 
 ---
 
@@ -329,12 +331,12 @@ prezero-route approve --by "Disponentin (Heilbronn)"
 ### Folien-Text
 
 - **11 Betriebsvariablen** („Annahme, von PreZero zu ersetzen"): Density je Glasfarbe, Containervolumen, LKW-Gewicht **und -Volumen (26 m³)**, Umwegfaktor, Tempo, Betriebshof, Entsorgung, Schicht, Servicezeiten.
-- Live austauschbar: Dichte **300** / Umweg **1,2** → **5 statt 7 Runden, 8,8 h, 47,7 t, 100 km** (statt 7 Runden, 10,5 h, 63,6 t, 125 km).
+- Live austauschbar: Dichte **300** / Umweg **1,2** → **3 statt 4 Fahrzeuge, 214 statt 250 km**.
 
 ### Speaker Notes
 
 - **0–6 s:** Live-Hook: Betriebsvariablen sind „Annahme, von PreZero zu ersetzen".
-- **6–11 s:** Beispiel: Dichte 300 / Umweg 1,2 → sichtbar andere Zahlen.
+- **6–11 s:** Beispiel: Dichte 300 / Umweg 1,2 → 3 statt 4 Fahrzeuge, 214 statt 250 km.
 - **11–15 s:** Ask: bitte drei operative Zahlen von PreZero; dann läuft die Route neu.
 
 ### Quellen / Zahlenstand
