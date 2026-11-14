@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlasRoute Copilot — Interaktiver Visual Explainer</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-green: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-purple: #c084fc;
+      --danger: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    header .badge {
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .subtitle {
+      padding: 0 2rem 1.25rem 2rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Interactive Stepper Navigation */
+    .stepper-nav {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 2rem;
+      background: #131d31;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .step-pill {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .step-pill.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .step-pill:hover:not(.active) {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    /* Diagram Area */
+    .viz-stage {
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #0b1120;
+    }
+
+    svg#explainer-svg {
+      width: 100%;
+      height: 320px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    }
+
+    /* Details Panel */
+    .details-panel {
+      padding: 1.5rem 2rem;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+
+    .step-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .step-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .code-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      color: var(--accent-green);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* Controls Bar */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 2rem;
+      background: rgba(15, 23, 42, 0.6);
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    button.nav-btn {
+      background: #334155;
+      color: var(--text);
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    button.nav-btn:hover:not(:disabled) {
+      background: #475569;
+    }
+
+    button.nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    button.nav-btn.primary {
+      background: var(--accent);
+      color: #0f172a;
+    }
+
+    button.nav-btn.primary:hover:not(:disabled) {
+      background: #7dd3fc;
+    }
+
+    .keyboard-hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    kbd {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    /* SVG Classes */
+    .box-node {
+      rx: 8px;
+      ry: 8px;
+      stroke-width: 2px;
+      transition: all 0.3s ease;
+    }
+    .node-text {
+      font-size: 13px;
+      font-weight: 600;
+      fill: #f8fafc;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .node-subtext {
+      font-size: 10px;
+      fill: #94a3b8;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .connector {
+      stroke: #334155;
+      stroke-width: 2px;
+      stroke-dasharray: 4, 4;
+      transition: all 0.3s ease;
+    }
+    .connector.active {
+      stroke: var(--accent);
+      stroke-dasharray: none;
+      stroke-width: 3px;
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+    .pulse-glow {
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { filter: drop-shadow(0 0 2px var(--accent)); }
+      50% { filter: drop-shadow(0 0 10px var(--accent)); }
+      100% { filter: drop-shadow(0 0 2px var(--accent)); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>
+        <span style="color:var(--accent);">GlasRoute Copilot</span>
+        <span>— Tool-Calling Architektur</span>
+      </h1>
+      <span class="badge">Deterministic AI vs. Halluzination</span>
+    </header>
+
+    <p class="subtitle">
+      Warum ein Sprachmodell niemals Routen frei erfinden sollte: Dieses interaktive Diagramm zeigt, wie der <strong>GlasRoute Copilot</strong> Disponenten-Fragen über deterministische Tools beantwortet – lokal, auditsicher und 100% faktenbasiert.
+    </p>
+
+    <!-- Stepper Navigation -->
+    <div class="stepper-nav" id="stepperNav"></div>
+
+    <!-- SVG Visualizer Stage -->
+    <div class="viz-stage">
+      <svg id="explainer-svg" viewBox="0 0 800 280">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+          </marker>
+          <marker id="arrow-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569" />
+          </marker>
+        </defs>
+
+        <!-- Connectors (Background) -->
+        <path id="line-1" class="connector" d="M 140 140 L 250 140" marker-end="url(#arrow-gray)" />
+        <path id="line-2" class="connector" d="M 370 140 L 480 140" marker-end="url(#arrow-gray)" />
+        <path id="line-3" class="connector" d="M 600 140 L 690 140" marker-end="url(#arrow-gray)" />
+        <path id="line-4" class="connector" d="M 540 85 L 540 45 L 310 45 L 310 85" marker-end="url(#arrow-gray)" fill="none" />
+        <path id="line-5" class="connector" d="M 310 195 L 310 240 L 140 240 L 140 195" marker-end="url(#arrow-gray)" fill="none" />
+
+        <!-- Node 1: Disponent (User) -->
+        <g id="node-user" transform="translate(40, 90)">
+          <rect class="box-node" width="100" height="100" fill="#1e293b" stroke="#334155" />
+          <text class="node-text" x="50" y="42">👤 Disponent</text>
+          <text class="node-subtext" x="50" y="65">Frage / What-If</text>
+        </g>
+
+        <!-- Node 2: Ollama LLM Controller -->
+        <g id="node-llm" transform="translate(250, 90)">
+          <rect class="box-node" width="120" height="100" fill="#1e293b" stroke="#334155" />
+          <text class="node-text" x="60" y="38">🧠 Local LLM</text>
+          <text class="node-subtext" x="60" y="58">Ollama (Qwen 7B)</text>
+          <text class="node-subtext" x="60" y="75" fill="#38bdf8">Function Router</text>
+        </g>
+
+        <!-- Node 3: Tool Execution Layer -->
+        <g id="node-tools" transform="translate(480, 90)">
+          <rect class="box-node" width="120" height="100" fill="#1e293b" stroke="#334155" />
+          <text class="node-text" x="60" y="38">⚙️ Tools</text>
+          <text class="node-subtext" x="60" y="58">routing.py</text>
+          <text class="node-subtext" x="60" y="75">scoring.py</text>
+        </g>
+
+        <!-- Node 4: Ground Truth Data -->
+        <g id="node-data" transform="translate(690, 90)">
+          <rect class="box-node" width="100" height="100" fill="#1e293b" stroke="#334155" />
+          <text class="node-text" x="50" y="38">📊 PreZero Data</text>
+          <text class="node-subtext" x="50" y="58">route.json</text>
+          <text class="node-subtext" x="50" y="75">scored.csv</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Description & Code Box -->
+    <div class="details-panel">
+      <div class="step-header">
+        <div class="step-num" id="stepNum">1</div>
+        <div class="step-title" id="stepTitle">Titel</div>
+      </div>
+      <p class="step-desc" id="stepDesc">Beschreibung...</p>
+      <div class="code-box" id="stepCode">Code Snippet...</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <span class="keyboard-hint">Tipp: Navigiere mit <kbd>◀</kbd> und <kbd>▶</kbd> Pfeiltasten</span>
+      <div class="btn-group">
+        <button class="nav-btn" id="prevBtn">◀ Zurück</button>
+        <button class="nav-btn primary" id="nextBtn">Weiter ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        num: 1,
+        title: "1. Disponent stellt eine Frage (Prompt)",
+        desc: "Der Disponent möchte wissen, warum Container #144 angefahren wird, oder will eine What-If-Simulation durchführen. Er nutzt natürliche Sprache.",
+        code: `Disponent: "Warum ist Container 144 heute auf der Route und wie wirkt sich ein Schichtlimit von 6h aus?"`,
+        activeNodes: ["node-user"],
+        activeLines: ["line-1"],
+        pulseNode: "node-user"
+      },
+      {
+        num: 2,
+        title: "2. Lokales LLM fungiert als Router (Keine Halluzination)",
+        desc: "Das LLM (z. B. Qwen 7B via Ollama) berechnet NICHT die Route im Prompt-Kontext. Stattdessen erkennt es die Absicht und generiert strukturierte Function-Calls (JSON) für unsere vorhandenen Python-Module.",
+        code: `// LLM Tool-Call Payload
+{
+  "tool": "explain_container_priority",
+  "arguments": { "location_id": "144", "date": "2026-04-15" }
+}
+// Tool 2:
+{
+  "tool": "simulate_route",
+  "arguments": { "override_config": { "shift_hours": 6.0 } }
+}`,
+        activeNodes: ["node-llm"],
+        activeLines: ["line-2"],
+        pulseNode: "node-llm"
+      },
+      {
+        num: 3,
+        title: "3. Tool-Execution auf deterministischem Python-Code",
+        desc: "Der Tool-Runner führt unsere echten, getesteten Skripte aus (scoring.py, routing.py). Es gibt exakte Berechnungen: Haversine-Distanz, 11 konfigurierbare Betriebsvariablen, Füllstandsextrapolation.",
+        code: `def explain_container_priority(location_id, date):
+    row = scored_df.loc[scored_df['Location_id'] == location_id]
+    return {
+        "fill_level": row['last_fill_level'].values[0],     # 92%
+        "material": row['material_type'].values[0],        # Weißglas
+        "critical_score": row['critical_score'].values[0],  # 0.94
+        "overfull_rate": row['overfull_rate'].values[0]     # 35%
+    }`,
+        activeNodes: ["node-tools", "node-data"],
+        activeLines: ["line-3"],
+        pulseNode: "node-tools"
+      },
+      {
+        num: 4,
+        title: "4. Rückgabe der Ground-Truth-Daten an das Modell",
+        desc: "Die echten Zahlen werden aus route_2026-04-15.json und scored.csv gezogen und als Tool-Output an das LLM zurückgegeben. Die Simulation mit 6h ergibt z.B. 19 statt 25 Stopps.",
+        code: `// Tool Output zurück an Ollama
+{
+  "location_144": { "fill": "92%", "material": "Weißglas", "risk": "Hoch" },
+  "simulation_6h": { "stops": 19, "unserved_critical": 6, "distance_km": 88.4 }
+}`,
+        activeNodes: ["node-tools", "node-llm"],
+        activeLines: ["line-4"],
+        pulseNode: "node-tools"
+      },
+      {
+        num: 5,
+        title: "5. Disponenten-Antwort & Freigabe (Human-Agent Interface)",
+        desc: "Das LLM fasst die exakten Berechnungen verständlich zusammen. Der Disponent behält die Hoheit und kann den Tourenplan mit einem Klick freigeben ('prezero-route approve').",
+        code: `Copilot: "Container 144 ist wegen 92% Weißglas und 35% Überlaufhistorie priorisiert (Score 0.94).
+Bei Reduktion auf 6h Schichtlimit können nur 19 statt 25 Container bedient werden – 6 kritische Standorte blieben ungeleert!"
+
+[ Tour mit 8h jetzt freigeben ] -> approval_2026-04-15.json generiert ✅`,
+        activeNodes: ["node-user", "node-llm"],
+        activeLines: ["line-5"],
+        pulseNode: "node-user"
+      }
+    ];
+
+    let currentStep = 0;
+
+    const stepperNav = document.getElementById("stepperNav");
+    const stepNum = document.getElementById("stepNum");
+    const stepTitle = document.getElementById("stepTitle");
+    const stepDesc = document.getElementById("stepDesc");
+    const stepCode = document.getElementById("stepCode");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    // Initialize Stepper Nav
+    steps.forEach((step, idx) => {
+      const btn = document.createElement("button");
+      btn.className = `step-pill ${idx === 0 ? "active" : ""}`;
+      btn.innerHTML = `<span>#${step.num}</span> ${step.title.split(" ")[1]}`;
+      btn.onclick = () => goToStep(idx);
+      stepperNav.appendChild(btn);
+    });
+
+    function updateView() {
+      const step = steps[currentStep];
+
+      // Update Text Details
+      stepNum.textContent = step.num;
+      stepTitle.textContent = step.title;
+      stepDesc.textContent = step.desc;
+      stepCode.textContent = step.code;
+
+      // Update Nav Buttons
+      prevBtn.disabled = currentStep === 0;
+      nextBtn.disabled = currentStep === steps.length - 1;
+
+      // Update Stepper Pills
+      const pills = stepperNav.querySelectorAll(".step-pill");
+      pills.forEach((pill, idx) => {
+        if (idx === currentStep) {
+          pill.classList.add("active");
+        } else {
+          pill.classList.remove("active");
+        }
+      });
+
+      // Reset SVG Nodes & Lines
+      const allNodes = ["node-user", "node-llm", "node-tools", "node-data"];
+      allNodes.forEach(id => {
+        const el = document.getElementById(id);
+        const rect = el.querySelector("rect");
+        rect.setAttribute("stroke", "#334155");
+        rect.setAttribute("stroke-width", "2");
+        rect.setAttribute("fill", "#1e293b");
+        el.classList.remove("pulse-glow");
+      });
+
+      const allLines = ["line-1", "line-2", "line-3", "line-4", "line-5"];
+      allLines.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove("active");
+        el.setAttribute("marker-end", "url(#arrow-gray)");
+      });
+
+      // Highlight Active Nodes
+      step.activeNodes.forEach(id => {
+        const el = document.getElementById(id);
+        const rect = el.querySelector("rect");
+        rect.setAttribute("stroke", "#38bdf8");
+        rect.setAttribute("stroke-width", "2.5");
+        rect.setAttribute("fill", "#1e2c45");
+      });
+
+      // Highlight Active Lines
+      step.activeLines.forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add("active");
+        el.setAttribute("marker-end", "url(#arrow)");
+      });
+
+      // Pulse Focus Node
+      if (step.pulseNode) {
+        document.getElementById(step.pulseNode).classList.add("pulse-glow");
+      }
+    }
+
+    function goToStep(idx) {
+      currentStep = idx;
+      updateView();
+    }
+
+    prevBtn.onclick = () => {
+      if (currentStep > 0) {
+        currentStep--;
+        updateView();
+      }
+    };
+
+    nextBtn.onclick = () => {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        updateView();
+      }
+    };
+
+    // Keyboard Arrow Navigation
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") {
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          updateView();
+        }
+      } else if (e.key === "ArrowLeft") {
+        if (currentStep > 0) {
+          currentStep--;
+          updateView();
+        }
+      }
+    });
+
+    // Initial render
+    updateView();
+  </script>
+</body>
+</html>
