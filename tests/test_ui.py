@@ -243,3 +243,36 @@ def test_cli_ui_command_generates_html(tmp_path: Path) -> None:
     )
     assert res.exit_code == 0, res.output
     assert (out_dir / "ui_2026-04-15.html").is_file()
+
+
+def test_build_ui_heatmap_tab_jumps_to_route_map(tmp_path: Path) -> None:
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+        heatmap_src="heatmap.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    assert 'id="view-heatmap"' in html
+    assert 'id="heatmap-frame"' in html
+    assert 'src="heatmap.html"' in html
+    # Click wiring: heatmap message -> route tab -> focus marker in the route map.
+    assert 'id="route-map-frame"' in html
+    assert '"heatmap-select"' in html
+    assert 'activateTab("view-route")' in html
+    assert "focus-container" in html
+
+
+def test_build_ui_without_heatmap_shows_hint(tmp_path: Path) -> None:
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    assert "Keine Heatmap erzeugt" in out.read_text(encoding="utf-8")

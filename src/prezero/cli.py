@@ -380,6 +380,7 @@ def run_cmd(
         route_data=route_data,
         output_path=out_dir / f"ui_{date}.html",
         trends_path=trends_path,
+        heatmap_src=heatmap_path.name,
     )
 
     crit = scored_df[scored_df["critical"]]
@@ -586,6 +587,7 @@ def ui_cmd(
         route_data=route_data,
         output_path=out_dir / f"ui_{date}.html",
         trends_path=trends_path,
+        heatmap_src=heatmap_path.name,
     )
     click.echo(f"UI written: {out_path}")
 

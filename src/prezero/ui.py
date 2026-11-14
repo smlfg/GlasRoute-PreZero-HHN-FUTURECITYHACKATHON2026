@@ -12,6 +12,7 @@ from typing import Any, Mapping
 
 import folium
 import pandas as pd
+import plotly.graph_objects as go
 
 from prezero import approval, forecast
 
@@ -21,11 +22,14 @@ def _safe_json_for_html(payload: Any) -> str:
     return json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
 
 
-def _wrap_srcdoc_iframe(inner_html: str, height_px: int = 560, title: str = "Map") -> str:
+def _wrap_srcdoc_iframe(
+    inner_html: str, height_px: int = 560, title: str = "Map", frame_id: str | None = None
+) -> str:
     """Wrap a standalone Folium HTML document into an isolated iframe."""
     escaped = html.escape(inner_html, quote=True)
+    id_attr = f' id="{html.escape(frame_id, quote=True)}"' if frame_id else ""
     return (
-        f'<iframe class="map-frame" title="{html.escape(title, quote=True)}" '
+        f'<iframe class="map-frame"{id_attr} title="{html.escape(title, quote=True)}" '
         f'style="width:100%;height:{height_px}px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;" '
         f'srcdoc="{escaped}"></iframe>'
     )
@@ -163,6 +167,7 @@ def render_route_view_data(
     route_data: Mapping[str, Any] | str | Path,
     scored_df: pd.DataFrame | None = None,
     locations_df: pd.DataFrame | None = None,
+    container_keys: pd.DataFrame | None = None,
 ) -> tuple[str, dict[str, Any]]:
     """Render the existing route map and extract verifiable metrics + approval proposal."""
     from prezero import viz
@@ -180,6 +185,7 @@ def render_route_view_data(
             scored=scored_df,
             locations=locations_df,
             forecast=None,
+            container_keys=container_keys,
         )
         route_map_html = tmp_map_path.read_text(encoding="utf-8")
 
@@ -495,7 +501,9 @@ def _build_route_section_html(route_map_html: str, route_bundle: dict[str, Any])
             """
         )
 
-    route_iframe = _wrap_srcdoc_iframe(route_map_html, height_px=500, title="Bestehende Route")
+    route_iframe = _wrap_srcdoc_iframe(
+        route_map_html, height_px=500, title="Bestehende Route", frame_id="route-map-frame"
+    )
     route_date = html.escape(str(metrics.get("date") or "unbekannt"))
     comparison_text = html.escape(str(metrics.get("comparison") or "-"))
 
@@ -503,6 +511,7 @@ def _build_route_section_html(route_map_html: str, route_bundle: dict[str, Any])
       <div class="section-head">
         <h2>Bestehende Route ({route_date})</h2>
         <p class="muted">{comparison_text}</p>
+        <div class="map-banner">Standorte simuliert (OSM), Zuordnung seed 2026</div>
       </div>
       <div class="kpi-grid">{kpi_cards}</div>
 
@@ -620,6 +629,23 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
     """
 
 
+def _build_heatmap_section_html(heatmap_src: str | None) -> str:
+    head = """
+      <div class="section-head">
+        <h2>Heatmap: Füllstand je Container und Woche</h2>
+        <p class="muted">Ein Kästchen = ein Container (Standort &times; Glasfarbe). Wochen-Slider unten.
+        Klick auf ein Kästchen springt in den Tab &bdquo;Route &amp; Freigabe&ldquo; und zeigt den Container auf der Karte.</p>
+      </div>
+    """
+    if not heatmap_src:
+        return head + '<div class="card"><div class="label">Hinweis</div><div class="value">Keine Heatmap erzeugt</div><div class="sub">prezero run bzw. prezero ui erzeugt sie automatisch.</div></div>'
+    # Linked (not srcdoc) because the offline Plotly heatmap is >10 MB.
+    return head + (
+        f'<iframe class="map-frame" id="heatmap-frame" title="Heatmap" src="{html.escape(heatmap_src, quote=True)}" '
+        'style="width:100%;height:760px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;"></iframe>'
+    )
+
+
 def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
     return f"""
       <div class="section-head">
@@ -642,6 +668,292 @@ def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
     """
 
 
+MATERIAL_LABELS = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
+MATERIAL_COLORS = {"white": "#64748b", "green": "#2e8b57", "brown": "#8b4513"}
+
+
+def _measurement_analysis_frame(readings_df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize the raw measurement columns used by the real-data dashboard."""
+    required = {"Location_id", "material_type", "date"}
+    if not required.issubset(readings_df.columns):
+        return pd.DataFrame(columns=["Location_id", "material_type", "date", "fill_level_numeric"])
+    work = readings_df.copy()
+    work["fill_level_numeric"] = _extract_numeric_fill(work)
+    work["date"] = pd.to_datetime(work["date"], errors="coerce")
+    work["material_type"] = work["material_type"].astype(str).str.strip().str.lower()
+    return work.dropna(subset=["Location_id", "material_type", "date", "fill_level_numeric"]).sort_values(
+        ["Location_id", "material_type", "date"]
+    )
+
+
+def _forecast_backtest(work: pd.DataFrame, horizon: int) -> list[dict[str, Any]]:
+    """Backtest the existing positive-growth forecast against later real readings."""
+    rows: list[dict[str, Any]] = []
+    for (location_id, material), group in work.groupby(["Location_id", "material_type"], sort=True):
+        group = group.sort_values("date")
+        dates = group["date"].tolist()
+        levels = group["fill_level_numeric"].astype(float).tolist()
+        for index in range(1, len(group)):
+            origin_date = dates[index]
+            prior_dates = dates[: index + 1]
+            prior_levels = levels[: index + 1]
+            rates = [
+                (prior_levels[pos] - prior_levels[pos - 1])
+                / (prior_dates[pos] - prior_dates[pos - 1]).days
+                for pos in range(1, len(prior_levels))
+                if (prior_dates[pos] - prior_dates[pos - 1]).days > 0
+                and prior_levels[pos] >= prior_levels[pos - 1]
+            ]
+            if not rates:
+                continue
+            target = origin_date + pd.Timedelta(days=horizon)
+            future = group[group["date"] >= target]
+            if future.empty:
+                continue
+            actual_row = future.iloc[0]
+            if actual_row["date"] > target + pd.Timedelta(days=7):
+                continue
+            forecast_value = min(110.0, levels[index] + statistics.mean(rates) * horizon)
+            actual_value = float(actual_row["fill_level_numeric"])
+            rows.append(
+                {
+                    "Location_id": str(location_id),
+                    "material_type": str(material),
+                    "horizon": horizon,
+                    "forecast": forecast_value,
+                    "actual": actual_value,
+                    "error_pct": abs(forecast_value - actual_value) / max(abs(actual_value), 1.0) * 100.0,
+                }
+            )
+    return rows
+
+
+def compute_measurement_analysis(readings_df: pd.DataFrame) -> dict[str, Any]:
+    """Compute all real-measurement series used by the first dashboard tab."""
+    work = _measurement_analysis_frame(readings_df)
+    materials = ("white", "green", "brown")
+    if work.empty:
+        return {
+            "container_count": 0,
+            "distribution": [],
+            "weekly_overfull": [],
+            "weekly_fill": [],
+            "top_overfull": [],
+            "intervals": [],
+            "forecast_errors": [],
+        }
+
+    bins = list(range(0, 111, 10))
+    distribution: list[dict[str, Any]] = []
+    for material in materials:
+        subset = work[work["material_type"] == material]
+        counts = subset["fill_level_numeric"].clip(upper=110).round().apply(lambda value: min(110, int(value // 10 * 10)))
+        for level in bins:
+            distribution.append(
+                {
+                    "material_type": material,
+                    "level": level,
+                    "count": int((counts == level).sum()),
+                }
+            )
+
+    work["week"] = work["date"].dt.to_period("W-MON").apply(lambda period: period.start_time)
+    weekly = (
+        work.assign(_overfull=work["fill_level_numeric"] >= 110.0)
+        .groupby("week", as_index=False)
+        .agg(overfull_rate=("_overfull", "mean"))
+        .sort_values("week")
+    )
+    weekly_overfull = [
+        {"week": row.week.strftime("%Y-%m-%d"), "overfull_rate": float(row.overfull_rate * 100.0)}
+        for row in weekly.itertuples(index=False)
+    ]
+    rate_rows: list[dict[str, Any]] = []
+    for (_, material), group in work.groupby(["Location_id", "material_type"], sort=True):
+        group = group.sort_values("date")
+        days = group["date"].diff().dt.total_seconds() / 86400.0
+        deltas = group["fill_level_numeric"].diff()
+        rates = (deltas / days * 7.0).where((days > 0) & (deltas >= 0))
+        rate_rows.extend(
+            {"week": date.to_period("W-MON").start_time, "material_type": material, "fill_rate": rate}
+            for date, rate in zip(group["date"].iloc[1:], rates.iloc[1:])
+            if pd.notna(rate)
+        )
+    weekly_fill_frame = (
+        pd.DataFrame(rate_rows)
+        .groupby(["week", "material_type"], as_index=False)["fill_rate"]
+        .mean()
+        .sort_values(["week", "material_type"])
+        if rate_rows
+        else pd.DataFrame(columns=["week", "material_type", "fill_rate"])
+    )
+    weekly_fill = [
+        {
+            "week": row.week.strftime("%Y-%m-%d"),
+            "material_type": str(row.material_type),
+            "fill_rate": float(row.fill_rate),
+        }
+        for row in weekly_fill_frame.itertuples(index=False)
+    ]
+
+    series = (
+        work.assign(_overfull=work["fill_level_numeric"] >= 110.0)
+        .groupby(["Location_id", "material_type"], as_index=False)
+        .agg(overfull_count=("_overfull", "sum"), measurement_count=("fill_level_numeric", "count"))
+    )
+    series["overfull_rate"] = series["overfull_count"] / series["measurement_count"] * 100.0
+    top_overfull = [
+        {
+            "Location_id": str(row.Location_id),
+            "material_type": str(row.material_type),
+            "overfull_count": int(row.overfull_count),
+            "measurement_count": int(row.measurement_count),
+            "overfull_rate": float(row.overfull_rate),
+        }
+        for row in series.sort_values(
+            ["overfull_count", "overfull_rate", "measurement_count", "Location_id"],
+            ascending=[False, False, False, True],
+        ).head(20).itertuples(index=False)
+    ]
+
+    intervals: list[dict[str, Any]] = []
+    for (location_id, material), group in work.groupby(["Location_id", "material_type"], sort=True):
+        gaps = group["date"].diff().dt.days.dropna()
+        intervals.extend(
+            {
+                "Location_id": str(location_id),
+                "material_type": str(material),
+                "interval_days": int(value),
+            }
+            for value in gaps[gaps > 0]
+        )
+
+    forecast_errors: list[dict[str, Any]] = []
+    for horizon in (7, 14):
+        forecast_errors.extend(_forecast_backtest(work, horizon))
+
+    return {
+        "container_count": int(series.shape[0]),
+        "distribution": distribution,
+        "weekly_overfull": weekly_overfull,
+        "weekly_fill": weekly_fill,
+        "top_overfull": top_overfull,
+        "intervals": intervals,
+        "forecast_errors": forecast_errors,
+    }
+
+
+def _plotly_html(fig: go.Figure, include_plotlyjs: bool = False) -> str:
+    return fig.to_html(full_html=False, include_plotlyjs=include_plotlyjs, config={"displayModeBar": False})
+
+
+def _build_data_section_html(analysis: dict[str, Any]) -> str:
+    """Render the real-measurement dashboard without any map or location data."""
+    distribution = analysis["distribution"]
+    fig_distribution = go.Figure()
+    for material in ("white", "green", "brown"):
+        rows = [row for row in distribution if row["material_type"] == material]
+        fig_distribution.add_bar(
+            x=[f"{row['level']}%" if row["level"] < 110 else "110%+" for row in rows],
+            y=[row["count"] for row in rows],
+            name=MATERIAL_LABELS[material],
+            marker_color=MATERIAL_COLORS[material],
+        )
+    fig_distribution.update_layout(barmode="group", title="Füllstandverteilung je Material", yaxis_title="Messungen", xaxis_title="Füllstand")
+
+    weekly_overfull = analysis["weekly_overfull"]
+    fig_overfull = go.Figure(
+        go.Scatter(
+            x=[row["week"] for row in weekly_overfull],
+            y=[row["overfull_rate"] for row in weekly_overfull],
+            mode="lines+markers",
+            name="Übervoll",
+            line={"color": "#dc2626"},
+        )
+    )
+    fig_overfull.update_layout(title="Übervoll-Anteil pro Kalenderwoche", yaxis_title="Anteil (%)", xaxis_title="Kalenderwoche")
+
+    weekly_fill = analysis["weekly_fill"]
+    fig_fill = go.Figure()
+    for material in ("white", "green", "brown"):
+        rows = [row for row in weekly_fill if row["material_type"] == material]
+        fig_fill.add_trace(
+            go.Scatter(
+                x=[row["week"] for row in rows],
+                y=[row["fill_rate"] for row in rows],
+                mode="lines+markers",
+                name=MATERIAL_LABELS[material],
+                line={"color": MATERIAL_COLORS[material]},
+            )
+        )
+    fig_fill.update_layout(title="Wöchentliche Füllrate nach Material", yaxis_title="Füllrate (% pro Woche)", xaxis_title="Kalenderwoche")
+
+    intervals = analysis["intervals"]
+    fig_intervals = go.Figure()
+    for material in ("white", "green", "brown"):
+        values = [row["interval_days"] for row in intervals if row["material_type"] == material]
+        fig_intervals.add_trace(
+            go.Box(y=values, name=MATERIAL_LABELS[material], marker_color=MATERIAL_COLORS[material], boxmean=True)
+        )
+    fig_intervals.update_layout(title="Messintervall je Container", yaxis_title="Tage zwischen Scans")
+
+    errors = analysis["forecast_errors"]
+    error_summary = []
+    for horizon in (7, 14):
+        values = [row["error_pct"] for row in errors if row["horizon"] == horizon]
+        error_summary.append((horizon, statistics.mean(values) if values else None, len(values)))
+    fig_errors = go.Figure(
+        go.Bar(
+            x=[f"+{horizon} Tage" for horizon, _, _ in error_summary],
+            y=[value or 0 for _, value, _ in error_summary],
+            text=[f"{value:.1f}%" if value is not None else "n/a" for _, value, _ in error_summary],
+            textposition="auto",
+            marker_color=["#2563eb", "#7c3aed"],
+        )
+    )
+    fig_errors.update_layout(title="Forecast vs. tatsächliche Messung", yaxis_title="Mittlerer Fehler (%)")
+
+    top_rows = "".join(
+        f"<tr><td><code>{html.escape(row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'], row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
+        for row in analysis["top_overfull"]
+    )
+    interval_values = [row["interval_days"] for row in intervals]
+    median_interval = statistics.median(interval_values) if interval_values else None
+    error_cards = "".join(
+        f'<div class="card"><div class="label">Forecast +{horizon} Tage</div><div class="value">{"-" if value is None else f"{value:.1f}%"} Fehler</div><div class="sub">{count} vergleichbare reale Messungen</div></div>'
+        for horizon, value, count in error_summary
+    )
+    charts = [
+        _plotly_html(fig_distribution, include_plotlyjs=True),
+        _plotly_html(fig_overfull),
+        _plotly_html(fig_fill),
+        _plotly_html(fig_intervals),
+        _plotly_html(fig_errors),
+    ]
+    return f"""
+      <div class="section-head">
+        <h2>Daten: Reale Messungen</h2>
+        <p class="muted">Echte PreZero-Messdaten · {analysis['container_count']:,} Container · Füllstand 110 % = übervoll</p>
+      </div>
+      <div class="two-col">
+        <div>{charts[0]}</div>
+        <div>{charts[1]}</div>
+        <div>{charts[2]}</div>
+        <div>{charts[3]}<p class="muted">Median des Scanintervalls: {"-" if median_interval is None else f"{median_interval:.1f} Tage"}.</p></div>
+      </div>
+      <div class="section-head"><h3>Top 20 Container nach Übervoll-Häufigkeit</h3></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Container</th><th>Material</th><th>Übervoll</th><th>Messungen</th><th>Anteil</th></tr></thead>
+        <tbody>{top_rows or '<tr><td colspan="5">Keine Daten</td></tr>'}</tbody></table>
+      </div>
+      <div class="section-head"><h3>Vorhersagbarkeit: Forecast gegen reale Folgemessung</h3>
+        <p class="muted">Historisches Backtesting: positive mittlere Steigung bis zum Prognosezeitpunkt; verglichen mit der ersten realen Messung am Zieltag (+/- 7 Tage).</p>
+      </div>
+      <div class="kpi-grid">{error_cards}</div>
+      <div>{charts[4]}</div>
+    """
+
+
 def build_ui(
     date: str,
     readings_df: pd.DataFrame,
@@ -650,16 +962,25 @@ def build_ui(
     route_data: Mapping[str, Any] | str | Path,
     output_path: str | Path | None = None,
     trends_path: str | Path | None = None,
+    heatmap_src: str | None = None,
 ) -> Path:
-    """Build the self-contained 4-view local HTML UI (Views 3, 4, 2, 1) from verifiable data."""
+    """Build the single self-contained website ui_<date>.html from verifiable data."""
     out = Path(output_path) if output_path is not None else Path(f"ui_{date}.html")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     forecast_map_html, forecast_summaries = render_forecast_timeline_map_html(
         scored_df, locations_df, date
     )
-    route_map_html, route_bundle = render_route_view_data(route_data, scored_df, locations_df)
+    container_keys = (
+        readings_df[["Location_id", "material_type"]]
+        if {"Location_id", "material_type"}.issubset(readings_df.columns)
+        else None
+    )
+    route_map_html, route_bundle = render_route_view_data(
+        route_data, scored_df, locations_df, container_keys=container_keys
+    )
     data_check = compute_data_check(readings_df)
+    measurement_analysis = compute_measurement_analysis(readings_df)
     upload_check = compute_upload_check(readings_df)
     trends_uri = _trends_data_uri(readings_df, trends_path)
 
@@ -668,6 +989,8 @@ def build_ui(
     route_section_html = _build_route_section_html(route_map_html, route_bundle)
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
     upload_section_html = _build_upload_section_html(upload_check)
+    heatmap_section_html = _build_heatmap_section_html(heatmap_src)
+    data_section_html = _build_data_section_html(measurement_analysis)
 
     proposal_json = _safe_json_for_html(route_bundle["proposal"])
     approval_filename = f"approval_{date}.json"
@@ -762,6 +1085,16 @@ def build_ui(
     .card .value {{ font-size: 20px; font-weight: 700; }}
     .card .sub {{ font-size: 12px; color: var(--muted); margin-top: 4px; }}
     .map-wrap {{ margin-bottom: 18px; }}
+    .map-banner {{
+      display: inline-block;
+      margin: 4px 0 14px;
+      padding: 5px 9px;
+      border-radius: 5px;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 600;
+    }}
     .two-col {{
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -858,20 +1191,31 @@ def build_ui(
   </header>
 
   <nav class="tabs" role="tablist">
-    <button type="button" class="tab-btn active" data-target="view-forecast">1. Forecast-Timeline</button>
-    <button type="button" class="tab-btn" data-target="view-route">2. Bestehende Route</button>
-    <button type="button" class="tab-btn" data-target="view-datacheck">3. Datencheck</button>
-    <button type="button" class="tab-btn" data-target="view-upload">4. Upload</button>
+    <button type="button" class="tab-btn active" data-target="view-data">1. Daten</button>
+    <button type="button" class="tab-btn" data-target="view-forecast">2. Forecast-Timeline</button>
+    <button type="button" class="tab-btn" data-target="view-heatmap">3. Heatmap</button>
+    <button type="button" class="tab-btn" data-target="view-route">4. Route &amp; Freigabe</button>
+    <button type="button" class="tab-btn" data-target="view-datacheck">5. Datencheck</button>
+    <button type="button" class="tab-btn" data-target="view-upload">6. Upload</button>
   </nav>
 
   <main>
-    <section id="view-forecast" class="view-panel active">
+    <section id="view-data" class="view-panel active">
+      {data_section_html}
+    </section>
+
+    <section id="view-forecast" class="view-panel">
       <div class="section-head">
         <h2>Forecast-Timeline (+0 / +7 / +14 / +21 Tage)</h2>
         <p class="muted">Formel: last_fill_level + avg_daily_increase &times; Tage &times; Saisonfaktor, begrenzt auf 110 %.</p>
+        <div class="map-banner">Standorte simuliert (OSM), Zuordnung seed 2026</div>
       </div>
       <div class="kpi-grid">{forecast_cards_html}</div>
       <div class="map-wrap">{forecast_iframe}</div>
+    </section>
+
+    <section id="view-heatmap" class="view-panel">
+      {heatmap_section_html}
     </section>
 
     <section id="view-route" class="view-panel">
@@ -917,6 +1261,18 @@ def build_ui(
         btn.addEventListener("click", function() {{
           activateTab(btn.getAttribute("data-target"));
         }});
+      }});
+
+      // Heatmap click -> jump to the route map tab and focus the container marker.
+      window.addEventListener("message", function(evt) {{
+        var d = evt.data || {{}};
+        if (d.type !== "heatmap-select" || !d.loc) return;
+        activateTab("view-route");
+        var routeFrame = document.getElementById("route-map-frame");
+        if (!routeFrame || !routeFrame.contentWindow) return;
+        var msg = {{ type: "focus-container", loc: String(d.loc), mat: String(d.mat || "") }};
+        // Give the hidden map one tick to resize before focusing.
+        setTimeout(function() {{ routeFrame.contentWindow.postMessage(msg, "*"); }}, 150);
       }});
 
       var approveBtn = document.getElementById("approve-route-btn");
