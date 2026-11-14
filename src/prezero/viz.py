@@ -251,26 +251,58 @@ def plot_heatmap(
             }
         ],
     )
-    html = fig.to_html(include_plotlyjs="inline", full_html=True, div_id="heatmap-plot")
+    html_doc = fig.to_html(include_plotlyjs="inline", full_html=True, div_id="heatmap-plot")
     target_map = f"map_{map_date}.html" if map_date else "map_2026-04-15.html"
+    labels_json = json.dumps(labels)
     click_script = f"""
     <script>
       document.addEventListener("DOMContentLoaded", function() {{
         var plot = document.getElementById("heatmap-plot");
+        var labels = {labels_json};
+        var targetMap = "{target_map}";
+        function currentWeekLabel() {{
+          try {{
+            var slider = (plot.layout && plot.layout.sliders && plot.layout.sliders[0]) || null;
+            var idx = slider ? (slider.active || 0) : 0;
+            return labels[idx] || labels[0] || "";
+          }} catch (e) {{ return labels[0] || ""; }}
+        }}
         if (!plot) return;
         plot.on("plotly_click", function(event) {{
           var point = event.points && event.points[0];
           if (!point || !point.customdata) return;
-          var locationId = encodeURIComponent(point.customdata[0]);
-          var material = encodeURIComponent(
-            String(point.customdata[1]).toLowerCase()
-          );
-          window.location.href = "{target_map}#loc=" + locationId + "&mat=" + material;
+          var loc = String(point.customdata[0]);
+          var mat = String(point.customdata[1] || "").toLowerCase().replace(/^glass_/, "");
+          var week = currentWeekLabel();
+          var hash = "#loc=" + encodeURIComponent(loc) + "&mat=" + encodeURIComponent(mat);
+          var targetHref = targetMap + hash; // map_2026-04-15.html#loc= fallback target
+          if (window.parent && window.parent !== window) {{
+            try {{ window.parent.postMessage({{type: "heatmap-select", loc: loc, mat: mat, week: week, target: targetHref}}, "*"); }} catch (e) {{}}
+          }} else {{
+            window.location.href = targetHref;
+          }}
+        }});
+        plot.on("plotly_sliderchange", function(evt) {{
+          var idx = (evt && typeof evt.slider === "object" && typeof evt.slider.active === "number") ? evt.slider.active : (evt && evt.active);
+          var week = labels[idx] || currentWeekLabel();
+          try {{ if (window.parent && window.parent !== window) window.parent.postMessage({{type: "heatmap-week", week: week, label: week}}, "*"); }} catch (e) {{}}
+        }});
+        window.addEventListener("message", function(evt) {{
+          var d = evt.data || {{}};
+          if (d.type !== "set-week") return;
+          var week = d.week || d.label;
+          var idx = labels.indexOf(week);
+          if (idx < 0 || !window.Plotly) return;
+          try {{
+            Plotly.relayout(plot, {{"sliders[0].active": idx}});
+            var steps = (plot.layout.sliders[0].steps || []);
+            if (steps[idx]) Plotly.restyle(plot, steps[idx].args[0], steps[idx].args[1] ? undefined : undefined);
+          }} catch (e) {{}}
         }});
       }});
     </script>
     """
-    out.write_text(html.replace("</body>", click_script + "</body>"), encoding="utf-8")
+    out.write_text(html_doc.replace("</body>", click_script + "</body>"), encoding="utf-8")
     return out
 
 
@@ -536,6 +568,7 @@ def _add_forecast_selector(fmap: folium.Map, layer_refs: list[tuple[str, str]]) 
         f'<option value="{label}">{label}</option>' for label, _ in layer_refs
     )
     layers = ", ".join(f'"{label}": {layer_name}' for label, layer_name in layer_refs)
+    labels_json = json.dumps([label for label, _ in layer_refs])
     fmap.get_root().html.add_child(
         folium.Element(
             f"""
@@ -550,7 +583,9 @@ def _add_forecast_selector(fmap: folium.Map, layer_refs: list[tuple[str, str]]) 
                 var forecastMap = {map_name};
                 var forecastLayers = {{{layers}}};
                 var selector = document.getElementById("forecast-week-selector");
-                function showForecastLayer(label) {{
+                var labels = {labels_json};
+                function showForecastLayer(label, notify) {{
+                  if (!forecastLayers[label]) return;
                   Object.keys(forecastLayers).forEach(function(key) {{
                     var layer = forecastLayers[key];
                     if (forecastMap.hasLayer(layer)) {{
@@ -558,11 +593,28 @@ def _add_forecast_selector(fmap: folium.Map, layer_refs: list[tuple[str, str]]) 
                     }}
                   }});
                   forecastMap.addLayer(forecastLayers[label]);
+                  if (selector.value !== label) selector.value = label;
+                  if (notify && window.parent && window.parent !== window) {{
+                    try {{ window.parent.postMessage({{type: "map-week", week: label, label: label}}, "*"); }} catch (e) {{}}
+                  }}
                 }}
                 selector.addEventListener("change", function() {{
-                  showForecastLayer(selector.value);
+                  showForecastLayer(selector.value, true);
                 }});
-                showForecastLayer(selector.value);
+                window.addEventListener("message", function(evt) {{
+                  var d = evt.data || {{}};
+                  if (d.type !== "set-week") return;
+                  var w = String(d.week || d.label || "");
+                  if (forecastLayers[w]) {{ showForecastLayer(w, false); return; }}
+                  var m = w.match(/KW\\s*0?(\\d+)/i);
+                  if (m) {{
+                    var n = m[1];
+                    for (var i = 0; i < labels.length; i++) {{
+                      if (labels[i].indexOf(n) !== -1) {{ showForecastLayer(labels[i], false); return; }}
+                    }}
+                  }}
+                }});
+                showForecastLayer(selector.value, false);
               }});
             </script>
             """
@@ -768,30 +820,40 @@ def _add_container_hash_handler(
                   notice.style.display = "block";
                   window.setTimeout(function() {{ notice.style.display = "none"; }}, 3500);
                 }}
-                var hash = new URLSearchParams(window.location.hash.slice(1));
-                var locationId = hash.get("loc");
-                var material = hash.get("mat");
-                if (!locationId || !material) return;
-                var key = locationId + "|" + material.toLowerCase().replace(/^glas/, "");
-                var target = containerMarkers[key];
-                if (!target) {{
-                  showNotice("Container " + locationId + " / " + material + " nicht gefunden.");
-                  return;
+                function focusFrom(locationId, material) {{
+                  if (!locationId || !material) return;
+                  var matNorm = String(material).toLowerCase().replace(/^glass_/, "");
+                  var key = locationId + "|" + matNorm;
+                  var target = containerMarkers[key];
+                  if (!target) {{
+                    showNotice("Container " + locationId + " / " + matNorm + " nicht gefunden.");
+                    return;
+                  }}
+                  var marker = window[target.marker];
+                  if (!marker || !containerMap) {{
+                    showNotice("Marker für " + locationId + " / " + matNorm + " nicht verfügbar.");
+                    return;
+                  }}
+                  containerMap.setView(marker.getLatLng(), 17);
+                  if (marker.openPopup) marker.openPopup();
+                  if (marker.setStyle) {{
+                    marker.setStyle({{weight: 5, radius: 8}});
+                    window.setTimeout(function() {{ marker.setStyle({{weight: 1.5, radius: 4}}); }}, 3500);
+                  }}
+                  if (target.site === "simulated") {{
+                    showNotice("Standortzuordnung simuliert.");
+                  }}
                 }}
-                var marker = window[target.marker];
-                if (!marker) {{
-                  showNotice("Marker für " + locationId + " / " + material + " nicht verfügbar.");
-                  return;
+                function focusFromHash() {{
+                  var hash = new URLSearchParams(window.location.hash.slice(1));
+                  focusFrom(hash.get("loc"), hash.get("mat"));
                 }}
-                containerMap.setView(marker.getLatLng(), 17);
-                marker.openPopup();
-                marker.setStyle({{weight: 5, radius: 8}});
-                window.setTimeout(function() {{
-                  marker.setStyle({{weight: 1.5, radius: 4}});
-                }}, 3500);
-                if (target.site === "simulated") {{
-                  showNotice("Standortzuordnung simuliert.");
-                }}
+                focusFromHash();
+                window.addEventListener("hashchange", focusFromHash);
+                window.addEventListener("message", function(evt) {{
+                  var d = evt.data || {{}};
+                  if (d.type === "focus-container") focusFrom(d.loc, d.mat);
+                }});
               }});
             </script>
             """

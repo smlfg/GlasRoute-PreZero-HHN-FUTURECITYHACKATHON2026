@@ -642,6 +642,235 @@ def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
     """
 
 
+def build_dashboard(
+    date: str,
+    readings_df: pd.DataFrame,
+    scored_df: pd.DataFrame,
+    locations_df: pd.DataFrame,
+    route_data: Mapping[str, Any] | str | Path,
+    output_dir: str | Path = ".",
+    heatmap_file: str = "heatmap.html",
+    map_file: str | None = None,
+    route_file: str | None = None,
+    output_path: str | Path | None = None,
+    trends_path: str | Path | None = None,
+) -> Path:
+    """Build the main integrated website (index.html) with embedded Heatmap/Prognosekarte."""
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = Path(output_path) if output_path is not None else out_dir / "index.html"
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    map_href = map_file or f"map_{date}.html"
+    route_href = route_file or f"route_{date}.json"
+
+    upload_check = compute_upload_check(readings_df)
+    data_check = compute_data_check(readings_df)
+    trends_uri = _trends_data_uri(readings_df, trends_path)
+    route_map_html, route_bundle = render_route_view_data(route_data, scored_df, locations_df)
+    route_section_html = _build_route_section_html(route_map_html, route_bundle)
+    datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
+
+    metrics = route_bundle["metrics"]
+    proposal_json = _safe_json_for_html(route_bundle["proposal"])
+    approval_filename = f"approval_{date}.json"
+
+    overview_cards = "\n".join(
+        [
+            f'<div class="card"><div class="label">Standorte / Messungen</div><div class="value">{upload_check["container_count"]}</div><div class="sub">{upload_check["row_count"]} Messungen · {upload_check["series_count"]} Serien</div></div>',
+            f'<div class="card"><div class="label">Zeitraum</div><div class="value" style="font-size:16px">{html.escape(upload_check["date_min"])} bis {html.escape(upload_check["date_max"])}</div><div class="sub">Messtage: {upload_check["measurement_days"]}</div></div>',
+            f'<div class="card"><div class="label">Kritische Standorte</div><div class="value">{_format_num(metrics.get("total_critical_locations"))}</div><div class="sub">Geplante Stopps: {_format_num(metrics.get("num_stops"))}</div></div>',
+            f'<div class="card"><div class="label">Route ({html.escape(date)})</div><div class="value">{_format_num(metrics.get("planned_km"), " km")}</div><div class="sub">Ersparnis: {_format_num(metrics.get("saved_km"), " km")} ({_format_num(metrics.get("saved_pct"), " %")})</div></div>',
+        ]
+    )
+
+    document_html = f"""<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlasRoute – {html.escape(date)}</title>
+  <style>
+    :root {{
+      --bg: #f8fafc; --surface: #fff; --border: #cbd5e1; --text: #0f172a;
+      --muted: #475569; --accent: #1d4ed8; --accent-soft: #eff6ff;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.45; }}
+    header {{ background: #0f172a; color: #fff; padding: 14px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }}
+    header h1 {{ margin: 0; font-size: 18px; }}
+    header .meta {{ font-size: 12px; color: #cbd5e1; }}
+    nav.tabs {{ display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border); }}
+    nav.tabs button {{ border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }}
+    nav.tabs button.active {{ background: var(--accent); color: #fff; border-color: var(--accent); }}
+    main {{ max-width: 1400px; margin: 0 auto; padding: 18px 20px 40px; }}
+    .view-panel {{ display: none; }} .view-panel.active {{ display: block; }}
+    .section-head h2 {{ margin: 0 0 4px; font-size: 18px; }} .muted {{ margin: 0 0 14px; color: var(--muted); font-size: 13px; }}
+    .kpi-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }}
+    .card {{ background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }}
+    .card .label {{ font-size: 12px; color: var(--muted); margin-bottom: 4px; }} .card .value {{ font-size: 20px; font-weight: 700; }} .card .sub {{ font-size: 12px; color: var(--muted); margin-top: 4px; }}
+    .embed-frame {{ width: 100%; height: 78vh; min-height: 560px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }}
+    .two-col {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 18px; }}
+    .trend-img {{ width: 100%; border: 1px solid var(--border); border-radius: 8px; background: #fff; }}
+    .table-wrap {{ overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 18px; }}
+    table {{ width: 100%; border-collapse: collapse; font-size: 13px; }} th, td {{ padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap; }} th {{ background: #f1f5f9; font-weight: 600; }}
+    .approval-box {{ background: var(--accent-soft); border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }}
+    .approval-controls {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }}
+    .approval-controls input {{ padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }}
+    .approval-controls button {{ background: #16a34a; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; }}
+    .badge {{ padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }} .badge.pending {{ background: #fef3c7; color: #92400e; }} .badge.approved {{ background: #dcfce7; color: #166534; }}
+    .json-preview {{ display: none; margin-top: 10px; background: #0f172a; color: #e2e8f0; padding: 10px; border-radius: 6px; font-size: 12px; max-height: 220px; overflow: auto; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GlasRoute – PreZero Dashboard ({html.escape(date)})</h1>
+    <div class="meta">Heatmap · Prognosekarte · Route &amp; Freigabe · {upload_check['container_count']} Standorte</div>
+  </header>
+
+  <!-- Tabs: Übersicht | Heatmap | Prognosekarte | Route & Freigabe -->
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab-btn active" data-target="view-overview">Übersicht</button>
+    <button type="button" class="tab-btn" data-target="view-heatmap">Heatmap</button>
+    <button type="button" class="tab-btn" data-target="view-prognose">Prognosekarte</button>
+    <button type="button" class="tab-btn" data-target="view-route">Route &amp; Freigabe</button>
+  </nav>
+
+  <main>
+    <section id="view-overview" class="view-panel active">
+      <div class="section-head"><h2>Übersicht</h2><p class="muted">Zentrale Kennzahlen aus der Pipeline (Stichtag {html.escape(date)}).</p></div>
+      <div class="kpi-grid">{overview_cards}</div>
+      <div class="two-col">
+        <div><h3>Trends</h3><img class="trend-img" src="{trends_uri}" alt="Trends" /></div>
+        <div>{datacheck_section_html}</div>
+      </div>
+    </section>
+
+    <section id="view-heatmap" class="view-panel">
+      <div class="section-head"><h2>Heatmap</h2><p class="muted">Klick auf eine Zelle wechselt zur Prognosekarte und zoomt auf den Container.</p></div>
+      <iframe id="heatmap-frame" class="embed-frame" title="Heatmap" src="{html.escape(heatmap_file)}"></iframe>
+    </section>
+
+    <section id="view-prognose" class="view-panel">
+      <div class="section-head"><h2>Prognosekarte</h2><p class="muted">Prognosehorizonte und Containerstandorte; Auswahl synchron mit Heatmap.</p></div>
+      <iframe id="map-frame" class="embed-frame" title="Prognosekarte" src="{html.escape(map_href)}"></iframe>
+    </section>
+
+    <section id="view-route" class="view-panel">
+      {route_section_html}
+    </section>
+  </main>
+
+  <script id="proposal-payload" type="application/json">{proposal_json}</script>
+  <script>
+    (function() {{
+      var buttons = document.querySelectorAll('.tab-btn');
+      var panels = document.querySelectorAll('.view-panel');
+      var mapFrame = document.getElementById('map-frame');
+      var heatmapFrame = document.getElementById('heatmap-frame');
+
+      function setHashParams(params) {{
+        var h = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        Object.keys(params).forEach(function(k) {{
+          var v = params[k];
+          if (v === null || v === undefined || v === '') h.delete(k); else h.set(k, String(v));
+        }});
+        var s = h.toString();
+        var next = s ? ('#' + s) : '';
+        if (window.location.hash !== next) history.replaceState(null, '', next || (window.location.pathname + window.location.search));
+      }}
+      function getHashParams() {{ return new URLSearchParams(window.location.hash.replace(/^#/, '')); }}
+
+      function activateTab(targetId) {{
+        buttons.forEach(function(btn) {{ btn.classList.toggle('active', btn.getAttribute('data-target') === targetId); }});
+        panels.forEach(function(panel) {{
+          var active = panel.id === targetId;
+          panel.classList.toggle('active', active);
+          if (active) {{
+            panel.querySelectorAll('iframe').forEach(function(frame) {{
+              try {{ if (frame.contentWindow) frame.contentWindow.dispatchEvent(new Event('resize')); }} catch(e) {{}}
+            }});
+          }}
+        }});
+        var tabName = targetId === 'view-overview' ? 'overview' : targetId === 'view-heatmap' ? 'heatmap' : targetId === 'view-prognose' ? 'prognose' : 'route';
+        setHashParams({{tab: tabName}});
+      }}
+
+      buttons.forEach(function(btn) {{ btn.addEventListener('click', function() {{ activateTab(btn.getAttribute('data-target')); }}); }});
+
+      function syncWeekToFrames(weekLabel, source) {{
+        if (!weekLabel) return;
+        try {{ localStorage.setItem('prezero_week', weekLabel); }} catch(e) {{}}
+        setHashParams({{week: weekLabel}});
+        if (source !== 'heatmap' && heatmapFrame && heatmapFrame.contentWindow) {{
+          heatmapFrame.contentWindow.postMessage({{type: 'set-week', week: weekLabel}}, '*');
+        }}
+        if (source !== 'map' && mapFrame && mapFrame.contentWindow) {{
+          mapFrame.contentWindow.postMessage({{type: 'set-week', week: weekLabel}}, '*');
+        }}
+      }}
+
+      function focusContainer(loc, mat) {{
+        if (!loc) return;
+        var matNorm = mat ? String(mat).toLowerCase().replace(/^glass_/, '') : '';
+        setHashParams({{tab: 'prognose', loc: loc, mat: matNorm || null}});
+        activateTab('view-prognose');
+        var h = '#loc=' + encodeURIComponent(loc) + '&mat=' + encodeURIComponent(matNorm);
+        try {{ if (mapFrame) mapFrame.src = {json.dumps(map_href)}.split('#')[0] + h; }} catch(e) {{}}
+        if (mapFrame && mapFrame.contentWindow) {{
+          mapFrame.contentWindow.postMessage({{type: 'focus-container', loc: loc, mat: matNorm}}, '*');
+        }}
+      }}
+
+      window.addEventListener('message', function(evt) {{
+        var d = evt.data || {{}};
+        if (d.type === 'heatmap-select') {{
+          if (d.week) syncWeekToFrames(d.week, 'heatmap');
+          focusContainer(d.loc, d.mat);
+        }} else if (d.type === 'heatmap-week' || d.type === 'week-changed') {{
+          syncWeekToFrames(d.week || d.label, d.source || 'heatmap');
+        }} else if (d.type === 'map-week' || d.type === 'forecast-week') {{
+          syncWeekToFrames(d.week || d.label, 'map');
+        }}
+      }});
+
+      var hp = getHashParams();
+      var tab = hp.get('tab');
+      if (tab === 'heatmap') activateTab('view-heatmap');
+      else if (tab === 'prognose') activateTab('view-prognose');
+      else if (tab === 'route') activateTab('view-route');
+      var initWeek = hp.get('week');
+      if (!initWeek) {{ try {{ initWeek = localStorage.getItem('prezero_week'); }} catch(e) {{}} }}
+      if (initWeek) setTimeout(function() {{ syncWeekToFrames(initWeek, 'init'); }}, 300);
+      if (hp.get('loc')) setTimeout(function() {{ focusContainer(hp.get('loc'), hp.get('mat')); }}, 500);
+
+      var approveBtn = document.getElementById('approve-route-btn');
+      var nameInput = document.getElementById('dispatcher-name-input');
+      var badge = document.getElementById('approval-status-badge');
+      var preview = document.getElementById('approval-record-preview');
+      var proposalRaw = document.getElementById('proposal-payload').textContent;
+      if (approveBtn) {{
+        approveBtn.addEventListener('click', function() {{
+          var approver = (nameInput.value || '').trim() || 'dispatcher';
+          var record = JSON.parse(proposalRaw);
+          record.status = 'approved'; record.approved = true; record.approved_by = approver;
+          record.approved_at = new Date().toISOString().replace(/\\.\\d{{3}}Z$/, '+00:00');
+          badge.textContent = 'Freigegeben durch ' + approver; badge.classList.remove('pending'); badge.classList.add('approved');
+          var text = JSON.stringify(record, null, 2); preview.textContent = text; preview.style.display = 'block';
+          var blob = new Blob([text], {{type: 'application/json'}}); var url = URL.createObjectURL(blob);
+          var link = document.createElement('a'); link.href = url; link.download = {json.dumps(approval_filename)};
+          document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        }});
+      }}
+    }})();
+  </script>
+</body>
+</html>
+"""
+    out.write_text(document_html, encoding="utf-8")
+    return out
+
+
 def build_ui(
     date: str,
     readings_df: pd.DataFrame,

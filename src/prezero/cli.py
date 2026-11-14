@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import click
 import pandas as pd
 
-from prezero import approval, features, forecast, ingest, locations, routing, scoring, viz
+from prezero import approval, copilot, features, forecast, ingest, locations, routing, scoring, viz
 from prezero.heatmap import END_DATE, START_DATE, build_heatmap_matrix
 from prezero.model import build_model
 
@@ -83,7 +84,7 @@ def score_cmd(date: str, input: str, output: str | None) -> None:
     default="data/external/locations.csv",
     help="Path to canonical locations CSV.",
 )
-@click.option("--max-stops", default=25, show_default=True, type=int, help="Maximum stops.")
+@click.option("--max-stops", default=None, type=int, help="Optional stop cap (default: all critical sites).")
 @click.option(
     "--config",
     "-c",
@@ -321,8 +322,11 @@ def run_cmd(
     config_path: str | None,
     output_dir: str,
 ) -> None:
-    """Run the full pipeline: ingest -> features -> score -> route -> visualize."""
+    """Run the full pipeline and write all views + main website into output folder."""
+    from prezero.ui import build_dashboard
+
     out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     cleaned_df = ingest.ingest(raw, cleaned)
     feat_df = features.build_features(cleaned_df, date)
     scored_df = scoring.score_containers(feat_df)
@@ -351,6 +355,38 @@ def run_cmd(
         container_keys=cleaned_df[["Location_id", "material_type"]],
     )
 
+    heatmap_matrix = build_heatmap_matrix(cleaned_df, START_DATE, END_DATE, locations=locs_df)
+    labels = heatmap_matrix.attrs.get("week_labels", [])
+    week_starts = [pd.Timestamp(v) for v in heatmap_matrix.attrs.get("week_starts", [])]
+    selected_week = labels[0] if labels else None
+    try:
+        selected_ts = pd.Timestamp(date)
+        for idx, ws in enumerate(week_starts):
+            if ws <= selected_ts <= ws + pd.Timedelta(days=6):
+                selected_week = labels[idx]
+                break
+    except Exception:
+        pass
+    heatmap_path = viz.plot_heatmap(
+        heatmap_matrix,
+        out_dir / "heatmap.html",
+        selected_week=selected_week,
+        map_date=date,
+    )
+
+    index_path = build_dashboard(
+        date=date,
+        readings_df=cleaned_df,
+        scored_df=scored_df,
+        locations_df=locs_df,
+        route_data=route_data,
+        output_dir=out_dir,
+        heatmap_file=heatmap_path.name,
+        map_file=map_path.name,
+        trends_path=trends_path,
+        output_path=out_dir / "index.html",
+    )
+
     crit = scored_df[scored_df["critical"]]
     click.echo(
         f"Pipeline complete for {date}: {crit['Location_id'].nunique()} critical locations "
@@ -358,7 +394,7 @@ def run_cmd(
     )
     click.echo(route_data["comparison"])
     click.echo(
-        f"Outputs: {out_dir / f'route_{date}.json'}, {map_path}, {trends_path}"
+        f"Outputs: {out_dir / f'route_{date}.json'}, {map_path}, {trends_path}, {heatmap_path}, {index_path}"
     )
 
 
@@ -468,7 +504,7 @@ def approve_cmd(
     default=None,
     help="Path to route_<date>.json. Defaults to route_<date>.json in the output dir.",
 )
-@click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html.")
+@click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html and index.html.")
 def ui_cmd(
     date: str,
     readings: str,
@@ -477,8 +513,11 @@ def ui_cmd(
     route: str | None,
     output_dir: str,
 ) -> None:
-    """Build the 4-view local HTML UI (ui_<date>.html) from verifiable pipeline outputs."""
+    """Build the local UI and main dashboard (index.html) from pipeline outputs."""
+    from prezero.ui import build_dashboard
+
     out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     readings_path = Path(readings)
     if not readings_path.is_file():
         raise click.ClickException(f"Readings CSV not found: {readings_path}")
@@ -526,6 +565,26 @@ def ui_cmd(
         )
 
     trends_candidate = out_dir / "trends.png"
+    trends_path = trends_candidate if trends_candidate.is_file() else viz.plot_trends(readings_df, out_dir / "trends.png")
+    map_path = out_dir / f"map_{date}.html"
+    if not map_path.is_file():
+        viz.plot_route(route_data, map_path, scored=scored_df, locations=locs_df, container_keys=readings_df[["Location_id", "material_type"]])
+    heatmap_path = out_dir / "heatmap.html"
+    if not heatmap_path.is_file():
+        heatmap_matrix = build_heatmap_matrix(readings_df, START_DATE, END_DATE, locations=locs_df)
+        labels = heatmap_matrix.attrs.get("week_labels", [])
+        week_starts = [pd.Timestamp(v) for v in heatmap_matrix.attrs.get("week_starts", [])]
+        selected_week = labels[0] if labels else None
+        try:
+            selected_ts = pd.Timestamp(date)
+            for idx, ws in enumerate(week_starts):
+                if ws <= selected_ts <= ws + pd.Timedelta(days=6):
+                    selected_week = labels[idx]
+                    break
+        except Exception:
+            pass
+        viz.plot_heatmap(heatmap_matrix, heatmap_path, selected_week=selected_week, map_date=date)
+
     out_path = viz.build_ui(
         date=date,
         readings_df=readings_df,
@@ -533,9 +592,313 @@ def ui_cmd(
         locations_df=locs_df,
         route_data=route_data,
         output_path=out_dir / f"ui_{date}.html",
-        trends_path=trends_candidate if trends_candidate.is_file() else None,
+        trends_path=trends_path,
+    )
+    index_path = build_dashboard(
+        date=date,
+        readings_df=readings_df,
+        scored_df=scored_df,
+        locations_df=locs_df,
+        route_data=route_data,
+        output_dir=out_dir,
+        heatmap_file=heatmap_path.name,
+        map_file=map_path.name,
+        trends_path=trends_path,
+        output_path=out_dir / "index.html",
     )
     click.echo(f"UI written: {out_path}")
+    click.echo(f"Dashboard written: {index_path}")
+
+
+@cli.command("serve")
+@click.option("--dir", "directory", default=".", show_default=True, help="Directory containing index.html.")
+@click.option("--port", default=8000, show_default=True, type=int, help="Port to bind.")
+def serve_cmd(directory: str, port: int) -> None:
+    """Serve the website output directory over HTTP."""
+    import functools
+    import http.server
+    import socketserver
+
+    out_dir = Path(directory)
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(out_dir))
+    with socketserver.TCPServer(("127.0.0.1", port), handler) as httpd:
+        click.echo(f"Serving {out_dir} at http://127.0.0.1:{port}/ (Ctrl+C to stop)")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            click.echo("Stopped.")
+
+
+def _parse_cli_override_value(raw: str) -> Any:
+    """Parse CLI --set value while preserving invalid types for allowlist validation."""
+    text = raw.strip()
+    lowered = text.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    try:
+        if "." not in text and "e" not in lowered:
+            return int(text)
+        return float(text)
+    except ValueError:
+        return text
+
+
+def _emit_copilot_result(result: dict[str, Any], as_json: bool) -> None:
+    if as_json:
+        click.echo(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        click.echo(copilot.format_copilot_output(result))
+
+
+@cli.group("copilot")
+def copilot_group() -> None:
+    """Deterministic GlasRoute Copilot (read-only analysis & allowlisted What-If)."""
+    pass
+
+
+@copilot_group.command("overview")
+@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option("--route", default=None, help="Path to route_<date>.json.")
+@click.option("--scored", default=None, help="Path to scored_<date>.csv.")
+@click.option(
+    "--readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option("--config", "-c", "config_path", default=None, help="Optional operational config.")
+@click.option("--json", "as_json", is_flag=True, help="Output structured JSON instead of text.")
+def copilot_overview_cmd(
+    date: str,
+    route: str | None,
+    scored: str | None,
+    readings: str,
+    locations_path: str,
+    config_path: str | None,
+    as_json: bool,
+) -> None:
+    """Show authoritative tour overview and data sources."""
+    try:
+        result = copilot.get_tour_overview(
+            date,
+            route_path=route,
+            scored_path=scored,
+            readings_path=readings,
+            locations_path=locations_path,
+            config_path=config_path,
+        )
+    except copilot.CopilotError as exc:
+        raise click.ClickException(str(exc)) from exc
+    _emit_copilot_result(result, as_json)
+
+
+@copilot_group.command("explain")
+@click.option("--location", "-l", "location_id", default="", help="Location_id of the container site.")
+@click.option(
+    "--material",
+    "-m",
+    default=None,
+    help="Glass material type (white, green, brown).",
+)
+@click.option(
+    "--container",
+    "-k",
+    "container_key",
+    default=None,
+    help="Composite container key '<Location_id>:<material>'.",
+)
+@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option("--route", default=None, help="Path to route_<date>.json.")
+@click.option("--scored", default=None, help="Path to scored_<date>.csv.")
+@click.option(
+    "--readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option("--json", "as_json", is_flag=True, help="Output structured JSON instead of text.")
+def copilot_explain_cmd(
+    location_id: str,
+    material: str | None,
+    container_key: str | None,
+    date: str,
+    route: str | None,
+    scored: str | None,
+    readings: str,
+    locations_path: str,
+    as_json: bool,
+) -> None:
+    """Explain score, fill metrics, and tour inclusion for (Location_id, material_type)."""
+    try:
+        result = copilot.explain_container(
+            location_id=location_id,
+            material=material,
+            date=date,
+            container_key=container_key,
+            scored_path=scored,
+            route_path=route,
+            readings_path=readings,
+            locations_path=locations_path,
+        )
+    except copilot.CopilotError as exc:
+        raise click.ClickException(str(exc)) from exc
+    _emit_copilot_result(result, as_json)
+
+
+@copilot_group.command("what-if")
+@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option(
+    "--set",
+    "-s",
+    "set_items",
+    multiple=True,
+    help="Allowlisted parameter override in KEY=VALUE form (repeatable).",
+)
+@click.option("--max-shift-hours", type=float, default=None, help="Override max_shift_hours.")
+@click.option("--max-stops", type=int, default=None, help="Override max_stops.")
+@click.option("--vehicle-max-weight-kg", type=float, default=None, help="Override vehicle_max_weight_kg.")
+@click.option("--route", default=None, help="Path to baseline route_<date>.json.")
+@click.option("--scored", default=None, help="Path to scored_<date>.csv.")
+@click.option(
+    "--readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option("--config", "-c", "config_path", default=None, help="Optional baseline operational config.")
+@click.option("--json", "as_json", is_flag=True, help="Output structured JSON instead of text.")
+def copilot_what_if_cmd(
+    date: str,
+    set_items: tuple[str, ...],
+    max_shift_hours: float | None,
+    max_stops: int | None,
+    vehicle_max_weight_kg: float | None,
+    route: str | None,
+    scored: str | None,
+    readings: str,
+    locations_path: str,
+    config_path: str | None,
+    as_json: bool,
+) -> None:
+    """Run an allowlisted What-If simulation and compare it against the baseline."""
+    overrides: dict[str, Any] = {}
+    for item in set_items:
+        if "=" not in item:
+            raise click.ClickException(f"Ungültiges --set Format '{item}'. Erwartet KEY=VALUE.")
+        key, raw_val = item.split("=", 1)
+        overrides[key.strip()] = _parse_cli_override_value(raw_val)
+
+    if max_shift_hours is not None:
+        overrides["max_shift_hours"] = max_shift_hours
+    if max_stops is not None:
+        overrides["max_stops"] = max_stops
+    if vehicle_max_weight_kg is not None:
+        overrides["vehicle_max_weight_kg"] = vehicle_max_weight_kg
+
+    if not overrides:
+        allowed = ", ".join(copilot.WHAT_IF_ALLOWLIST.keys())
+        raise click.ClickException(
+            f"Mindestens ein Allowlist-Parameter erforderlich (--set KEY=VALUE). Erlaubt: {allowed}."
+        )
+
+    try:
+        result = copilot.simulate_what_if(
+            date,
+            overrides,
+            scored_path=scored,
+            route_path=route,
+            readings_path=readings,
+            locations_path=locations_path,
+            base_config_path=config_path,
+        )
+    except copilot.CopilotError as exc:
+        raise click.ClickException(str(exc)) from exc
+    _emit_copilot_result(result, as_json)
+
+
+@copilot_group.command("ask")
+@click.argument("question")
+@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option("--no-llm", is_flag=True, help="Bypass Ollama and use deterministic fallback routing.")
+@click.option(
+    "--ollama-url",
+    default="http://localhost:11434/api/chat",
+    show_default=True,
+    help="Ollama chat API endpoint.",
+)
+@click.option("--model", default="qwen2.5:7b", show_default=True, help="Ollama model name.")
+@click.option("--route", default=None, help="Path to route_<date>.json.")
+@click.option("--scored", default=None, help="Path to scored_<date>.csv.")
+@click.option(
+    "--readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option("--json", "as_json", is_flag=True, help="Output structured JSON instead of text.")
+def copilot_ask_cmd(
+    question: str,
+    date: str,
+    no_llm: bool,
+    ollama_url: str,
+    model: str,
+    route: str | None,
+    scored: str | None,
+    readings: str,
+    locations_path: str,
+    as_json: bool,
+) -> None:
+    """Ask the Copilot a question (optional Ollama router + authoritative Python tools)."""
+    try:
+        result = copilot.ask_copilot(
+            question,
+            date=date,
+            use_llm=not no_llm,
+            ollama_url=ollama_url,
+            model=model,
+            route_path=route,
+            scored_path=scored,
+            readings_path=readings,
+            locations_path=locations_path,
+        )
+    except copilot.CopilotError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    if as_json:
+        click.echo(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        click.echo(f"[Modus: {result['mode']} | Tool: {result['tool_name']}]")
+        click.echo(result["formatted_output"])
 
 
 def _latest_route_file() -> Path:
