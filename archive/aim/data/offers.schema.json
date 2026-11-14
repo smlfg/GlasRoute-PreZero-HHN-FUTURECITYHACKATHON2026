@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/smlfg/Lernlotse-AIM-HHN-FUTURECITYHACKATHON2026/data/offers.schema.json",
+  "title": "Lernlotse Angebote",
+  "description": "Liste kuratierter Lernangebote. Nur echte, geprüfte Einträge in offers.json. Keine Beispiel- oder Platzhalterdaten in der Demo verwenden.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "title",
+      "institution",
+      "topic",
+      "age_min",
+      "age_max",
+      "format",
+      "date",
+      "location",
+      "link",
+      "description",
+      "tags"
+    ],
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Öffentlicher Titel des Angebots."
+      },
+      "institution": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Träger. Fokus: aim, experimenta, Haus der Familie, IPAI Foundation."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Leithema. Fokus: AI, Coding, Gaming. Nahe Themen sind erlaubt, wenn sie am Angebot hängen."
+      },
+      "age_min": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Untergrenze der Zielgruppe in Jahren."
+      },
+      "age_max": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Obergrenze der Zielgruppe in Jahren."
+      },
+      "format": {
+        "type": "string",
+        "minLength": 1,
+        "description": "z. B. Workshop, Kurs, Ferienprogramm, offenes Angebot, Vortrag."
+      },
+      "date": {
+        "type": ["string", "null"],
+        "description": "ISO-Datum (YYYY-MM-DD), Zeitspanne als Text, 'laufend', oder null wenn unbekannt. Kein erfundenes Datum."
+      },
+      "location": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Ort oder Angabe wie 'online', so wie vom Träger genannt."
+      },
+      "link": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Öffentliche URL zur Info oder Anmeldung (http oder https)."
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Kurze sachliche Beschreibung auf Basis der Trägerangaben."
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "description": "Zusätzliche Merkmale, z. B. anfaenger, wochenende, ferien, robotik."
+      }
+    }
+  }
+}

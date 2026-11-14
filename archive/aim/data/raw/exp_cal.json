@@ -1,0 +1,4353 @@
+[
+ {
+  "title": "Berufspraxistag 2026",
+  "description": "*** Die Veranstaltung ist bereits ausgebucht. *** Du willst eine Ausbildung machen, bist aber unsicher, welcher Beruf der richtige für dich ist? Bei unserem Berufspraxistag kannst du in viele handwerkliche und technische Berufe schnuppern. Firmen aus der Region stellen sich vor, Ausbildende und Azubis beantworten deine Fragen und geben Einblicke in ihre Arbeit. In Workshops kannst du sogar direkt ausprobieren, welcher Job gut zu dir passt.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/berufspraxistag/?termin=1794650400",
+  "categories": [
+   "workshop",
+   "vortrag",
+   "11-13-klasse",
+   "jugendliche",
+   "8-10-klasse",
+   "eltern",
+   "info-veranstaltung",
+   "berufsorientierung",
+   "ab-klasse-8",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "10:00 bis 16:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "10:00 bis 16:00 Uhr"
+  }
+ },
+ {
+  "title": "Auge in Auge mit Afrikas Tieren",
+  "description": "Komm mit uns auf Safari in die afrikanische Savanne! Wir zeigen dir beeindruckende Nahaufnahmen von einzigartigen Tieren. Begegne Löwen, Elefanten & Co. Auge in Augen in der Wildnis. Auf unserer Science Dome-Kuppel erlebst du tierische Begegnungen in spektakulären 360-Grad-Aufnahmen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/auge-in-auge-mit-afrikas-wilden-tieren/?termin=1794652200",
+  "categories": [
+   "familien",
+   "science-dome-shows",
+   "ab-8-jahren",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "11:30 bis 12:00 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "11:30 bis 12:00 Uhr"
+   },
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "11:30 bis 12:00 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "11:30 bis 12:00 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "10:00 bis 10:30 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "13:30 bis 14:00 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "14:30 bis 15:00 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "11:00 bis 11:30 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "10:00 bis 10:30 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "14:30 bis 15:00 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "13:30 bis 14:00 Uhr"
+   },
+   {
+    "start_unix": 1800662400,
+    "end_unix": 1800662400,
+    "day": "23.",
+    "month": "Januar",
+    "time": "11:30 bis 12:00 Uhr"
+   },
+   {
+    "start_unix": 1800748800,
+    "end_unix": 1800748800,
+    "day": "24.",
+    "month": "Januar",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "11:30 bis 12:00 Uhr"
+   },
+   {
+    "start_unix": 1801958400,
+    "end_unix": 1801958400,
+    "day": "07.",
+    "month": "Februar",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "14:30 bis 15:00 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1805846400,
+    "end_unix": 1805846400,
+    "day": "24.",
+    "month": "März",
+    "time": "10:00 bis 10:30 Uhr"
+   },
+   {
+    "start_unix": 1806105600,
+    "end_unix": 1806105600,
+    "day": "27.",
+    "month": "März",
+    "time": "15:30 bis 16:00 Uhr"
+   },
+   {
+    "start_unix": 1806192000,
+    "end_unix": 1806192000,
+    "day": "28.",
+    "month": "März",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1806278400,
+    "end_unix": 1806278400,
+    "day": "29.",
+    "month": "März",
+    "time": "14:30 bis 15:00 Uhr"
+   },
+   {
+    "start_unix": 1806451200,
+    "end_unix": 1806451200,
+    "day": "31.",
+    "month": "März",
+    "time": "10:00 bis 10:30 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "10:30 bis 11:00 Uhr"
+  }
+ },
+ {
+  "title": "Meine Freundin Roxy",
+  "description": "Als Lizzi einen kaputten Roboter findet, startet für die beiden ein Abenteuer voller Technik, Freundschaft und Neugier. Ab 6 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/meine-freundin-roxy/?termin=1794655800",
+  "categories": [
+   "ab-6-jahren",
+   "science-dome-shows",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "11:30 bis 12:05 Uhr"
+   },
+   {
+    "start_unix": 1794873600,
+    "end_unix": 1794873600,
+    "day": "17.",
+    "month": "November",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "11:30 bis 12:05 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "11:30 bis 12:05 Uhr"
+   },
+   {
+    "start_unix": 1796169600,
+    "end_unix": 1796169600,
+    "day": "02.",
+    "month": "Dezember",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "12:30 bis 13:05 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "10:30 bis 11:05 Uhr"
+   },
+   {
+    "start_unix": 1796860800,
+    "end_unix": 1796860800,
+    "day": "10.",
+    "month": "Dezember",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "11:30 bis 12:05 Uhr"
+   },
+   {
+    "start_unix": 1797811200,
+    "end_unix": 1797811200,
+    "day": "21.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:35 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:35 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "10:00 bis 10:35 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:35 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "12:00 bis 12:35 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "12:00 bis 12:35 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "12:30 bis 13:05 Uhr"
+   },
+   {
+    "start_unix": 1799539200,
+    "end_unix": 1799539200,
+    "day": "10.",
+    "month": "Januar",
+    "time": "10:30 bis 11:05 Uhr"
+   },
+   {
+    "start_unix": 1799798400,
+    "end_unix": 1799798400,
+    "day": "13.",
+    "month": "Januar",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "10:30 bis 11:05 Uhr"
+   },
+   {
+    "start_unix": 1800316800,
+    "end_unix": 1800316800,
+    "day": "19.",
+    "month": "Januar",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1800662400,
+    "end_unix": 1800662400,
+    "day": "23.",
+    "month": "Januar",
+    "time": "12:30 bis 13:05 Uhr"
+   },
+   {
+    "start_unix": 1801958400,
+    "end_unix": 1801958400,
+    "day": "07.",
+    "month": "Februar",
+    "time": "12:30 bis 13:05 Uhr"
+   },
+   {
+    "start_unix": 1802044800,
+    "end_unix": 1802044800,
+    "day": "08.",
+    "month": "Februar",
+    "time": "11:00 bis 11:35 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "13:00 bis 13:35 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "10:30 bis 11:05 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "12:30 bis 13:05 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "10:30 bis 11:05 Uhr"
+   },
+   {
+    "start_unix": 1805328000,
+    "end_unix": 1805328000,
+    "day": "18.",
+    "month": "März",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1805846400,
+    "end_unix": 1805846400,
+    "day": "24.",
+    "month": "März",
+    "time": "12:00 bis 12:35 Uhr"
+   },
+   {
+    "start_unix": 1805932800,
+    "end_unix": 1805932800,
+    "day": "25.",
+    "month": "März",
+    "time": "11:00 bis 11:35 Uhr"
+   },
+   {
+    "start_unix": 1806192000,
+    "end_unix": 1806192000,
+    "day": "28.",
+    "month": "März",
+    "time": "11:30 bis 12:05 Uhr"
+   },
+   {
+    "start_unix": 1806451200,
+    "end_unix": 1806451200,
+    "day": "31.",
+    "month": "März",
+    "time": "11:00 bis 11:35 Uhr"
+   },
+   {
+    "start_unix": 1806969600,
+    "end_unix": 1806969600,
+    "day": "06.",
+    "month": "April",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1809302400,
+    "end_unix": 1809302400,
+    "day": "03.",
+    "month": "Mai",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1812931200,
+    "end_unix": 1812931200,
+    "day": "14.",
+    "month": "Juni",
+    "time": "09:30 bis 10:05 Uhr"
+   },
+   {
+    "start_unix": 1815436800,
+    "end_unix": 1815436800,
+    "day": "13.",
+    "month": "Juli",
+    "time": "09:30 bis 10:05 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "11:30 bis 12:05 Uhr"
+  }
+ },
+ {
+  "title": "Die Legende des Zauberriffs – 3D",
+  "description": "Auf der Suche nach dem verlorenen Paradies erleben die Fische Jake, Shorty und Indigo so manches Abenteuer. Nachdem ihr Riff zerstört wird, wollen sie zu einem sagenumworbenen Korallenriff. Der humorvolle Film schafft ein Bewusstsein für den Erhalt der Korallenriffe.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/die-legende-des-zauberriffs/?termin=1794659400",
+  "categories": [
+   "ab-6-jahren",
+   "science-dome-shows",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "15:30 bis 15:58 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "15:30 bis 15:58 Uhr"
+   },
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "15:30 bis 15:58 Uhr"
+   },
+   {
+    "start_unix": 1797552000,
+    "end_unix": 1797552000,
+    "day": "18.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:28 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1797811200,
+    "end_unix": 1797811200,
+    "day": "21.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:28 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:28 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "15:30 bis 15:58 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "14:00 bis 14:28 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "15:30 bis 15:58 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "14:00 bis 14:28 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1800576000,
+    "end_unix": 1800576000,
+    "day": "22.",
+    "month": "Januar",
+    "time": "15:00 bis 15:28 Uhr"
+   },
+   {
+    "start_unix": 1801267200,
+    "end_unix": 1801267200,
+    "day": "30.",
+    "month": "Januar",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1801958400,
+    "end_unix": 1801958400,
+    "day": "07.",
+    "month": "Februar",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1802304000,
+    "end_unix": 1802304000,
+    "day": "11.",
+    "month": "Februar",
+    "time": "14:00 bis 14:28 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "12:00 bis 12:28 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1805500800,
+    "end_unix": 1805500800,
+    "day": "20.",
+    "month": "März",
+    "time": "15:30 bis 15:58 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1805846400,
+    "end_unix": 1805846400,
+    "day": "24.",
+    "month": "März",
+    "time": "14:00 bis 14:28 Uhr"
+   },
+   {
+    "start_unix": 1806019200,
+    "end_unix": 1806019200,
+    "day": "26.",
+    "month": "März",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1806105600,
+    "end_unix": 1806105600,
+    "day": "27.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "12:30 bis 12:58 Uhr"
+  }
+ },
+ {
+  "title": "Expedition Reef",
+  "description": "Erlebe die „Regenwälder des Meeres“. Besuche bei einer 360°-Ozeansafari die am stärksten gefährdeten Meeres-Ökosysteme der Welt. Erfahre, wie Korallen leben und welchen Gefahren den Riffbewohner durch Klimawandel und Überfischung drohen. Für alle ab 10 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/expedition-reef/?termin=1794663000",
+  "categories": [
+   "science-dome-shows",
+   "ab-10-jahren",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1799020800,
+    "end_unix": 1799020800,
+    "day": "04.",
+    "month": "Januar",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1800662400,
+    "end_unix": 1800662400,
+    "day": "23.",
+    "month": "Januar",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1801267200,
+    "end_unix": 1801267200,
+    "day": "30.",
+    "month": "Januar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1802304000,
+    "end_unix": 1802304000,
+    "day": "11.",
+    "month": "Februar",
+    "time": "12:00 bis 12:28 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1804291200,
+    "end_unix": 1804291200,
+    "day": "06.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1805500800,
+    "end_unix": 1805500800,
+    "day": "20.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1805932800,
+    "end_unix": 1805932800,
+    "day": "25.",
+    "month": "März",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1806364800,
+    "end_unix": 1806364800,
+    "day": "30.",
+    "month": "März",
+    "time": "12:00 bis 12:28 Uhr"
+   },
+   {
+    "start_unix": 1806451200,
+    "end_unix": 1806451200,
+    "day": "31.",
+    "month": "März",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1819152000,
+    "end_unix": 1819152000,
+    "day": "25.",
+    "month": "August",
+    "time": "12:00 bis 12:28 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "13:30 bis 13:58 Uhr"
+  }
+ },
+ {
+  "title": "Dinosaurier: Eine Geschichte des Überlebens",
+  "description": "Was, wenn die Dinosaurier gar nicht ausgestorben sind? Komm mit auf eine Zeitreise zu den faszinierenden Tieren. Dabei kannst du auf unserer 360-Grad-Kuppel beobachten, wie sich die Dinosaurier über Millionen Jahre verändert haben - bis zu einemAsteroideneinschlag. Doch einige Arten konnten die Katastrophe überleben.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/dinosaurier-eine-geschichte-des-ueberlebens/?termin=1794666600",
+  "categories": [
+   "familien",
+   "science-dome-shows",
+   "ab-10-jahren",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "13:30 bis 13:58 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "14:30 bis 14:58 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "14:00 bis 14:28 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1799020800,
+    "end_unix": 1799020800,
+    "day": "04.",
+    "month": "Januar",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1799539200,
+    "end_unix": 1799539200,
+    "day": "10.",
+    "month": "Januar",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1801267200,
+    "end_unix": 1801267200,
+    "day": "30.",
+    "month": "Januar",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1802044800,
+    "end_unix": 1802044800,
+    "day": "08.",
+    "month": "Februar",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1802304000,
+    "end_unix": 1802304000,
+    "day": "11.",
+    "month": "Februar",
+    "time": "11:00 bis 11:28 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1804291200,
+    "end_unix": 1804291200,
+    "day": "06.",
+    "month": "März",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "11:30 bis 11:58 Uhr"
+   },
+   {
+    "start_unix": 1805500800,
+    "end_unix": 1805500800,
+    "day": "20.",
+    "month": "März",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "12:30 bis 12:58 Uhr"
+   },
+   {
+    "start_unix": 1805846400,
+    "end_unix": 1805846400,
+    "day": "24.",
+    "month": "März",
+    "time": "13:00 bis 13:28 Uhr"
+   },
+   {
+    "start_unix": 1805932800,
+    "end_unix": 1805932800,
+    "day": "25.",
+    "month": "März",
+    "time": "10:00 bis 10:28 Uhr"
+   },
+   {
+    "start_unix": 1806105600,
+    "end_unix": 1806105600,
+    "day": "27.",
+    "month": "März",
+    "time": "10:30 bis 10:58 Uhr"
+   },
+   {
+    "start_unix": 1806278400,
+    "end_unix": 1806278400,
+    "day": "29.",
+    "month": "März",
+    "time": "11:30 bis 11:58 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "14:30 bis 14:58 Uhr"
+  }
+ },
+ {
+  "title": "Abenteuerreise durchs Sonnensystem – 3D",
+  "description": "Der charismatische Entertainer Schiaparelli nimmt dich mit auf eine spektakuläre Reise durch Raum und Zeit! In seinem wundersamen Observatorium geht es von der glühend heißen Oberfläche des Merkurs bis hin zu den eisigen Weiten des Plutos.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/abenteuerreise-durchs-sonnensystem-3d/?termin=1794670200",
+  "categories": [
+   "science-dome-shows",
+   "ab-8-jahren",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "13:30 bis 13:56 Uhr"
+   },
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1795737600,
+    "end_unix": 1795737600,
+    "day": "27.",
+    "month": "November",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1796342400,
+    "end_unix": 1796342400,
+    "day": "04.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1796947200,
+    "end_unix": 1796947200,
+    "day": "11.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:26 Uhr"
+   },
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "12:30 bis 12:56 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1799539200,
+    "end_unix": 1799539200,
+    "day": "10.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1800748800,
+    "end_unix": 1800748800,
+    "day": "24.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1801267200,
+    "end_unix": 1801267200,
+    "day": "30.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1804291200,
+    "end_unix": 1804291200,
+    "day": "06.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1806192000,
+    "end_unix": 1806192000,
+    "day": "28.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "15:30 bis 15:56 Uhr"
+  }
+ },
+ {
+  "title": "SpektakulAIR – Live",
+  "description": "Vom schwebenden Wasserglas bis zum selbstgebauten Hovercraft: Erlebe spannende Experimente rund um Luft und Bewegung. Sei dabei, wenn wir Hündin Laika „zum Mond“ schießen und einen Feuertornado erzeugen. Einfach spektakulAIR!",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/spektakulair/?termin=1794673800",
+  "categories": [
+   "ab-6-jahren",
+   "familien",
+   "science-dome-shows",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794614400,
+    "end_unix": 1794614400,
+    "day": "14.",
+    "month": "November",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1797811200,
+    "end_unix": 1797811200,
+    "day": "21.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1799020800,
+    "end_unix": 1799020800,
+    "day": "04.",
+    "month": "Januar",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1799539200,
+    "end_unix": 1799539200,
+    "day": "10.",
+    "month": "Januar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1800662400,
+    "end_unix": 1800662400,
+    "day": "23.",
+    "month": "Januar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1802044800,
+    "end_unix": 1802044800,
+    "day": "08.",
+    "month": "Februar",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "16:00 bis 16:35 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1804291200,
+    "end_unix": 1804291200,
+    "day": "06.",
+    "month": "März",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1805500800,
+    "end_unix": 1805500800,
+    "day": "20.",
+    "month": "März",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1806019200,
+    "end_unix": 1806019200,
+    "day": "26.",
+    "month": "März",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1806105600,
+    "end_unix": 1806105600,
+    "day": "27.",
+    "month": "März",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1806192000,
+    "end_unix": 1806192000,
+    "day": "28.",
+    "month": "März",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1806278400,
+    "end_unix": 1806278400,
+    "day": "29.",
+    "month": "März",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1809561600,
+    "end_unix": 1809561600,
+    "day": "06.",
+    "month": "Mai",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1810512000,
+    "end_unix": 1810512000,
+    "day": "17.",
+    "month": "Mai",
+    "time": "13:30 bis 14:05 Uhr"
+   },
+   {
+    "start_unix": 1811376000,
+    "end_unix": 1811376000,
+    "day": "27.",
+    "month": "Mai",
+    "time": "16:30 bis 17:05 Uhr"
+   },
+   {
+    "start_unix": 1825027200,
+    "end_unix": 1825027200,
+    "day": "01.",
+    "month": "November",
+    "time": "13:30 bis 14:05 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794614400,
+   "end_unix": 1794614400,
+   "day": "14.",
+   "month": "November",
+   "time": "16:30 bis 17:05 Uhr"
+  }
+ },
+ {
+  "title": "Das Rätsel der Polarnacht – 3D",
+  "description": "Pinguin James und Eisbär Vladimir lieben es, gemeinsam die Sterne zu beobachten. Gemeinsam bauen sie das Raumschiff Polaris und entdecken die Welt der Planeten. Ab 6 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/das-raetsel-der-polarnacht-3d/?termin=1794738600",
+  "categories": [
+   "ab-6-jahren",
+   "science-dome-shows",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "12:30 bis 12:59 Uhr"
+   },
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1796342400,
+    "end_unix": 1796342400,
+    "day": "04.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:29 Uhr"
+   },
+   {
+    "start_unix": 1796947200,
+    "end_unix": 1796947200,
+    "day": "11.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:29 Uhr"
+   },
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1797552000,
+    "end_unix": 1797552000,
+    "day": "18.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:29 Uhr"
+   },
+   {
+    "start_unix": 1797811200,
+    "end_unix": 1797811200,
+    "day": "21.",
+    "month": "Dezember",
+    "time": "10:00 bis 10:29 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "10:00 bis 10:29 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "12:00 bis 12:29 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1799020800,
+    "end_unix": 1799020800,
+    "day": "04.",
+    "month": "Januar",
+    "time": "12:00 bis 12:29 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "12:00 bis 12:29 Uhr"
+   },
+   {
+    "start_unix": 1799539200,
+    "end_unix": 1799539200,
+    "day": "10.",
+    "month": "Januar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "12:30 bis 12:59 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1800662400,
+    "end_unix": 1800662400,
+    "day": "23.",
+    "month": "Januar",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1800748800,
+    "end_unix": 1800748800,
+    "day": "24.",
+    "month": "Januar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1801267200,
+    "end_unix": 1801267200,
+    "day": "30.",
+    "month": "Januar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "12:30 bis 12:59 Uhr"
+   },
+   {
+    "start_unix": 1801958400,
+    "end_unix": 1801958400,
+    "day": "07.",
+    "month": "Februar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1802044800,
+    "end_unix": 1802044800,
+    "day": "08.",
+    "month": "Februar",
+    "time": "12:00 bis 12:29 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "12:00 bis 12:29 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1802304000,
+    "end_unix": 1802304000,
+    "day": "11.",
+    "month": "Februar",
+    "time": "10:00 bis 10:29 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "12:30 bis 12:59 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "11:30 bis 11:59 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794700800,
+   "end_unix": 1794700800,
+   "day": "15.",
+   "month": "November",
+   "time": "10:30 bis 10:59 Uhr"
+  }
+ },
+ {
+  "title": "Signale aus dem Universum",
+  "description": "Sterne explodieren, Galaxien kollidieren, Schwarze Löcher senden Signale durch Raum und Zeit. Viele Ereignisse im All sind unsichtbar. Dank neuer Technologien können wir immer mehr Geheimnisse des Universums entschlüsseln. Begleite uns zu Observatorien in Chile und Hawaii und erfahre, wie Forschende daran arbeiten.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/signale-aus-dem-universum/?termin=1794749400",
+  "categories": [
+   "familien",
+   "science-dome-shows",
+   "ab-10-jahren",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "13:30 bis 14:00 Uhr"
+   },
+   {
+    "start_unix": 1795737600,
+    "end_unix": 1795737600,
+    "day": "27.",
+    "month": "November",
+    "time": "16:00 bis 16:30 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "13:30 bis 14:00 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "15:30 bis 16:00 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:30 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "15:30 bis 16:00 Uhr"
+   },
+   {
+    "start_unix": 1799539200,
+    "end_unix": 1799539200,
+    "day": "10.",
+    "month": "Januar",
+    "time": "14:30 bis 15:00 Uhr"
+   },
+   {
+    "start_unix": 1800748800,
+    "end_unix": 1800748800,
+    "day": "24.",
+    "month": "Januar",
+    "time": "14:30 bis 15:00 Uhr"
+   },
+   {
+    "start_unix": 1801180800,
+    "end_unix": 1801180800,
+    "day": "29.",
+    "month": "Januar",
+    "time": "15:00 bis 15:30 Uhr"
+   },
+   {
+    "start_unix": 1802044800,
+    "end_unix": 1802044800,
+    "day": "08.",
+    "month": "Februar",
+    "time": "15:00 bis 15:30 Uhr"
+   },
+   {
+    "start_unix": 1802304000,
+    "end_unix": 1802304000,
+    "day": "11.",
+    "month": "Februar",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1802995200,
+    "end_unix": 1802995200,
+    "day": "19.",
+    "month": "Februar",
+    "time": "16:00 bis 16:30 Uhr"
+   },
+   {
+    "start_unix": 1803600000,
+    "end_unix": 1803600000,
+    "day": "26.",
+    "month": "Februar",
+    "time": "15:00 bis 15:30 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "15:30 bis 16:00 Uhr"
+   },
+   {
+    "start_unix": 1804204800,
+    "end_unix": 1804204800,
+    "day": "05.",
+    "month": "März",
+    "time": "16:00 bis 16:30 Uhr"
+   },
+   {
+    "start_unix": 1806019200,
+    "end_unix": 1806019200,
+    "day": "26.",
+    "month": "März",
+    "time": "15:30 bis 16:00 Uhr"
+   },
+   {
+    "start_unix": 1806451200,
+    "end_unix": 1806451200,
+    "day": "31.",
+    "month": "März",
+    "time": "15:00 bis 15:30 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794700800,
+   "end_unix": 1794700800,
+   "day": "15.",
+   "month": "November",
+   "time": "13:30 bis 14:00 Uhr"
+  }
+ },
+ {
+  "title": "Capcom Go! – 3D",
+  "description": "Reise zurück in die Zeit mit der Apollo-Mission zum Mond im Juli 1969. Mittels neuester 3D-Technik bist du mittendrin im Geschehen vor über 50 Jahren. Der „CapCom“, die Kontaktperson in Houston für die Astronauten, gab mit seinem „go“ die Erlaubnis zum Landen auf dem Mond.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/capcom-go-3d/?termin=1794753000",
+  "categories": [
+   "science-dome-shows",
+   "ab-8-jahren",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1795219200,
+    "end_unix": 1795219200,
+    "day": "21.",
+    "month": "November",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1797811200,
+    "end_unix": 1797811200,
+    "day": "21.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:26 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1799020800,
+    "end_unix": 1799020800,
+    "day": "04.",
+    "month": "Januar",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1801785600,
+    "end_unix": 1801785600,
+    "day": "05.",
+    "month": "Februar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1801958400,
+    "end_unix": 1801958400,
+    "day": "07.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1804204800,
+    "end_unix": 1804204800,
+    "day": "05.",
+    "month": "März",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1805414400,
+    "end_unix": 1805414400,
+    "day": "19.",
+    "month": "März",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1805846400,
+    "end_unix": 1805846400,
+    "day": "24.",
+    "month": "März",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1806364800,
+    "end_unix": 1806364800,
+    "day": "30.",
+    "month": "März",
+    "time": "14:00 bis 14:26 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794700800,
+   "end_unix": 1794700800,
+   "day": "15.",
+   "month": "November",
+   "time": "14:30 bis 14:56 Uhr"
+  }
+ },
+ {
+  "title": "Blitzgescheit – LIVE",
+  "description": "Komm mit in die Welt von Volt, Ampere und elektrischen Impulsen: In „Blitzgescheit “ begleitest du Showstar Funke und Physikgenie Einstein auf eine energiegeladene Zeitreise. Was ist ein Blitz? Kann Strom durch deinen Körper fließen? Und wie funktioniert ein Faradayscher Käfig? Mit hochspannenden Experimenten gehen wir diesen Fragen auf den Grund. In dem Spannungsfeld aus Humor, Interaktion und Wissen werden dir garantiert die Haare zu Berge stehen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/blitzgescheit/?termin=1794760200",
+  "categories": [
+   "science-dome-shows",
+   "ab-8-jahren",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794700800,
+    "end_unix": 1794700800,
+    "day": "15.",
+    "month": "November",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "15:30 bis 16:03 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:33 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "16:00 bis 16:33 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "16:00 bis 16:33 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "16:00 bis 16:33 Uhr"
+   },
+   {
+    "start_unix": 1799452800,
+    "end_unix": 1799452800,
+    "day": "09.",
+    "month": "Januar",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1800144000,
+    "end_unix": 1800144000,
+    "day": "17.",
+    "month": "Januar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1800748800,
+    "end_unix": 1800748800,
+    "day": "24.",
+    "month": "Januar",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1801958400,
+    "end_unix": 1801958400,
+    "day": "07.",
+    "month": "Februar",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "16:00 bis 16:33 Uhr"
+   },
+   {
+    "start_unix": 1802304000,
+    "end_unix": 1802304000,
+    "day": "11.",
+    "month": "Februar",
+    "time": "16:00 bis 16:33 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1802563200,
+    "end_unix": 1802563200,
+    "day": "14.",
+    "month": "Februar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1804291200,
+    "end_unix": 1804291200,
+    "day": "06.",
+    "month": "März",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1805500800,
+    "end_unix": 1805500800,
+    "day": "20.",
+    "month": "März",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1806019200,
+    "end_unix": 1806019200,
+    "day": "26.",
+    "month": "März",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1806105600,
+    "end_unix": 1806105600,
+    "day": "27.",
+    "month": "März",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1806192000,
+    "end_unix": 1806192000,
+    "day": "28.",
+    "month": "März",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1806278400,
+    "end_unix": 1806278400,
+    "day": "29.",
+    "month": "März",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1806710400,
+    "end_unix": 1806710400,
+    "day": "03.",
+    "month": "April",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1807401600,
+    "end_unix": 1807401600,
+    "day": "11.",
+    "month": "April",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1807920000,
+    "end_unix": 1807920000,
+    "day": "17.",
+    "month": "April",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1808006400,
+    "end_unix": 1808006400,
+    "day": "18.",
+    "month": "April",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1808524800,
+    "end_unix": 1808524800,
+    "day": "24.",
+    "month": "April",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1809129600,
+    "end_unix": 1809129600,
+    "day": "01.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1809561600,
+    "end_unix": 1809561600,
+    "day": "06.",
+    "month": "Mai",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1809820800,
+    "end_unix": 1809820800,
+    "day": "09.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1810339200,
+    "end_unix": 1810339200,
+    "day": "15.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1810512000,
+    "end_unix": 1810512000,
+    "day": "17.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1810512000,
+    "end_unix": 1810512000,
+    "day": "17.",
+    "month": "Mai",
+    "time": "16:30 bis 17:03 Uhr"
+   },
+   {
+    "start_unix": 1810771200,
+    "end_unix": 1810771200,
+    "day": "20.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1811030400,
+    "end_unix": 1811030400,
+    "day": "23.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1811376000,
+    "end_unix": 1811376000,
+    "day": "27.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1811548800,
+    "end_unix": 1811548800,
+    "day": "29.",
+    "month": "Mai",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1812240000,
+    "end_unix": 1812240000,
+    "day": "06.",
+    "month": "Juni",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1812758400,
+    "end_unix": 1812758400,
+    "day": "12.",
+    "month": "Juni",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1813968000,
+    "end_unix": 1813968000,
+    "day": "26.",
+    "month": "Juni",
+    "time": "13:30 bis 14:03 Uhr"
+   },
+   {
+    "start_unix": 1825027200,
+    "end_unix": 1825027200,
+    "day": "01.",
+    "month": "November",
+    "time": "16:30 bis 17:03 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794700800,
+   "end_unix": 1794700800,
+   "day": "15.",
+   "month": "November",
+   "time": "16:30 bis 17:03 Uhr"
+  }
+ },
+ {
+  "title": "Robert Mayer Lecture: Warum essen wir, was wir essen?",
+  "description": "Wir essen nicht nur, weil wir hungrig sind: Unsere Ernährung hat viel mit Emotionen, Erziehung und Gewohnheiten zu tun. Bei unserer Robert Mayer Lecture erfährst du, wie unser Alltag beeinflusst, was auf unserem Teller landet.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/robert-mayer-lecture-warum-essen-wir-was-wir-essen/?termin=1794943800",
+  "categories": [
+   "vortrag",
+   "robert-mayer-lecture",
+   "abends",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1794873600,
+    "end_unix": 1794873600,
+    "day": "17.",
+    "month": "November",
+    "time": "19:30 bis 22:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1794873600,
+   "end_unix": 1794873600,
+   "day": "17.",
+   "month": "November",
+   "time": "19:30 bis 22:00 Uhr"
+  }
+ },
+ {
+  "title": "VAST – Eine kosmische Reise – 3D",
+  "description": "Der Weltraum hat eine unvorstellbare Ausdehnung. Wir begeben uns auf eine Reise in die Weiten des Weltraums – wie sie für uns Menschen nicht erreichbar sind. Produziert vom Norrköping Visualization Center C im Rahmen des WISDOME Projekts.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/vast-eine-kosmische-reise-3d/?termin=1795357800",
+  "categories": [
+   "science-dome-shows",
+   "ab-8-jahren",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795305600,
+    "end_unix": 1795305600,
+    "day": "22.",
+    "month": "November",
+    "time": "14:30 bis 15:04 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "14:30 bis 15:04 Uhr"
+   },
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "14:30 bis 15:04 Uhr"
+   },
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "15:30 bis 16:04 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "14:30 bis 15:04 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "14:30 bis 15:04 Uhr"
+   },
+   {
+    "start_unix": 1797811200,
+    "end_unix": 1797811200,
+    "day": "21.",
+    "month": "Dezember",
+    "time": "14:00 bis 14:34 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:34 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "14:30 bis 15:04 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "15:00 bis 15:34 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "12:00 bis 12:34 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795305600,
+   "end_unix": 1795305600,
+   "day": "22.",
+   "month": "November",
+   "time": "14:30 bis 15:04 Uhr"
+  }
+ },
+ {
+  "title": "Plätzchen-Party",
+  "description": "Gemeinsam backen, verzieren und genießen! In diesem Kurs dreht sich alles um köstliche Plätzchen. Ob klassisch oder bunt dekoriert – hier ist für jeden etwas dabei. Freut euch auf einen Nachmittag voller Kreativität, Spaß und köstlicher Plätzchen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/plaetzchen-party/?termin=1795615200",
+  "categories": [
+   "workshop",
+   "ferienprogramm",
+   "experimentierkueche",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795564800,
+    "end_unix": 1795564800,
+    "day": "25.",
+    "month": "November",
+    "time": "14:00 bis 16:30 Uhr"
+   },
+   {
+    "start_unix": 1796169600,
+    "end_unix": 1796169600,
+    "day": "02.",
+    "month": "Dezember",
+    "time": "14:00 bis 16:30 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795564800,
+   "end_unix": 1795564800,
+   "day": "25.",
+   "month": "November",
+   "time": "14:00 bis 16:30 Uhr"
+  }
+ },
+ {
+  "title": "Fortbildung „ESP32-Programmierung in Python“",
+  "description": "Wie funktioniert der Mikrocontrollers ESP32? Was kann man damit im Unterricht machen? Antworten gibt es in unserer praxisnahen Fortbildung für Lehrkräfte. Wir richten den Mikrokontroller ein, verbinden ihn mit verschiedenen Bauteilen und steuern anschließend LEDs, Lautsprecher, Sensoren und Motoren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/fortbildung-esp32-programmierung-in-python/?termin=1795701600",
+  "categories": [
+   "fortbildung",
+   "nachmittags",
+   "abends"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795651200,
+    "end_unix": 1795651200,
+    "day": "26.",
+    "month": "November",
+    "time": "14:00 bis 18:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795651200,
+   "end_unix": 1795651200,
+   "day": "26.",
+   "month": "November",
+   "time": "14:00 bis 18:00 Uhr"
+  }
+ },
+ {
+  "title": "SinnenRauschen",
+  "description": "In diesem besonderen Konzertformat holt das WKO unter der musikalischen Leitung von Michael Form den Barock in die Gegenwart und zeigt, wie zeitlos seine Ausdruckskraft und sein Wesenskern sind. Aus der Kombination von Musik, Literatur, Theater und Videokunst entsteht ein Live-Erlebnis, das vollkommen neue Hör- und Seherlebnisse schafft.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/sinnenrauschen/?termin=1795721400",
+  "categories": [
+   "science-dome-special",
+   "science-dome-shows",
+   "abends",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795651200,
+    "end_unix": 1795651200,
+    "day": "26.",
+    "month": "November",
+    "time": "19:30 bis 21:45 Uhr"
+   },
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "19:30 bis 21:45 Uhr"
+   },
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "19:30 bis 21:45 Uhr"
+   },
+   {
+    "start_unix": 1801267200,
+    "end_unix": 1801267200,
+    "day": "30.",
+    "month": "Januar",
+    "time": "19:30 bis 21:45 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "19:30 bis 21:45 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795651200,
+   "end_unix": 1795651200,
+   "day": "26.",
+   "month": "November",
+   "time": "19:30 bis 21:45 Uhr"
+  }
+ },
+ {
+  "title": "Fortbildung: Von Wellen und Teilchen: Optik, Atom- und Quantenphysik",
+  "description": "Spektroskopie, Interferometrie, Doppelspalt mit Laser und Einzelphotonen, Balmer-Serie und vieles mehr: In dieser Fortbildung stellen wir Lehrkräften das große Experimentier-Angebot des Physik-Kurses für die Sekundarstufe II vor.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/fortbildung-highlights-der-physik-2/?termin=1795791600",
+  "categories": [
+   "fortbildung",
+   "gymnasium",
+   "nachmittags",
+   "abends"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795737600,
+    "end_unix": 1795737600,
+    "day": "27.",
+    "month": "November",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1802822400,
+    "end_unix": 1802822400,
+    "day": "17.",
+    "month": "Februar",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1805760000,
+    "end_unix": 1805760000,
+    "day": "23.",
+    "month": "März",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1810080000,
+    "end_unix": 1810080000,
+    "day": "12.",
+    "month": "Mai",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1813190400,
+    "end_unix": 1813190400,
+    "day": "17.",
+    "month": "Juni",
+    "time": "15:00 bis 18:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795737600,
+   "end_unix": 1795737600,
+   "day": "27.",
+   "month": "November",
+   "time": "15:00 bis 18:00 Uhr"
+  }
+ },
+ {
+  "title": "Fortbildung: Molekularbiologie",
+  "description": "Mit dieser Fortbildung bieten wir Lehrkräften die Möglichkeit, sich im Vorfeld ein Bild über die genauen Kursinhalte unserer Angebote aus der Molekularbiologie zu machen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/fortbildung-molekularbiologie/?termin=1795791600",
+  "categories": [
+   "fortbildung",
+   "gymnasium",
+   "nachmittags",
+   "abends"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795737600,
+    "end_unix": 1795737600,
+    "day": "27.",
+    "month": "November",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1802822400,
+    "end_unix": 1802822400,
+    "day": "17.",
+    "month": "Februar",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1805760000,
+    "end_unix": 1805760000,
+    "day": "23.",
+    "month": "März",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1810080000,
+    "end_unix": 1810080000,
+    "day": "12.",
+    "month": "Mai",
+    "time": "15:00 bis 18:00 Uhr"
+   },
+   {
+    "start_unix": 1813190400,
+    "end_unix": 1813190400,
+    "day": "17.",
+    "month": "Juni",
+    "time": "15:00 bis 18:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795737600,
+   "end_unix": 1795737600,
+   "day": "27.",
+   "month": "November",
+   "time": "15:00 bis 18:00 Uhr"
+  }
+ },
+ {
+  "title": "Familienworkshop Plätzchen für die ganze Familie",
+  "description": "*** Bitte beachte: Der Familienworkshop ist bereits ausgebucht. *** Gemeinsam backen, verzieren und genießen! In diesem Kurs dreht sich alles um köstliche Plätzchen. Ob klassisch oder bunt dekoriert - hier für jeden ist etwas dabei. Freut euch auf einen Nachmittag voller Kreativität, Spaß und köstlicher Plätzchen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/familienworkshop-plaetzchen-fuer-die-ganze-familie/?termin=1795860000",
+  "categories": [
+   "workshop",
+   "ferienprogramm",
+   "experimentierkueche",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "10:00 bis 12:30 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795824000,
+   "end_unix": 1795824000,
+   "day": "28.",
+   "month": "November",
+   "time": "10:00 bis 12:30 Uhr"
+  }
+ },
+ {
+  "title": "Kleidertauschparty",
+  "description": "Bei unserer Kleidertauschparty kannst du ausgemistete Kleidungsstücke gegen die Schrankhüter anderer tauschen. Das spart Geld und schont die Umwelt. Wer möchte, kann bis zu zehn gut erhaltene Kleidungsstücke bringen und abgeben – und sich dafür neue Lieblingsteile aussuchen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/kleidertausch-im-forum/?termin=1795863600",
+  "categories": [
+   "11-13-klasse",
+   "jugendliche",
+   "erwachsene",
+   "forum",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795824000,
+    "end_unix": 1795824000,
+    "day": "28.",
+    "month": "November",
+    "time": "11:00 bis 15:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795824000,
+   "end_unix": 1795824000,
+   "day": "28.",
+   "month": "November",
+   "time": "11:00 bis 15:00 Uhr"
+  }
+ },
+ {
+  "title": "Der kleine Major Tom",
+  "description": "Im Jahr 2050 trainieren die Teenager Tom und Stella das Leben als Astronaut und Astronautin an Bord von Space Camp 1. Ab 6 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/der-kleine-major-tom/?termin=1795955400",
+  "categories": [
+   "ab-6-jahren",
+   "science-dome-shows",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1795910400,
+    "end_unix": 1795910400,
+    "day": "29.",
+    "month": "November",
+    "time": "12:30 bis 12:59 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1800748800,
+    "end_unix": 1800748800,
+    "day": "24.",
+    "month": "Januar",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "11:00 bis 11:29 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "10:00 bis 10:29 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "10:00 bis 10:29 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1804291200,
+    "end_unix": 1804291200,
+    "day": "06.",
+    "month": "März",
+    "time": "11:30 bis 11:59 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1806019200,
+    "end_unix": 1806019200,
+    "day": "26.",
+    "month": "März",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1806278400,
+    "end_unix": 1806278400,
+    "day": "29.",
+    "month": "März",
+    "time": "10:30 bis 10:59 Uhr"
+   },
+   {
+    "start_unix": 1806364800,
+    "end_unix": 1806364800,
+    "day": "30.",
+    "month": "März",
+    "time": "11:00 bis 11:29 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1795910400,
+   "end_unix": 1795910400,
+   "day": "29.",
+   "month": "November",
+   "time": "12:30 bis 12:59 Uhr"
+  }
+ },
+ {
+  "title": "SkyNight",
+  "description": "Entdecke vom Dach der experimenta den Kosmos: Bei der SkyNight öffnet abends die Sternwarte für dich ihre Türen. Mit dem großen Teleskop in unserer All-Sky-Kuppel kannst du zu Mond und Planeten reisen und den Sternenhimmel beobachten. Sollte das Wetter nicht mitspielen, gibt es ein spannendes Alternativprogramm.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/skynight/?termin=1796320800",
+  "categories": [
+   "erwachsene",
+   "abends",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796256000,
+    "end_unix": 1796256000,
+    "day": "03.",
+    "month": "Dezember",
+    "time": "18:00 bis 20:00 Uhr"
+   },
+   {
+    "start_unix": 1796860800,
+    "end_unix": 1796860800,
+    "day": "10.",
+    "month": "Dezember",
+    "time": "18:00 bis 20:00 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "19:00 bis 21:00 Uhr"
+   },
+   {
+    "start_unix": 1800489600,
+    "end_unix": 1800489600,
+    "day": "21.",
+    "month": "Januar",
+    "time": "19:00 bis 21:00 Uhr"
+   },
+   {
+    "start_unix": 1801699200,
+    "end_unix": 1801699200,
+    "day": "04.",
+    "month": "Februar",
+    "time": "19:00 bis 21:00 Uhr"
+   },
+   {
+    "start_unix": 1802908800,
+    "end_unix": 1802908800,
+    "day": "18.",
+    "month": "Februar",
+    "time": "19:00 bis 21:00 Uhr"
+   },
+   {
+    "start_unix": 1804118400,
+    "end_unix": 1804118400,
+    "day": "04.",
+    "month": "März",
+    "time": "20:00 bis 22:00 Uhr"
+   },
+   {
+    "start_unix": 1805328000,
+    "end_unix": 1805328000,
+    "day": "18.",
+    "month": "März",
+    "time": "20:00 bis 22:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796256000,
+   "end_unix": 1796256000,
+   "day": "03.",
+   "month": "Dezember",
+   "time": "18:00 bis 20:00 Uhr"
+  }
+ },
+ {
+  "title": "Imagine Dragons: Dimensional Voyager",
+  "description": "Wir holen für dich den Sound der Imagine Dragons in den Science Dome! Erlebe die Hits einer der größten Bands des 21. Jahrhunderts mit 3D-Sound, Laser-Show und 360 Grad-Animationen. Wir nehmen dich durch über zehn Jahre Bandgeschichte mit – von Radioactive über Believer bis hin zu Enemy.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/imagine-dragons-dimensional-voyager/?termin=1796324400",
+  "categories": [
+   "jugendliche",
+   "science-dome-special",
+   "erwachsene",
+   "science-dome-shows",
+   "abends",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796256000,
+    "end_unix": 1796256000,
+    "day": "03.",
+    "month": "Dezember",
+    "time": "19:00 bis 19:40 Uhr"
+   },
+   {
+    "start_unix": 1796860800,
+    "end_unix": 1796860800,
+    "day": "10.",
+    "month": "Dezember",
+    "time": "20:30 bis 21:10 Uhr"
+   },
+   {
+    "start_unix": 1800489600,
+    "end_unix": 1800489600,
+    "day": "21.",
+    "month": "Januar",
+    "time": "19:00 bis 19:40 Uhr"
+   },
+   {
+    "start_unix": 1801699200,
+    "end_unix": 1801699200,
+    "day": "04.",
+    "month": "Februar",
+    "time": "20:30 bis 21:10 Uhr"
+   },
+   {
+    "start_unix": 1802908800,
+    "end_unix": 1802908800,
+    "day": "18.",
+    "month": "Februar",
+    "time": "20:30 bis 21:10 Uhr"
+   },
+   {
+    "start_unix": 1804118400,
+    "end_unix": 1804118400,
+    "day": "04.",
+    "month": "März",
+    "time": "19:00 bis 19:40 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796256000,
+   "end_unix": 1796256000,
+   "day": "03.",
+   "month": "Dezember",
+   "time": "19:00 bis 19:40 Uhr"
+  }
+ },
+ {
+  "title": "Space and Time",
+  "description": "Ein Fest für die Sinne! Erlebe fantastische Bilderwelten mit dem Elektro-Sound von Kael Alden. Reise in die Tiefen der menschlichen Psyche, entdecke die Schönheit wilder Tiere und lasse dich ins Universum treiben.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/space-and-time/?termin=1796329800",
+  "categories": [
+   "jugendliche",
+   "science-dome-special",
+   "erwachsene",
+   "science-dome-shows",
+   "abends",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796256000,
+    "end_unix": 1796256000,
+    "day": "03.",
+    "month": "Dezember",
+    "time": "20:30 bis 21:20 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "20:30 bis 21:20 Uhr"
+   },
+   {
+    "start_unix": 1802908800,
+    "end_unix": 1802908800,
+    "day": "18.",
+    "month": "Februar",
+    "time": "19:00 bis 19:50 Uhr"
+   },
+   {
+    "start_unix": 1805328000,
+    "end_unix": 1805328000,
+    "day": "18.",
+    "month": "März",
+    "time": "20:30 bis 21:20 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796256000,
+   "end_unix": 1796256000,
+   "day": "03.",
+   "month": "Dezember",
+   "time": "20:30 bis 21:20 Uhr"
+  }
+ },
+ {
+  "title": "First Lego League Explore – Ausstellung",
+  "description": "In der aktuellen Saison begeben sich Kinder im Alter von 6 bis 10 Jahren bei der First Lego League (FLL) Explore in die Vielfalt globaler Naturlandschaften. Die Saison BIOGLOW™ führt Teams in die faszinierenden Ökosysteme unserer Erde. Im Mittelpunkt stehen die Wechselwirkungen zwischen Natur, Technologie und Innovation.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/first-lego-league-explore-ausstellung/?termin=1796468400",
+  "categories": [
+   "wettbewerbe",
+   "grundschule",
+   "ab-6-jahren",
+   "familien",
+   "schulkinder",
+   "jugendforschungszentrum-2",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "11:00 bis 16:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796428800,
+   "end_unix": 1796428800,
+   "day": "05.",
+   "month": "Dezember",
+   "time": "11:00 bis 16:00 Uhr"
+  }
+ },
+ {
+  "title": "First Lego League Challenge – Regionalwettbewerb Heilbronn",
+  "description": "Faszinierende Naturphänomene, neue Entdeckungen und innovative Forschungsmethoden: Unter dem Motto „BIOGLOW“ nimmt die First Lego League (FLL) Challenge in dieser Saison mit auf eine Reise durch die vielfältigen Ökosysteme unserer Erde.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/first-lego-league-regionalwettbewerb-heilbronn/?termin=1796468400",
+  "categories": [
+   "wettbewerbe",
+   "5-10-klasse",
+   "jugendliche",
+   "jugendforschungszentrum-2",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "11:00 bis 17:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796428800,
+   "end_unix": 1796428800,
+   "day": "05.",
+   "month": "Dezember",
+   "time": "11:00 bis 17:00 Uhr"
+  }
+ },
+ {
+  "title": "Das Geheimnis der Jahreszeiten – 3D",
+  "description": "Im Urlaub bei ihrem Großvater entdeckt ein kleines Mädchen namens Mia zufällig ein mysteriöses Stück Weltraum-Technik. Edmund, Mias exzentrischer Onkel, stachelt das Mädchen dazu an, die geheimen Kräfte dieser Weltraum-Technik zu nutzen, um die Jahreszeiten auf der Welt zu manipulieren. Schnell ist sich Mia der Konsequenzen ihres Handelns bewusst aber Onkel Edmund will seinen Plan nicht aufgeben.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/das-geheimnis-der-jahreszeiten/?termin=1796470200",
+  "categories": [
+   "grundschule",
+   "ab-6-jahren",
+   "familien",
+   "science-dome-shows",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "11:30 bis 11:58 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796428800,
+   "end_unix": 1796428800,
+   "day": "05.",
+   "month": "Dezember",
+   "time": "11:30 bis 11:58 Uhr"
+  }
+ },
+ {
+  "title": "Der Stern von Bethlehem",
+  "description": "Sein Mythos leuchtet bis heute: der Stern von Bethlehem. Doch gab es ihn wirklich? Geh mit uns auf Spurensuche – wissenschaftlich fundiert und himmlisch schön. Ab 8 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/der-stern-von-bethlehem/?termin=1796488200",
+  "categories": [
+   "familien",
+   "science-dome-shows",
+   "ab-8-jahren",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796428800,
+    "end_unix": 1796428800,
+    "day": "05.",
+    "month": "Dezember",
+    "time": "16:30 bis 17:00 Uhr"
+   },
+   {
+    "start_unix": 1796515200,
+    "end_unix": 1796515200,
+    "day": "06.",
+    "month": "Dezember",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "13:30 bis 14:00 Uhr"
+   },
+   {
+    "start_unix": 1797120000,
+    "end_unix": 1797120000,
+    "day": "13.",
+    "month": "Dezember",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1797638400,
+    "end_unix": 1797638400,
+    "day": "19.",
+    "month": "Dezember",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1797724800,
+    "end_unix": 1797724800,
+    "day": "20.",
+    "month": "Dezember",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1797897600,
+    "end_unix": 1797897600,
+    "day": "22.",
+    "month": "Dezember",
+    "time": "12:00 bis 12:30 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "11:00 bis 11:30 Uhr"
+   },
+   {
+    "start_unix": 1797984000,
+    "end_unix": 1797984000,
+    "day": "23.",
+    "month": "Dezember",
+    "time": "12:00 bis 12:30 Uhr"
+   },
+   {
+    "start_unix": 1798243200,
+    "end_unix": 1798243200,
+    "day": "26.",
+    "month": "Dezember",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1798329600,
+    "end_unix": 1798329600,
+    "day": "27.",
+    "month": "Dezember",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1798416000,
+    "end_unix": 1798416000,
+    "day": "28.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1798502400,
+    "end_unix": 1798502400,
+    "day": "29.",
+    "month": "Dezember",
+    "time": "12:00 bis 12:30 Uhr"
+   },
+   {
+    "start_unix": 1798588800,
+    "end_unix": 1798588800,
+    "day": "30.",
+    "month": "Dezember",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1798848000,
+    "end_unix": 1798848000,
+    "day": "02.",
+    "month": "Januar",
+    "time": "12:30 bis 13:00 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "10:30 bis 11:00 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "13:00 bis 13:30 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "12:30 bis 13:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796428800,
+   "end_unix": 1796428800,
+   "day": "05.",
+   "month": "Dezember",
+   "time": "16:30 bis 17:00 Uhr"
+  }
+ },
+ {
+  "title": "Queen – Heaven – Das Original!",
+  "description": "„The Show Must Go On!“ Erlebe die größten Hits von Queen in 360 Grad. Tauche ein in eine furiose Musikshow rund um die britische Band und ihren Leadsänger Freddie Mercury.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/queen-heaven-das-original/?termin=1796929200",
+  "categories": [
+   "science-dome-special",
+   "science-dome-shows",
+   "abends",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1796860800,
+    "end_unix": 1796860800,
+    "day": "10.",
+    "month": "Dezember",
+    "time": "19:00 bis 20:18 Uhr"
+   },
+   {
+    "start_unix": 1799280000,
+    "end_unix": 1799280000,
+    "day": "07.",
+    "month": "Januar",
+    "time": "19:00 bis 20:18 Uhr"
+   },
+   {
+    "start_unix": 1800489600,
+    "end_unix": 1800489600,
+    "day": "21.",
+    "month": "Januar",
+    "time": "20:30 bis 21:48 Uhr"
+   },
+   {
+    "start_unix": 1801699200,
+    "end_unix": 1801699200,
+    "day": "04.",
+    "month": "Februar",
+    "time": "19:00 bis 20:18 Uhr"
+   },
+   {
+    "start_unix": 1804118400,
+    "end_unix": 1804118400,
+    "day": "04.",
+    "month": "März",
+    "time": "20:30 bis 21:48 Uhr"
+   },
+   {
+    "start_unix": 1805328000,
+    "end_unix": 1805328000,
+    "day": "18.",
+    "month": "März",
+    "time": "19:00 bis 20:18 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1796860800,
+   "end_unix": 1796860800,
+   "day": "10.",
+   "month": "Dezember",
+   "time": "19:00 bis 20:18 Uhr"
+  }
+ },
+ {
+  "title": "Wir sind Sterne – 3D",
+  "description": "Mit dem Film „Wir sind Sterne – 3D“ unternimmst du eine Reise durch Raum und Zeit. Erkunde die Geheimnisse der kosmischen Chemie in uns und ihren explosiven Ursprung. Ab 8 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/wir-sind-sterne-3d/?termin=1797075000",
+  "categories": [
+   "science-dome-shows",
+   "ab-8-jahren",
+   "vormittags",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1797033600,
+    "end_unix": 1797033600,
+    "day": "12.",
+    "month": "Dezember",
+    "time": "11:30 bis 11:56 Uhr"
+   },
+   {
+    "start_unix": 1798934400,
+    "end_unix": 1798934400,
+    "day": "03.",
+    "month": "Januar",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1799020800,
+    "end_unix": 1799020800,
+    "day": "04.",
+    "month": "Januar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1799107200,
+    "end_unix": 1799107200,
+    "day": "05.",
+    "month": "Januar",
+    "time": "14:00 bis 14:26 Uhr"
+   },
+   {
+    "start_unix": 1799193600,
+    "end_unix": 1799193600,
+    "day": "06.",
+    "month": "Januar",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1799366400,
+    "end_unix": 1799366400,
+    "day": "08.",
+    "month": "Januar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1800057600,
+    "end_unix": 1800057600,
+    "day": "16.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1800662400,
+    "end_unix": 1800662400,
+    "day": "23.",
+    "month": "Januar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1801353600,
+    "end_unix": 1801353600,
+    "day": "31.",
+    "month": "Januar",
+    "time": "14:30 bis 14:56 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1802476800,
+    "end_unix": 1802476800,
+    "day": "13.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1805414400,
+    "end_unix": 1805414400,
+    "day": "19.",
+    "month": "März",
+    "time": "16:00 bis 16:26 Uhr"
+   },
+   {
+    "start_unix": 1805932800,
+    "end_unix": 1805932800,
+    "day": "25.",
+    "month": "März",
+    "time": "15:00 bis 15:26 Uhr"
+   },
+   {
+    "start_unix": 1806278400,
+    "end_unix": 1806278400,
+    "day": "29.",
+    "month": "März",
+    "time": "15:30 bis 15:56 Uhr"
+   },
+   {
+    "start_unix": 1806451200,
+    "end_unix": 1806451200,
+    "day": "31.",
+    "month": "März",
+    "time": "14:00 bis 14:26 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1797033600,
+   "end_unix": 1797033600,
+   "day": "12.",
+   "month": "Dezember",
+   "time": "11:30 bis 11:56 Uhr"
+  }
+ },
+ {
+  "title": "Stille Stunde",
+  "description": "Pssst! Entdecke die experimenta mal leise: Wir dämmen die Flut an Reizen ein. Dafür schalten wir laute Mitmachstationen ab, bieten Rückzugsorte und begrenzen die Gästezahl. Die „Stille Stunde“ ist für alle, die mehr Ruhe brauchen – zum Beispiel für Menschen mit Autismus. Eine Anmeldung ist notwendig.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/stille-stunde/?termin=1800021600",
+  "categories": [
+   "jugendliche",
+   "familien",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1799971200,
+    "end_unix": 1799971200,
+    "day": "15.",
+    "month": "Januar",
+    "time": "14:00 bis 17:00 Uhr"
+   },
+   {
+    "start_unix": 1807833600,
+    "end_unix": 1807833600,
+    "day": "16.",
+    "month": "April",
+    "time": "14:00 bis 17:00 Uhr"
+   },
+   {
+    "start_unix": 1821139200,
+    "end_unix": 1821139200,
+    "day": "17.",
+    "month": "September",
+    "time": "14:00 bis 17:00 Uhr"
+   },
+   {
+    "start_unix": 1827792000,
+    "end_unix": 1827792000,
+    "day": "03.",
+    "month": "Dezember",
+    "time": "14:00 bis 17:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1799971200,
+   "end_unix": 1799971200,
+   "day": "15.",
+   "month": "Januar",
+   "time": "14:00 bis 17:00 Uhr"
+  }
+ },
+ {
+  "title": "Die Reise zum Mars – 3D",
+  "description": "Nächstes Ziel: Mars. Begleite in der Zukunft eine Astronautencrew ins All, wo das bislang größte Abenteuer der Menschheit auf sie wartet. Ab 8 Jahren.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/die-reise-zum-mars-3d/?termin=1801843200",
+  "categories": [
+   "familien",
+   "science-dome-shows",
+   "ab-8-jahren",
+   "nachmittags",
+   "vormittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1801785600,
+    "end_unix": 1801785600,
+    "day": "05.",
+    "month": "Februar",
+    "time": "16:00 bis 16:25 Uhr"
+   },
+   {
+    "start_unix": 1802044800,
+    "end_unix": 1802044800,
+    "day": "08.",
+    "month": "Februar",
+    "time": "14:00 bis 14:25 Uhr"
+   },
+   {
+    "start_unix": 1802131200,
+    "end_unix": 1802131200,
+    "day": "09.",
+    "month": "Februar",
+    "time": "14:00 bis 14:25 Uhr"
+   },
+   {
+    "start_unix": 1802217600,
+    "end_unix": 1802217600,
+    "day": "10.",
+    "month": "Februar",
+    "time": "12:00 bis 12:25 Uhr"
+   },
+   {
+    "start_unix": 1802390400,
+    "end_unix": 1802390400,
+    "day": "12.",
+    "month": "Februar",
+    "time": "14:00 bis 14:25 Uhr"
+   },
+   {
+    "start_unix": 1802995200,
+    "end_unix": 1802995200,
+    "day": "19.",
+    "month": "Februar",
+    "time": "15:00 bis 15:25 Uhr"
+   },
+   {
+    "start_unix": 1803081600,
+    "end_unix": 1803081600,
+    "day": "20.",
+    "month": "Februar",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1803168000,
+    "end_unix": 1803168000,
+    "day": "21.",
+    "month": "Februar",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1803600000,
+    "end_unix": 1803600000,
+    "day": "26.",
+    "month": "Februar",
+    "time": "16:00 bis 16:25 Uhr"
+   },
+   {
+    "start_unix": 1803686400,
+    "end_unix": 1803686400,
+    "day": "27.",
+    "month": "Februar",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1803772800,
+    "end_unix": 1803772800,
+    "day": "28.",
+    "month": "Februar",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1804377600,
+    "end_unix": 1804377600,
+    "day": "07.",
+    "month": "März",
+    "time": "11:30 bis 11:55 Uhr"
+   },
+   {
+    "start_unix": 1804896000,
+    "end_unix": 1804896000,
+    "day": "13.",
+    "month": "März",
+    "time": "11:30 bis 11:55 Uhr"
+   },
+   {
+    "start_unix": 1804982400,
+    "end_unix": 1804982400,
+    "day": "14.",
+    "month": "März",
+    "time": "10:30 bis 10:55 Uhr"
+   },
+   {
+    "start_unix": 1805500800,
+    "end_unix": 1805500800,
+    "day": "20.",
+    "month": "März",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1805587200,
+    "end_unix": 1805587200,
+    "day": "21.",
+    "month": "März",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1805846400,
+    "end_unix": 1805846400,
+    "day": "24.",
+    "month": "März",
+    "time": "11:00 bis 11:25 Uhr"
+   },
+   {
+    "start_unix": 1805932800,
+    "end_unix": 1805932800,
+    "day": "25.",
+    "month": "März",
+    "time": "12:00 bis 12:25 Uhr"
+   },
+   {
+    "start_unix": 1806019200,
+    "end_unix": 1806019200,
+    "day": "26.",
+    "month": "März",
+    "time": "11:30 bis 11:55 Uhr"
+   },
+   {
+    "start_unix": 1806105600,
+    "end_unix": 1806105600,
+    "day": "27.",
+    "month": "März",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1806192000,
+    "end_unix": 1806192000,
+    "day": "28.",
+    "month": "März",
+    "time": "14:30 bis 14:55 Uhr"
+   },
+   {
+    "start_unix": 1806364800,
+    "end_unix": 1806364800,
+    "day": "30.",
+    "month": "März",
+    "time": "13:00 bis 13:25 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1801785600,
+   "end_unix": 1801785600,
+   "day": "05.",
+   "month": "Februar",
+   "time": "16:00 bis 16:25 Uhr"
+  }
+ },
+ {
+  "title": "Maker Faire ® Heilbronn 2027",
+  "description": "Kreativität trifft Technologie! Komm vorbei, wenn die Maker Community ihre Projekte vorstellt. An den Ständen kannst du kreative Köpfe treffen, dich austauschen und inspirieren lassen. Werde bei Mini Workshops aktiv und lausche spannenden Vorträgen.",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/maker-faire/?termin=1801908000",
+  "categories": [
+   "workshop",
+   "jugendliche",
+   "erwachsene",
+   "familien",
+   "ab-14-jahren",
+   "vormittags",
+   "nachmittags",
+   "abends"
+  ],
+  "dates": [
+   {
+    "start_unix": 1801872000,
+    "end_unix": 1801872000,
+    "day": "06.",
+    "month": "Februar",
+    "time": "10:00 bis 18:00 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1801872000,
+   "end_unix": 1801872000,
+   "day": "06.",
+   "month": "Februar",
+   "time": "10:00 bis 18:00 Uhr"
+  }
+ },
+ {
+  "title": "Solarmobilbauwettbewerb",
+  "description": "Auf die Plätze, Licht an, los! Welches Solarmobil ist das schnellste? Genau das fechten Jugendliche auf einer Rennstrecke in der experimenta aus. Alle haben vorab ein identisches Bauset erhalten, dann waren Kreativität und Erfindergeist gefragt. Komm vorbei, schnuppere Wettbewerbsluft und erlebe spannende Rennen!",
+  "url": "https://www.experimenta.science/besuchen/veranstaltungskalender/solarmobilbauwettbewerb/?termin=1808568000",
+  "categories": [
+   "wettbewerbe",
+   "5-10-klasse",
+   "jugendliche",
+   "jugendforschungszentrum-2",
+   "nachmittags"
+  ],
+  "dates": [
+   {
+    "start_unix": 1808524800,
+    "end_unix": 1808524800,
+    "day": "24.",
+    "month": "April",
+    "time": "12:00 bis 17:30 Uhr"
+   }
+  ],
+  "first_date": {
+   "start_unix": 1808524800,
+   "end_unix": 1808524800,
+   "day": "24.",
+   "month": "April",
+   "time": "12:00 bis 17:30 Uhr"
+  }
+ }
+]

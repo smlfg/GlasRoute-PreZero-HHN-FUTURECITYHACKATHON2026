@@ -1,0 +1,22 @@
+[
+  {
+    "id": "aim",
+    "name": "aim (Akademie für Innovative Bildung und Management Heilbronn-Franken)",
+    "url": "https://www.aim-akademie.org/"
+  },
+  {
+    "id": "experimenta",
+    "name": "experimenta",
+    "url": "https://www.experimenta.science/"
+  },
+  {
+    "id": "haus-der-familie",
+    "name": "Haus der Familie Heilbronn",
+    "url": "https://hdf-hn.de/"
+  },
+  {
+    "id": "ipai-foundation",
+    "name": "IPAI Foundation",
+    "url": "https://ipai-foundation.ai/"
+  }
+]
