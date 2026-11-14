@@ -1,3 +1,8 @@
+> **Archiv — veraltet seit `127d502`.** Die operativen Hebel (materialabhängige Intervalle 80/70/60 %) wurden durch das Timer-Modell ersetzt (ein Container ist fällig, wenn der geschätzte Stand 80 % erreicht). Aktuelle Zahlen: [PITCH.md](../PITCH.md), [Pitch/NOTES.md](../../Pitch/NOTES.md).
+> Nicht als aktuellen Stand lesen. Übersicht: [docs/archiv](../archiv/README.md), Status: [STATUS.md](../STATUS.md).
+
+---
+
 # Pitch Executive Summary
 
 ## Problem

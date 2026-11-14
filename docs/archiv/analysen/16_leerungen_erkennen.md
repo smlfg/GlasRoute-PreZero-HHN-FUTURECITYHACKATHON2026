@@ -1,3 +1,8 @@
+> **Archiv — veraltet seit `127d502`.** Die Leerungserkennung über negative Sprünge war ein Behelf, solange kein Leerungsmodell existierte. Seit `127d502` rechnet die Pipeline measure-and-empty (Füllrate je Intervall, Timer je Container) und `scripts/backtest.py` prüft den Rhythmus direkt. Aktuelle Rhythmus-Zahlen: [BACKTEST.md](../BACKTEST.md).
+> Nicht als aktuellen Stand lesen. Übersicht: [docs/archiv](../../archiv/README.md), Status: [STATUS.md](../../STATUS.md).
+
+---
+
 # 16 – Mögliche Leerungen identifizieren
 
 > Von 10.363 Messübergängen sind 936 (9,0 %) negative Sprünge ≥ 40 pp mit Zielwert ≤ 40 % — arbeitsdefinitorisch Leerungen; sie treffen 712 der 1.338 Zeitreihen, der Median-Abstand zwischen zwei rekonstruierten Leerungen derselben Reihe beträgt 81 Tage.

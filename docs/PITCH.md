@@ -4,7 +4,7 @@ Dauer: ca. 3 Minuten · Demo-Datum: **15.04.2026**
 
 Alle Zahlen sind aus `data/raw/glass_fill_levels_anonymized_f.csv` und den Pipeline-Outputs
 (`data/processed/scored_2026-04-15.csv`, `route_2026-04-15.json`, `benchmark_results.csv`) reproduzierbar.
-Beleg: `Projek-Management/proof/A3_pitch_zahlen.txt` (Stand 14.11.2026, 18:30).
+Beleg: `Projek-Management/proof/A3_pitch_zahlen.txt` (Stand 14.11.2026, 19:40, `RESULT: ALL MATCH`).
 
 ---
 
@@ -96,7 +96,7 @@ Container, 11.000 kg Fahrzeuglast, Umwegfaktor 1,35, 25 km/h, 2 min Standzeit, 3
 1. **Ingest** – CSV einlesen, `overfull` kodieren (11.701 → 11.701 Zeilen, 449 IDs).
 2. **Features** – je Container und Material: letzter Füllstand, Füllrate, Overfull-Quote, Saisonfaktor.
 3. **Scoring** – gewichteter Kritikalitäts-Score → `critical`-Flag.
-4. **Routing** – Nearest-Neighbor über Haversine, ein Fahrzeug, Kapazitäts-, Schicht- und Umschlaggrenzen.
+4. **Routing** – Nearest-Neighbor über Haversine, Kapazitäts-, Schicht- und Umschlaggrenzen, mehrere Fahrzeuge je Tag.
 5. **Freigabe** – der Agent *schlägt* die Route vor, die Disponentin *gibt frei*.
 6. **Export** – erst nach Freigabe entsteht der ausführbare Tourenplan.
 
@@ -160,5 +160,5 @@ Daten hineingebaut wurde, sondern konfigurierbar ist.
 - Echte PreZero-Koordinaten fehlen → die Zuordnung der anonymisierten IDs bleibt simuliert
   (`osm_assigned` / `simulated_mapping`); Austauschpfad ist vorbereitet.
 - Die Route ist eine Luftlinien-Näherung (Umwegfaktor 1,35), kein Straßenrouting.
-- Kein Multi-Fahrzeug-Optimum: gezeigt wird, dass 2 Fahrzeuge nötig sind, und wie man sie verteilt.
+- Kein Flottenoptimum: gezeigt wird eine Tages-Tour mit 4 Fahrzeugen und 19 Runden, nicht das Optimum über die Woche.
 - Die Betriebsvariablen sind Annahmen, bis PreZero Zahlen liefert — das ist der Live-Hook, kein Mangel.

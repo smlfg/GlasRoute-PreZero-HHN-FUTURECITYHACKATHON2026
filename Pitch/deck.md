@@ -16,7 +16,7 @@
 | `Pitch/NOTES.md` | Stand **14.11.2026, 19:00 Uhr** — „Messen und Leeren"-Fix, Live-Hook |
 | `docs/BENCHMARK.md` | Fairer Vergleich (4 Tage × 3 Seeds), Effektberechnung |
 | `docs/analysen/36_hypothesen_mentor.md` | Mentor-Insights, Datenlücken, Fragen an Mentor |
-| `docs/ROADMAP.md` | UI-Roadmap (mehrbenutzer, Live, Standorte) |
+| `docs/TODO.md` | offene Aufgaben bis Freeze/Abgabe, ROADMAP-Abschnitt |
 | `Projek-Management/proof/A3_pitch_zahlen.txt` | Verifikation gegen Pipeline: **ALL MATCH** |
 | `data/raw/glass_fill_levels_anonymized_f.csv` | 11.701 Messungen, 449 IDs, 1.192 `overfull` |
 | `data/processed/route_2026-04-15.json` | Tages-Tour: 25 Stopps, 125,21 km, 2 Fahrzeuge, 7 Runden, 10,51 h, 63,58 t |
@@ -152,7 +152,7 @@ Aug     2,8 %
 
 ### Quellen / Zahlenstand
 
-- `docs/PITCH_EXECUTIVE_SUMMARY.md`, `docs/analysen/21_prognosemodell.md`, `docs/analysen/33_geschaeftliche_kennzahlen.md`, `docs/analysen/06_materialvergleich.md`.
+- `docs/archiv/PITCH_EXECUTIVE_SUMMARY.md`, `docs/analysen/21_prognosemodell.md`, `docs/analysen/33_geschaeftliche_kennzahlen.md`, `docs/analysen/06_materialvergleich.md`.
 - Zahlen: **11.701 ✓**, **1.338 ✓**, **66,4 % ✓**, **14,7 % ✓**, **10,2 % ✓**, **21,0 ✓**, **66,3 % ✓**.
 
 ---
@@ -267,7 +267,7 @@ prezero-route approve --by "Disponentin (Heilbronn)"
 
 ### Quellen / Zahlenstand
 
-- `docs/PITCH.md` (§5, „Offene Punkte"), `docs/GEO_DATENQUELLEN.md`, `README.md` („Geo coordinates / PreZero swap").
+- `docs/PITCH.md` (§5, „Offene Punkte"), `docs/archiv/GEO_DATENQUELLEN.md`, `README.md` („Geo coordinates / PreZero swap").
 - Simulierte Zuordnung: `osm_assigned` / `simulated_mapping` ✓; Swap-Pfad ✓.
 
 ---
@@ -316,7 +316,7 @@ prezero-route approve --by "Disponentin (Heilbronn)"
 
 ### Quellen / Zahlenstand
 
-- `docs/ROADMAP.md`, `docs/UI_PLAN.md`, `docs/analysen/12_ferien_feiertage.md`, `docs/analysen/13_nachweihnachtsspitze.md`.
+- `docs/TODO.md`, `docs/UI_PLAN.md`, `docs/analysen/12_ferien_feiertage.md`, `docs/analysen/13_nachweihnachtsspitze.md`.
 
 ---
 

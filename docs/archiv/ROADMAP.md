@@ -1,3 +1,8 @@
+> **Archiv — veraltet seit `1577c74`.** Inhalt ist in [TODO.md](../TODO.md) übergegangen (Abschnitt „ROADMAP — nicht jetzt“).
+> Nicht als aktuellen Stand lesen. Übersicht: [docs/archiv](../archiv/README.md), Status: [STATUS.md](../STATUS.md).
+
+---
+
 # GlasRoute UI Roadmap
 
 Diese Punkte sind bewusst nicht Teil des minimalen Feedback-Loops:

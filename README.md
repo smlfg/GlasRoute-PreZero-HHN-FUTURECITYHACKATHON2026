@@ -15,7 +15,7 @@ A CLI tool that:
 1. Ingests fill-level CSV data.
 2. Analyzes patterns (material, season, overfull frequency).
 3. Scores container criticality for a target day.
-4. Builds a capacity-constrained route plan (Haversine; the demo date needs 2 vehicles in 5 rounds).
+4. Builds a capacity-constrained route plan (Haversine; the 2026-04-15 demo tour needs 4 vehicles in 19 rounds).
 5. Extends it with a weekly fill forecast.
 6. Presents the route for dispatcher approval (Human-Agent Interface).
 
@@ -133,17 +133,21 @@ df = load_locations()  # reads data/external/locations.csv by default
 
 ## Docs
 
+Start here: **`docs/STATUS.md`** (one page: what works, pitch numbers, what is simulated, what is open).
+
+- `docs/INDEX.md` – one line per document, current or archived
+- `docs/STATUS.md` – current state, pitch numbers, simulated parts, open items
+- `docs/TODO.md` – open tasks until feature freeze / submission, with timeboxes
+- `docs/STAKEHOLDER.md` – the six fixed PreZero rules and where each is implemented
 - `docs/ANFORDERUNGEN.md` – challenge requirements
 - `docs/ARCHITEKTUR.md` – technical architecture and geo swap path
-- `docs/GEO_DATENQUELLEN.md` – checked open-data sources, limits, licenses/attribution
-- `docs/INDEX.md` – index of the 10 data analyses (`docs/analysen/`)
 - `docs/PITCH.md` – Sunday pitch structure with verified figures
-- `docs/PITCH_EXECUTIVE_SUMMARY.md` – one-page summary of the data findings
-- `docs/STATUS.md` – current state, pitch numbers, next steps
 - `docs/UI_PLAN.md` – plan for the local web UI
+- `docs/analysen/INDEX.md` – index of the 36 data analyses
 - `Pitch/NOTES.md` – stage notes, live-demo script and the questions for PreZero
 - `PLAN.md` – hackathon plan with checkpoints
-- `AGENTS.md` – scope, data-truth rules and agent contract for this repo
+- `AGENTS.md` – scope, data-truth rules, one-writer rule and agent contract
+- `docs/archiv/` – outdated documents with the commit that superseded them
 
 ## Tests
 

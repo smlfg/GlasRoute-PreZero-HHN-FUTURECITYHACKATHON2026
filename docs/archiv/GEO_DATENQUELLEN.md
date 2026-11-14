@@ -1,3 +1,8 @@
+> **Archiv — veraltet seit `d12331f`.** Die Zahlen „126 reale Standorte / 323 Platzhalter“ gelten nicht mehr: seit `d12331f` liegen alle 449 IDs auf echten OSM-Punkten mit `source=osm_assigned` / `confidence=simulated_mapping`. Aktueller Geo-Vertrag: [README](../README.md#geo-coordinates--prezero-swap) und [ARCHITEKTUR.md](../ARCHITEKTUR.md).
+> Nicht als aktuellen Stand lesen. Übersicht: [docs/archiv](../archiv/README.md), Status: [STATUS.md](../STATUS.md).
+
+---
+
 # Geo-Datenquellen – Glascontainer Heilbronn
 
 Stand: 2026-11-14, 15:40 Uhr. Ziel: reale, materialbeschriebene Glascontainer-Koordinaten für 449

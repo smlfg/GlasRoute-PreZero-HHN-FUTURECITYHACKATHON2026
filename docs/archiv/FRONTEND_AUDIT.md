@@ -1,3 +1,8 @@
+> **Archiv — veraltet seit `1353f28`.** Beschreibt die 4-Tab-Oberfläche und den gewichteten Score-Faktor. Die Oberfläche hat heute 9 Tabs und ein Timer-Modell; die Sprachregeln stehen in [UI_SPRACHE.md](../UI_SPRACHE.md).
+> Nicht als aktuellen Stand lesen. Übersicht: [docs/archiv](../archiv/README.md), Status: [STATUS.md](../STATUS.md).
+
+---
+
 # Frontend-Audit: Backend vs. Website
 
 Stand: Sa 14.11.2026, ca. 17:50 · Pitch: So 15.11.2026, 13:00 · Nur Audit, kein Code geändert.

@@ -1,75 +1,55 @@
-# Index der Analysen
+# Dokumenten-Index
 
-## 1. Risiko & Priorisierung (01–05)
+Eine Zeile pro Dokument. **Wer ein Dokument anlegt, verschiebt oder für veraltet erklärt, ändert
+diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 
-| Nr | Titel | Kernaussage | Wichtigste Kennzahl | Profil |
-|---:|---|---|---|---|
-| 01 | [Überfüllungsrisiken erkennen](analysen/01_ueberfuellungsrisiko.md) | Das Überfüllungsrisiko konzentriert sich auf Weißglas und die Monate Januar bis Mai. | 44,7 % ≥80 %; 10,2 % overfull | Modell |
-| 02 | [Container priorisieren](analysen/02_priorisierung.md) | Ein transparenter Score priorisiert 19 Serien über 90 Punkte. | 19 Serien >90 Punkte | Modell |
-| 03 | [Leerungsintervalle optimieren](analysen/03_leerungsintervalle.md) | Aus beobachteten Steigraten lassen sich kürzere und längere Intervalle ableiten. | 399 kürzere, 546 längere Intervalle | Modell |
-| 04 | [Füllgeschwindigkeit](analysen/04_fuellgeschwindigkeit.md) | Die scheinbare Füllrate sinkt stark mit dem Messabstand. | Median 0,74 pp/Tag | Daten |
-| 05 | [Zeit bis zum erwarteten Überlauf](analysen/05_zeit_bis_ueberlauf.md) | Ein Teil der Reihen ist bereits kritisch oder erreicht 80 % kurzfristig. | 462 von 1.338 Reihen ≥80 % | Modell |
+## Einstieg (in dieser Reihenfolge lesen)
 
-## 2. Material & Standort (06–10)
+| Dokument | Zweck | Stand |
+|---|---|---|
+| [`STATUS.md`](STATUS.md) | 1 Seite: was läuft (mit Befehl), Pitch-Zahlen, was simuliert ist, was offen ist | **aktuell** |
+| [`TODO.md`](TODO.md) | Aufgaben bis Feature-Freeze (So 11:00) und Abgabe (So 13:00), mit Timebox | **aktuell** |
+| [`STAKEHOLDER.md`](STAKEHOLDER.md) | Die sechs fixierten PreZero-/Mentor-Regeln und wo jede im Code umgesetzt ist | **aktuell** |
+| [`../README.md`](../README.md) | Installation, Demo-Ablauf, alle CLI-Befehle, Geo-Austauschpfad | **aktuell** |
 
-| Nr | Titel | Kernaussage | Wichtigste Kennzahl | Profil |
-|---:|---|---|---|---|
-| 06 | [Materialvergleich](analysen/06_materialvergleich.md) | Die Rangfolge der Auslastung ist standortübergreifend Braun < Grün < Weiß. | Weiß liegt an 429 von 441 Standorten über Braun | Daten |
-| 07 | [Materialabhängige Schwellenwerte](analysen/07_material_schwellenwerte.md) | Schwellenwerte sollten materialabhängig gesetzt werden. | Weiß 80 %, Grün 70 %, Braun 60 % | Modell |
-| 08 | [Standortvergleich](analysen/08_standortvergleich.md) | Material erklärt mehr Varianz als der Standort, dessen Rangfolge zudem instabil ist. | Material 28,7 %, Standort 8,6 % | Daten |
-| 09 | [Standorte clustern](analysen/09_standort_cluster.md) | Die vier Cluster trennen nur schwach; das Verhalten liegt überwiegend auf einem Kontinuum. | Silhouette 0,19 | Modell |
-| 10 | [Standortkopplung](analysen/10_standort_kopplung.md) | Die drei Materialien eines Standorts bewegen sich an gemeinsamen Messtagen häufig gemeinsam. | Median r = 0,66 | Daten |
+## Fachliche Dokumente
 
-## 3. Saison & Zeit (11–18)
+| Dokument | Zweck | Stand |
+|---|---|---|
+| [`PITCH.md`](PITCH.md) | Pitch-Struktur (3 Min), belegte Zahlen, Demo-Ablauf, Betriebsvariablen als Live-Hook | **aktuell** |
+| [`ARCHITEKTUR.md`](ARCHITEKTUR.md) | Module, Datenfluss, Verantwortlichkeiten, Geo-Swap | **aktuell** |
+| [`DATENMODELL.md`](DATENMODELL.md) | Dataclasses in `src/prezero/model.py` (Standort, Container, Messung, Fahrzeug) | **aktuell** |
+| [`BACKTEST.md`](BACKTEST.md) | Ist der Füllstand vorhersagbar? Leerungsrhythmus je Glasfarbe | **generiert** von `scripts/backtest.py` |
+| [`BENCHMARK.md`](BENCHMARK.md) | Fairer Vergleich B0–B4 über 4 Stichtage × 3 Seeds | **generiert** von `scripts/benchmark.py` |
+| [`UI_PLAN.md`](UI_PLAN.md) | Soll-Zustand der Website: Datums-first, Rollen, Ansichtsgrenzen | **aktuell** (in Umsetzung) |
+| [`UI_SPRACHE.md`](UI_SPRACHE.md) | Nielsen #2: keine UUIDs, kein snake_case, keine englischen Enums in sichtbarem Text | **aktuell** |
+| [`ANFORDERUNGEN.md`](ANFORDERUNGEN.md) | Anforderungen aus der Challenge-Readme (Quelle, nicht verhandelbar) | **aktuell** |
+| [`analysen/INDEX.md`](analysen/INDEX.md) | 36 Datenanalysen: je eine Kennzahl und Kernaussage | **aktuell** |
+| [`analysen/01…36`](analysen/) | Datengrundlage der Pitch-Aussagen (Ausnahmen sind dort markiert) | **aktuell**, außer als „archiviert“ markiert |
+| [`copilot_visual_explainer.html`](copilot_visual_explainer.html) | Interaktiver Erklärartefakt zum Copilot-Tab | **aktuell**, kein Abgabebestandteil |
 
-| Nr | Titel | Kernaussage | Wichtigste Kennzahl | Profil |
-|---:|---|---|---|---|
-| 11 | [Saisonale Nachfrage](analysen/11_saisonalitaet.md) | Zwischen Juni und März liegt ein deutlicher, nicht durch Standortzusammensetzung erklärter Saisonabstand. | 53,7 % bis 85,2 %; 31,5 pp | Daten |
-| 12 | [Ferien- und Feiertagseffekte](analysen/12_ferien_feiertage.md) | Ein eigenständiger Ferieneffekt ist von Saison und Abdeckung nicht trennbar. | Abweichungen meist höchstens 7 pp | Daten |
-| 13 | [Nachweihnachts-Spitzen](analysen/13_nachweihnachtsspitze.md) | Die auffälligste Spitze liegt in der ersten Messrunde nach dem Jahreswechsel. | 59 von 112 overfull (52,7 %) | Daten |
-| 14 | [Sommer- und Urlaubsperioden](analysen/14_sommer_urlaub.md) | Eine pauschale Intervallverlängerung für die Sommerferien ist nicht belegt. | Nur 144 von 440 Reihen differenziert | Daten |
-| 15 | [Anomalien erkennen](analysen/15_anomalien.md) | Große Sprünge sind überwiegend Folge langer Beobachtungslücken. | 13,1 % der Übergänge | Modell |
-| 16 | [Mögliche Leerungen identifizieren](analysen/16_leerungen_erkennen.md) | Negative Sprünge können arbeitsdefinitorisch als mögliche Leerungen markiert werden. | 936 von 10.363 Übergängen | Modell |
-| 17 | [Leerungszyklen rekonstruieren](analysen/17_leerungszyklen.md) | Vollständige Zyklen sind erkennbar, aber nur wenige Reihen sind regelmäßig. | Median 46 Tage; 17,9 % regelmäßig | Modell |
-| 18 | [Unregelmäßige Messungen erkennen](analysen/18_messluecken.md) | Ein Drittel der Reihen enthält Lücken über 90 Tage und ist für Prognosen eingeschränkt. | 458 Reihen mit >90-Tage-Lücke | Daten |
+## Projekt-Steuerung
 
-## 4. Qualität & Prognose (19–22)
+| Dokument | Zweck | Stand |
+|---|---|---|
+| [`../AGENTS.md`](../AGENTS.md) | Arbeitsvertrag: Ein-Schreiber-Regel, Datei-Ownership, Commit-Regeln, Scope | **aktuell** |
+| [`../Pitch/NOTES.md`](../Pitch/NOTES.md) | Bühnennotizen, Live-Demo-Skript, Fragen an PreZero, Zahlenstand | **aktuell** |
+| [`../Pitch/deck.md`](../Pitch/deck.md) | 10 Folien als Markdown-Quelle (3:30 Min) | **aktuell** |
+| [`../Projek-Management/proof/A3_pitch_zahlen.txt`](../Projek-Management/proof/A3_pitch_zahlen.txt) | Beleg: jede Pitch-Zahl gegen die Pipeline geprüft (`RESULT: ALL MATCH`) | **aktuell** |
+| [`../Projek-Management/proof/`](../Projek-Management/proof/) | A1 Freigabe-Verhalten, A2 Beleg, A4 README-Demo, A5 Tests | **aktuell** |
+| [`../PLAN.md`](../PLAN.md) | Hackathon-Plan mit Prüfkriterien je Stufe | **historisch** (14.11.) |
+| [`../PLAN_VALIDATION_REPORT.md`](../PLAN_VALIDATION_REPORT.md) | Unabhängige Freigabe des Plans | **historisch** (14.11.) |
+| [`../UPSTREAM_SEARCH.md`](../UPSTREAM_SEARCH.md) | Upstream-Recherche vor Eigenbau (Geo-Quellen) | **historisch** (14.11.) |
+| [`../Projek-Management/plan-council/`](../Projek-Management/plan-council/) | Bewertung des Plans durch den Plan-Council | **historisch** |
 
-| Nr | Titel | Kernaussage | Wichtigste Kennzahl | Profil |
-|---:|---|---|---|---|
-| 19 | [Datenqualität bewerten](analysen/19_datenqualitaet.md) | Die CSV ist strukturell sauber, aber inhaltlich dünn und kategorial. | 10,2 % overfull ohne Höhenangabe | Daten |
-| 20 | [Messabdeckung bewerten](analysen/20_messabdeckung.md) | Häufiger gemessene Standorte haben im Mittel höhere Füllstände. | Median 24 Messungen/Standort; r = 0,39 | Daten |
-| 21 | [Prognosemodell für Füllstände](analysen/21_prognosemodell.md) | Der Material-Median ist die beste getestete einfache Baseline. | MAE 21,0 pp; 66,3 % innerhalb ±20 pp | Modell |
-| 22 | [Überlaufwahrscheinlichkeit prognostizieren](analysen/22_ueberlaufwahrscheinlichkeit.md) | Ein materialabhängiges Bucket-Modell verbessert die Basisrate. | Brier 0,196 statt 0,249 | Modell |
+## Archiv (veraltet, nur Historie)
 
-## 5. Betrieb & Strategie (23–36)
-
-| Nr | Titel | Kernaussage | Wichtigste Kennzahl | Profil |
-|---:|---|---|---|---|
-| 23 | [Dynamische Leerungsempfehlungen](analysen/23_dynamische_empfehlungen.md) | Eine tagesaktuelle Liste ist möglich, bleibt aber saisonal volatil. | Top-20-Überlappung März/Juli: 10–25 % | Konzept |
-| 24 | [Routenplanung vorbereiten](analysen/24_routenplanung_vorbereitung.md) | Die CSV liefert eine priorisierte Stoppliste, aber keine produktionsfähige Route. | 4 zentrale Routendaten fehlen | Konzept |
-| 25 | [Standortdaten anreichern](analysen/25_standort_anreicherung.md) | Für die Erklärung von Standortunterschieden fehlen Stammdaten und Kontext. | Anonyme Location_id statt Adresse | Konzept |
-| 26 | [Lokale Einflussfaktoren untersuchen](analysen/26_lokale_einflussfaktoren.md) | Gemeinsames Verhalten ist nur ein Indiz für lokale Treiber. | Median r = 0,66 | Konzept |
-| 27 | [Kapazitätsplanung unterstützen](analysen/27_kapazitaetsplanung.md) | Zusätzliche Kapazität ist vor allem bei Weißglas dringlich. | 61,3 % aller overfull-Messungen | Modell |
-| 28 | [Containergößen oder Aufstellorte bewerten](analysen/28_containergroessen_aufstellorte.md) | Die große Weiß-Braun-Differenz spricht für materialabhängige Behältergrößen. | 359 von 441 Standorten >30 pp Differenz | Daten |
-| 29 | [Servicequalität messen](analysen/29_servicequalitaet.md) | Die beobachtete Servicequalität schwankt stark über das Jahr. | März 37,6 % vs. Juni 5,2 % overfull | Konzept |
-| 30 | [Kosten und Ressourcen planen](analysen/30_kosten_ressourcen.md) | Eine bedarfsgesteuerte Planung kann die kritischen Anfahrten fokussieren. | Median 13, Spitze 40 Standorte/Tag | Konzept |
-| 31 | [Einsparpotenziale finden](analysen/31_einsparpotenziale.md) | Einsparungen liegen eher in Bündelung und saisonaler Drosselung als in dauerhaft leeren Standorten. | 9 von 449 nie kritisch | Konzept |
-| 32 | [Pilotgebiete vergleichen](analysen/32_pilotgebiete.md) | Vier Gruppen sind unterscheidbar, aber nicht scharf getrennt. | 119/107/105/118 Standorte | Modell |
-| 33 | [Geschäftliche Kennzahlen erzeugen](analysen/33_geschaeftliche_kennzahlen.md) | Ein kompaktes KPI-Set kann direkt aus der CSV gebildet werden. | Mittelwert 66,0 %; 10,2 % overfull | Konzept |
-| 34 | [Dashboard für Disposition bauen](analysen/34_dashboard.md) | Die CSV trägt Ranglisten, Zeitreihen, Materialvergleiche und Warnlisten. | 5 Dashboard-Bausteine | Konzept |
-| 35 | [Grundlage für einen digitalen Zwilling](analysen/35_digitaler_zwilling.md) | Die CSV bildet Standort, Material, Zeit und Füllstand ab, aber nicht den Betriebskontext. | 4 von 5 Kerndimensionen fehlen | Konzept |
-| 36 | [Hypothesen für den Mentor](analysen/36_hypothesen_mentor.md) | Die CSV zeigt das Verhalten, nicht dessen Ursachen. | 5 zentrale Datenlücken | Konzept |
-
-## Empfohlene Lesereihenfolge für den Pitch
-
-1. [01 – Überfüllungsrisiken erkennen](analysen/01_ueberfuellungsrisiko.md)
-2. [06 – Materialvergleich](analysen/06_materialvergleich.md)
-3. [11 – Saisonale Nachfrage](analysen/11_saisonalitaet.md)
-4. [22 – Überlaufwahrscheinlichkeit prognostizieren](analysen/22_ueberlaufwahrscheinlichkeit.md)
-5. [23 – Dynamische Leerungsempfehlungen](analysen/23_dynamische_empfehlungen.md)
-
-## Inkonsistenzen
-
-- **Monatsmittel:** Die Gesamtanalyse weist für März 84,6 % und Juni 52,4 % aus. Analyse 11 nennt 85,2 % bzw. 53,7 %, Analyse 14 nennt für Juni ebenfalls 53,7 %. Die Abweichungen betragen 0,6 bzw. 1,3 Prozentpunkte; die zugrunde liegende Teilmenge oder Filterung ist in der Gesamtanalyse nicht ausgewiesen.
-- **Keine weiteren festgestellten Abweichungen** bei den gemeinsam ausgewiesenen Gesamtwerten: 11.701 Messungen, 449 Standorte, 1.338 Reihen, Materialmittel, Anteile ≥80 %, overfull-Anteil sowie die KPIs in Analyse 33 stimmen mit der Gesamtanalyse überein.
+| Dokument | Zweck | Stand |
+|---|---|---|
+| [`archiv/README.md`](archiv/README.md) | Tabelle: was ist veraltet, seit welchem Commit, und was gilt stattdessen | **Archiv** |
+| [`archiv/GEO_DATENQUELLEN.md`](archiv/GEO_DATENQUELLEN.md) | OSM/Overpass-Quellen, Lizenz, „126 reale / 323 Platzhalter“ | veraltet seit `d12331f` |
+| [`archiv/PITCH_EXECUTIVE_SUMMARY.md`](archiv/PITCH_EXECUTIVE_SUMMARY.md) | 1-Seiter Datenbefunde mit materialabhängigen Intervallen | veraltet seit `127d502` |
+| [`archiv/FRONTEND_AUDIT.md`](archiv/FRONTEND_AUDIT.md) | Backend-vs-Website-Audit der 4-Tab-Oberfläche | veraltet seit `1353f28` |
+| [`archiv/ROADMAP.md`](archiv/ROADMAP.md) | UI-Roadmap | veraltet seit `1577c74` (→ `TODO.md`) |
+| [`archiv/analysen/16_leerungen_erkennen.md`](archiv/analysen/16_leerungen_erkennen.md) | Leerungen über negative Sprünge erkennen | veraltet seit `127d502` |
+| [`archiv/ui_konzept/`](archiv/ui_konzept/) | Skizze, Blueprint, 03_ui_mockup (67,92 km / −74 %), UML, Integrationsplan | veraltet seit `2005f7f` |

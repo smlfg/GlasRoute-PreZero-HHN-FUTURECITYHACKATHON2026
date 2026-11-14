@@ -1,3 +1,8 @@
+> **Archiv — veraltet seit `2005f7f`.** Konzeptphase (Skizze, Blueprint, Mockup, UML, Integrationsplan). Das Mockup zeigt 67,92 km / −74 % und `osm_heuristic` — alles vor Timer-Modell, Benchmark und What-if.
+> Nicht als aktuellen Stand lesen. Übersicht: [docs/archiv](../README.md), Status: [STATUS.md](../../STATUS.md).
+
+---
+
 # docs/ui_konzept: veraltet
 
 Stand: 14.11.2026. Alle Dateien in diesem Ordner stammen aus der Konzeptphase und zeigen

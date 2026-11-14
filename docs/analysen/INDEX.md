@@ -1,4 +1,8 @@
-# Index der Analysen
+# Index der Analysen (36 Datenanalysen, 14.11.2026)
+
+Diese 36 Analysen sind die Datengrundlage der Pitch-Aussagen. Einzelne Analysen können überholt sein, wenn ein späteres Modell sie ersetzt hat (siehe Spalte Profil und `docs/archiv/`).
+
+**Dokumentenübersicht:** [../INDEX.md](../INDEX.md) · **Status:** [../STATUS.md](../STATUS.md)
 
 ## 1. Risiko & Priorisierung (01–05)
 
@@ -29,7 +33,7 @@
 | 13 | [Nachweihnachts-Spitzen](13_nachweihnachtsspitze.md) | Die auffälligste Spitze liegt in der ersten Messrunde nach dem Jahreswechsel. | 59 von 112 overfull (52,7 %) | Daten |
 | 14 | [Sommer- und Urlaubsperioden](14_sommer_urlaub.md) | Eine pauschale Intervallverlängerung für die Sommerferien ist nicht belegt. | Nur 144 von 440 Reihen differenziert | Daten |
 | 15 | [Anomalien erkennen](15_anomalien.md) | Große Sprünge sind überwiegend Folge langer Beobachtungslücken. | 13,1 % der Übergänge | Modell |
-| 16 | [Mögliche Leerungen identifizieren](16_leerungen_erkennen.md) | Negative Sprünge können arbeitsdefinitorisch als mögliche Leerungen markiert werden. | 936 von 10.363 Übergängen | Modell |
+| 16 | Mögliche Leerungen identifizieren *(archiviert seit `127d502`)* | Negative Sprünge als Leerungsbehelf — ersetzt durch das Timer-Modell. | 936 von 10.363 Übergängen | Modell |
 | 17 | [Leerungszyklen rekonstruieren](17_leerungszyklen.md) | Vollständige Zyklen sind erkennbar, aber nur wenige Reihen sind regelmäßig. | Median 46 Tage; 17,9 % regelmäßig | Modell |
 | 18 | [Unregelmäßige Messungen erkennen](18_messluecken.md) | Ein Drittel der Reihen enthält Lücken über 90 Tage und ist für Prognosen eingeschränkt. | 458 Reihen mit >90-Tage-Lücke | Daten |
 

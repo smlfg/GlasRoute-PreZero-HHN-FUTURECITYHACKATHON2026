@@ -114,4 +114,4 @@ Alle betrieblichen Annahmen liegen gebündelt in `OperationalConfig` (`src/preze
 
 1. Echte Koordinaten als `data/external/locations_real.csv` ablegen (`Location_id,lat,lon`, optional `source,confidence,match_reason`).
 2. Pipeline ausführen (`prezero-route run --date 2026-04-15`) bzw. `python scripts/refresh_locations.py --real data/external/locations_real.csv`.
-3. `prezero.locations` übernimmt alle realen Koordinaten automatisch vorrangig vor den simulierten/heuristischen OSM-Standorten (`docs/GEO_DATENQUELLEN.md`).
+3. `prezero.locations` übernimmt alle realen Koordinaten automatisch vorrangig vor den simulierten/heuristischen OSM-Standorten (Details in `docs/archiv/GEO_DATENQUELLEN.md`, Zahlen dort veraltet).

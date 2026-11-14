@@ -8,8 +8,9 @@ ergänzt sie um die Projektgrenze.
 Prototyp für die **PreZero-Challenge**: aus Füllstandsdaten von Glascontainern in Heilbronn
 eine priorisierte Leerungsroute für ein Fahrzeug erzeugen. Abgabe So 13:00.
 
-Einstieg: `README.md` · Plan: `PLAN.md` · Anforderungen: `docs/ANFORDERUNGEN.md` ·
-Geo-Quellen: `docs/GEO_DATENQUELLEN.md` · Pitch: `docs/PITCH.md`
+Einstieg: [`docs/STATUS.md`](docs/STATUS.md) (1 Seite) · Übersicht: [`docs/INDEX.md`](docs/INDEX.md) ·
+Aufgaben: [`docs/TODO.md`](docs/TODO.md) · Regeln: [`docs/STAKEHOLDER.md`](docs/STAKEHOLDER.md) ·
+`README.md` · Pitch: `docs/PITCH.md` und `Pitch/NOTES.md`
 
 ## Titel zuerst, ID in Klammern
 
@@ -71,16 +72,45 @@ nicht umgekehrt.
 Prüfkriterien je Stufe stehen in `PLAN.md`. Eine Stufe gilt als fertig, wenn ihr Prüfkriterium
 erfüllt ist und ihr Output in `data/processed/` liegt.
 
-## Ein Schreiber zur Zeit
+## Ein Schreiber zur Zeit (verbindlich)
 
-Zwei Agenten haben bereits gleichzeitig in dieses Repo committet. **Ab jetzt schreibt nur einer
-zur Zeit.** Vor jedem Commit:
+Am 14.11. haben **drei** Agenten gleichzeitig in dieses Repo geschrieben: zwei Haupt-Sessions
+parallel, dazu ein dritter, der `ui.py` mitten in der Arbeit weiterschrieb. Ergebnis: ein
+Arbeitsbaum mit halbfertigen Änderungen aus fremder Hand, ein `NameError` aus veraltetem
+Bytecode und ein Commit, der fremde Arbeit bewusst liegen ließ.
 
-1. `git status` + `git log --oneline -3` — ist die Arbeit eines anderen drin?
-2. Bei Konflikt: warten, bis dessen Commit durch ist, dann neu bauen. Nicht überschreiben.
-3. Commit nur den eigenen Scope (`git add <eigene Pfade>`), nicht `git add -A`.
+**Regel: ein Agent, ein Bereich, ein Commit.** Vor der ersten Schreiboperation:
 
-Wer gerade schreibt, steht in `docs/STATUS.md` unter „Aktive Schreiber“.
+1. `git status` und `git log --oneline -3` lesen.
+2. `stat -f '%Sm %N' -t '%H:%M:%S' <deine Dateien>` — ist eine davon **jünger als 15 Minuten**,
+   arbeitet dort jemand. Dann **nicht** schreiben, sondern warten oder Samuel fragen.
+3. Nach dem Schreiben: `git status` erneut prüfen. Tauchen Dateien auf, die du nicht angefasst hast,
+   ist ein zweiter Schreiber aktiv — stehen bleiben, nicht committen, melden.
+
+### Wer welche Dateien besitzt
+
+| Rolle | Dateien | Darf nicht |
+|---|---|---|
+| **Pipeline** | `src/prezero/{ingest,locations,features,scoring,routing,model,forecast,approval}.py`, `scripts/` | `ui.py`, `docs/` |
+| **UI/Website** | `src/prezero/{ui,viz,copilot,tour,heatmap}.py`, `data/external/street_lookup.json` | Pipeline-Module, `docs/` |
+| **CLI** | `src/prezero/cli.py`, `pyproject.toml` | Fachlogik in den Modulen |
+| **Docs/Pitch** | `docs/**`, `Pitch/**`, `README.md`, `AGENTS.md` | jeder Code |
+| **Tests** | `tests/` — Owner ist, wer das getestete Modul ändert | fremde Tests umschreiben, damit sie grün werden |
+
+Ein Wechsel der Rolle ist erlaubt, aber nur nach Schritt 1–3 und nur für einen Commit.
+Während des Freeze (So 11:00) schreibt **nur noch Docs/Pitch**.
+
+### Commit-Regeln
+
+- **Nur eigene Pfade stagen:** `git add <pfad> …`, **nie** `git add -A` oder `git add .`.
+- Fremde Änderungen im Baum werden **nicht** mitcommittet, **nicht** gestasht, **nicht** verworfen —
+  liegen lassen und im Bericht nennen.
+- Ein Commit = ein Thema. Betreff `feat|fix|docs|chore|test(scope): …`, Körper nennt Beleg
+  (Tests, `A3`) und, falls es fremde Vorarbeit war, deren Herkunft.
+- Kein `--amend` auf fremden Commits, kein `push --force`, kein `rebase` auf geteilten Branches.
+- Push erst, wenn `pytest -q` grün **und** `Projek-Management/proof/verify_pitch_numbers.py`
+  `RESULT: ALL MATCH` liefert.
+- Neue oder verschobene Dokumente: eine Zeile in `docs/INDEX.md` im selben Commit.
 
 ## Agenten
 
