@@ -950,6 +950,91 @@ def _build_location_banner_html(locations_df: pd.DataFrame) -> str:
     )
 
 
+def _fmt_de(value: Any, digits: int = 1) -> str:
+    if value is None:
+        return "-"
+    return f"{float(value):,.{digits}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _build_variables_section_html(route_data: Mapping[str, Any] | str | Path) -> str:
+    """Spec 3 (configurable variables) and spec 4 (fleet deployment), read from the route's assumptions."""
+    from prezero.routing import OperationalConfig, density_for
+
+    route = (
+        json.loads(Path(route_data).read_text(encoding="utf-8"))
+        if isinstance(route_data, (str, Path))
+        else dict(route_data)
+    )
+    raw = route.get("assumptions") if isinstance(route.get("assumptions"), Mapping) else {}
+    try:
+        cfg = OperationalConfig.from_dict(raw) if raw else OperationalConfig()
+    except (TypeError, ValueError):
+        cfg = OperationalConfig()
+
+    def coord(pair: tuple[float, float]) -> str:
+        return f"{pair[0]:.4f} / {pair[1]:.4f}"
+
+    dens = " · ".join(
+        f"{label} {_fmt_de(density_for(cfg, key), 0)}"
+        for key, label in (("white", "weiß"), ("green", "grün"), ("brown", "braun"))
+    )
+    rows = [
+        ("Abfallstrom &amp; Dichte", "density_kg_per_m3, density_white/green/brown_kg_per_m3",
+         f"{dens} kg/m³", "ja: Masse = Behältervolumen &times; Füllstand jetzt &times; Dichte der Glasfarbe"),
+        ("Containerspezifikation", "container_volume_m3",
+         f"{_fmt_de(cfg.container_volume_m3)} m³", "ja, ein Containertyp für alle (Typen je Standort: offen)"),
+        ("Fahrzeug: Gewicht", "vehicle_max_weight_kg",
+         f"{_fmt_de(cfg.vehicle_max_weight_kg / 1000)} t", "ja: Runde endet am Gewichtslimit &rarr; Entladen"),
+        ("Fahrzeug: Volumen", "vehicle_max_volume_m3",
+         f"{_fmt_de(cfg.vehicle_max_volume_m3)} m³", "ja: Runde endet am Volumenlimit &rarr; Entladen"),
+        ("Fahrzeug: Tempo", "avg_speed_kmh", f"{_fmt_de(cfg.avg_speed_kmh, 0)} km/h", "ja: Fahrzeit"),
+        ("Abstände zwischen Punkten", "road_detour_factor",
+         f"Luftlinie &times; {_fmt_de(cfg.road_detour_factor, 2)}", "ja (Näherung, kein Straßennetz)"),
+        ("Nähe Entsorgungsdepot", "disposal_depot, unload_time_min",
+         f"{coord(cfg.disposal_depot)} · {_fmt_de(cfg.unload_time_min, 0)} min Entladen",
+         "ja: Fahrt zum Depot + Entladezeit je Runde"),
+        ("Betriebshof &rarr; erster/letzter Stopp", "yard_depot",
+         coord(cfg.yard_depot), "ja: jede Fahrzeugschicht startet und endet hier"),
+        ("Schichtgrenze", "max_shift_hours",
+         f"{_fmt_de(cfg.max_shift_hours)} h je Fahrzeug", "ja: Fahrzeug fährt heim, nächstes übernimmt"),
+        ("Servicezeit am Container", "stop_setup_min, lift_time_per_bin_min",
+         f"{_fmt_de(cfg.stop_setup_min, 0)} min Anfahrt + {_fmt_de(cfg.lift_time_per_bin_min, 0)} min je Behälter",
+         "ja: zählt zur Schicht"),
+    ]
+    body = "".join(
+        f"<tr><td>{a}</td><td><code>{html.escape(b)}</code></td><td>{c}</td><td>{d}</td></tr>"
+        for a, b, c, d in rows
+    )
+    fleet = (
+        f"<b>{route.get('vehicles_needed', '-')} Fahrzeug(e)</b> für {route.get('num_stops', '-')} Standorte: "
+        f"{route.get('rounds', '-')} Runden, {_fmt_de(route.get('planned_km'), 2)} km, "
+        f"{_fmt_de(route.get('t_collected'), 2)} t, längste Schicht "
+        f"{_fmt_de(route.get('max_vehicle_shift_hours'), 2)} h (Limit {_fmt_de(cfg.max_shift_hours)} h)."
+    )
+    return f"""
+      <div class="section-head">
+        <h2>Variablen (Spec 3) und Flotteneinsatz (Spec 4)</h2>
+        <p class="muted">Alle Werte sind <b>Annahmen, von PreZero zu ersetzen</b>. Sie stehen in <code>prezero_config.json</code>;
+        <code>prezero-route run --date 2026-04-15 --config prezero_config.json</code> rechnet alles neu, ohne Codeänderung.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Spec 3</th><th>Variable</th><th>Wert heute</th><th>Wirkt im Routing?</th></tr></thead>
+          <tbody>{body}</tbody>
+        </table>
+      </div>
+      <div class="card"><div class="label">Spec 4: Flotteneinsatz, automatisch berechnet</div>
+        <div class="sub" style="font-size:14px;color:inherit">{fleet} Ein Fahrzeug reicht nicht, sobald Gewicht, Volumen
+        oder Schichtzeit überschritten werden; dann plant das System das nächste Fahrzeug.</div></div>
+      <h3>Noch nicht abgebildet</h3>
+      <ul class="muted">
+        <li>Mehrere Fahrzeugtypen und eine Obergrenze der Flotte (heute: ein Typ, Flotte unbegrenzt).</li>
+        <li>Verschiedene Containertypen je Standort (heute: alle {_fmt_de(cfg.container_volume_m3)} m³).</li>
+        <li>Echtes Straßennetz (heute: Luftlinie &times; Umwegfaktor) und echte Standorte (heute selbst gescrapt).</li>
+      </ul>
+    """
+
+
 def _build_heatmap_section_html(heatmap_src: str | None) -> str:
     head = """
       <div class="section-head">
@@ -1341,6 +1426,7 @@ def build_ui(
     heatmap_section_html = _build_heatmap_section_html(heatmap_src)
     location_banner_html = _build_location_banner_html(locations_df)
     benchmark_section_html = _build_benchmark_section_html(compute_benchmark_summary(benchmark_rows, date))
+    variables_section_html = _build_variables_section_html(route_data)
     data_section_html = _build_data_section_html(measurement_analysis)
 
     proposal_json = _safe_json_for_html(route_bundle["proposal"])
@@ -1598,9 +1684,10 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-forecast">2. Forecast-Timeline</button>
     <button type="button" class="tab-btn" data-target="view-heatmap">3. Heatmap</button>
     <button type="button" class="tab-btn" data-target="view-route">4. Route &amp; Freigabe</button>
-    <button type="button" class="tab-btn" data-target="view-benchmark">5. Fairer Vergleich</button>
-    <button type="button" class="tab-btn" data-target="view-datacheck">6. Datencheck</button>
-    <button type="button" class="tab-btn" data-target="view-upload">7. Upload</button>
+    <button type="button" class="tab-btn" data-target="view-variables">5. Variablen</button>
+    <button type="button" class="tab-btn" data-target="view-benchmark">6. Fairer Vergleich</button>
+    <button type="button" class="tab-btn" data-target="view-datacheck">7. Datencheck</button>
+    <button type="button" class="tab-btn" data-target="view-upload">8. Upload</button>
   </nav>
 
   <main>
@@ -1624,6 +1711,10 @@ def build_ui(
 
     <section id="view-route" class="view-panel">
       {route_section_html}
+    </section>
+
+    <section id="view-variables" class="view-panel">
+      {variables_section_html}
     </section>
 
     <section id="view-benchmark" class="view-panel">

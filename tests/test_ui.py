@@ -513,3 +513,24 @@ def test_build_ui_explains_measure_and_empty(tmp_path: Path) -> None:
     assert "schätzt den Füllstand und leert" in html
     assert "Füllstand jetzt (geschätzt)" in html
     assert "last_fill_level + avg_daily_increase" not in html  # old continuous-sensor formula
+
+
+def test_build_ui_has_variables_tab_for_spec_3_and_4(tmp_path: Path) -> None:
+    from prezero.routing import OperationalConfig
+
+    route = dict(_sample_route())
+    route["assumptions"] = OperationalConfig(density_green_kg_per_m3=450.0).to_dict()
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=route,
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    assert 'id="view-variables"' in html
+    for needle in ("vehicle_max_volume_m3", "road_detour_factor", "max_shift_hours", "disposal_depot", "yard_depot"):
+        assert needle in html
+    assert "grün 450" in html and "weiß 400" in html
+    assert "Flotteneinsatz" in html
