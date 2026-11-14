@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlasRoute UI Prototype — Sketch to Interactive Flow</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: translateY(14px) scale(0.95);
+      }
+      70% {
+        opacity: 1;
+        transform: translateY(-2px) scale(1.015);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .card-pop {
+      opacity: 0;
+      animation: popIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes wavePulse {
+      0%, 100% { transform: scaleY(0.35); }
+      50% { transform: scaleY(1); }
+    }
+    .wave-bar {
+      transform-origin: center;
+      animation: wavePulse 0.9s ease-in-out infinite;
+    }
+    @keyframes flowDash {
+      to { stroke-dashoffset: -24; }
+    }
+    .connector-active {
+      stroke-dasharray: 6 6;
+      animation: flowDash 1s linear infinite;
+    }
+  </style>
+  <style>
+    :root {
+      --background: #0b1120;
+      --content: #0f172a;
+      --card: #162033;
+      --sidebar: #111827;
+      --border: #334155;
+      --foreground: #f8fafc;
+      --muted-foreground: #94a3b8;
+      --placeholder: #64748b;
+      --primary: #2563eb;
+      --primary-foreground: #ffffff;
+      --secondary: #1e293b;
+      --secondary-foreground: #e2e8f0;
+      --accent: #334155;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 sm:p-6">
+  <div class="max-w-7xl mx-auto space-y-5">
+
+    <!-- Top Header & Stage Switcher -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)]">
+            GlasRoute UI Concept
+          </span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)]">
+            From reMarkable Sketch · Futurecityhackathon
+          </span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--secondary)] text-[var(--muted-foreground)]">
+            Recommendation-Based HAI
+          </span>
+        </div>
+        <h1 class="text-xl font-bold tracking-tight text-[var(--foreground)]">
+          PreZero Intelligence Engine — CSV Drop &rarr; Pandas Pop-Ups &rarr; RAG + Route
+        </h1>
+        <p class="text-sm text-[var(--muted-foreground)]">
+          11,701 readings &middot; 449 Heilbronn sites &middot; 1,338 material series &middot; Route demo 2026-04-15 (67.92 km vs 260.82 km)
+        </p>
+      </div>
+
+      <!-- Stage Switcher Tabs -->
+      <nav class="flex flex-wrap gap-2" aria-label="Prototype stages">
+        <button id="tab-flow" onclick="setMode('flow')" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer">
+          All-in-One Live Flow
+        </button>
+        <button id="tab-1" onclick="setMode('stage1')" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer">
+          &#9312; Drag &amp; Drop .csv
+        </button>
+        <button id="tab-2" onclick="setMode('stage2')" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer">
+          &#9313; Processing &amp; 6 Graphs
+        </button>
+        <button id="tab-3" onclick="setMode('stage3')" class="tab-btn px-3 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer">
+          &#9314; RAG + Voice + Route
+        </button>
+      </nav>
+    </header>
+
+    <!-- STAGE 1: Drag & Drop .csv -->
+    <section id="section-stage1" class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center text-sm font-bold shrink-0">1</span>
+          <div>
+            <h2 class="text-base font-semibold text-[var(--foreground)]">Stage &#9312; — Drag &amp; Drop .csv Ingestion</h2>
+            <p class="text-xs text-[var(--muted-foreground)]">Drop any fill-level dataset (or simulate with PreZero's anonymized CSV) to trigger pipeline processing.</p>
+          </div>
+        </div>
+        <div id="dataset-badge" class="px-3 py-1.5 rounded-lg bg-[var(--secondary)] border border-[var(--border)] text-xs font-medium text-[var(--foreground)]">
+          Loaded: <span class="font-semibold">glass_fill_levels_anonymized_f.csv</span> (11,701 rows &middot; 449 IDs)
+        </div>
+      </div>
+
+      <div id="dropzone"
+           class="border-2 border-dashed border-[var(--border)] hover:border-[var(--primary)] bg-[var(--secondary)]/40 rounded-xl p-6 text-center transition cursor-pointer"
+           onclick="document.getElementById('csv-file-input').click()">
+        <input id="csv-file-input" type="file" accept=".csv" class="hidden" />
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center shadow-sm">
+            <svg class="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+            </svg>
+          </div>
+          <div class="text-left">
+            <p class="text-sm font-semibold text-[var(--foreground)]">Drag &amp; drop <code class="px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-xs">.csv</code> here or click to browse</p>
+            <p class="text-xs text-[var(--muted-foreground)] mt-0.5">Validates schema (Location_id, material_type, date, fill_level) via <code class="text-xs">ingest.py</code> and auto-triggers Stage &#9313;.</p>
+          </div>
+          <button type="button"
+                  onclick="event.stopPropagation(); triggerProcessingAnimation('glass_fill_levels_anonymized_f.csv', 11701)"
+                  class="px-4 py-2.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold shadow-sm hover:opacity-90 transition cursor-pointer shrink-0">
+            Simulate Drop: glass_fill_levels_anonymized_f.csv (11,701 rows)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 2 PROCESSING BAR -->
+    <section id="section-processing" class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center text-sm font-bold shrink-0">2</span>
+          <div>
+            <h2 class="text-base font-semibold text-[var(--foreground)]">Stage &#9313; — Animation &ldquo;processing&rdquo; &rarr; Pandas Graphs Popping Up</h2>
+            <p id="processing-status" class="text-xs text-[var(--muted-foreground)]">Pipeline complete: 6 Pandas insight modules &amp; 25-stop route computed.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="replayProcessingAndCards()"
+                  class="px-3 py-1.5 rounded-lg bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] text-xs font-semibold hover:opacity-90 transition cursor-pointer">
+            Replay Pop-Up Animation
+          </button>
+          <button type="button" id="btn-toggle-anomalies" onclick="toggleAnomalyHighlights()"
+                  class="px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-500 text-xs font-semibold hover:bg-rose-500/20 transition cursor-pointer">
+            &ldquo;Data&rdquo; Anomaly Highlight: ON (2)
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress bar & 4 pipeline steps -->
+      <div class="space-y-2">
+        <div class="w-full h-2.5 rounded-full bg-[var(--secondary)] overflow-hidden">
+          <div id="proc-bar" class="h-full bg-[var(--primary)] transition-all duration-300" style="width: 100%;"></div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div id="step-ingest" class="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--secondary)]/60 flex items-center justify-between">
+            <span class="font-medium">1. ingest.py</span>
+            <span class="text-emerald-500 font-semibold">11,701 OK</span>
+          </div>
+          <div id="step-features" class="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--secondary)]/60 flex items-center justify-between">
+            <span class="font-medium">2. features.py</span>
+            <span class="text-emerald-500 font-semibold">1,338 series</span>
+          </div>
+          <div id="step-scoring" class="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--secondary)]/60 flex items-center justify-between">
+            <span class="font-medium">3. scoring.py</span>
+            <span class="text-emerald-500 font-semibold">169 critical</span>
+          </div>
+          <div id="step-routing" class="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--secondary)]/60 flex items-center justify-between">
+            <span class="font-medium">4. routing.py</span>
+            <span class="text-emerald-500 font-semibold">67.92 km</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN STAGE 2 & STAGE 3 SPLIT CONTAINER (With Live SVG Connectors) -->
+    <section id="split-stage" class="relative">
+      <!-- Dynamic SVG connector overlay between Left 2x3 Graph Grid and Right RAG Agent -->
+      <svg id="connector-svg" class="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-10"></svg>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+
+        <!-- LEFT: 2x3 Pandas Graph Cards Grid -->
+        <div id="cards-panel" class="lg:col-span-7 space-y-3 relative z-20">
+          <div class="flex items-center justify-between px-1">
+            <p class="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+              2&times;3 Pandas Graph Nodes (Click any card to highlight &amp; query in RAG)
+            </p>
+            <span class="text-xs text-[var(--muted-foreground)]">
+              Active Focus: <strong id="active-node-label" class="text-[var(--foreground)]">All 6 Nodes Connected</strong>
+            </span>
+          </div>
+
+          <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+
+            <!-- CARD 1: Material Comparison -->
+            <article data-node="material" onclick="selectGraphNode('material')"
+                     class="graph-card card-pop bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm cursor-pointer transition hover:border-[var(--primary)]"
+                     style="animation-delay: 0ms;">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="text-xs font-medium text-[var(--muted-foreground)]">06_materialvergleich</span>
+                  <h3 class="text-sm font-bold text-[var(--foreground)]">Material Fill Split</h3>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--secondary)] text-[var(--foreground)] border border-[var(--border)]">
+                  White #1
+                </span>
+              </div>
+              <svg viewBox="0 0 260 112" class="w-full h-28">
+                <!-- Axes -->
+                <line x1="48" y1="12" x2="48" y2="96" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <line x1="48" y1="96" x2="248" y2="96" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <!-- Threshold markers -->
+                <line x1="168" y1="12" x2="168" y2="96" stroke="#ef4444" stroke-dasharray="3 3" stroke-opacity="0.5"/>
+                <!-- Bars (scale: 180px = 100%) -->
+                <text x="4" y="31" fill="currentColor" font-size="12" font-weight="600">White</text>
+                <rect x="52" y="18" width="148" height="18" rx="4" fill="#64748b"/>
+                <text x="206" y="31" fill="currentColor" font-size="12" font-weight="700">82.2%</text>
+
+                <text x="4" y="59" fill="currentColor" font-size="12" font-weight="600">Green</text>
+                <rect x="52" y="46" width="122" height="18" rx="4" fill="#10b981"/>
+                <text x="180" y="59" fill="currentColor" font-size="12" font-weight="700">68.1%</text>
+
+                <text x="4" y="87" fill="currentColor" font-size="12" font-weight="600">Brown</text>
+                <rect x="52" y="74" width="72" height="18" rx="4" fill="#b45309"/>
+                <text x="130" y="87" fill="currentColor" font-size="12" font-weight="700">40.0%</text>
+              </svg>
+              <p class="text-xs text-[var(--muted-foreground)] mt-1">
+                White drives <strong class="text-[var(--foreground)]">61.3%</strong> of all overfulls; thresholds 80/70/60%.
+              </p>
+            </article>
+
+            <!-- CARD 2: Seasonal Curve & New-Year Spike (ANOMALY) -->
+            <article data-node="seasonal" onclick="selectGraphNode('seasonal')"
+                     class="graph-card anomaly-node card-pop bg-[var(--card)] border-2 border-rose-500/70 rounded-xl p-4 shadow-sm cursor-pointer transition"
+                     style="animation-delay: 110ms;">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="text-xs font-medium text-[var(--muted-foreground)]">11_saisonalitaet &amp; 13</span>
+                  <h3 class="text-sm font-bold text-[var(--foreground)]">Seasonal Curve &amp; Spike</h3>
+                </div>
+                <span class="anomaly-pill px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-500 border border-rose-500/30">
+                  Anomaly: 85.2% Mar
+                </span>
+              </div>
+              <svg viewBox="0 0 260 112" class="w-full h-28">
+                <line x1="28" y1="12" x2="28" y2="94" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <line x1="28" y1="94" x2="250" y2="94" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <!-- 100% line -->
+                <line x1="28" y1="22" x2="250" y2="22" stroke="#ef4444" stroke-dasharray="4 3" stroke-opacity="0.6"/>
+                <!-- White trend -->
+                <polyline fill="none" stroke="#64748b" stroke-width="2.5"
+                          points="34,42 68,36 102,28 134,27 168,26 198,55 228,39 246,36"/>
+                <!-- Green trend -->
+                <polyline fill="none" stroke="#10b981" stroke-width="2.5"
+                          points="34,54 68,47 102,35 134,38 168,39 198,66 228,53 246,51"/>
+                <!-- Brown trend -->
+                <polyline fill="none" stroke="#b45309" stroke-width="2"
+                          points="34,79 68,77 102,63 134,49 168,51 198,74 228,71 246,68"/>
+                <!-- Highlight circles -->
+                <circle cx="134" cy="27" r="4.5" fill="#ef4444"/>
+                <circle cx="198" cy="55" r="4.5" fill="#10b981"/>
+                <text x="108" y="16" fill="#ef4444" font-size="12" font-weight="700">Mar 85.2%</text>
+                <text x="176" y="88" fill="#10b981" font-size="12" font-weight="600">Jun 53.7%</text>
+              </svg>
+              <p class="text-xs text-[var(--muted-foreground)] mt-1">
+                Post-Xmas round: <strong class="text-rose-500">52.7% overfull</strong> (59/112); 31.5 pp seasonal swing.
+              </p>
+            </article>
+
+            <!-- CARD 3: Overflow Risk & Criticality -->
+            <article data-node="risk" onclick="selectGraphNode('risk')"
+                     class="graph-card card-pop bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm cursor-pointer transition hover:border-[var(--primary)]"
+                     style="animation-delay: 220ms;">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="text-xs font-medium text-[var(--muted-foreground)]">01_risiko &amp; 02_priorisierung</span>
+                  <h3 class="text-sm font-bold text-[var(--foreground)]">Overflow Risk Tiers</h3>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                  1,192 Overfull
+                </span>
+              </div>
+              <svg viewBox="0 0 260 112" class="w-full h-28">
+                <line x1="22" y1="12" x2="22" y2="90" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <line x1="22" y1="90" x2="248" y2="90" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <!-- Histogram blocks -->
+                <rect x="34" y="45" width="38" height="45" rx="4" fill="#10b981" fill-opacity="0.8"/>
+                <rect x="82" y="34" width="38" height="56" rx="4" fill="#3b82f6" fill-opacity="0.8"/>
+                <rect x="130" y="20" width="38" height="70" rx="4" fill="#f59e0b" fill-opacity="0.9"/>
+                <rect x="178" y="64" width="38" height="26" rx="4" fill="#ef4444"/>
+                <text x="34" y="106" fill="currentColor" font-size="12">&lt;60%</text>
+                <text x="82" y="106" fill="currentColor" font-size="12">60-79</text>
+                <text x="128" y="106" fill="currentColor" font-size="12">80-100</text>
+                <text x="180" y="106" fill="#ef4444" font-size="12" font-weight="700">110%</text>
+                <text x="126" y="15" fill="currentColor" font-size="12" font-weight="700">44.7% &ge;80%</text>
+              </svg>
+              <p class="text-xs text-[var(--muted-foreground)] mt-1">
+                <strong class="text-[var(--foreground)]">10.2%</strong> overfull overall; <strong class="text-[var(--foreground)]">19</strong> series score &gt;90 pts.
+              </p>
+            </article>
+
+            <!-- CARD 4: Fill Velocity & Emptying Cycles -->
+            <article data-node="velocity" onclick="selectGraphNode('velocity')"
+                     class="graph-card card-pop bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm cursor-pointer transition hover:border-[var(--primary)]"
+                     style="animation-delay: 330ms;">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="text-xs font-medium text-[var(--muted-foreground)]">04_fuellgeschwindigkeit &amp; 17</span>
+                  <h3 class="text-sm font-bold text-[var(--foreground)]">Fill Velocity &amp; Cycles</h3>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--secondary)] text-[var(--foreground)] border border-[var(--border)]">
+                  46d Median
+                </span>
+              </div>
+              <svg viewBox="0 0 260 112" class="w-full h-28">
+                <line x1="22" y1="12" x2="22" y2="92" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <line x1="22" y1="92" x2="248" y2="92" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <!-- Sawtooth fill-and-empty curve -->
+                <polyline fill="none" stroke="#3b82f6" stroke-width="2.5"
+                          points="28,82 78,34 82,84 138,24 142,82 204,28 208,82 246,46"/>
+                <circle cx="78" cy="34" r="3.5" fill="#f59e0b"/>
+                <circle cx="138" cy="24" r="3.5" fill="#ef4444"/>
+                <circle cx="204" cy="28" r="3.5" fill="#ef4444"/>
+                <text x="36" y="22" fill="currentColor" font-size="12" font-weight="700">0.74 pp/day median</text>
+                <text x="148" y="76" fill="currentColor" font-size="12">936 emptyings</text>
+              </svg>
+              <p class="text-xs text-[var(--muted-foreground)] mt-1">
+                <strong class="text-[var(--foreground)]">399</strong> shorter vs. <strong class="text-[var(--foreground)]">546</strong> longer intervals; 17.9% regular.
+              </p>
+            </article>
+
+            <!-- CARD 5: Data Anomalies & Gaps (ANOMALY) -->
+            <article data-node="anomalies" onclick="selectGraphNode('anomalies')"
+                     class="graph-card anomaly-node card-pop bg-[var(--card)] border-2 border-rose-500/70 rounded-xl p-4 shadow-sm cursor-pointer transition"
+                     style="animation-delay: 440ms;">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="text-xs font-medium text-[var(--muted-foreground)]">15_anomalien &amp; 18_messluecken</span>
+                  <h3 class="text-sm font-bold text-[var(--foreground)]">Data Anomalies &amp; Gaps</h3>
+                </div>
+                <span class="anomaly-pill px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-500 border border-rose-500/30">
+                  Anomaly: 13.1% Jumps
+                </span>
+              </div>
+              <svg viewBox="0 0 260 112" class="w-full h-28">
+                <line x1="22" y1="12" x2="22" y2="92" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <line x1="22" y1="92" x2="248" y2="92" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <!-- Observation gap shaded -->
+                <rect x="82" y="16" width="68" height="76" fill="#ef4444" fill-opacity="0.14"/>
+                <line x1="28" y1="74" x2="82" y2="62" stroke="#3b82f6" stroke-width="2.5"/>
+                <line x1="82" y1="62" x2="150" y2="20" stroke="#ef4444" stroke-dasharray="4 3" stroke-width="2.5"/>
+                <line x1="150" y1="20" x2="242" y2="24" stroke="#3b82f6" stroke-width="2.5"/>
+                <circle cx="150" cy="20" r="4.5" fill="#ef4444"/>
+                <text x="86" y="84" fill="#ef4444" font-size="12" font-weight="700">&gt;90d gap</text>
+                <text x="156" y="42" fill="#ef4444" font-size="12" font-weight="700">&gt;50 pp jump</text>
+              </svg>
+              <p class="text-xs text-[var(--muted-foreground)] mt-1">
+                <strong class="text-rose-500">458</strong> series have &gt;90d gaps; 74.8% of sites hit overfull.
+              </p>
+            </article>
+
+            <!-- CARD 6: Dynamic Route Savings -->
+            <article data-node="route" onclick="selectGraphNode('route')"
+                     class="graph-card card-pop bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm cursor-pointer transition hover:border-[var(--primary)]"
+                     style="animation-delay: 550ms;">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="text-xs font-medium text-[var(--muted-foreground)]">route_2026-04-15.json</span>
+                  <h3 class="text-sm font-bold text-[var(--foreground)]">Possible Route Savings</h3>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                  -74.0% km
+                </span>
+              </div>
+              <svg viewBox="0 0 260 112" class="w-full h-28">
+                <line x1="22" y1="12" x2="22" y2="92" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <line x1="22" y1="92" x2="248" y2="92" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5"/>
+                <!-- Mini Heilbronn loop schematic -->
+                <rect x="34" y="20" width="90" height="22" rx="5" fill="#64748b" fill-opacity="0.35"/>
+                <text x="130" y="36" fill="currentColor" font-size="12">Full (431): 260.8 km</text>
+                <rect x="34" y="54" width="24" height="22" rx="5" fill="#10b981"/>
+                <text x="64" y="70" fill="#10b981" font-size="12" font-weight="700">Planned (25): 67.9 km</text>
+                <!-- Mini route path -->
+                <polyline fill="none" stroke="#3b82f6" stroke-width="2"
+                          points="200,78 214,64 228,72 242,56 232,84 200,78"/>
+                <circle cx="200" cy="78" r="3.5" fill="currentColor"/>
+                <circle cx="242" cy="56" r="3.5" fill="#ef4444"/>
+              </svg>
+              <p class="text-xs text-[var(--muted-foreground)] mt-1">
+                Saves <strong class="text-emerald-500">192.91 km</strong> on 2026-04-15 (25 stops / 169 critical).
+              </p>
+            </article>
+
+          </div>
+        </div>
+
+        <!-- RIGHT: Stage 3 Chat with Agent RAG (Voice + Text) -->
+        <aside id="rag-panel" class="lg:col-span-5 relative z-20 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between min-h-[540px]">
+          <div class="space-y-3">
+            <!-- Panel Header -->
+            <div class="flex items-start justify-between gap-2 pb-3 border-b border-[var(--border)]">
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center text-sm font-bold shrink-0">3</span>
+                <div>
+                  <h2 class="text-base font-bold text-[var(--foreground)]">Chat with Agent RAG</h2>
+                  <p class="text-xs text-[var(--muted-foreground)]">Grounded in 36 Analyses + <code class="text-xs">route_2026-04-15.json</code></p>
+                </div>
+              </div>
+              <!-- Voice + Text Toggle -->
+              <button type="button" id="voice-toggle-btn" onclick="toggleVoiceMode()"
+                      class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)] flex items-center gap-1.5 cursor-pointer transition">
+                <span id="voice-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span id="voice-label">Voice + Text</span>
+              </button>
+            </div>
+
+            <!-- Voice Waveform Indicator -->
+            <div id="voice-bar" class="bg-[var(--secondary)]/70 border border-[var(--border)] rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-1 h-5" aria-hidden="true">
+                  <span class="wave-bar w-1 h-4 rounded-full bg-[var(--primary)]" style="animation-delay: 0ms;"></span>
+                  <span class="wave-bar w-1 h-5 rounded-full bg-[var(--primary)]" style="animation-delay: 150ms;"></span>
+                  <span class="wave-bar w-1 h-3 rounded-full bg-[var(--primary)]" style="animation-delay: 300ms;"></span>
+                  <span class="wave-bar w-1 h-5 rounded-full bg-[var(--primary)]" style="animation-delay: 450ms;"></span>
+                  <span class="wave-bar w-1 h-3 rounded-full bg-[var(--primary)]" style="animation-delay: 600ms;"></span>
+                </div>
+                <span id="voice-status-text" class="text-xs text-[var(--foreground)] font-medium">
+                  Voice mode ready (Piper / Thorsten TTS + Text)
+                </span>
+              </div>
+              <button type="button" onclick="speakLastReply()" class="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer">
+                Play Audio
+              </button>
+            </div>
+
+            <!-- Quick Prompt Chips -->
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="askPreset('anomalies')"
+                      class="px-2.5 py-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[var(--accent)] border border-[var(--border)] text-xs font-medium text-[var(--foreground)] cursor-pointer transition">
+                Highlight top data anomalies
+              </button>
+              <button type="button" onclick="askPreset('stop1')"
+                      class="px-2.5 py-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[var(--accent)] border border-[var(--border)] text-xs font-medium text-[var(--foreground)] cursor-pointer transition">
+                Why Stop #1 (0e87bab4)?
+              </button>
+              <button type="button" onclick="askPreset('spike')"
+                      class="px-2.5 py-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[var(--accent)] border border-[var(--border)] text-xs font-medium text-[var(--foreground)] cursor-pointer transition">
+                Post-Xmas &amp; March spike
+              </button>
+              <button type="button" onclick="askPreset('route')"
+                      class="px-2.5 py-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[var(--accent)] border border-[var(--border)] text-xs font-medium text-[var(--foreground)] cursor-pointer transition">
+                67.9 km vs fixed plan
+              </button>
+            </div>
+
+            <!-- Chat Messages Feed -->
+            <div id="chat-feed" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              <div class="p-3 rounded-xl bg-[var(--secondary)]/80 border border-[var(--border)] text-xs space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-[var(--foreground)]">GlasRoute RAG Agent</span>
+                  <span class="text-[var(--muted-foreground)]">Sources: 01, 06, 15, route_2026-04-15</span>
+                </div>
+                <p class="text-[var(--foreground)] leading-relaxed">
+                  Dataset processed: <strong>11,701 readings</strong> across <strong>449 sites</strong>.
+                  I flagged <strong>2 anomaly clusters</strong> on the left: the post-Christmas/March surge (<strong>52.7%</strong> New Year overfull, <strong>85.2%</strong> March peak) and <strong>13.1%</strong> observation jumps from <strong>&gt;90-day</strong> measurement gaps.
+                  Ready to recommend a <strong>25-stop route (67.92 km)</strong> — ask or click any graph node.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Row -->
+          <form onsubmit="handleChatSubmit(event)" class="mt-4 pt-3 border-t border-[var(--border)] flex gap-2">
+            <input id="chat-input" type="text"
+                   placeholder="Ask about anomalies, white glass, or route stops..."
+                   class="flex-1 px-3 py-2 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:border-[var(--primary)]" />
+            <button type="submit"
+                    class="px-4 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:opacity-90 transition cursor-pointer shrink-0">
+              Send
+            </button>
+          </form>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- BOTTOM STRIP: Challenge 2 Intelligence Engine + Possible Route + Human Approval -->
+    <section id="section-route" class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--secondary)] border border-[var(--border)] text-[var(--foreground)]">
+              Challenge 2 &middot; Intelligence Engine + Possible Route
+            </span>
+            <span id="route-approval-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+              Pending Dispatcher Approval
+            </span>
+          </div>
+          <h2 class="text-base font-bold text-[var(--foreground)] mt-1">
+            Proposed Tour for 2026-04-15 &mdash; 25 Critical Stops (67.92 km vs 260.82 km Full Round)
+          </h2>
+        </div>
+
+        <button type="button" id="approve-btn" onclick="toggleRouteApproval()"
+                class="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-sm hover:bg-emerald-500 transition cursor-pointer shrink-0">
+          Approve Route (25 Stops &middot; 67.92 km)
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <!-- Mini Route Map -->
+        <div class="lg:col-span-4 bg-[var(--secondary)]/50 border border-[var(--border)] rounded-xl p-3 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs mb-2">
+            <span class="font-semibold text-[var(--foreground)]">Heilbronn Route Schematic</span>
+            <span class="text-[var(--muted-foreground)]">Depot 49.1427, 9.2109</span>
+          </div>
+          <svg viewBox="0 0 320 170" class="w-full h-40">
+            <!-- Grid -->
+            <rect x="8" y="8" width="304" height="154" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.12"/>
+            <!-- Route polyline through first 8 stops -->
+            <polyline fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round"
+                      points="155,30 144,44 134,62 178,70 208,108 108,122 110,148 164,154 222,140 155,30"/>
+            <!-- Depot -->
+            <rect x="148" y="23" width="14" height="14" rx="3" fill="currentColor"/>
+            <text x="167" y="34" fill="currentColor" font-size="12" font-weight="700">Depot</text>
+            <!-- Stops (solid = osm_heuristic, dashed = synthetic_placeholder) -->
+            <circle cx="144" cy="44" r="6" fill="#ef4444" stroke="currentColor" stroke-width="1.5"/>
+            <text x="120" y="48" fill="currentColor" font-size="12" font-weight="700">#1</text>
+
+            <circle cx="134" cy="62" r="6" fill="#ef4444" fill-opacity="0.55" stroke="currentColor" stroke-dasharray="3 2" stroke-width="1.5"/>
+            <text x="110" y="66" fill="currentColor" font-size="12">#2</text>
+
+            <circle cx="178" cy="70" r="6" fill="#ef4444" stroke="currentColor" stroke-width="1.5"/>
+            <text x="188" y="74" fill="currentColor" font-size="12">#3</text>
+
+            <circle cx="208" cy="108" r="6" fill="#b91c1c" stroke="currentColor" stroke-width="1.5"/>
+            <text x="218" y="112" fill="currentColor" font-size="12">#4</text>
+
+            <circle cx="108" cy="122" r="5" fill="#ef4444" fill-opacity="0.55" stroke="currentColor" stroke-dasharray="3 2" stroke-width="1.5"/>
+            <circle cx="110" cy="148" r="5" fill="#ef4444" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="164" cy="154" r="5" fill="#b91c1c" fill-opacity="0.55" stroke="currentColor" stroke-dasharray="3 2" stroke-width="1.5"/>
+            <circle cx="222" cy="140" r="5" fill="#b91c1c" fill-opacity="0.55" stroke="currentColor" stroke-dasharray="3 2" stroke-width="1.5"/>
+          </svg>
+          <div class="flex flex-wrap gap-3 text-xs text-[var(--muted-foreground)] mt-2">
+            <span>&#9679; Solid = OSM heuristic</span>
+            <span>&#9675; Dashed = Synthetic placeholder</span>
+          </div>
+        </div>
+
+        <!-- Stop Table -->
+        <div class="lg:col-span-8 overflow-x-auto border border-[var(--border)] rounded-xl">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[var(--secondary)] text-[var(--muted-foreground)] border-b border-[var(--border)]">
+              <tr>
+                <th class="py-2.5 px-3 font-semibold">Stop</th>
+                <th class="py-2.5 px-3 font-semibold">Location_id</th>
+                <th class="py-2.5 px-3 font-semibold">Material</th>
+                <th class="py-2.5 px-3 font-semibold">Last Fill</th>
+                <th class="py-2.5 px-3 font-semibold">Score</th>
+                <th class="py-2.5 px-3 font-semibold">Provenance</th>
+                <th class="py-2.5 px-3 font-semibold text-right">Cum. km</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)]">
+              <tr class="hover:bg-[var(--secondary)]/40">
+                <td class="py-2 px-3 font-bold">#1</td>
+                <td class="py-2 px-3 font-mono">0e87bab4...</td>
+                <td class="py-2 px-3">white</td>
+                <td class="py-2 px-3 text-rose-500 font-semibold">110%</td>
+                <td class="py-2 px-3 font-semibold">0.85</td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded bg-[var(--secondary)] border border-[var(--border)]">osm_heuristic (low)</span></td>
+                <td class="py-2 px-3 text-right">0.40 km</td>
+              </tr>
+              <tr class="hover:bg-[var(--secondary)]/40">
+                <td class="py-2 px-3 font-bold">#2</td>
+                <td class="py-2 px-3 font-mono">7947cea4...</td>
+                <td class="py-2 px-3">white</td>
+                <td class="py-2 px-3 text-rose-500 font-semibold">110%</td>
+                <td class="py-2 px-3 font-semibold">0.88</td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30">synthetic_placeholder</span></td>
+                <td class="py-2 px-3 text-right">0.89 km</td>
+              </tr>
+              <tr class="hover:bg-[var(--secondary)]/40">
+                <td class="py-2 px-3 font-bold">#3</td>
+                <td class="py-2 px-3 font-mono">0cac7e1d...</td>
+                <td class="py-2 px-3">white</td>
+                <td class="py-2 px-3 text-rose-500 font-semibold">110%</td>
+                <td class="py-2 px-3 font-semibold">0.85</td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded bg-[var(--secondary)] border border-[var(--border)]">osm_heuristic (low)</span></td>
+                <td class="py-2 px-3 text-right">1.73 km</td>
+              </tr>
+              <tr class="hover:bg-[var(--secondary)]/40">
+                <td class="py-2 px-3 font-bold">#4</td>
+                <td class="py-2 px-3 font-mono">1d0394e7...</td>
+                <td class="py-2 px-3">white</td>
+                <td class="py-2 px-3 text-rose-500 font-semibold">110%</td>
+                <td class="py-2 px-3 font-semibold">1.00</td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded bg-[var(--secondary)] border border-[var(--border)]">osm_heuristic (low)</span></td>
+                <td class="py-2 px-3 text-right">2.92 km</td>
+              </tr>
+              <tr class="hover:bg-[var(--secondary)]/40">
+                <td class="py-2 px-3 font-bold">#5</td>
+                <td class="py-2 px-3 font-mono">4abf4082...</td>
+                <td class="py-2 px-3">white</td>
+                <td class="py-2 px-3 text-rose-500 font-semibold">110%</td>
+                <td class="py-2 px-3 font-semibold">0.85</td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30">synthetic_placeholder</span></td>
+                <td class="py-2 px-3 text-right">4.80 km</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    let currentMode = 'flow';
+    let anomaliesHighlighted = true;
+    let selectedNode = null;
+    let voiceEnabled = true;
+    let routeApproved = false;
+    let lastAgentReply = "Dataset processed: 11,701 readings across 449 sites. Recommended 25-stop route saves 192.91 kilometers.";
+
+    const NODE_RESPONSES = {
+      material: {
+        title: "Material Fill Split (06_materialvergleich)",
+        reply: "White glass averages 82.2% (median 90%) and generates 61.3% of all overfull events, exceeding Brown at 429 of 441 sites. That's why Analyse 07 sets material thresholds at 80% White, 70% Green, and 60% Brown."
+      },
+      seasonal: {
+        title: "Seasonal Spike Anomaly (11 & 13)",
+        reply: "Anomaly detected: the first measurement round after New Year hits 52.7% overfull (59 of 112), and the seasonal curve peaks in March at 85.2% (37.6% overfull) before dropping to 53.7% in June."
+      },
+      risk: {
+        title: "Overflow Risk Tiers (01 & 02)",
+        reply: "44.7% of all readings are >= 80% and 10.2% (1,192 events) are overfull (110%). 19 container series exceed 90 priority points and drive immediate collection demand."
+      },
+      velocity: {
+        title: "Fill Velocity & Cycles (04 & 17)",
+        reply: "Median fill rate is 0.74 percentage points/day with a 46-day median emptying cycle. Based on observed slopes, 399 series need shorter intervals while 546 can be extended."
+      },
+      anomalies: {
+        title: "Data Anomalies & Gaps (15 & 18)",
+        reply: "Anomaly alert: 13.1% of transitions show >50 pp jumps caused by irregular sampling — 458 series contain >90-day observation gaps, limiting raw time-series forecasting to MAE ~21.0 pp."
+      },
+      route: {
+        title: "Possible Route (route_2026-04-15.json)",
+        reply: "For 2026-04-15, 169 of 431 active sites are critical. Serving the top 25 stops from Heilbronn Depot takes 67.92 km versus 260.82 km for a full round — saving 192.91 km (74.0%)."
+      },
+      stop1: {
+        title: "Why Stop #1 (0e87bab4)?",
+        reply: "Stop #1 (0e87bab4-f739-4269-b217-2c4fb48c1719) is White glass currently at 110% (overfull) with priority score 0.85, located only 0.397 km from Heilbronn Depot (OSM heuristic coordinate, confidence=low)."
+      },
+      spike: {
+        title: "Post-Christmas & March Peak",
+        reply: "After New Year, 52.7% of measured sites were overfull (59/112). High demand persists through Q1 until March (85.2% mean) before dipping 31.5 pp down to June (53.7%)."
+      }
+    };
+
+    function setMode(mode) {
+      currentMode = mode;
+      const s1 = document.getElementById('section-stage1');
+      const sProc = document.getElementById('section-processing');
+      const sSplit = document.getElementById('split-stage');
+      const rag = document.getElementById('rag-panel');
+      const cardsPanel = document.getElementById('cards-panel');
+      const sRoute = document.getElementById('section-route');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = "tab-btn px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)] transition cursor-pointer";
+      });
+      const activeBtn = document.getElementById(mode === 'flow' ? 'tab-flow' : 'tab-' + mode.replace('stage', ''));
+      if (activeBtn) {
+        activeBtn.className = "tab-btn px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)] transition cursor-pointer";
+      }
+
+      if (mode === 'stage1') {
+        s1.classList.remove('hidden');
+        sProc.classList.add('hidden');
+        sSplit.classList.add('hidden');
+        sRoute.classList.add('hidden');
+      } else if (mode === 'stage2') {
+        s1.classList.add('hidden');
+        sProc.classList.remove('hidden');
+        sSplit.classList.remove('hidden');
+        cardsPanel.classList.remove('lg:col-span-7');
+        cardsPanel.classList.add('lg:col-span-12');
+        rag.classList.add('hidden');
+        sRoute.classList.add('hidden');
+        replayCardsAnimation();
+      } else if (mode === 'stage3') {
+        s1.classList.add('hidden');
+        sProc.classList.add('hidden');
+        sSplit.classList.remove('hidden');
+        cardsPanel.classList.remove('lg:col-span-12');
+        cardsPanel.classList.add('lg:col-span-7');
+        rag.classList.remove('hidden');
+        sRoute.classList.remove('hidden');
+      } else {
+        s1.classList.remove('hidden');
+        sProc.classList.remove('hidden');
+        sSplit.classList.remove('hidden');
+        cardsPanel.classList.remove('lg:col-span-12');
+        cardsPanel.classList.add('lg:col-span-7');
+        rag.classList.remove('hidden');
+        sRoute.classList.remove('hidden');
+      }
+      requestAnimationFrame(drawConnectors);
+    }
+
+    function replayCardsAnimation() {
+      const cards = document.querySelectorAll('.graph-card');
+      cards.forEach((c, idx) => {
+        c.classList.remove('card-pop');
+        void c.offsetWidth;
+        c.style.animationDelay = (idx * 105) + 'ms';
+        c.classList.add('card-pop');
+      });
+      setTimeout(drawConnectors, 750);
+    }
+
+    function triggerProcessingAnimation(filename, rowCount) {
+      document.getElementById('dataset-badge').innerHTML =
+        `Loaded: <span class="font-semibold">${filename}</span> (${rowCount.toLocaleString()} rows)`;
+      if (currentMode === 'stage1') {
+        setMode('flow');
+      }
+      replayProcessingAndCards();
+    }
+
+    function replayProcessingAndCards() {
+      const bar = document.getElementById('proc-bar');
+      const status = document.getElementById('processing-status');
+      const steps = [
+        { pct: 25, text: 'Processing: ingest.py validating schema & normalizing overfull=110%...' },
+        { pct: 55, text: 'Processing: features.py computing 1,338 material series slopes & gaps...' },
+        { pct: 80, text: 'Processing: scoring.py ranking 169 critical locations...' },
+        { pct: 100, text: 'Done: 6 Pandas charts popped up + 25-stop route (67.92 km) ready.' }
+      ];
+      bar.style.width = '5%';
+      steps.forEach((step, i) => {
+        setTimeout(() => {
+          bar.style.width = step.pct + '%';
+          status.textContent = step.text;
+          if (i === steps.length - 1) {
+            replayCardsAnimation();
+          }
+        }, (i + 1) * 280);
+      });
+    }
+
+    function toggleAnomalyHighlights() {
+      anomaliesHighlighted = !anomaliesHighlighted;
+      const btn = document.getElementById('btn-toggle-anomalies');
+      btn.textContent = anomaliesHighlighted ? '"Data" Anomaly Highlight: ON (2)' : '"Data" Anomaly Highlight: OFF';
+      document.querySelectorAll('.anomaly-node').forEach(card => {
+        if (anomaliesHighlighted) {
+          card.classList.add('border-2', 'border-rose-500/70');
+          card.classList.remove('border', 'border-[var(--border)]');
+        } else {
+          card.classList.remove('border-2', 'border-rose-500/70');
+          card.classList.add('border', 'border-[var(--border)]');
+        }
+      });
+      drawConnectors();
+    }
+
+    function selectGraphNode(nodeKey) {
+      selectedNode = nodeKey;
+      document.querySelectorAll('.graph-card').forEach(card => {
+        if (card.dataset.node === nodeKey) {
+          card.classList.add('ring-2', 'ring-[var(--primary)]');
+        } else {
+          card.classList.remove('ring-2', 'ring-[var(--primary)]');
+        }
+      });
+      const info = NODE_RESPONSES[nodeKey];
+      document.getElementById('active-node-label').textContent = info.title;
+      if (currentMode === 'stage2') {
+        setMode('stage3');
+      }
+      appendMessage('Agent RAG · Node Context', info.reply, info.title);
+      drawConnectors();
+    }
+
+    function askPreset(key) {
+      const labels = {
+        anomalies: "Highlight top data anomalies",
+        stop1: "Why is Stop #1 (0e87bab4) prioritized?",
+        spike: "Explain the post-Christmas & March overflow spike",
+        route: "Compare our 67.9 km route vs. fixed schedule"
+      };
+      appendMessage('You', labels[key], null, true);
+      const info = NODE_RESPONSES[key];
+      setTimeout(() => {
+        appendMessage('GlasRoute RAG Agent', info.reply, info.title);
+      }, 180);
+    }
+
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const q = input.value.trim();
+      if (!q) return;
+      input.value = '';
+      appendMessage('You', q, null, true);
+
+      const lower = q.toLowerCase();
+      let key = 'route';
+      if (lower.includes('anomal') || lower.includes('gap') || lower.includes('jump')) key = 'anomalies';
+      else if (lower.includes('white') || lower.includes('brown') || lower.includes('green') || lower.includes('material')) key = 'material';
+      else if (lower.includes('xmas') || lower.includes('christmas') || lower.includes('march') || lower.includes('season')) key = 'spike';
+      else if (lower.includes('stop') || lower.includes('0e87')) key = 'stop1';
+      else if (lower.includes('velocity') || lower.includes('cycle') || lower.includes('day')) key = 'velocity';
+
+      setTimeout(() => {
+        const info = NODE_RESPONSES[key];
+        appendMessage('GlasRoute RAG Agent', info.reply, info.title);
+      }, 220);
+    }
+
+    function appendMessage(sender, text, sourceTag, isUser = false) {
+      const feed = document.getElementById('chat-feed');
+      const div = document.createElement('div');
+      div.className = isUser
+        ? "p-3 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs ml-8"
+        : "p-3 rounded-xl bg-[var(--secondary)]/80 border border-[var(--border)] text-xs space-y-1 mr-2";
+      if (isUser) {
+        div.innerHTML = `<span class="font-semibold block mb-0.5">You</span><p>${escapeHtml(text)}</p>`;
+      } else {
+        lastAgentReply = text;
+        div.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-[var(--foreground)]">${escapeHtml(sender)}</span>
+            ${sourceTag ? `<span class="text-[var(--muted-foreground)]">${escapeHtml(sourceTag)}</span>` : ''}
+          </div>
+          <p class="text-[var(--foreground)] leading-relaxed">${escapeHtml(text)}</p>`;
+      }
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function toggleVoiceMode() {
+      voiceEnabled = !voiceEnabled;
+      document.getElementById('voice-label').textContent = voiceEnabled ? 'Voice + Text' : 'Text Only';
+      document.getElementById('voice-dot').className = voiceEnabled
+        ? 'w-2 h-2 rounded-full bg-emerald-500'
+        : 'w-2 h-2 rounded-full bg-[var(--muted-foreground)]';
+      document.getElementById('voice-bar').style.display = voiceEnabled ? 'flex' : 'none';
+    }
+
+    function speakLastReply() {
+      const status = document.getElementById('voice-status-text');
+      status.textContent = 'Speaking summary via TTS...';
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(lastAgentReply);
+          utter.lang = 'en-US';
+          utter.onend = () => { status.textContent = 'Voice mode ready (Piper / Thorsten TTS + Text)'; };
+          window.speechSynthesis.speak(utter);
+          return;
+        }
+      } catch (_) {}
+      setTimeout(() => { status.textContent = 'Voice mode ready (Piper / Thorsten TTS + Text)'; }, 2000);
+    }
+
+    function toggleRouteApproval() {
+      routeApproved = !routeApproved;
+      const btn = document.getElementById('approve-btn');
+      const badge = document.getElementById('route-approval-badge');
+      if (routeApproved) {
+        btn.textContent = 'Approved by Dispatcher (Click to Undo)';
+        btn.className = 'px-4 py-2.5 rounded-xl bg-[var(--secondary)] text-[var(--foreground)] border border-[var(--border)] text-xs font-semibold cursor-pointer shrink-0';
+        badge.textContent = 'Approved for Dispatch · 25 Stops';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30';
+      } else {
+        btn.textContent = 'Approve Route (25 Stops · 67.92 km)';
+        btn.className = 'px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-sm hover:bg-emerald-500 transition cursor-pointer shrink-0';
+        badge.textContent = 'Pending Dispatcher Approval';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-500 border border-amber-500/30';
+      }
+    }
+
+    function drawConnectors() {
+      const svg = document.getElementById('connector-svg');
+      const split = document.getElementById('split-stage');
+      const rag = document.getElementById('rag-panel');
+      if (!svg || !split || !rag || rag.classList.contains('hidden') || window.innerWidth < 1024) {
+        if (svg) svg.innerHTML = '';
+        return;
+      }
+      const rootRect = split.getBoundingClientRect();
+      const ragRect = rag.getBoundingClientRect();
+      const targetX = ragRect.left - rootRect.left;
+      const targetMidY = (ragRect.top - rootRect.top) + ragRect.height * 0.45;
+
+      const cards = document.querySelectorAll('.graph-card');
+      let paths = '';
+      cards.forEach((card, idx) => {
+        const r = card.getBoundingClientRect();
+        const startX = r.right - rootRect.left;
+        const startY = (r.top - rootRect.top) + r.height / 2;
+        const endY = targetMidY + (idx - 2.5) * 24;
+        const cx1 = startX + (targetX - startX) * 0.5;
+        const isAnom = card.classList.contains('anomaly-node') && anomaliesHighlighted;
+        const isSel = selectedNode === card.dataset.node;
+        const stroke = isSel ? '#3b82f6' : (isAnom ? '#f43f5e' : 'currentColor');
+        const opacity = isSel ? '0.95' : (isAnom ? '0.7' : '0.22');
+        const width = isSel || isAnom ? '2.2' : '1.5';
+        const cls = (isSel || isAnom) ? 'connector-active' : '';
+        paths += `<path d="M ${startX} ${startY} C ${cx1} ${startY}, ${cx1} ${endY}, ${targetX} ${endY}" fill="none" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="${width}" class="${cls}" />`;
+        paths += `<circle cx="${targetX}" cy="${endY}" r="3" fill="${stroke}" fill-opacity="${opacity}" />`;
+      });
+      svg.innerHTML = paths;
+    }
+
+    // Real Drag & Drop handler
+    const dz = document.getElementById('dropzone');
+    const fileInput = document.getElementById('csv-file-input');
+    dz.addEventListener('dragover', e => {
+      e.preventDefault();
+      dz.classList.add('border-[var(--primary)]');
+    });
+    dz.addEventListener('dragleave', () => dz.classList.remove('border-[var(--primary)]'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('border-[var(--primary)]');
+      const file = e.dataTransfer.files[0];
+      if (file) handleUploadedCsv(file);
+    });
+    fileInput.addEventListener('change', e => {
+      if (e.target.files[0]) handleUploadedCsv(e.target.files[0]);
+    });
+
+    function handleUploadedCsv(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const lines = String(ev.target.result || '').trim().split(/\r?\n/).length;
+        triggerProcessingAnimation(file.name, Math.max(0, lines - 1));
+      };
+      reader.readAsText(file);
+    }
+
+    window.addEventListener('resize', () => requestAnimationFrame(drawConnectors));
+    setMode('flow');
+    setTimeout(drawConnectors, 650);
+  </script>
+</body>
+</html>
