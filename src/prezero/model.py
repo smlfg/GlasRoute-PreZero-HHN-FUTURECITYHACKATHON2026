@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -197,12 +196,6 @@ def _normalize_fill(value: object) -> float:
     return float(value)
 
 
-def _select_primary_material(materials: list[str]) -> str:
-    counts = Counter(materials)
-    priority = {"white": 0, "glass_white": 0, "green": 1, "glass_green": 1, "brown": 2, "glass_brown": 2}
-    return min(counts, key=lambda m: (-counts[m], priority.get(m, 99), m))
-
-
 def build_model(
     readings_df: pd.DataFrame | str | Path = "data/processed/cleaned_readings.csv",
     locations_df: pd.DataFrame | str | Path = "data/external/locations.csv",
@@ -234,65 +227,63 @@ def build_model(
     readings = readings.sort_values(["Location_id", "material_type", "date"]).reset_index(drop=True)
     max_dataset_date = pd.Timestamp(readings["date"].max()) if not readings.empty else None
 
-    readings_by_loc: dict[str, pd.DataFrame] = {
-        str(loc_id): group for loc_id, group in readings.groupby("Location_id", sort=False)
+    readings_by_series: dict[tuple[str, str], pd.DataFrame] = {
+        (str(loc_id), str(material)): group
+        for (loc_id, material), group in readings.groupby(
+            ["Location_id", "material_type"], sort=False
+        )
     }
 
     locs = locations.copy()
     locs["Location_id"] = locs["Location_id"].astype(str).str.strip()
     locs["lat"] = pd.to_numeric(locs["lat"], errors="raise")
     locs["lon"] = pd.to_numeric(locs["lon"], errors="raise")
-    locs["coord_key"] = list(zip(locs["lat"].round(6), locs["lon"].round(6)))
-
-    source_priority = {"prezero": 0, "osm_assigned": 1, "synthetic": 2}
-    sites_by_coord: dict[tuple[float, float], Site] = {}
+    sites_by_location: dict[str, Site] = {}
     sites: list[Site] = []
 
-    for coord_key in sorted(set(locs["coord_key"])):
+    for row in locs.sort_values("Location_id").itertuples(index=False):
         site_id = f"site_{len(sites) + 1:03d}"
-        coord_rows = locs[locs["coord_key"] == coord_key]
-        best_row = min(
-            coord_rows.itertuples(index=False),
-            key=lambda r: source_priority.get(_normalize_source(getattr(r, "source", "synthetic")), 99),
-        )
+        location_id = str(row.Location_id)
         site = Site(
             site_id=site_id,
-            lat=float(coord_key[0]),
-            lon=float(coord_key[1]),
-            source=_normalize_source(getattr(best_row, "source", "synthetic")),
-            confidence=str(getattr(best_row, "confidence", "synthetic")).strip().lower(),
+            lat=float(row.lat),
+            lon=float(row.lon),
+            source=_normalize_source(getattr(row, "source", "synthetic")),
+            confidence=str(getattr(row, "confidence", "synthetic")).strip().lower(),
         )
-        sites_by_coord[coord_key] = site
+        sites_by_location[location_id] = site
         sites.append(site)
 
     for row in locs.sort_values("Location_id").itertuples(index=False):
         loc_id = str(row.Location_id)
-        site = sites_by_coord[row.coord_key]
-        loc_readings = readings_by_loc.get(loc_id)
-
-        if loc_readings is None or loc_readings.empty:
-            stream = GLASS_WHITE
-            measurements: list[Measurement] = []
-        else:
-            primary_mat = _select_primary_material(loc_readings["material_type"].tolist())
-            stream = WASTE_STREAMS.get(primary_mat, GLASS_WHITE)
-            mat_readings = loc_readings[loc_readings["material_type"] == primary_mat].sort_values("date")
-            measurements = [
-                Measurement(
-                    location_id=loc_id,
-                    timestamp=pd.Timestamp(r.date),
-                    fill_pct=float(r.fill_level_numeric),
-                )
-                for r in mat_readings.itertuples(index=False)
-            ]
-
-        container = Container(
-            location_id=loc_id,
-            site_id=site.site_id,
-            waste_stream=stream,
-            measurements=measurements,
-            reference_date=max_dataset_date,
-        )
-        site.containers.append(container)
+        site = sites_by_location[loc_id]
+        material_names = sorted(
+            material
+            for (location_key, material) in readings_by_series
+            if location_key == loc_id
+        ) or ["white"]
+        for material_name in material_names:
+            mat_readings = readings_by_series.get((loc_id, material_name))
+            if mat_readings is None:
+                measurements: list[Measurement] = []
+            else:
+                mat_readings = mat_readings.sort_values("date")
+                measurements = [
+                    Measurement(
+                        location_id=loc_id,
+                        timestamp=pd.Timestamp(r.date),
+                        fill_pct=float(r.fill_level_numeric),
+                    )
+                    for r in mat_readings.itertuples(index=False)
+                ]
+            stream = WASTE_STREAMS.get(material_name, GLASS_WHITE)
+            container = Container(
+                location_id=loc_id,
+                site_id=site.site_id,
+                waste_stream=stream,
+                measurements=measurements,
+                reference_date=max_dataset_date,
+            )
+            site.containers.append(container)
 
     return sites

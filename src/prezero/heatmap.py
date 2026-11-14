@@ -215,7 +215,8 @@ def build_heatmap_matrix(
                 else:
                     values.append(_forecast_at(container, week_end))
                     predicted.append(True)
-            rows.append({"Location_id": container.location_id, **dict(zip(week_labels, values))})
+            container_key = f"{container.location_id} · {container.waste_stream.name.removeprefix('glass_')}"
+            rows.append({"Location_id": container_key, **dict(zip(week_labels, values))})
             predicted_rows.append(predicted)
             material = container.waste_stream.name
             materials.append(material)

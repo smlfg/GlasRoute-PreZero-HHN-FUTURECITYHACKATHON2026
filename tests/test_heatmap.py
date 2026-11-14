@@ -67,7 +67,7 @@ def test_real_dataset_has_all_449_containers() -> None:
         "2025-10-17",
         "2026-09-30",
     )
-    assert len(matrix) == 449
+    assert len(matrix) == 1338
     assert matrix.min().min() >= 0
     assert matrix.max().max() <= 110
     assert matrix.attrs["predicted"].shape == matrix.shape

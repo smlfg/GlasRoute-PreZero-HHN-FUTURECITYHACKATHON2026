@@ -23,7 +23,7 @@ READINGS_PATH = ROOT / "data" / "processed" / "cleaned_readings.csv"
 LOCATIONS_PATH = ROOT / "data" / "external" / "locations.csv"
 
 
-def test_build_model_produces_449_containers_with_measurements_and_waste_stream() -> None:
+def test_build_model_produces_1338_material_containers() -> None:
     readings_df = pd.read_csv(
         READINGS_PATH,
         parse_dates=["date"],
@@ -35,8 +35,18 @@ def test_build_model_produces_449_containers_with_measurements_and_waste_stream(
     assert sites
 
     containers = [container for site in sites for container in site.containers]
-    assert len(containers) == 449
+    assert len(containers) == 1338
     assert len({c.location_id for c in containers}) == 449
+    assert all(1 <= len(site.containers) <= 3 for site in sites)
+    measurement_counts = {
+        material: sum(
+            len(container.measurements)
+            for container in containers
+            if container.waste_stream.name == f"glass_{material}"
+        )
+        for material in ("white", "green", "brown")
+    }
+    assert measurement_counts == {"white": 4432, "green": 4169, "brown": 3100}
 
     valid_names = {"glass_white", "glass_green", "glass_brown"}
     for container in containers:
