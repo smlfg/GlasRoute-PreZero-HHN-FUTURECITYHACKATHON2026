@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import click
 import pandas as pd
 
-from prezero import features, ingest, locations, routing, scoring, viz
+from prezero import approval, features, ingest, locations, routing, scoring, viz
 
 
 @click.group()
@@ -239,6 +240,95 @@ def run_cmd(
     click.echo(
         f"Outputs: {out_dir / f'route_{date}.json'}, {map_path}, {trends_path}"
     )
+
+
+@cli.command("propose")
+@click.option(
+    "--route",
+    "-r",
+    default=None,
+    help="Path to route_<date>.json. Defaults to the most recent route file.",
+)
+@click.option(
+    "--output",
+    "-o",
+    default="data/processed/proposal.json",
+    show_default=True,
+    help="Where the proposal is written.",
+)
+def propose_cmd(route: str | None, output: str) -> None:
+    """Turn a computed route into a proposal awaiting dispatcher approval."""
+    route_path = Path(route) if route else _latest_route_file()
+    payload = json.loads(route_path.read_text(encoding="utf-8"))
+    proposal = approval.propose_route(payload)
+    out_path = Path(output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(proposal, indent=2, ensure_ascii=False), encoding="utf-8")
+    click.echo(approval.format_proposal_summary(proposal))
+    click.echo(f"Proposal written to {out_path}")
+    click.echo("Nothing is dispatched until a dispatcher approves it.")
+
+
+@cli.command("approve")
+@click.option(
+    "--proposal",
+    "-p",
+    default="data/processed/proposal.json",
+    show_default=True,
+    help="Path to the proposal file.",
+)
+@click.option(
+    "--by",
+    "approved_by",
+    default="dispatcher",
+    show_default=True,
+    help="Who takes the decision.",
+)
+@click.option(
+    "--reject",
+    "reason",
+    default=None,
+    help="Reject the proposal with this reason instead of approving it.",
+)
+@click.option(
+    "--output-dir",
+    default="data/processed",
+    show_default=True,
+    help="Directory for the approval record.",
+)
+def approve_cmd(
+    proposal: str,
+    approved_by: str,
+    reason: str | None,
+    output_dir: str,
+) -> None:
+    """Approve or reject a proposed route and record the decision."""
+    loaded = approval.load_proposal(proposal)
+    if reason:
+        record = approval.rejection_record(
+            loaded,
+            rejected_by=approved_by,
+            reason=reason,
+            output_dir=output_dir,
+        )
+        click.echo(f"Proposal rejected by {approved_by}: {reason}")
+    else:
+        record = approval.approve_route(
+            loaded,
+            approved_by=approved_by,
+            output_dir=output_dir,
+        )
+        click.echo(f"Route approved by {approved_by}")
+    click.echo(f"Record written to {record['record_path']}")
+    click.echo(approval.format_proposal_summary(record))
+
+
+def _latest_route_file() -> Path:
+    """Find the newest route_<date>.json in the working directory."""
+    candidates = sorted(Path(".").glob("route_*.json"), key=lambda p: p.stat().st_mtime)
+    if not candidates:
+        raise click.ClickException("No route file found. Run 'prezero-route route' first.")
+    return candidates[-1]
 
 
 if __name__ == "__main__":

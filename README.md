@@ -21,28 +21,68 @@ A CLI tool that:
 ## Quick start
 
 ```bash
-# Install
+# Install (editable, puts `prezero-route` on PATH)
 pip install -e .
 
-# Resolve container coordinates (OpenStreetMap attempt + deterministic fallback)
-python scripts/fetch_locations.py
+# Without installing: PYTHONPATH=src python3 -m prezero.cli <command>
+```
 
-# Refresh from the best available source / apply PreZero coordinates later
-python scripts/refresh_locations.py
+## Demo-Ablauf (das, was am Sonntag läuft)
 
-# Run full demo
-python scripts/01_ingest.py
-python scripts/02_analyze.py
-python scripts/03_score.py
-python scripts/04_route.py
-python scripts/05_visualize.py
+Drei Befehle, ein Datum:
 
-# Or use the CLI
-prezero-route ingest
-prezero-route analyze
-prezero-route score --date 2026-04-15
-prezero-route route --date 2026-04-15
-prezero-route visualize
+```bash
+prezero-route run --date 2026-04-15
+```
+
+Erzeugt `route_2026-04-15.json`, `map_2026-04-15.html`, `trends.png` und
+`data/processed/scored_2026-04-15.csv`. Erwartete Ausgabe:
+
+```
+Pipeline complete for 2026-04-15: 169 critical locations (213 pairs).
+119.75 km planned (25 stops) vs. 157.72 km full round (431 stops)
+```
+
+Dann der Human-Agent-Schritt — erst der Vorschlag, dann die Entscheidung:
+
+```bash
+prezero-route propose                      # Vorschlag anzeigen + speichern
+prezero-route approve --by "Disponentin"   # freigeben -> Beleg mit Zahlen
+```
+
+Erwartete Ausgabe:
+
+```
+Route proposal for 2026-04-15
+  stops:          25
+  planned:        119.75 km
+  saved:          37.97 km (24.1 %)
+  vehicles:       2
+  shift hours:    8.52
+  collected:      41.8 t
+```
+
+`approve` schreibt `data/processed/approval_2026-04-15.json` (Zeitstempel, Freigebende, Route,
+entscheidende Kennzahlen). Mit `--reject "<Grund>"` wird stattdessen eine Ablehnung mit Begründung
+protokolliert. **Ohne Freigabe wird nichts dispatcht.**
+
+## Alle Befehle
+
+| Befehl | Zweck |
+|---|---|
+| `ingest` | Roh-CSV einlesen und bereinigen (`overfull` → 110 %) |
+| `score --date` | Features + Kritikalitäts-Score bis zum Stichtag |
+| `route --date` | Route für ein Fahrzeug (Haversine, Kapazität, Schicht, Umschlag) |
+| `visualize --date` | `trends.png` + `map_<date>.html` |
+| `run --date` | Alles in einem Durchlauf |
+| `propose` | Route in einen freigabepflichtigen Vorschlag überführen |
+| `approve` | Vorschlag freigeben oder ablehnen, Beleg schreiben |
+
+## Ortsdaten
+
+```bash
+python scripts/fetch_locations.py    # OSM-Glascontainer holen (Area-Query, BBox-Fallback)
+python scripts/refresh_locations.py  # Alternativ: Standorte neu auflösen
 ```
 
 ## Data
@@ -81,5 +121,17 @@ df = load_locations()  # reads data/external/locations.csv by default
 - `docs/ANFORDERUNGEN.md` – challenge requirements
 - `docs/ARCHITEKTUR.md` – technical architecture and geo swap path
 - `docs/GEO_DATENQUELLEN.md` – checked open-data sources, limits, licenses/attribution
-- `docs/PITCH.md` – Sunday pitch structure
+- `docs/PITCH.md` – Sunday pitch structure with verified figures
+- `docs/STATUS.md` – current state, pitch numbers, next steps
 - `PLAN.md` – hackathon plan with checkpoints
+- `AGENTS.md` – scope, data-truth rules and agent contract for this repo
+
+## Tests
+
+```bash
+PYTHONPATH=src python3 -m pytest tests/ -q
+```
+
+41 Tests: Ingestion, Geo-Auflösung (inkl. 449-ID-Vertrag, Timeout-Fallback, Prioritätslogik),
+Features, Scoring, Routing, Visualisierung und Disponent-Freigabe.
+

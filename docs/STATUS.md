@@ -1,6 +1,6 @@
 # GlasRoute (PreZero Route) – Projektstatus
 
-**Stand:** Samstag, 14.11.2026, 15:45 Uhr · **Abgabe:** Sonntag, 15.11.2026, 13:00 Uhr
+**Stand:** Samstag, 14.11.2026, 15:55 Uhr · **Abgabe:** Sonntag, 15.11.2026, 13:00 Uhr
 
 ---
 
@@ -105,11 +105,14 @@ flowchart LR
 
 ## 6. Nächste Schritte
 
-1. **`docs/PITCH.md` mit echten Zahlen füllen** (Abschnitt 4 dieser Datei als Quelle).
-2. **Disponent-Freigabe implementieren** — der letzte offene Deliverable-Punkt: Agent schlägt Route
-   vor, Mensch bestätigt, erst dann wird exportiert.
-3. **README aktualisieren** — Pipeline-Kommandos und Demo-Ablauf.
-4. **Pitch-Deck** (Slides) für 13:00.
+1. **Pitch-Deck** (Slides) für 13:00 — `docs/PITCH.md` liefert die belegten Zahlen und den Ablauf.
+2. **README-Demo-Ablauf durchspielen** — drei Befehle, ein Datum, mit Erwartungsausgaben.
+3. **Präsentationsfolien bauen** und einmal mit Timer durchgehen.
+4. **Optional, wenn Zeit bleibt:** CLI-Tests für `propose`/`approve` mit `CliRunner`.
+
+Der Disponent-Freigabe-Schritt (Human-Agent-Interface) ist **fertig und getestet**:
+`prezero-route propose` → `prezero-route approve` (oder `--reject`) → Beleg in
+`data/processed/approval_<date>.json` mit Zeitstempel, Freigebender, Route und Kennzahlen.
 
 ---
 
