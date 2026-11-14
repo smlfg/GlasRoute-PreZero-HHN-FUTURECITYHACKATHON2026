@@ -20,9 +20,14 @@ EARTH_RADIUS_KM = 6371.0
 class OperationalConfig:
     """Configurable operational assumptions for glass collection routing."""
 
-    density_kg_per_m3: float = 400.0  # Annahme, von PreZero zu ersetzen
+    density_kg_per_m3: float = 400.0  # Annahme, von PreZero zu ersetzen (alle Abfallströme)
+    # Optional per waste stream (glass colour); None = use density_kg_per_m3.
+    density_white_kg_per_m3: float | None = None  # Annahme, von PreZero zu ersetzen
+    density_green_kg_per_m3: float | None = None  # Annahme, von PreZero zu ersetzen
+    density_brown_kg_per_m3: float | None = None  # Annahme, von PreZero zu ersetzen
     container_volume_m3: float = 2.5  # Annahme, von PreZero zu ersetzen
     vehicle_max_weight_kg: float = 11000.0  # Annahme, von PreZero zu ersetzen
+    vehicle_max_volume_m3: float = 26.0  # Annahme, von PreZero zu ersetzen
     road_detour_factor: float = 1.35  # Annahme, von PreZero zu ersetzen
     avg_speed_kmh: float = 25.0  # Annahme, von PreZero zu ersetzen
     yard_depot: tuple[float, float] = (49.1427, 9.2109)  # Annahme, von PreZero zu ersetzen
@@ -36,8 +41,12 @@ class OperationalConfig:
         """Return a JSON-serializable representation of all operational assumptions."""
         return {
             "density_kg_per_m3": float(self.density_kg_per_m3),
+            "density_white_kg_per_m3": _opt_float(self.density_white_kg_per_m3),
+            "density_green_kg_per_m3": _opt_float(self.density_green_kg_per_m3),
+            "density_brown_kg_per_m3": _opt_float(self.density_brown_kg_per_m3),
             "container_volume_m3": float(self.container_volume_m3),
             "vehicle_max_weight_kg": float(self.vehicle_max_weight_kg),
+            "vehicle_max_volume_m3": float(self.vehicle_max_volume_m3),
             "road_detour_factor": float(self.road_detour_factor),
             "avg_speed_kmh": float(self.avg_speed_kmh),
             "yard_depot": [float(self.yard_depot[0]), float(self.yard_depot[1])],
@@ -60,9 +69,26 @@ class OperationalConfig:
         for key, value in data.items():
             if key in {"yard_depot", "disposal_depot"}:
                 parsed[key] = _parse_coord_pair(value, key)
+            elif value is None:
+                parsed[key] = None
             else:
                 parsed[key] = float(value)
         return cls(**parsed)
+
+
+def density_for(cfg: OperationalConfig, material: str) -> float:
+    """Bulk density for one waste stream (glass colour); falls back to density_kg_per_m3."""
+    key = str(material).strip().lower().replace("glass_", "")
+    specific = {
+        "white": cfg.density_white_kg_per_m3,
+        "green": cfg.density_green_kg_per_m3,
+        "brown": cfg.density_brown_kg_per_m3,
+    }.get(key)
+    return float(cfg.density_kg_per_m3 if specific is None else specific)
+
+
+def _opt_float(value: float | None) -> float | None:
+    return None if value is None else float(value)
 
 
 def _parse_coord_pair(value: Any, field_name: str) -> tuple[float, float]:
@@ -139,12 +165,14 @@ def _aggregate_locations(
     # Mass to collect = current (estimated) level; the last reading was taken before emptying.
     if "est_fill_level" not in work.columns:
         work["est_fill_level"] = work["last_fill_level"]
-    work["bin_mass_kg"] = (
-        float(cfg.container_volume_m3)
-        * (work["est_fill_level"].astype(float) / 100.0)
-        * float(cfg.density_kg_per_m3)
+    work["bin_volume_m3"] = float(cfg.container_volume_m3) * (
+        work["est_fill_level"].astype(float).clip(lower=0.0) / 100.0
+    )
+    work["bin_mass_kg"] = work["bin_volume_m3"] * work["material_type"].map(
+        lambda m: density_for(cfg, m)
     )
     work["crit_mass_kg"] = work["bin_mass_kg"].where(work["critical"], 0.0)
+    work["crit_volume_m3"] = work["bin_volume_m3"].where(work["critical"], 0.0)
 
     merged = work.merge(
         locations[["Location_id", "lat", "lon", "source", "confidence"]],
@@ -169,6 +197,9 @@ def _aggregate_locations(
         mass_kg=("crit_mass_kg", "sum"),
         total_mass_kg=("bin_mass_kg", "sum"),
         max_bin_mass_kg=("bin_mass_kg", "max"),
+        volume_m3=("crit_volume_m3", "sum"),
+        total_volume_m3=("bin_volume_m3", "sum"),
+        max_bin_volume_m3=("bin_volume_m3", "max"),
         source=("source", "first"),
         confidence=("confidence", "first"),
     )
@@ -176,7 +207,8 @@ def _aggregate_locations(
     no_crit = per_loc["critical_bins"] == 0
     per_loc.loc[no_crit, "critical_bins"] = 1
     per_loc.loc[no_crit, "mass_kg"] = per_loc.loc[no_crit, "max_bin_mass_kg"]
-    per_loc = per_loc.drop(columns=["max_bin_mass_kg"])
+    per_loc.loc[no_crit, "volume_m3"] = per_loc.loc[no_crit, "max_bin_volume_m3"]
+    per_loc = per_loc.drop(columns=["max_bin_mass_kg", "max_bin_volume_m3"])
 
     per_loc["lat"] = per_loc["_lat_key"]
     per_loc["lon"] = per_loc["_lon_key"]
@@ -269,6 +301,7 @@ def _simulate_constrained_routes(
     vehicle_idx = 1
     cur_lat, cur_lon = yard_lat, yard_lon
     cur_weight_kg = 0.0
+    cur_volume_m3 = 0.0
     cur_shift_min = 0.0
     cur_vehicle_km = 0.0
     cur_vehicle_mass_kg = 0.0
@@ -278,7 +311,7 @@ def _simulate_constrained_routes(
 
     def _close_vehicle() -> None:
         nonlocal total_km, cur_vehicle_km, cur_shift_min
-        nonlocal vehicle_idx, cur_lat, cur_lon, cur_weight_kg
+        nonlocal vehicle_idx, cur_lat, cur_lon, cur_weight_kg, cur_volume_m3
         nonlocal cur_vehicle_mass_kg, cur_round, cur_vehicle_stops, cur_vehicle_unloads
 
         return_km = road_distance_km(cur_lat, cur_lon, yard_lat, yard_lon, cfg)
@@ -299,6 +332,7 @@ def _simulate_constrained_routes(
         vehicle_idx += 1
         cur_lat, cur_lon = yard_lat, yard_lon
         cur_weight_kg = 0.0
+        cur_volume_m3 = 0.0
         cur_shift_min = 0.0
         cur_vehicle_km = 0.0
         cur_vehicle_mass_kg = 0.0
@@ -316,10 +350,13 @@ def _simulate_constrained_routes(
         cand = remaining[best_idx]
         cand_lat, cand_lon = float(cand["lat"]), float(cand["lon"])
         cand_mass_kg = float(cand["mass_kg"])
+        cand_volume_m3 = float(cand.get("volume_m3", 0.0) or 0.0)
         cand_bins = max(1, int(cand["critical_bins"]))
         service_min = float(cfg.stop_setup_min) + cand_bins * float(cfg.lift_time_per_bin_min)
 
-        if cur_weight_kg > 0.0 and (cur_weight_kg + cand_mass_kg) > float(cfg.vehicle_max_weight_kg):
+        over_weight = (cur_weight_kg + cand_mass_kg) > float(cfg.vehicle_max_weight_kg)
+        over_volume = (cur_volume_m3 + cand_volume_m3) > float(cfg.vehicle_max_volume_m3)
+        if (cur_weight_kg > 0.0 or cur_volume_m3 > 0.0) and (over_weight or over_volume):
             leg_to_disp_km = road_distance_km(cur_lat, cur_lon, disp_lat, disp_lon, cfg)
             unload_step_min = drive_time_min(leg_to_disp_km, cfg) + float(cfg.unload_time_min)
 
@@ -368,6 +405,7 @@ def _simulate_constrained_routes(
                 unload_stops.append(unload_entry)
                 cur_lat, cur_lon = disp_lat, disp_lon
                 cur_weight_kg = 0.0
+                cur_volume_m3 = 0.0
                 cur_round += 1
                 cur_vehicle_unloads += 1
                 continue
@@ -392,6 +430,7 @@ def _simulate_constrained_routes(
         cur_vehicle_km += leg_to_cand_km
         cur_shift_min += drive_time_min(leg_to_cand_km, cfg) + service_min
         cur_weight_kg += cand_mass_kg
+        cur_volume_m3 += cand_volume_m3
         cur_vehicle_mass_kg += cand_mass_kg
         total_mass_kg += cand_mass_kg
         cur_vehicle_stops += 1
@@ -416,6 +455,8 @@ def _simulate_constrained_routes(
                 "critical_bins": cand_bins,
                 "mass_kg": round(cand_mass_kg, 2),
                 "load_kg": round(cur_weight_kg, 2),
+                "volume_m3": round(cand_volume_m3, 2),
+                "load_m3": round(cur_volume_m3, 2),
                 "leg_km": round(leg_to_cand_km, 3),
                 "cumulative_km": round(total_km, 3),
             }
@@ -501,7 +542,9 @@ def build_route(
         # Status quo empties every bin at every site, under the SAME capacity/shift/unload
         # rules as the planned tour (otherwise the comparison is not like-for-like).
         status_quo = loc_scores.assign(
-            mass_kg=loc_scores["total_mass_kg"], critical_bins=loc_scores["bins"]
+            mass_kg=loc_scores["total_mass_kg"],
+            volume_m3=loc_scores["total_volume_m3"],
+            critical_bins=loc_scores["bins"],
         )
         _, _, full_vehicles, full_round_km, _ = _simulate_constrained_routes(status_quo, cfg)
         collection_stop_count = len(stops) - len(unload_stops)

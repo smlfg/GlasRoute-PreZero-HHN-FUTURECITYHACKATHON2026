@@ -195,3 +195,56 @@ def test_full_round_uses_same_capacity_rules_as_planned_tour() -> None:
     assert route["full_round_km"] > route["planned_km"]
     assert route["full_round_vehicles"] >= route["vehicles_needed"]
     assert "same capacity rules" in route["comparison"]
+
+
+def _two_colour_site() -> tuple:
+    import pandas as pd
+
+    scored = pd.DataFrame(
+        {
+            "Location_id": ["A", "A", "B", "B"],
+            "material_type": ["white", "green", "white", "green"],
+            "score": [0.9, 0.9, 0.9, 0.9],
+            "critical": [True, True, True, True],
+            "last_fill_level": [100.0] * 4,
+            "est_fill_level": [100.0] * 4,
+        }
+    )
+    locs = pd.DataFrame(
+        {
+            "Location_id": ["A", "B"],
+            "lat": [49.14, 49.16],
+            "lon": [9.21, 9.23],
+            "source": ["osm_assigned"] * 2,
+            "confidence": ["simulated_mapping"] * 2,
+        }
+    )
+    return scored, locs
+
+
+def test_density_per_glass_colour_changes_collected_mass() -> None:
+    from prezero import routing
+
+    scored, locs = _two_colour_site()
+    base = routing.build_route(scored, locs, config=routing.OperationalConfig())
+    # 4 full 2.5 m3 bins x 400 kg/m3 = 4.0 t
+    assert base["t_collected"] == pytest.approx(4.0)
+    heavy_green = routing.OperationalConfig(density_green_kg_per_m3=600.0)
+    route = routing.build_route(scored, locs, config=heavy_green)
+    # white 2 x 1.0 t + green 2 x 1.5 t = 5.0 t
+    assert route["t_collected"] == pytest.approx(5.0)
+    assert routing.density_for(heavy_green, "glass_white") == pytest.approx(400.0)
+
+
+def test_vehicle_volume_limit_forces_unload() -> None:
+    from prezero import routing
+
+    scored, locs = _two_colour_site()
+    # Each site holds 2 x 2.5 m3 = 5 m3; with 6 m3 capacity the second site needs an unload first.
+    cfg = routing.OperationalConfig(vehicle_max_volume_m3=6.0)
+    route = routing.build_route(scored, locs, config=cfg)
+    assert len(route["unload_stops"]) == 1
+    loads = [s["load_m3"] for s in route["stops"] if s.get("stop_type") == "collection"]
+    assert max(loads) <= 6.0
+    roomy = routing.build_route(scored, locs, config=routing.OperationalConfig())
+    assert len(roomy["unload_stops"]) == 0

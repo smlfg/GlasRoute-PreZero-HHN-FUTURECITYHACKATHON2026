@@ -1,7 +1,11 @@
 {
   "density_kg_per_m3": 400.0,
+  "density_white_kg_per_m3": null,
+  "density_green_kg_per_m3": null,
+  "density_brown_kg_per_m3": null,
   "container_volume_m3": 2.5,
   "vehicle_max_weight_kg": 11000.0,
+  "vehicle_max_volume_m3": 26.0,
   "road_detour_factor": 1.35,
   "avg_speed_kmh": 25.0,
   "yard_depot": [
