@@ -109,8 +109,9 @@ def test_cli_run_accepts_input_alias(tmp_path: Path) -> None:
     raw_path, locs_path = _stage_sample_inputs(tmp_path)
     result = CliRunner().invoke(
         cli,
+        # --cleaned keeps the test from overwriting the real data/processed/cleaned_readings.csv.
         ["run", "--date", "2026-04-15", "--input", str(raw_path), "--locations", str(locs_path),
-         "--output-dir", str(tmp_path / "out")],
+         "--cleaned", str(tmp_path / "cleaned.csv"), "--output-dir", str(tmp_path / "out")],
     )
     assert result.exit_code == 0, result.output
 
