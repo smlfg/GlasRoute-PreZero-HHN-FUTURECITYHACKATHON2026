@@ -33,7 +33,26 @@
 - Do: CLI-first, kleine Schritte, validieren.
 - Don't: Dashboard-Overengineering, Flottenoptimierung, erfundene Zahlen.
 
-## Aktueller Arbeitsstand & Team-Aufteilung (Update Sa 15:00)
+## Stand (Sa 17:15)
+
+**Solaufstellung:** das Projekt läuft solo mit Agenten-Workern (Claude Code, Zed/Copilot) — die
+ursprüngliche Rollenaufteilung unten ist Geschichte. Geliefert ist:
+
+| Slice | Stand |
+|---|---|
+| Ingest → Features → Scoring → Routing | ✅ Ende-zu-Ende (`prezero-route run --date 2026-04-15`) |
+| Geo-Modul (OSM-Abruf + Resolver) | ✅ siehe Slice unten + Vertragsnotiz |
+| Disponent-Freigabe (Human-Agent Interface) | ✅ `propose` / `approve` / `--reject`, Beleg-JSON |
+| Forecast (KW 16–19) | ✅ `prezero-route forecast`, `forecast_16.html` |
+| Heatmap (alle 449 Container, Wochen-Slider) | ✅ |
+| Lokale 4-View-Weboberfläche | ✅ `prezero-route ui`, `ui_<date>.html` |
+| Pitch-Material | ✅ `docs/PITCH.md` + `Pitch/NOTES.md`, Zahlen gegen Belege geprüft |
+| **Offen** | Folien bauen, Live-Hook üben (`--config`), Dry-Run, **Freeze So 11:00** |
+
+Der Live-Hook: 11 Betriebsvariablen in `prezero_config.json` — mit PreZeros Zahlen gerechnet
+(2 Fahrzeuge/120 km → 1 Fahrzeug/99 km, getestet).
+
+## Solaufstellung & Re-Planning (historisch, Sa 15:00)
 
 ### 1. Rollen & Schritt 1 (Task 1 – Datengrundlage)
 
@@ -62,6 +81,12 @@ Sobald Schritt 1 abgeschlossen ist, folgt ein bewusster **Checkpoint**, bevor es
 
 ## Slice: Geo-Positions-Modul (Mission M-20261114T144015-322994d8)
 
+> **Vertragsnotiz (Sa 17:15):** geliefert wurde ein anderer Vertrag als hier geplant: statt
+> `osm_heuristic`/`low` + `synthetic_placeholder` entscheidet die gelebte Lösung `osm_assigned` /
+> `simulated_mapping` — alle 449 IDs auf echten OSM-Punkten, die ID-Zuordnung ist simuliert
+> (Punkte wiederverwendet). Nachvollziehbar in `data/external/locations.csv` und
+> `docs/STATUS.md`. Der Austauschpfad (`locations_real.csv`) ist unverändert gültig.
+
 ### Ziel und Abgrenzung
 
 Für jede der 449 anonymisierten `Location_id`s genau eine Koordinate mit Herkunft und Verlässlichkeit bereitstellen. Reale OSM-Punkte dokumentieren reale Containerstandorte; ihre Zuordnung zu anonymen IDs bleibt ohne PreZero-Schlüssel eine **unbewiesene Heuristik** und erhält deshalb höchstens `confidence=low`. Spätere PreZero-Koordinaten ersetzen alle Heuristiken ohne Codeänderung.
@@ -80,12 +105,12 @@ Nicht-Ziele: keine 1:1-Behauptung, keine schwere GIS-Bibliothek, kein Routing-/D
 ### Tests und Abnahme
 
 - Unit-Tests in `tests/test_locations.py` für Materialsets, deterministische Synthetik, eindeutige/heuristische OSM-Matches, direkte Providerpriorität, 449 IDs, ungültige CSVs sowie HTTP-, Schema- und Timeout-Fehler per Mock. Der Timeout-Mock muss belegen, dass der Resolver trotzdem alle IDs mit markierten Ersatzdaten liefert; Retry-Zähler und Timeout-Parameter werden geprüft.
-- CLI-End-to-End: Fetch normal und simulierter Ausfall; Refresh ohne und mit temporärer PreZero-CSV; Sanity-HTML existiert und enthält alle Punkte. Temporäre Testdaten liegen ausschließlich unter `Projek-Managment/tmp/`.
+- CLI-End-to-End: Fetch normal und simulierter Ausfall; Refresh ohne und mit temporärer PreZero-CSV; Sanity-HTML existiert und enthält alle Punkte. Temporäre Testdaten liegen ausschließlich unter `Projek-Management/tmp/`.
 - Bestehende Pipeline-Tests in `tests/test_pipeline.py` laufen unverändert weiter. Statistik nennt reale Kandidaten, heuristische Zuordnungen und Synthetik getrennt.
 - Abnahme: die Eingabe liefert 449 IDs; die Ausgabe hat genau 449 Datenzeilen, deren ID-Menge exakt der Eingabe-ID-Menge entspricht und deren IDs eindeutig sind; endliche `lat/lon` in gültigen WGS84-Bereichen; `source`, `confidence`, `match_reason` vorhanden; Synthetik ausschließlich `synthetic_placeholder/synthetic`; Import `from prezero.locations import load_locations` funktioniert.
 
 ### Boundaries / Reproduktion
 
-Erlaubt sind ausschließlich: `PLAN.md`, `README.md`, `UPSTREAM_SEARCH.md`, `PLAN_VALIDATION_REPORT.md`, `docs/ARCHITEKTUR.md`, `docs/GEO_DATENQUELLEN.md`, `scripts/fetch_locations.py`, `scripts/refresh_locations.py`, `src/prezero/locations.py`, `tests/test_locations.py`, neue nicht-sensitive CSV-/HTML-Dateien unter `data/external/` sowie Evidenz, Council-Ausgaben und temporäre Testdaten unter `Projek-Managment/`. Alle übrigen Pfade einschließlich Rawdaten, bestehendem Pipeline-Code und Konfiguration bleiben unverändert.
+Erlaubt sind ausschließlich: `PLAN.md`, `README.md`, `UPSTREAM_SEARCH.md`, `PLAN_VALIDATION_REPORT.md`, `docs/ARCHITEKTUR.md`, `docs/GEO_DATENQUELLEN.md`, `scripts/fetch_locations.py`, `scripts/refresh_locations.py`, `src/prezero/locations.py`, `tests/test_locations.py`, neue nicht-sensitive CSV-/HTML-Dateien unter `data/external/` sowie Evidenz, Council-Ausgaben und temporäre Testdaten unter `Projek-Management/`. Alle übrigen Pfade einschließlich Rawdaten, bestehendem Pipeline-Code und Konfiguration bleiben unverändert.
 
 HTTP nutzt die Python-Standardbibliothek; Datenverarbeitung pandas und Karte das bereits deklarierte folium — damit ist keine Konfigurationsänderung nötig. Seed 2026; keine Löschungen. Bei fehlendem externen Datensatz werden ausschließlich klar markierte Platzhalter erzeugt. Plan-Council und unabhängiger Plan-Validator müssen den revidierten SHA vor Feature-Code erneut freigeben.
