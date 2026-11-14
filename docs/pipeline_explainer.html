@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlasRoute — Datenpipeline Visual Explainer</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --ink: #0f172a;
+      --muted: #475569;
+      --subtle: #64748b;
+      --border: #cbd5e1;
+      --border-soft: #e2e8f0;
+
+      --real-bg: #dcfce7;
+      --real-fg: #166534;
+      --real-bd: #86efac;
+
+      --sim-bg: #ffedd5;
+      --sim-fg: #9a3412;
+      --sim-bd: #fdba74;
+
+      --assump-bg: #e2e8f0;
+      --assump-fg: #334155;
+      --assump-bd: #94a3b8;
+
+      --accent: #0284c7;
+      --accent-soft: #e0f2fe;
+      --feedback: #0f766e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.35;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .slide {
+      width: 100%;
+      max-width: 1460px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+      padding: 18px 22px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 10px;
+    }
+
+    .title-block h1 {
+      font-size: 1.28rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .title-block p {
+      font-size: 0.84rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-real { background: var(--real-bg); color: var(--real-fg); border-color: var(--real-bd); }
+    .badge-sim { background: var(--sim-bg); color: var(--sim-fg); border-color: var(--sim-bd); }
+    .badge-assump { background: var(--assump-bg); color: var(--assump-fg); border-color: var(--assump-bd); }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 3px 6px;
+    }
+
+    .controls button {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .controls button:hover:not(:disabled) {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .controls button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .step-counter {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 58px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Main body: Pipeline + Side Panel */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 270px;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .pipeline-area {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    /* 9-column horizontal flow */
+    .pipeline-row {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      gap: 8px;
+      position: relative;
+      align-items: stretch;
+    }
+
+    .module-card {
+      background: var(--surface-alt);
+      border: 1.5px solid var(--border);
+      border-top-width: 4px;
+      border-radius: 10px;
+      padding: 8px 8px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+    }
+
+    .module-card.tone-real { border-top-color: #16a34a; }
+    .module-card.tone-sim { border-top-color: #ea580c; }
+    .module-card.tone-assump { border-top-color: #64748b; }
+    .module-card.tone-mixed-ra { border-top-color: #16a34a; background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 45%); }
+    .module-card.tone-mixed-sa { border-top-color: #ea580c; background: linear-gradient(180deg, #fff7ed 0%, #f8fafc 45%); }
+
+    /* Arrow between cards */
+    .module-card:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--subtle);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .module-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .module-card.is-dimmed {
+      opacity: 0.45;
+    }
+
+    .module-card.is-active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2), 0 8px 18px rgba(15, 23, 42, 0.1);
+      transform: translateY(-2px);
+      opacity: 1;
+      background: #ffffff;
+    }
+
+    .mod-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mod-num {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--subtle);
+      background: #e2e8f0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mod-file {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .mod-purpose {
+      font-size: 0.74rem;
+      color: var(--ink);
+      font-weight: 600;
+      line-height: 1.28;
+    }
+
+    .mod-io {
+      font-size: 0.69rem;
+      color: var(--muted);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      padding: 4px 5px;
+      line-height: 1.28;
+      margin-top: auto;
+    }
+
+    .mod-io strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .mod-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 2px;
+    }
+
+    .mod-badges .badge {
+      font-size: 0.61rem;
+      padding: 1px 5px;
+    }
+
+    .output-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-top: auto;
+    }
+
+    .chip {
+      font-size: 0.67rem;
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      color: var(--ink);
+      line-height: 1.22;
+    }
+
+    .chip b { font-weight: 700; }
+
+    /* Feedback Loop SVG */
+    .feedback-wrap {
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    .feedback-svg {
+      width: 100%;
+      height: 46px;
+      display: block;
+      overflow: visible;
+    }
+
+    .feedback-active {
+      filter: drop-shadow(0 0 4px rgba(15, 118, 110, 0.45));
+    }
+
+    /* Interactive Caption Bar */
+    .caption-bar {
+      background: var(--accent-soft);
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: #0c4a6e;
+      min-height: 36px;
+    }
+
+    .caption-tag {
+      font-weight: 800;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 2px 7px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    /* Side Panel */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .truth-box {
+      border-radius: 10px;
+      padding: 10px 12px;
+      border: 1.5px solid;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .truth-real {
+      background: #f0fdf4;
+      border-color: var(--real-bd);
+    }
+
+    .truth-assumed {
+      background: #f8fafc;
+      border-color: var(--border);
+    }
+
+    .truth-box h2 {
+      font-size: 0.84rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .truth-real h2 { color: var(--real-fg); }
+    .truth-assumed h2 { color: var(--assump-fg); }
+
+    .truth-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 0.74rem;
+      color: var(--ink);
+    }
+
+    .truth-list li {
+      padding-left: 11px;
+      position: relative;
+      line-height: 1.3;
+    }
+
+    .truth-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      font-weight: 900;
+    }
+
+    .truth-real li::before { color: #16a34a; }
+    .truth-assumed li::before { color: #ea580c; }
+
+    /* Jury Footer */
+    .jury-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      border-top: 1px solid var(--border-soft);
+      padding-top: 10px;
+    }
+
+    .jury-item {
+      background: var(--surface-alt);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.32;
+    }
+
+    .jury-item strong {
+      color: var(--ink);
+      font-weight: 800;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .side-panel { flex-direction: row; }
+      .pipeline-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .module-card:not(:last-child)::after { content: "▸"; right: -10px; }
+    }
+
+    @media (max-width: 720px) {
+      .pipeline-row { grid-template-columns: 1fr; }
+      .module-card:not(:last-child)::after {
+        content: "↓";
+        right: 50%;
+        top: auto;
+        bottom: -14px;
+        transform: translateX(50%);
+      }
+      .side-panel { flex-direction: column; }
+      .jury-bar { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .slide { box-shadow: none; border: none; }
+      .controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="slide">
+    <header class="header">
+      <div class="title-block">
+        <h1>GlasRoute — Datenpipeline vom Roh-CSV bis zur Fahrertour</h1>
+        <p>Modulare CLI-Pipeline (<code>src/prezero/</code>) · 11.701 PreZero-Messungen · 449 Standorte · 1.338 Container-Zeitreihen</p>
+      </div>
+      <div class="header-right">
+        <div class="legend" aria-label="Datenherkunft">
+          <span class="badge badge-real">Echt</span>
+          <span class="badge badge-sim">Simuliert</span>
+          <span class="badge badge-assump">Annahme</span>
+        </div>
+        <div class="controls" aria-label="Schrittsteuerung">
+          <button id="btn-all" type="button" title="Alle Module zeigen">Alle</button>
+          <button id="btn-prev" type="button" title="Vorheriger Schritt (Pfeil links)">◀</button>
+          <span id="step-counter" class="step-counter">Überblick</span>
+          <button id="btn-next" type="button" title="Nächster Schritt (Pfeil rechts)">▶</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="main-grid">
+      <div class="pipeline-area">
+        <div class="pipeline-row" id="pipeline">
+          <!-- 1. ingest.py -->
+          <article class="module-card tone-real" data-step="1">
+            <div class="mod-head">
+              <span class="mod-num">1</span>
+              <span class="mod-file">ingest.py</span>
+            </div>
+            <p class="mod-purpose">Bereinigt PreZero-Scans und kodiert Überläufe.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> Roh-CSV (11.701 Scans, 10-%-Schritte)<br>
+              <strong>Aus:</strong> <code>cleaned_readings.csv</code> (<code>overfull</code> = 110 %)
+            </div>
+            <div class="mod-badges"><span class="badge badge-real">Echt</span></div>
+          </article>
+
+          <!-- 2. model.py -->
+          <article class="module-card tone-mixed-ra" data-step="2">
+            <div class="mod-head">
+              <span class="mod-num">2</span>
+              <span class="mod-file">model.py</span>
+            </div>
+            <p class="mod-purpose">Bildet Behälter, Standorte und Fahrzeugregeln ab.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> Bereinigte Scans<br>
+              <strong>Aus:</strong> 1.338 Container (Standort + Glasfarbe), <code>Site</code>, <code>Vehicle</code>, <code>Depot</code>, <code>ShiftConfig</code>
+            </div>
+            <div class="mod-badges">
+              <span class="badge badge-real">Echt</span>
+              <span class="badge badge-assump">Annahme</span>
+            </div>
+          </article>
+
+          <!-- 3. locations.py -->
+          <article class="module-card tone-sim" data-step="3">
+            <div class="mod-head">
+              <span class="mod-num">3</span>
+              <span class="mod-file">locations.py</span>
+            </div>
+            <p class="mod-purpose">Weist anonymen IDs reale OSM-Punkte zu.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> 449 IDs + OSM-Punkte<br>
+              <strong>Aus:</strong> Koordinaten (simuliert, Seed 2026; Tausch via <code>locations_real.csv</code>)
+            </div>
+            <div class="mod-badges"><span class="badge badge-sim">Simuliert</span></div>
+          </article>
+
+          <!-- 4. features.py -->
+          <article class="module-card tone-mixed-ra" data-step="4">
+            <div class="mod-head">
+              <span class="mod-num">4</span>
+              <span class="mod-file">features.py</span>
+            </div>
+            <p class="mod-purpose">Messen &amp; Leeren: leitet tägliche Füllrate ab.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> Besuchsintervalle<br>
+              <strong>Aus:</strong> Füllrate = Stand ÷ Tage seit Besuch; <code>est_fill_level</code>, Timer (80 %)
+            </div>
+            <div class="mod-badges">
+              <span class="badge badge-real">Echt</span>
+              <span class="badge badge-assump">Annahme</span>
+            </div>
+          </article>
+
+          <!-- 5. forecast.py -->
+          <article class="module-card tone-mixed-ra" data-step="5">
+            <div class="mod-head">
+              <span class="mod-num">5</span>
+              <span class="mod-file">forecast.py</span>
+            </div>
+            <p class="mod-purpose">Schreibt Füllstand über 4 Wochen voraus.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> Füllrate + Stichtag<br>
+              <strong>Aus:</strong> +0 / +7 / +14 / +21 Tage inkl. Tages-Saisonfaktor &amp; Ampelstatus
+            </div>
+            <div class="mod-badges">
+              <span class="badge badge-real">Echt</span>
+              <span class="badge badge-assump">Annahme</span>
+            </div>
+          </article>
+
+          <!-- 6. scoring.py -->
+          <article class="module-card tone-assump" data-step="6">
+            <div class="mod-head">
+              <span class="mod-num">6</span>
+              <span class="mod-file">scoring.py</span>
+            </div>
+            <p class="mod-purpose">Berechnet Dringlichkeit aus dem Leerungs-Timer.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> <code>est_fill_level</code>, <code>days_until_due</code><br>
+              <strong>Aus:</strong> <code>scored_&lt;date&gt;.csv</code> (<code>score</code> 0–1, kritisch ab 80 %)
+            </div>
+            <div class="mod-badges"><span class="badge badge-assump">Annahme</span></div>
+          </article>
+
+          <!-- 7. routing.py -->
+          <article class="module-card tone-mixed-sa" data-step="7">
+            <div class="mod-head">
+              <span class="mod-num">7</span>
+              <span class="mod-file">routing.py</span>
+            </div>
+            <p class="mod-purpose">Plant Stoppfolge unter Last- und Zeitlimits.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> Kritische Standorte<br>
+              <strong>Aus:</strong> <code>route_&lt;date&gt;.json</code> (11 t / 26 m³, 8 h, Entladestelle; NN / 2-opt / OR-Tools)
+            </div>
+            <div class="mod-badges">
+              <span class="badge badge-sim">Simuliert</span>
+              <span class="badge badge-assump">Annahme</span>
+            </div>
+          </article>
+
+          <!-- 8. approval.py -->
+          <article class="module-card tone-real" data-step="8">
+            <div class="mod-head">
+              <span class="mod-num">8</span>
+              <span class="mod-file">approval.py</span>
+            </div>
+            <p class="mod-purpose">Disponentin prüft und gibt Tour frei.</p>
+            <div class="mod-io">
+              <strong>Ein:</strong> Tourenvorschlag (<code>proposal</code>)<br>
+              <strong>Aus:</strong> <code>approval_&lt;date&gt;.json</code> mit Belegzahlen
+            </div>
+            <div class="mod-badges"><span class="badge badge-real">Echt</span></div>
+          </article>
+
+          <!-- 9. Outputs -->
+          <article class="module-card tone-mixed-sa" data-step="9">
+            <div class="mod-head">
+              <span class="mod-num">9</span>
+              <span class="mod-file">Outputs</span>
+            </div>
+            <p class="mod-purpose">Liefert Rollen-UI, Exporte, Copilot &amp; Vergleich.</p>
+            <div class="output-chips">
+              <div class="chip"><b>ui_&lt;date&gt;.html:</b> Fahrer / Disponentin / Analyse</div>
+              <div class="chip"><b>Export:</b> GPX / CSV (<code>tour.py</code>)</div>
+              <div class="chip"><b>copilot.py:</b> Offline-Q&amp;A &amp; What-if</div>
+              <div class="chip"><b>benchmark.py:</b> B0–B4 Vergleich</div>
+              <div class="chip"><b>simulate_daily.py:</b> Replay &amp; Kosten</div>
+            </div>
+            <div class="mod-badges">
+              <span class="badge badge-sim">Simuliert</span>
+              <span class="badge badge-real">Echt</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Feedback Loop SVG -->
+        <div class="feedback-wrap">
+          <svg id="feedback-svg" class="feedback-svg" viewBox="0 0 1120 48" preserveAspectRatio="none" aria-label="Rückkopplung vom Fahrer-Export zurück in ingest.py">
+            <defs>
+              <marker id="arrow-fb" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f766e" />
+              </marker>
+            </defs>
+            <path d="M 1058 2 L 1058 26 Q 1058 36 1044 36 L 76 36 Q 62 36 62 26 L 62 7"
+                  fill="none" stroke="#0f766e" stroke-width="2.4" stroke-dasharray="6 4"
+                  marker-end="url(#arrow-fb)" />
+            <rect x="330" y="23" width="460" height="22" rx="11" fill="#ecfdf5" stroke="#5eead4" stroke-width="1.2" />
+            <text x="560" y="38" text-anchor="middle" font-size="12" font-weight="700" fill="#0f766e"
+                  font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">
+              Rückkopplung ohne Sensor: Fahrer-Export (tour_feedback.csv) → neue CSV → zurück in ingest.py
+            </text>
+          </svg>
+        </div>
+
+        <!-- Caption Bar -->
+        <div class="caption-bar" id="caption-bar">
+          <span class="caption-tag" id="caption-tag">Überblick</span>
+          <span id="caption-text">Klicke auf ein Modul oder nutze ◀ / ▶ (Pfeiltasten), um den Datenfluss Schritt für Schritt durchzugehen.</span>
+        </div>
+      </div>
+
+      <!-- Side Panel -->
+      <aside class="side-panel" aria-label="Datenwahrheit">
+        <div class="truth-box truth-real">
+          <h2>Was ist echt? <span class="badge badge-real">Echt</span></h2>
+          <ul class="truth-list">
+            <li><strong>11.701 Messungen</strong> (17.10.2025 – 30.09.2026)</li>
+            <li><strong>449 Standorte</strong> &amp; <strong>1.338 Container</strong> (Weiß, Grün, Braun)</li>
+            <li><strong>Füllstände</strong> als Fahrerschätzung in <strong>10-%-Schritten</strong></li>
+            <li><strong>1.192× Übervoll</strong> (<code>overfull</code>, als 110 % kodiert)</li>
+            <li><strong>Besuchsdaten</strong> (Messen vor dem Leeren, danach ~0 %)</li>
+          </ul>
+        </div>
+
+        <div class="truth-box truth-assumed">
+          <h2>Was ist angenommen? <span class="badge badge-sim">Sim</span> <span class="badge badge-assump">Ann</span></h2>
+          <ul class="truth-list">
+            <li><strong>Standorte:</strong> echte OSM-Punkte, ID-Zuordnung simuliert (Seed 2026)</li>
+            <li><strong>Physik:</strong> Dichte 400 kg/m³, Container 2,5 m³</li>
+            <li><strong>Fahrzeug:</strong> 11 t Zuladung, 26 m³ Volumen, 8 h Schicht, 25 km/h</li>
+            <li><strong>Strecke &amp; Zeiten:</strong> Umweg 1,35, Entladung 20 min, Rüst/Hub 2/3 min</li>
+            <li><strong>Regeln &amp; Kosten:</strong> 80-%-Schwelle, Depots, Kostensätze im Replay</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="jury-bar" aria-label="Jury-Kriterien">
+      <div class="jury-item">
+        <strong>Understanding:</strong> Trennt reale Messen-&amp;-Leeren-Raten strikt von simulierten Orten und veränderbaren Betriebsparametern.
+      </div>
+      <div class="jury-item">
+        <strong>Documentation:</strong> Einheitliches Domänenmodell (<code>DATENMODELL.md</code>), sechs fixierte Stakeholder-Regeln und belegte Kennzahlen.
+      </div>
+      <div class="jury-item">
+        <strong>Choice of Technology:</strong> Modulares Python-CLI, reproduzierbares Routing (NN / 2-opt / OR-Tools) und offline-fähige HTML-UI.
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const STEPS = [
+      {
+        step: 0,
+        tag: "Überblick",
+        text: "Klicke auf ein Modul oder nutze ◀ / ▶ (Pfeiltasten), um den Datenfluss Schritt für Schritt durchzugehen."
+      },
+      {
+        step: 1,
+        tag: "1 · ingest.py",
+        text: "ECHT: Liest 11.701 PreZero-Messungen (10-%-Schritte) ein, kodiert 1.192× 'overfull' als 110 % und sortiert nach Container & Datum."
+      },
+      {
+        step: 2,
+        tag: "2 · model.py",
+        text: "ECHT + ANNAHME: Baut 1.338 Container (Standort + Glasfarbe) sowie Site-, Vehicle- (11 t / 26 m³), Depot- und ShiftConfig-Objekte."
+      },
+      {
+        step: 3,
+        tag: "3 · locations.py",
+        text: "SIMULIERT: Ordnet den 449 anonymen IDs echte Heilbronner OSM-Punkte zu (Seed 2026); per locations_real.csv ohne Codeänderung tauschbar."
+      },
+      {
+        step: 4,
+        tag: "4 · features.py",
+        text: "ECHT + ANNAHME: Messen & Leeren — Füllrate = vorgefundener Stand ÷ Tage seit letztem Besuch; schätzt heutigen Stand und Timer bis 80 %."
+      },
+      {
+        step: 5,
+        tag: "5 · forecast.py",
+        text: "ECHT + ANNAHME: Schreibt die Füllrate auf +0, +7, +14 und +21 Tage fort (inkl. Tages-Saisonfaktor) und vergibt Ampelstatus."
+      },
+      {
+        step: 6,
+        tag: "6 · scoring.py",
+        text: "ANNAHME: Skaliert den geschätzten Stand auf einen Dringlichkeits-Score (0–1) und markiert Container ab 80 % als kritisch."
+      },
+      {
+        step: 7,
+        tag: "7 · routing.py",
+        text: "SIMULIERT + ANNAHME: Plant Touren über Haversine (× 1,35) mit 11 t / 26 m³, 8 h Schicht, Entladestelle und NN / 2-opt / OR-Tools."
+      },
+      {
+        step: 8,
+        tag: "8 · approval.py",
+        text: "ECHT: Human-in-the-Loop — das System erzeugt einen Vorschlag, die Disponentin gibt die Tour mit Belegzahlen explizit frei."
+      },
+      {
+        step: 9,
+        tag: "9 · Outputs",
+        text: "Erzeugt ui_<date>.html (Fahrer, Disponentin, Analyse), GPX/CSV-Tourlisten, Offline-Copilot, B0–B4-Benchmark und Kosten-Replay."
+      },
+      {
+        step: 10,
+        tag: "Rückkopplung",
+        text: "Regelkreis: Der Fahrer meldet reale Füllstände (10-%-Schritte) als CSV zurück — diese fließen direkt wieder in ingest.py ein."
+      }
+    ];
+
+    let current = 0;
+    const cards = Array.from(document.querySelectorAll(".module-card"));
+    const fbSvg = document.getElementById("feedback-svg");
+    const counter = document.getElementById("step-counter");
+    const tagEl = document.getElementById("caption-tag");
+    const textEl = document.getElementById("caption-text");
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+
+    function render() {
+      const info = STEPS[current];
+      tagEl.textContent = info.tag;
+      textEl.textContent = info.text;
+      counter.textContent = current === 0 ? "Überblick" : `${current} / ${STEPS.length - 1}`;
+      btnPrev.disabled = current === 0;
+      btnNext.disabled = current === STEPS.length - 1;
+
+      cards.forEach((card) => {
+        const s = Number(card.dataset.step);
+        card.classList.remove("is-active", "is-dimmed");
+        if (current === 0) return;
+        if (current === 10) {
+          if (s === 1 || s === 9) card.classList.add("is-active");
+          else card.classList.add("is-dimmed");
+        } else if (s === current) {
+          card.classList.add("is-active");
+        } else {
+          card.classList.add("is-dimmed");
+        }
+      });
+
+      fbSvg.classList.toggle("feedback-active", current === 10);
+    }
+
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const s = Number(card.dataset.step);
+        current = current === s ? 0 : s;
+        render();
+      });
+    });
+
+    document.getElementById("btn-all").addEventListener("click", () => { current = 0; render(); });
+    btnPrev.addEventListener("click", () => { current = Math.max(0, current - 1); render(); });
+    btnNext.addEventListener("click", () => { current = Math.min(STEPS.length - 1, current + 1); render(); });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") { current = Math.min(STEPS.length - 1, current + 1); render(); }
+      if (e.key === "ArrowLeft") { current = Math.max(0, current - 1); render(); }
+      if (e.key === "Escape") { current = 0; render(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>
