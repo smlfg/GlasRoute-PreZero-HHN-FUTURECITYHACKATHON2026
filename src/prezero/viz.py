@@ -44,7 +44,7 @@ def plot_heatmap(
     output_path: str | Path = "heatmap.html",
     selected_week: str | None = None,
 ) -> Path:
-    """Write an offline Plotly heatmap with a week slider."""
+    """Write an offline Plotly container tileboard with a week slider."""
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     labels = list(matrix.attrs.get("week_labels", matrix.columns))
@@ -81,53 +81,66 @@ def plot_heatmap(
     fig = make_subplots(
         rows=1,
         cols=2,
-        column_widths=[0.9, 0.1],
-        specs=[[{"type": "heatmap"}, {"type": "bar"}]],
+        column_widths=[0.88, 0.12],
+        specs=[[{"type": "scatter"}, {"type": "bar"}]],
         horizontal_spacing=0.08,
     )
+    material_names = ("glass_white", "glass_green", "glass_brown")
+    material_labels = {"glass_white": "Weißglas", "glass_green": "Grünglas", "glass_brown": "Braunglas"}
+    grid_columns = 25
+    group_sizes = [int((materials == material).sum()) for material in material_names]
+    band_height = max(1, max((size + grid_columns - 1) // grid_columns for size in group_sizes)) + 1
+    y_ticks = [index * band_height + (size / grid_columns) / 2 for index, size in enumerate(group_sizes)]
+    y_ticktext = [f"{material_labels[material]} ({size})" for material, size in zip(material_names, group_sizes)]
+
+    def rgba(hex_color: str, alpha: float) -> str:
+        return f"rgba({int(hex_color[1:3], 16)},{int(hex_color[3:5], 16)},{int(hex_color[5:7], 16)},{alpha})"
+
     trace_count = 0
     for index, label in enumerate(labels):
-        week_values = matrix.iloc[:, index].to_numpy(dtype=float)
-        week_predicted = predicted.iloc[:, index].to_numpy(dtype=bool)
-        measured_values = week_values.copy()
-        predicted_values = week_values.copy()
-        measured_values[week_predicted] = float("nan")
-        predicted_values[~week_predicted] = float("nan")
-        visible = index == selected_index
+        x_values: list[int] = []
+        y_values: list[int] = []
+        colors: list[str] = []
+        hover_data: list[list[str]] = []
+        for group, material in enumerate(material_names):
+            ids = list(matrix.index[materials == material])
+            ids.sort(key=lambda location_id: float(matrix.loc[location_id, label]), reverse=True)
+            for position, location_id in enumerate(ids):
+                value = float(matrix.loc[location_id, label])
+                is_predicted = bool(predicted.loc[location_id, label])
+                status_color = FORECAST_STATUS_COLORS[_heatmap_status(value)]
+                x_values.append(position % grid_columns)
+                y_values.append(group * band_height + position // grid_columns)
+                colors.append(rgba(status_color, 0.45 if is_predicted else 0.95))
+                hover_data.append(
+                    [
+                        str(location_id),
+                        material_labels[material],
+                        f"{value:.1f}%",
+                        "prognostiziert" if is_predicted else "gemessen",
+                    ]
+                )
         fig.add_trace(
-            go.Heatmap(
-                z=measured_values[:, None],
-                x=[0],
-                y=list(matrix.index),
-                zmin=0,
-                zmax=110,
-                colorscale=colorscale,
-                colorbar={"title": "%"} if index == 0 else None,
-                hovertemplate=f"ID: %{{y}}<br>Woche: {label}<br>Füllstand: %{{z:.1f}}%<extra>gemessen</extra>",
-                name="Gemessen",
-                visible=visible,
+            go.Scatter(
+                x=x_values,
+                y=y_values,
+                mode="markers",
+                marker={"symbol": "square", "size": 15, "color": colors, "line": {"color": "white", "width": 1}},
+                customdata=hover_data,
+                hovertemplate=(
+                    "ID: %{customdata[0]}<br>Glas: %{customdata[1]}<br>"
+                    "Füllstand: %{customdata[2]}<br>%{customdata[3]}<extra>"
+                    + label
+                    + "</extra>"
+                ),
+                name=label,
+                visible=index == selected_index,
+                showlegend=False,
             ),
             row=1,
             col=1,
         )
-        fig.add_trace(
-            go.Heatmap(
-                z=predicted_values[:, None],
-                x=[0],
-                y=list(matrix.index),
-                zmin=0,
-                zmax=110,
-                colorscale=colorscale,
-                opacity=0.45,
-                hovertemplate=f"ID: %{{y}}<br>Woche: {label}<br>Füllstand: %{{z:.1f}}%<extra>prognostiziert</extra>",
-                name="Prognostiziert",
-                showscale=False,
-                visible=visible,
-            ),
-            row=1,
-            col=1,
-        )
-        trace_count += 2
+        trace_count += 1
     fig.add_trace(
         go.Bar(
             x=[f"{material.removeprefix('glass_')}" for material in ("glass_white", "glass_green", "glass_brown")],
@@ -152,12 +165,46 @@ def plot_heatmap(
             f"{measured_count} gemessen / {len(matrix) - measured_count} prognostiziert"
         )
 
+    static_trace_count = 1
+    for status, label in (
+        ("green", "Grün <50%"),
+        ("yellow", "Gelb 50–80%"),
+        ("red", "Rot >80%"),
+        ("black", "Schwarz =110%"),
+    ):
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                marker={"symbol": "square", "size": 13, "color": FORECAST_STATUS_COLORS[status]},
+                name=label,
+                hoverinfo="skip",
+            ),
+            row=1,
+            col=1,
+        )
+        static_trace_count += 1
+    for opacity, label in ((0.95, "Gemessen"), (0.45, "Prognostiziert")):
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                marker={"symbol": "square", "size": 13, "color": "#64748b", "opacity": opacity},
+                name=label,
+                hoverinfo="skip",
+            ),
+            row=1,
+            col=1,
+        )
+        static_trace_count += 1
+
     steps = []
     for index in range(len(labels)):
-        visibility = [False] * (trace_count + 1)
-        visibility[index * 2] = True
-        visibility[index * 2 + 1] = True
-        visibility[-1] = True
+        visibility = [False] * (trace_count + static_trace_count)
+        visibility[index] = True
+        visibility[trace_count:] = [True] * static_trace_count
         steps.append(
             {
                 "label": labels[index],
@@ -168,7 +215,7 @@ def plot_heatmap(
                     },
                     {
                         "title.text": header(index),
-                        "xaxis.ticktext": [labels[index]],
+                        "xaxis.ticktext": [f"{labels[index]} – {len(matrix)} Container"],
                     },
                 ],
             }
@@ -176,15 +223,15 @@ def plot_heatmap(
     fig.update_layout(
         title=header(selected_index),
         template="plotly_white",
-        height=760,
+        height=650,
         xaxis={
-            "title": "Kalenderwoche",
+            "title": "Container je Glasfarbe (sortiert nach Füllstand)",
             "tickmode": "array",
-            "tickvals": [0],
-            "ticktext": [labels[selected_index]],
-            "range": [-0.5, 0.5],
+            "tickvals": list(range(grid_columns)),
+            "showticklabels": False,
+            "range": [-1, grid_columns],
         },
-        yaxis={"title": "Container (Mouseover für ID)", "autorange": "reversed", "dtick": 10},
+        yaxis={"title": "Containergruppe", "tickmode": "array", "tickvals": y_ticks, "ticktext": y_ticktext, "autorange": "reversed"},
         xaxis2={"title": "Glasfarbe", "tickangle": -45},
         yaxis2={"title": "Anteil übervoll", "tickformat": ".0%"},
         sliders=[
