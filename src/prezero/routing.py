@@ -36,6 +36,10 @@ class OperationalConfig:
     stop_setup_min: float = 2.0  # Annahme, von PreZero zu ersetzen
     lift_time_per_bin_min: float = 3.0  # Annahme, von PreZero zu ersetzen
     unload_time_min: float = 20.0  # Annahme, von PreZero zu ersetzen
+    # Standortplanung-What-if (reine Simulation, keine Auswirkung auf echte Route)
+    location_planning_radius_m: float = 500.0
+    location_planning_adoption_weeks: float = 8.0
+    location_planning_logistic_steepness: float = 1.0
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation of all operational assumptions."""
@@ -55,6 +59,9 @@ class OperationalConfig:
             "stop_setup_min": float(self.stop_setup_min),
             "lift_time_per_bin_min": float(self.lift_time_per_bin_min),
             "unload_time_min": float(self.unload_time_min),
+            "location_planning_radius_m": float(self.location_planning_radius_m),
+            "location_planning_adoption_weeks": float(self.location_planning_adoption_weeks),
+            "location_planning_logistic_steepness": float(self.location_planning_logistic_steepness),
         }
 
     @classmethod

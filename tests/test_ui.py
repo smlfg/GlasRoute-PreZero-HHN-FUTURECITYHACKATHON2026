@@ -229,6 +229,54 @@ def test_build_ui_has_all_four_views_and_no_unbacked_claims(tmp_path: Path) -> N
         assert expected in html
 
 
+def test_build_ui_driver_has_gpx_maps_legs_and_qr(tmp_path: Path) -> None:
+    import json as _json
+    from bs4 import BeautifulSoup
+
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui_exports.html",
+    )
+    html = out.read_text(encoding="utf-8")
+
+    # UI controls exist.
+    assert 'id="driver-download-gpx-btn"' in html
+    assert "GPX herunterladen" in html
+    assert 'id="driver-maps-legs"' in html
+    assert 'id="driver-qr-code"' in html
+    assert "QR-Code" in html
+
+    # Snapshot payload carries GPX and per-vehicle Maps legs.
+    match = __import__("re").search(
+        r'<script id="date-snapshots-payload" type="application/json">(.*?)</script>',
+        html,
+        flags=__import__("re").S,
+    )
+    assert match is not None
+    snapshots = _json.loads(match.group(1).replace("<\\/", "</"))
+    snap = snapshots["2026-04-15"]
+    assert "gpx_xml" in snap
+    assert "<gpx" in snap["gpx_xml"] and "</gpx>" in snap["gpx_xml"]
+    assert "Start Betriebshof" in snap["gpx_xml"]
+    assert "maps_legs" in snap
+    assert isinstance(snap["maps_legs"], dict)
+    assert any(snap["maps_legs"].get(v) for v in snap["maps_legs"])
+    first_leg = next(u for urls in snap["maps_legs"].values() for u in urls)
+    assert first_leg.startswith("https://www.google.com/maps/dir/?api=1")
+    assert "origin=" in first_leg and "destination=" in first_leg
+
+    # Driver panel stays free of charts/images and keeps the offline QR script inline.
+    soup = BeautifulSoup(html, "html.parser")
+    driver = soup.find(id="role-driver")
+    assert driver is not None
+    assert driver.find("iframe") is None
+    assert driver.find("canvas") is None
+
+
 def test_build_ui_role_start_screen_supports_approval_and_round_trip_export(tmp_path: Path) -> None:
     out = build_ui(
         date="2026-04-15",
@@ -379,6 +427,41 @@ def test_build_ui_has_what_if_and_explain_hooks(tmp_path: Path) -> None:
     assert 'id="explain-panel"' in html
     assert "Fahrzeugstunden gesamt" in html
     assert "· Schicht:" not in html  # old misleading label (sum shown as one shift)
+
+
+def test_build_ui_has_location_planning_tab(tmp_path: Path) -> None:
+    route = dict(_sample_route())
+    route["assumptions"] = {
+        "density_kg_per_m3": 400.0,
+        "container_volume_m3": 2.5,
+        "vehicle_max_weight_kg": 11000.0,
+        "vehicle_max_volume_m3": 26.0,
+        "road_detour_factor": 1.35,
+        "avg_speed_kmh": 25.0,
+        "yard_depot": [49.1427, 9.2109],
+        "disposal_depot": [49.178, 9.2085],
+        "max_shift_hours": 8.0,
+        "stop_setup_min": 2.0,
+        "lift_time_per_bin_min": 3.0,
+        "unload_time_min": 20.0,
+        "location_planning_radius_m": 500.0,
+        "location_planning_adoption_weeks": 8.0,
+        "location_planning_logistic_steepness": 1.0,
+    }
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=route,
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    assert 'data-target="view-location-planning"' in html
+    assert 'id="view-location-planning"' in html
+    assert "Standortplanung" in html
+    assert "simulierten Koordinaten" in html
+    assert "Adoptions-Timeline" in html
 
 
 def test_build_ui_inline_scripts_are_valid_js(tmp_path: Path) -> None:

@@ -19,5 +19,8 @@
   "max_shift_hours": 8.0,
   "stop_setup_min": 2.0,
   "lift_time_per_bin_min": 3.0,
-  "unload_time_min": 20.0
+  "unload_time_min": 20.0,
+  "location_planning_radius_m": 500.0,
+  "location_planning_adoption_weeks": 8.0,
+  "location_planning_logistic_steepness": 1.0
 }

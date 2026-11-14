@@ -17,12 +17,14 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | Dokument | Zweck | Stand |
 |---|---|---|
 | [`PITCH.md`](PITCH.md) | Pitch-Struktur (3 Min), belegte Zahlen, Demo-Ablauf, Betriebsvariablen als Live-Hook | **aktuell** |
+| [`EXPORT_RECHERCHE.md`](EXPORT_RECHERCHE.md) | Recherche zu GPX/KML/CSV-Export und Google Maps / OsmAnd / Garmin Support | **aktuell** |
 | [`ARCHITEKTUR.md`](ARCHITEKTUR.md) | Module, Datenfluss, Verantwortlichkeiten, Geo-Swap | **aktuell** |
 | [`DATENMODELL.md`](DATENMODELL.md) | Dataclasses in `src/prezero/model.py` (Standort, Container, Messung, Fahrzeug) | **aktuell** |
 | [`BACKTEST.md`](BACKTEST.md) | Ist der Füllstand vorhersagbar? Leerungsrhythmus je Glasfarbe | **generiert** von `scripts/backtest.py` |
 | [`BENCHMARK.md`](BENCHMARK.md) | Fairer Vergleich B0–B4 über 4 Stichtage × 3 Seeds | **generiert** von `scripts/benchmark.py` |
 | [`UI_PLAN.md`](UI_PLAN.md) | Soll-Zustand der Website: Datums-first (`#global-date-picker`), Rollen, Ansichtsgrenzen | **aktuell** (umgesetzt) |
 | [`UI_SPRACHE.md`](UI_SPRACHE.md) | Nielsen #2: keine UUIDs, kein snake_case, keine englischen Enums in sichtbarem Text | **aktuell** |
+| [`STANDORTPLANUNG.md`](STANDORTPLANUNG.md) | Annahmen des Standortplanung-What-if Tabs (simulierte Koordinaten, Radius, Adoptionskurve) | **aktuell** |
 | [`ANFORDERUNGEN.md`](ANFORDERUNGEN.md) | Anforderungen aus der Challenge-Readme (Quelle, nicht verhandelbar) | **aktuell** |
 | [`analysen/INDEX.md`](analysen/INDEX.md) | 36 Datenanalysen: je eine Kennzahl und Kernaussage | **aktuell** |
 | [`analysen/01…36`](analysen/) | Datengrundlage der Pitch-Aussagen (Ausnahmen sind dort markiert) | **aktuell**, außer als „archiviert“ markiert |
