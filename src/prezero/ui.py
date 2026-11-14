@@ -14,7 +14,7 @@ import folium
 import pandas as pd
 import plotly.graph_objects as go
 
-from prezero import approval, forecast
+from prezero import approval, forecast, tour
 
 
 def _safe_json_for_html(payload: Any) -> str:
@@ -247,6 +247,7 @@ def render_route_view_data(
         "t_collected": route_dict.get("t_collected"),
         "comparison": route_dict.get("comparison"),
         "stops": route_dict.get("stops", []),
+        "assumptions": route_dict.get("assumptions"),
         "max_stops": route_dict.get("max_stops"),
     }
     return route_map_html, {"proposal": proposal_payload, "metrics": metrics}
@@ -532,8 +533,16 @@ def _build_route_section_html(
     )
 
     stop_rows: list[str] = []
-    for stop_idx, stop in enumerate(stops):
+    for stop_idx, stop in tour.interleave(metrics):
         stop_type = str(stop.get("stop_type", "collection"))
+        if stop_idx is None:
+            note = f' <span class="muted">({html.escape(stop["note"])})</span>' if stop.get("note") else ""
+            stop_rows.append(
+                f'<tr class="yard-row"><td>&ndash;</td><td colspan="2"><strong>{html.escape(stop["label"])}</strong>'
+                f'{note}</td><td colspan="6">Fahrzeug {stop["vehicle"]} &middot; {stop["leg_min"]:.0f} min</td>'
+                f'<td>{_format_num(stop["leg_km"], " km")}</td><td>{_format_num(stop["cumulative_km"], " km")}</td></tr>'
+            )
+            continue
         stop_loc = html.escape(str(stop.get("Location_id", "")), quote=True)
         raw_mat = str(stop.get("primary_material", "")).strip().lower()
         stop_mat = html.escape(raw_mat, quote=True)
@@ -557,6 +566,8 @@ def _build_route_section_html(
             mat_cell = MATERIAL_LABELS.get(raw_mat, stop.get('primary_material', '-'))
 
         action_label = STOP_TYPE_LABELS.get(stop_type, stop_type)
+        if stop_type == "unload":
+            action_label = f"Entladen ({float(stop.get('unloaded_kg', 0.0)) / 1000:.1f} t geladen)"
 
         src_raw = str(stop.get('source', '-'))
         conf_raw = str(stop.get('confidence', '-'))
@@ -1307,7 +1318,14 @@ def _build_role_start_html(
 
     rows: list[str] = []
     map_points: list[str] = []
-    for stop in route_bundle["metrics"].get("stops", []):
+    for stop_idx, stop in tour.interleave(route_bundle["metrics"]):
+        if stop_idx is None:
+            note = f' <span class="muted">({html.escape(stop["note"])})</span>' if stop.get("note") else ""
+            rows.append(
+                f'<tr class="yard-row"><td>&ndash;</td><td colspan="5"><strong>{html.escape(stop["label"])}</strong>{note}'
+                f' &middot; {stop["leg_km"]:.1f} km &middot; {stop["leg_min"]:.0f} min</td></tr>'
+            )
+            continue
         loc_id = str(stop.get("Location_id", ""))
         location = location_lookup.get(loc_id, {})
         site = (
@@ -2067,6 +2085,7 @@ def build_ui(
             "ask_examples": insights.get("ask_examples", []),
             "rows": WHAT_IF_ROWS,
             "stops": route_bundle["metrics"].get("stops", []),
+            "csv_rows": [row for _, row in tour.interleave(route_bundle["metrics"])],
         }
     )
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
@@ -2834,9 +2853,9 @@ def build_ui(
       }});
 
       function downloadStopsCsv() {{
-        var stops = insights.stops || [];
+        var stops = insights.csv_rows || insights.stops || [];
         var matLabels = {{ white: "Weißglas", green: "Grünglas", brown: "Braunglas", unload: "Entladung" }};
-        var actLabels = {{ collection: "Leerung", unload: "Entladung", depot: "Betriebshof" }};
+        var actLabels = {{ collection: "Leerung", unload: "Entladung", depot: "Betriebshof", depot_start: "Start Betriebshof", depot_end: "Ende Betriebshof" }};
         var header = [
           "Fahrreihenfolge", "Fahrzeug", "Runde", "Aktion", "Standort_ID",
           "Glasart", "Fuellstand_geschaetzt_pct", "Vorgefunden_letzter_Besuch_pct",
@@ -2852,7 +2871,7 @@ def build_ui(
             s.vehicle || "",
             s.round || "",
             actLabels[actRaw] || actRaw,
-            locRaw === "disposal_depot" ? "Entsorgungshof" : locRaw,
+            locRaw === "disposal_depot" ? "Entsorgungshof" : (locRaw === "yard" ? "Betriebshof" : locRaw),
             matLabels[matRaw] || matRaw,
             s.est_fill_level !== undefined && s.est_fill_level !== null ? s.est_fill_level : "",
             s.last_fill_level !== undefined && s.last_fill_level !== null ? s.last_fill_level : "",

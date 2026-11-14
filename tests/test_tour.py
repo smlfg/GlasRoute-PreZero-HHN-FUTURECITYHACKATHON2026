@@ -43,3 +43,11 @@ def test_tour_csv_has_yard_rows(tmp_path):
 def test_default_locations_marked_assumed():
     rows = tour.build_tours(_route())[0]["rows"]
     assert "angenommen" in rows[0]["note"]
+
+
+def test_interleave_keeps_stop_indices_and_adds_yard_rows():
+    route = _route(vehicle_max_volume_m3=6.0)
+    rows = tour.interleave(route)
+    assert rows[0][1]["stop_type"] == "depot_start" and rows[-1][1]["stop_type"] == "depot_end"
+    assert [i for i, _ in rows if i is not None] == list(range(len(route["stops"])))
+    assert math.isclose(rows[-1][1]["cumulative_km"], route["km"], abs_tol=0.05)

@@ -9,7 +9,7 @@ from typing import Any
 import click
 import pandas as pd
 
-from prezero import approval, copilot, features, forecast, ingest, locations, routing, scoring, viz
+from prezero import approval, copilot, features, forecast, ingest, locations, routing, scoring, tour, viz
 from prezero.heatmap import END_DATE, START_DATE, build_heatmap_matrix
 from prezero.model import build_model
 
@@ -348,6 +348,7 @@ def run_cmd(
     )
     stops_out = Path(cleaned).parent / f"stops_{date}.csv"
     routing.export_stops_csv(route_data, stops_out)
+    tour.export_tour_csv(route_data, Path(cleaned).parent / f"tour_{date}.csv")
     trends_path = viz.plot_trends(cleaned_df, out_dir / "trends.png")
     map_path = viz.plot_route(
         route_data,

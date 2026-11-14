@@ -115,3 +115,42 @@ def tour_html(route_data: Mapping[str, Any]) -> str:
             )
         out.append("</table>")
     return "\n".join(out)
+
+
+def interleave(route_data: Mapping[str, Any]) -> list[tuple[int | None, dict[str, Any]]]:
+    """Stops in driving order with synthetic yard rows (stop_type depot_start/depot_end).
+
+    Returns ``(index into route_data["stops"], row)``; the index is ``None`` for yard rows.
+    """
+    stops = list(route_data.get("stops") or [])
+    tours = {t["vehicle"]: t for t in build_tours(route_data)}
+    ordered = sorted(range(len(stops)), key=lambda i: int(stops[i]["order"]))
+    out: list[tuple[int | None, dict[str, Any]]] = []
+    cum = 0.0
+    seen: set[int] = set()
+    last_veh: int | None = None
+
+    def yard(kind: str, veh: int, tour_row: Mapping[str, Any], cumulative: float) -> dict[str, Any]:
+        return {
+            "stop_type": kind, "Location_id": "yard", "vehicle": veh,
+            "label": tour_row["label"], "note": tour_row["note"],
+            "lat": tour_row["lat"], "lon": tour_row["lon"],
+            "leg_km": tour_row["leg_km"], "leg_min": tour_row["leg_min"],
+            "cumulative_km": round(cumulative, 3),
+        }
+
+    for i in ordered:
+        veh = int(stops[i].get("vehicle", 1))
+        if veh != last_veh:
+            if last_veh is not None:
+                end = tours[last_veh]["rows"][-1]
+                cum += end["leg_km"]
+                out.append((None, yard("depot_end", last_veh, end, cum)))
+            out.append((None, yard("depot_start", veh, tours[veh]["rows"][0], cum)))
+            last_veh = veh
+        out.append((i, dict(stops[i])))
+        cum = float(stops[i].get("cumulative_km", cum))
+    if last_veh is not None:
+        end = tours[last_veh]["rows"][-1]
+        out.append((None, yard("depot_end", last_veh, end, cum + end["leg_km"])))
+    return out
