@@ -28,14 +28,14 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 | 1 | Problem | 30 % zu früh, 1.192 Überläufe: Das Leerungs-Dilemma | Problem & Benefit | 20 s |
 | 2 | Status quo | Der reale Prozess: Fahrer schätzt beim Leeren | Understanding | 20 s |
 | 3 | Data & Backtest | Füllstand ist vorhersagbar (Backtest schlägt Baseline) | Understanding | 25 s |
-| 4 | Solution | Vom Füllraten-Timer zur Disponenten-Freigabe | Technology | 25 s |
-| 5 | Live Demo | Tagestour 15.04.: 25 Stopps, 249,9 km, Disponenten-Freigabe | Feasibility | 25 s |
-| 6 | Result | −36,7 % km (fair B1 → B4) & betriebliche Simulation | Problem & Benefit | 25 s |
-| 7 | Honesty | Echte Messungen, simuliertes OSM-Mapping, 1-Sekunden-Swap | Reliability | 15 s |
-| 8 | Closed Loop | Fahrer-Feedback verfeinert die Prognose im Betrieb | Technology | 15 s |
+| 4 | Solution | Vom Füllraten-Timer zur Freigabe & Closed Loop | Technology | 25 s |
+| 5 | Live Demo | Tagestour 15.04.: 25 Stopps, 249,9 km, A/B-Replay | Feasibility | 25 s |
+| 6 | Result | −36,7 % km im fairen Benchmark (B1 → B4) | Problem & Benefit | 20 s |
+| 7 | Kostenmodell | Jahressimulation, Kostenformel & Hebelannahmen | Feasibility | 25 s |
+| 8 | Honesty | Echte Messungen, simuliertes OSM-Mapping, 1-Sekunden-Swap | Reliability | 15 s |
 | 9 | Standortplanung | What-If Simulation für neue Standorte & Roadmap | Feasibility | 15 s |
 | 10 | Ask | Zwei Optionen für PreZero & Austausch der Betriebsregeln | Feasibility | 20 s |
-| | **Summe** | | | **~205 s ≈ 3:25 min** |
+| | **Summe** | | | **~210 s ≈ 3:30 min** |
 
 ---
 
@@ -138,15 +138,16 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 - **Operational Constraints (`prezero_config.json`):**
   - Fahrzeugkapazität: **11.000 kg Nutzlast**, **26,0 m³ Ladevolumen**
   - Schichtbeschränkung: max. **8,0 Stunden**, Entladezeit Betriebshof **20 min**, Hubzeit **3 min/Container**
-- **Human-in-the-Loop:** Kein LKW fährt autonom los!
+- **Human-in-the-Loop & Closed Loop:** Kein LKW fährt autonom los!
   - `prezero-route propose`: Algorithmus schlägt Tour für fällige Container vor.
   - `prezero-route approve`: Disponentin prüft und gibt verbindlich frei. Revisionssicher mit Zeitstempel.
+  - **Lernender Kreislauf:** Fahrer scannt/leert → System kalibriert Füllrate → nächste Tour wird noch präziser.
 
 ### Speaker Notes
 
 - **0–8 s:** „Unsere Pipeline filtert zuerst den echten Bedarf heraus: Nur Standorte, die heute ≥ 80 % voll sind, kommen auf die Liste.“
-- **8–17 s:** „Ein Google OR-Tools Routing-Modell berechnet die optimale Tour unter realen Restriktionen: 11 Tonnen Nutzlast, 26 Kubikmeter, 8 Stunden Schichtgrenze.“
-- **17–25 s:** „Entscheidend für die Praxis: Human-in-the-Loop. Der Algorithmus schlägt vor, die Disponentin gibt frei. Ohne Freigabe fährt kein LKW.“
+- **8–16 s:** „Ein Google OR-Tools Routing-Modell berechnet die optimale Tour unter realen Restriktionen: 11 Tonnen Nutzlast, 26 Kubikmeter, 8 Stunden Schichtgrenze.“
+- **16–25 s:** „Entscheidend für die Praxis: Human-in-the-Loop. Der Algorithmus schlägt vor, die Disponentin gibt frei. Jeder Besuch fließt als Feedback zurück ins Modell.“
 
 ---
 
@@ -201,11 +202,39 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 
 - **0–9 s:** „Wir haben einen wissenschaftlich fairen 4-Stufen-Benchmark gerechnet. Wenn PreZero heute die bestehende Route per TSP optimiert, fahren sie 1.662 km.“
 - **9–18 s:** „Fahren wir nur fällige Container an, sinkt die Strecke um 29,9 %. Optimiert Google OR-Tools die Runde, sinkt sie auf 1.053 km — minus 36,7 % Fahrstrecke.“
-- **18–25 s:** „Wir können die betrieblichen Auswirkungen simulieren und unsere Annahmen offenlegen. Reale Kostenersparnisse müssen allerdings erst unter den tatsächlichen Betriebsregeln validiert werden.“
+- **18–20 s:** „Wie übersetzt sich das in Jahreskosten? Das haben wir mathematisch modelliert.“
 
 ---
 
-## Slide 7 — Ehrlichkeit & Zuverlässigkeit
+## Slide 7 — Kostenmodell & Jahressimulation: Die mathematischen Hebel
+
+- **Folie:** „Kostenmodell & Simulation: Warum Hebelannahmen entscheiden"
+- **Jury-Kriterium:** Feasibility & Business Benefit
+- **Zeit:** 25 s
+
+### Folien-Text
+
+- **Drei-Komponenten-Kostenformel:**
+  $$\text{Gesamtkosten} = (\text{Fahrzeugtage} \times 500\,\text{€}) + (\text{Crew-Stunden} \times 2 \times 32\,\text{€/h}) + (\text{Strecke in km} \times 0{,}65\,\text{€/km})$$
+- **Hebel-Analyse der Jahressimulation (349 Tage, Massenerhaltungsbilanz):**
+  - **Größter Hebel = Einsatztage:** Bereitstellung (500 €/Tag) und 2-Personen-Crew (64 €/h) dominieren weit vor dem reinen Kraftstoff (0,65 €/km).
+  - **Gefahr naiver Modelle:** Wer Container zu früh triggert (z. B. 60-%-Schwelle) oder an 346 Tagen statt nur an den 229 Werktagen fährt, lässt die Fahrzeugtage von 345 auf 628 explodieren (+141.500 € allein Bereitstellung!).
+  - **Ergebnis GlasRoute (80-%-Bedarfstaktung):**
+    - **Ø Füllstand bei Leerung:** von **66,0 %** auf **83,5 %** gesteigert (**+17,5 pp**).
+    - **Überfüllungen:** 1.192 Überfüllungen auf **0** eliminiert.
+    - **Fahrzeugtage:** Glättung auf 381 Tage (stabil und schichtkonform).
+- **Ehrliche Schlussfolgerung:**
+  > *„Wir können die betrieblichen Auswirkungen simulieren und unsere Annahmen offenlegen. Reale Kostenersparnisse müssen allerdings erst unter den tatsächlichen Betriebsregeln validiert werden.“*
+
+### Speaker Notes
+
+- **0–8 s:** „Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €).“
+- **8–17 s:** „Dabei wird klar: Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle, die zu früh anfahren oder Wochenenden disponieren, treiben die Fahrzeugtage von 345 auf 628 hoch.“
+- **17–25 s:** „Unser Modell glättet die Einsatztage, hebt den Leerungsfüllstand auf 83,5 % und stoppt 100 % der Überläufe. Aber: Reale Kostenersparnisse müssen erst unter den echten Betriebsregeln von PreZero validiert werden.“
+
+---
+
+## Slide 8 — Ehrlichkeit & Zuverlässigkeit
 
 - **Folie:** „Ehrlichkeit als Prinzip: Was die Daten sind und was nicht"
 - **Jury-Kriterium:** Reliability
@@ -226,34 +255,6 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 - **0–6 s:** „Wir stehen für absolute Datenwahrheit: Die 11.701 Füllstandsmessungen sind real.“
 - **6–11 s:** „Die Standorte sind echte Heilbronner Container aus OpenStreetMap, aber die Zuordnung zu den anonymisierten IDs ist simuliert.“
 - **11–15 s:** „Der Austauschpfad steht: PreZero spielt die echte Tabelle ein, und das System rechnet ohne Codeänderung sofort auf den echten Koordinaten.“
-
----
-
-## Slide 8 — Closed Loop: Der lernende Betrieb
-
-- **Folie:** „Closed Loop: Aus jedem Besuch lernt das System"
-- **Jury-Kriterium:** Technology
-- **Zeit:** 15 s
-
-### Folien-Text
-
-- **Keine Einbahnstraße:** Tour → Fahrer leert → Fahrer schätzt aktuellen Stand → System kalibriert Füllrate neu.
-- **Saisonale Anpassung:** Modell lernt automatisch, wenn Container nach Feiertagen oder im Sommer schneller/langsamer voll werden.
-- **Vorteil für den Fahrer:** Sieht in der App sofort die Begründung, warum dieser Standort heute priorisiert wurde.
-
-### Diagramm (ASCII)
-
-```
-[Fahrer schätzt beim Leeren] ──> [Füllraten-Update] ──> [Timer bis 80 %]
-             ▲                                                 │
-             │                                                 ▼
-     [Entleerung & Scan] <── [Freigabe Disponentin] <── [OR-Tools Tour]
-```
-
-### Speaker Notes
-
-- **0–7 s:** „Unser System ist ein geschlossener Kreislauf: Jeder Besuch liefert einen neuen Datenpunkt.“
-- **7–15 s:** „Der Fahrer leert und schätzt — das System aktualisiert die Füllrate für morgen. Je länger das System läuft, desto exakter wird die Tourenplanung.“
 
 ---
 
