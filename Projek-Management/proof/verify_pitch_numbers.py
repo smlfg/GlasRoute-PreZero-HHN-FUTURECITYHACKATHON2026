@@ -18,7 +18,7 @@ from prezero.ui import compute_benchmark_summary
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# Numbers as written in the pitch documents (measure-and-empty model, 14.11.2026 18:40).
+# Numbers as written in the pitch documents (measure-and-empty, volume limit, 14.11.2026 19:00).
 EXPECTED_ROUTE = {
     "num_stops": 25,
     "total_critical_locations": 72,
@@ -29,27 +29,27 @@ EXPECTED_ROUTE = {
     "shift_hours": 10.51,
     "max_vehicle_shift_hours": 7.26,
     "t_collected": 63.58,
-    "full_round_km": 1185.27,
-    "full_round_vehicles": 19,
+    "full_round_km": 1202.24,
+    "full_round_vehicles": 20,
 }
-EXPECTED_BENCH_KM = {"B0": 1768.84, "B1": 1584.92, "B2": 297.30, "B4": 292.84}
+EXPECTED_BENCH_KM = {"B0": 1795.91, "B1": 1662.70, "B2": 316.31, "B4": 285.79}
 EXPECTED_BENCH_STOPS = {"B1": 121, "B2": 73}
 EXPECTED_EFFECTS = {
-    "demand_pct": 81.2,
-    "routing_pct": 1.5,
-    "overall_vs_b1_pct": 81.5,
-    "overall_vs_b0_pct": 83.4,
+    "demand_pct": 81.0,
+    "routing_pct": 9.6,
+    "overall_vs_b1_pct": 82.8,
+    "overall_vs_b0_pct": 84.1,
 }
 EXPECTED_SPANS = {
-    "demand_pct": (79.0, 97.1),
-    "routing_pct": (0.0, 17.1),
-    "overall_vs_b1_pct": (81.0, 97.1),
+    "demand_pct": (79.7, 97.3),
+    "routing_pct": (0.0, 13.0),
+    "overall_vs_b1_pct": (80.7, 97.3),
 }
 EXPECTED_WHAT_IF = {
     "shift_6h": {"vehicles_needed": 2, "max_vehicle_shift_hours": 5.57, "planned_km": 128.72},
     "truck_8t": {"vehicles_needed": 2, "rounds": 10, "planned_km": 177.53},
-    "plus_vehicle": {"num_stops": 72, "planned_km": 253.65, "unserved_critical_locations": 0},
-    "all_critical": {"num_stops": 72, "planned_km": 253.65, "vehicles_needed": 3},
+    "plus_vehicle": {"num_stops": 68, "planned_km": 258.24, "unserved_critical_locations": 4},
+    "all_critical": {"num_stops": 72, "planned_km": 270.94, "vehicles_needed": 3},
 }
 EXPECTED_RAW = {"rows": 11701, "ids": 449, "overfull": 1192}
 

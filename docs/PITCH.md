@@ -18,8 +18,8 @@ während andere überlaufen.
 > regardless of the actual fill level ('you'll drive past there anyway')."
 
 → Das ist unser Status quo (Benchmark B1): alle 121 physischen Standorte leeren. Der Großteil der
-Ersparnis (Bedarfs-Effekt 81,2 %) kommt daher, **nur die kritischen anzufahren**; das Routing selbst
-bringt bei gleichen Stopps nur weitere 1,5 %.
+Ersparnis (Bedarfs-Effekt 81,0 %) kommt daher, **nur die kritischen anzufahren**; das Routing selbst
+bringt bei gleichen Stopps bis ca. 10 % (instabil: 0–13 % je nach Fall und Solver-Lauf).
 
 **Belegt:** 11.701 Messungen, 449 Container, 1.192 `overfull`-Ereignisse — jeder vierte
 Überlauf-Fall betrifft Weißglas (731 von 1.192).
@@ -33,20 +33,20 @@ nicht in Routen übersetzt werden.
 ## 3. Was man spart (Demo 15.04.2026)
 
 **Fairer Vergleich** (`scripts/benchmark.py`, Website-Tab „Fairer Vergleich“): alle Varianten mit
-denselben Regeln (11 t pro Runde, Entladung am Wertstoffhof, max. 8 h, Stopp = physischer Standort).
+denselben Regeln (11 t und 26 m³ pro Runde, Entladung am Wertstoffhof, max. 8 h, Stopp = physischer Standort).
 Stichtag 15.04.2026, Zuordnungs-Seed 42.
 
 | Variante | Standorte | km | Runden |
 |---|---|---|---|
-| B1 Status quo: alle Standorte, optimierte Reihenfolge | 121 | 1.584,92 | 93 |
-| B2 nur kritische, Nearest Neighbor | 73 | 297,30 | 13 |
-| B4 nur kritische, OR-Tools | 73 | **292,84** | 12 |
+| B1 Status quo: alle Standorte, optimierte Reihenfolge | 121 | 1.662,70 | 98 |
+| B2 nur kritische, Nearest Neighbor | 73 | 316,31 | 14 |
+| B4 nur kritische, OR-Tools | 73 | **285,79** | 13 |
 
 | Effekt | Wert | Spanne (4 Stichtage × 3 Seeds) |
 |---|---|---|
-| **Bedarfs-Effekt** (B1 → B2) | **81,2 %** | 79,0–97,1 % |
-| **Routing-Effekt** (B2 → B4) | **1,5 %** | 0,0–17,1 % |
-| **Gesamt** (B1 → B4) | **81,5 %** | 81,0–97,1 % |
+| **Bedarfs-Effekt** (B1 → B2) | **81,0 %** | 79,7–97,3 % |
+| **Routing-Effekt** (B2 → B4) | **9,6 %** | 0,0–13,0 % |
+| **Gesamt** (B1 → B4) | **82,8 %** | 80,7–97,3 % |
 
 Gilt pro kompletter Gebietsleerung (Status quo leert alle 808,2 t auf einmal). Alle Füllstände sind der geschätzte Stand heute: Der Fahrer misst beim Besuch und leert, danach füllt sich der Container wieder ab ca. 0 %. Die alte Zahl
 24,1 % (119,75 vs. 157,72 km) ist ungültig: Sie verglich eine Tour mit Kapazitätsgrenzen gegen eine
@@ -61,8 +61,8 @@ volle Runde ohne.
 | Fahrzeugstunden gesamt / längste Schicht | 10,51 h / 7,26 h (Limit 8 h) | `route_2026-04-15.json` |
 | Sammelmenge | 63,6 t | `route_2026-04-15.json` |
 
-Formulierung im Pitch: „Heute wird das ganze Gebiet geleert: 1.585 km. Nur die 73 kritischen
-Standorte: 297 km, 81,2 % weniger. Der Solver holt bei gleichen Stopps nur noch 1,5 % raus: 293 km.“
+Formulierung im Pitch: „Heute wird das ganze Gebiet geleert: 1.663 km. Nur die 73 kritischen
+Standorte: 316 km, 81 % weniger. Der Solver holt bei gleichen Stopps noch bis ca. 10 % raus: 286 km.“
 
 **Saisonalität, belegt aus den Rohdaten** (Anteil `overfull` je Monat):
 

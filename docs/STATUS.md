@@ -85,8 +85,8 @@ Demo-Datum **15.04.2026**:
 | Kritische Standorte | 72 physische Orte (108 IDs, 118 Container) |
 | Aktive Standorte gesamt | 121 physische Orte |
 | Tages-Tour (25 Stopps) | **125,21 km** |
-| Volle Runde, gleiche Regeln (121 Stopps) | 1.185,27 km |
-| **Fairer Vergleich (Benchmark)** | **Bedarfs-Effekt 81,2 % · Routing-Effekt 1,5 % · gesamt 81,5 %** |
+| Volle Runde, gleiche Regeln (121 Stopps) | 1.202,24 km |
+| **Fairer Vergleich (Benchmark)** | **Bedarfs-Effekt 81,0 % · Routing-Effekt 9,6 % (instabil 0–13 %) · gesamt 82,8 %** |
 | Benötigte Fahrzeuge | 2 (7 Runden) |
 | Fahrzeugstunden gesamt / längste Schicht | 10,51 h / 7,26 h (Limit 8,0 h) |
 | Sammelmenge | 63,6 t (geschätzter Stand heute, 2,5 m³/Container, 400 kg/m³) |
