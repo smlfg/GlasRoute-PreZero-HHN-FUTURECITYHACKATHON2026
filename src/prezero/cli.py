@@ -322,9 +322,7 @@ def run_cmd(
     config_path: str | None,
     output_dir: str,
 ) -> None:
-    """Run the full pipeline and write all views + main website into output folder."""
-    from prezero.ui import build_dashboard
-
+    """Run the full pipeline and write all artifacts plus the website ui_<date>.html."""
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     cleaned_df = ingest.ingest(raw, cleaned)
@@ -374,17 +372,14 @@ def run_cmd(
         map_date=date,
     )
 
-    index_path = build_dashboard(
+    site_path = viz.build_ui(
         date=date,
         readings_df=cleaned_df,
         scored_df=scored_df,
         locations_df=locs_df,
         route_data=route_data,
-        output_dir=out_dir,
-        heatmap_file=heatmap_path.name,
-        map_file=map_path.name,
+        output_path=out_dir / f"ui_{date}.html",
         trends_path=trends_path,
-        output_path=out_dir / "index.html",
     )
 
     crit = scored_df[scored_df["critical"]]
@@ -394,7 +389,7 @@ def run_cmd(
     )
     click.echo(route_data["comparison"])
     click.echo(
-        f"Outputs: {out_dir / f'route_{date}.json'}, {map_path}, {trends_path}, {heatmap_path}, {index_path}"
+        f"Outputs: {out_dir / f'route_{date}.json'}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
     )
 
 
@@ -504,7 +499,7 @@ def approve_cmd(
     default=None,
     help="Path to route_<date>.json. Defaults to route_<date>.json in the output dir.",
 )
-@click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html and index.html.")
+@click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html.")
 def ui_cmd(
     date: str,
     readings: str,
@@ -513,9 +508,7 @@ def ui_cmd(
     route: str | None,
     output_dir: str,
 ) -> None:
-    """Build the local UI and main dashboard (index.html) from pipeline outputs."""
-    from prezero.ui import build_dashboard
-
+    """Build the single website ui_<date>.html from pipeline outputs."""
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     readings_path = Path(readings)
@@ -594,24 +587,11 @@ def ui_cmd(
         output_path=out_dir / f"ui_{date}.html",
         trends_path=trends_path,
     )
-    index_path = build_dashboard(
-        date=date,
-        readings_df=readings_df,
-        scored_df=scored_df,
-        locations_df=locs_df,
-        route_data=route_data,
-        output_dir=out_dir,
-        heatmap_file=heatmap_path.name,
-        map_file=map_path.name,
-        trends_path=trends_path,
-        output_path=out_dir / "index.html",
-    )
     click.echo(f"UI written: {out_path}")
-    click.echo(f"Dashboard written: {index_path}")
 
 
 @cli.command("serve")
-@click.option("--dir", "directory", default=".", show_default=True, help="Directory containing index.html.")
+@click.option("--dir", "directory", default=".", show_default=True, help="Directory containing ui_<date>.html.")
 @click.option("--port", default=8000, show_default=True, type=int, help="Port to bind.")
 def serve_cmd(directory: str, port: int) -> None:
     """Serve the website output directory over HTTP."""
