@@ -15,7 +15,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from prezero import approval, copilot, features, forecast, location_planning, routing, scoring, tour
+from prezero import approval, copilot, demo, features, forecast, hero, location_planning, routing, scoring, tour
 
 
 def _safe_json_for_html(payload: Any) -> str:
@@ -1341,9 +1341,138 @@ def _build_variables_section_html(route_data: Mapping[str, Any] | str | Path) ->
     """
 
 
+def _build_location_planning_map_html(
+    location_plan: dict[str, Any],
+    scored_df: pd.DataFrame,
+    locations_df: pd.DataFrame,
+) -> str:
+    """Render an interactive Folium map for the Standortplanung what-if."""
+    from prezero import viz
+
+    if not location_plan or not locations_df.size:
+        return ""
+
+    sites = location_plan.get("new_sites", [])
+    radius_m = float(location_plan.get("config", {}).get("radius_m", 500.0))
+    affected_keys = {
+        (str(item["Location_id"]).strip(), str(item["material_type"]).strip().lower())
+        for item in location_plan.get("affected_location_material_keys", [])
+    }
+
+    locs = locations_df.copy()
+    locs["Location_id"] = locs["Location_id"].astype(str).str.strip()
+    scored = scored_df.copy()
+    scored["Location_id"] = scored["Location_id"].astype(str).str.strip()
+    scored["material_type"] = scored["material_type"].astype(str).str.strip().str.lower()
+    scored["est_fill_level"] = location_planning._get_numeric_series(scored, "est_fill_level")
+
+    merged = scored.merge(
+        locs[["Location_id", "lat", "lon", "source", "confidence"]],
+        on="Location_id",
+        how="left",
+    ).dropna(subset=["lat", "lon"])
+
+    center = (
+        [float(merged["lat"].mean()), float(merged["lon"].mean())]
+        if not merged.empty
+        else [49.1427, 9.2109]
+    )
+
+    fmap = folium.Map(location=center, zoom_start=12, tiles=None)
+    folium.TileLayer(
+        tiles=viz.TILE_URL,
+        name="OpenStreetMap",
+        control=False,
+        attr=viz.TILE_ATTR,
+    ).add_to(fmap)
+
+    existing_layer = folium.FeatureGroup(name="Bestehende Container", show=True)
+    for row in merged.itertuples(index=False):
+        key = (str(row.Location_id).strip(), str(row.material_type).strip().lower())
+        fill = float(row.est_fill_level)
+        if fill >= 110.0:
+            color = "#111827"  # schwarz / übervoll
+        elif fill >= 80.0:
+            color = "#dc2626"  # rot / kritisch
+        elif fill >= 50.0:
+            color = "#eab308"  # gelb
+        else:
+            color = "#16a34a"  # grün
+        source_str = str(row.source) if pd.notna(row.source) else "unknown"
+        conf_str = str(row.confidence) if pd.notna(row.confidence) else "unknown"
+        simulated = viz._is_simulated(source_str, conf_str)
+        affected = key in affected_keys
+        popup = (
+            f"<b>ID:</b> {html.escape(str(row.Location_id))}<br>"
+            f"<b>Material:</b> {html.escape(str(row.material_type))}<br>"
+            f"<b>Geschätzter Füllstand:</b> {fill:.1f}%<br>"
+            f"<b>Quelle:</b> {html.escape(source_str)} ({html.escape(conf_str)})<br>"
+            f"{'<b>Betroffen durch neuen Standort</b>' if affected else ''}"
+        )
+        folium.CircleMarker(
+            location=[float(row.lat), float(row.lon)],
+            radius=6,
+            color="#7c3aed" if affected else color,
+            weight=3 if affected else 2,
+            dash_array="4, 4" if simulated else None,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.25 if simulated else 0.8,
+            popup=folium.Popup(popup, max_width=300),
+            tooltip=f"{row.Location_id} | {fill:.0f}%" + (" | betroffen" if affected else ""),
+        ).add_to(existing_layer)
+    existing_layer.add_to(fmap)
+
+    new_layer = folium.FeatureGroup(name="Neue Standorte & Einzugsradius", show=True)
+    for site in sites:
+        popup = (
+            f"<b>Neuer Standort #{site['rank']}</b><br>"
+            f"<b>Koordinaten:</b> {site['lat']:.5f}, {site['lon']:.5f}<br>"
+            f"<b>Score:</b> {site['score']:.2f}<br>"
+            f"<b>Radius:</b> {radius_m:.0f} m"
+        )
+        folium.Marker(
+            location=[float(site["lat"]), float(site["lon"])],
+            icon=folium.Icon(color="blue", icon="plus", prefix="glyphicon"),
+            popup=folium.Popup(popup, max_width=300),
+            tooltip=f"Neu #{site['rank']} | Score {site['score']:.2f}",
+        ).add_to(new_layer)
+        folium.Circle(
+            location=[float(site["lat"]), float(site["lon"])],
+            radius=radius_m,
+            color="#2563eb",
+            weight=2,
+            fill=True,
+            fill_color="#2563eb",
+            fill_opacity=0.08,
+            tooltip=f"Einzugsradius {radius_m:.0f} m",
+        ).add_to(new_layer)
+    new_layer.add_to(fmap)
+
+    folium.LayerControl(collapsed=False).add_to(fmap)
+
+    legend_html = """
+    <div style="position: fixed; bottom: 16px; left: 16px; z-index: 9999;
+                background: white; padding: 10px 14px; border-radius: 6px;
+                border: 1px solid #cbd5e1; font-size: 12px; line-height: 1.5;">
+      <b>Standortplanung (simuliert)</b><br>
+      <span style="color:#16a34a;">&#9679;</span> &lt; 50 % &nbsp;
+      <span style="color:#eab308;">&#9679;</span> 50–80 % &nbsp;
+      <span style="color:#dc2626;">&#9679;</span> 80–109 % &nbsp;
+      <span style="color:#111827;">&#9679;</span> &ge; 110 %<br>
+      <span style="color:#7c3aed;">&#9679;</span> Betroffener bestehender Container &nbsp;
+      <span style="color:#2563eb;">&#9679;</span> Neuer Standort + Radius<br>
+      Gestrichelt = simulierte Koordinaten
+    </div>
+    """
+    fmap.get_root().html.add_child(folium.Element(legend_html))
+    return fmap.get_root().render()
+
+
 def _build_location_planning_section_html(
     location_plan: dict[str, Any],
-    route_data: Mapping[str, Any],
+    scored_df: pd.DataFrame,
+    locations_df: pd.DataFrame,
 ) -> str:
     """Render the Standortplanung what-if with simulated-location banner and timeline."""
     if not location_plan:
@@ -1373,6 +1502,13 @@ def _build_location_planning_section_html(
         '<div class="table-wrap"><table><thead><tr><th>Rang</th><th>Breite</th><th>Länge</th>'
         '<th>Gesamt-Score</th><th>Nachfrage-Score</th><th>Abstands-Score</th></tr></thead>'
         f'<tbody>{site_rows or empty_row}</tbody></table></div>'
+    )
+
+    map_html = _build_location_planning_map_html(location_plan, scored_df, locations_df)
+    map_section = (
+        f'<h3>Kartenansicht</h3><div class="map-wrap">{map_html}</div>'
+        if map_html
+        else ""
     )
 
     weeks = [t["week"] for t in timeline]
@@ -1467,6 +1603,7 @@ def _build_location_planning_section_html(
       </div>
       {banner}
       <div class="kpi-grid">{kpi_cards}</div>
+      {map_section}
       <h3>Vorgeschlagene neue Standorte</h3>
       {sites_table}
       <h3>Adoptions-Timeline</h3>
@@ -1681,10 +1818,10 @@ def _build_operational_container_lists(
     route_metrics: Mapping[str, Any],
     locations_df: pd.DataFrame,
     street_lookup: dict[str, dict[str, str]],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int, int]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int, int, dict[str, Any]]:
     """Build today-full (+0) and this-week-full (+7) operational container tables without past dates."""
     if scored_df.empty:
-        return [], [], 0, 0
+        return [], [], 0, 0, {"in_tour_overfull_count": 0, "excluded_overflow": []}
 
     stop_order_by_loc: dict[str, int] = {}
     for stop in route_metrics.get("stops", []):
@@ -1748,7 +1885,16 @@ def _build_operational_container_lists(
     week1_items.sort(
         key=lambda c: (0 if (not c["is_crit_today"] and c["week1_pct"] >= 80.0) else 1, -c["week1_pct"], c["site_title"])
     )
-    return today_items[:15], week1_items[:15], len(today_items), today_overfull_count
+    overfull_all = [c for c in combined if float(c["today_pct"]) >= 110.0]
+    in_tour_overfull = sum(1 for c in overfull_all if str(c.get("in_tour", "")).startswith("Ja"))
+    excluded_overflow = [c for c in overfull_all if str(c.get("in_tour", "")).startswith("Offen")]
+    excluded_overflow.sort(key=lambda c: (-c["today_pct"], c["site_title"]))
+    hero_overflow = {
+        "in_tour_overfull_count": in_tour_overfull,
+        "excluded_overflow": excluded_overflow,
+        "process_step": "Auswahl",
+    }
+    return today_items[:15], week1_items[:15], len(today_items), today_overfull_count, hero_overflow
 
 
 def _build_driver_and_dispatcher_stops(
@@ -1866,11 +2012,12 @@ def _build_single_date_snapshot(
     route_bundle: dict[str, Any],
     presets: list[dict[str, Any]],
     street_lookup: dict[str, dict[str, str]],
+    status_quo_km: float | None = None,
 ) -> dict[str, Any]:
     """Build a complete date-anchored snapshot for consistent date switching."""
     metrics = route_bundle["metrics"]
     fc_df, horizons = _build_forecast_3w_horizons(scored_df, date_str)
-    today_list, week1_list, today_crit_cnt, today_overfull_cnt = _build_operational_container_lists(
+    today_list, week1_list, today_crit_cnt, today_overfull_cnt, hero_overflow = _build_operational_container_lists(
         scored_df, fc_df, metrics, locations_df, street_lookup
     )
     driver_stops, dispatcher_stops, maps_url, maps_legs, gpx_xml = _build_driver_and_dispatcher_stops(
@@ -1961,7 +2108,29 @@ def _build_single_date_snapshot(
         "proposal": route_bundle["proposal"],
         "variants": variant_options,
         "csv_rows": [row for _, row in tour.interleave(metrics)],
+        "status_quo_km": status_quo_km,
+        "hero": hero_overflow,
     }
+
+
+def _status_quo_km_from_benchmark(
+    benchmark_rows: list[Mapping[str, Any]] | pd.DataFrame | None,
+    date: str,
+) -> float | None:
+    """Return B1 (optimized status quo) km for the date, or None if unavailable."""
+    if benchmark_rows is None:
+        return None
+    frame = benchmark_rows.copy() if isinstance(benchmark_rows, pd.DataFrame) else pd.DataFrame(list(benchmark_rows))
+    if frame.empty or "variant" not in frame.columns or "km" not in frame.columns:
+        return None
+    frame["code"] = frame["variant"].astype(str).str.slice(0, 2)
+    sub = frame[(frame["date"].astype(str) == date) & (frame["code"] == "B1")]
+    if sub.empty:
+        return None
+    try:
+        return float(sub.iloc[0]["km"])
+    except (ValueError, TypeError):
+        return None
 
 
 def _build_date_snapshots(
@@ -1972,6 +2141,7 @@ def _build_date_snapshots(
     primary_route_bundle: dict[str, Any],
     primary_presets: list[dict[str, Any]],
     street_lookup: dict[str, dict[str, str]],
+    status_quo_km: float | None = None,
 ) -> tuple[list[str], dict[str, dict[str, Any]]]:
     """Precompute 4-6 date snapshots around selected_date and last data day."""
     dates = _select_demo_dates(selected_date, readings_df, target_count=5)
@@ -1997,6 +2167,7 @@ def _build_date_snapshots(
                 route_bundle=primary_route_bundle,
                 presets=primary_presets,
                 street_lookup=street_lookup,
+                status_quo_km=status_quo_km,
             )
             continue
 
@@ -2032,6 +2203,7 @@ def _build_date_snapshots(
             route_bundle=route_bundle_d,
             presets=presets_d,
             street_lookup=street_lookup,
+            status_quo_km=status_quo_km,
         )
     return dates, snapshots
 
@@ -2145,16 +2317,17 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
             return '<span id="driver-maps-legs" hidden></span>'
         items: list[str] = []
         for veh, urls in sorted(legs.items()):
-            if len(urls) == 1:
+            total = len(urls)
+            if total == 1:
                 items.append(
                     f'<a class="secondary-btn" target="_blank" rel="noopener" '
-                    f'href="{html.escape(urls[0], quote=True)}">Google Maps öffnen (Fahrzeug {veh})</a>'
+                    f'href="{html.escape(urls[0], quote=True)}">Fahrzeug {veh}: komplette Route</a>'
                 )
             else:
                 for idx, url in enumerate(urls, 1):
                     items.append(
                         f'<a class="secondary-btn" target="_blank" rel="noopener" '
-                        f'href="{html.escape(url, quote=True)}">Google Maps Leg {idx} (Fahrzeug {veh})</a>'
+                        f'href="{html.escape(url, quote=True)}">Fahrzeug {veh}: Abschnitt {idx} von {total}</a>'
                     )
         return f'<div id="driver-maps-legs" class="driver-actions">{"".join(items)}</div>'
 
@@ -2930,8 +3103,13 @@ def build_ui(
     heatmap_src: str | None = None,
     benchmark_rows: list[Mapping[str, Any]] | pd.DataFrame | None = None,
     backtest_summary: Mapping[str, Any] | None = None,
+    stream: str | None = None,
 ) -> Path:
-    """Build the single self-contained website ui_<date>.html from verifiable data."""
+    """Build the single self-contained website ui_<date>.html from verifiable data.
+
+    ``stream`` is accepted for CLI compatibility with multi-stream builds and ignored
+    by the glass UI; it does not change visible output.
+    """
     date = _resolve_target_date(date, readings_df)
     out = Path(output_path) if output_path is not None else Path(f"ui_{date}.html")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -2999,11 +3177,16 @@ def build_ui(
         scored_df, locations_df, operational_cfg
     )
     location_planning_section_html = _build_location_planning_section_html(
-        location_plan, route_data
+        location_plan, scored_df, locations_df
     )
+    demo_playback = demo.build_demo_playback_dataset(
+        readings_df, locations_df, operational_cfg
+    )
+    demo_section_html = demo.build_demo_section_html(demo_playback)
 
     street_lookup = _load_street_lookup()
     stand_de = _fmt_stand_de(date)
+    status_quo_km = _status_quo_km_from_benchmark(benchmark_rows, date)
     demo_dates, date_snapshots = _build_date_snapshots(
         selected_date=date,
         readings_df=readings_df,
@@ -3012,6 +3195,7 @@ def build_ui(
         primary_route_bundle=route_bundle,
         primary_presets=insights.get("presets", []),
         street_lookup=street_lookup,
+        status_quo_km=status_quo_km,
     )
     date_options_html = "".join(
         f'<option value="{html.escape(d, quote=True)}"{" selected" if d == date else ""}>'
@@ -3021,6 +3205,9 @@ def build_ui(
         for d in demo_dates
     )
     role_start_html = _build_role_start_html(date_snapshots[date], date)
+    dispatcher_hero_html = hero.build_hero_html(
+        date_snapshots[date], status_quo_km=date_snapshots[date].get("status_quo_km")
+    )
 
     proposal_json = _safe_json_for_html(route_bundle["proposal"])
     snapshots_json = _safe_json_for_html(date_snapshots)
@@ -3032,6 +3219,8 @@ def build_ui(
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GlasRoute UI – {html.escape(date)}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
   <style>
     :root {{
       --bg: #f8fafc;
@@ -3278,6 +3467,85 @@ def build_ui(
     .role-hero h2 {{ margin: 4px 0 8px; font-size: 30px; }}
     .role-hero p {{ max-width: 720px; margin: 0; color: #cbd5e1; }}
     .eyebrow {{ color: #93c5fd !important; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
+    body.role-driver .dispatcher-hero-shell,
+    body.role-analysis .dispatcher-hero-shell {{
+      display: none;
+    }}
+    .dispatcher-hero-shell {{
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 20px 0;
+    }}
+    .hero-block {{
+      background: #0f172a;
+      color: #fff;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 18px;
+    }}
+    .hero-eyebrow {{ color: #93c5fd; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 8px; }}
+    .hero-headline {{ font-size: 28px; font-weight: 700; margin: 0 0 12px; line-height: 1.25; }}
+    .hero-headline strong {{ color: #60a5fa; }}
+    .hero-sub {{ font-size: 16px; color: #e2e8f0; margin: 0 0 10px; line-height: 1.5; }}
+    .hero-sub strong {{ color: #fff; }}
+    .hero-sentence {{
+      font-size: 15px;
+      color: #cbd5e1;
+      font-style: italic;
+      margin: 0 0 18px;
+      padding-left: 14px;
+      border-left: 3px solid #2563eb;
+    }}
+    .hero-chain {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }}
+    .hero-chain-step {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 6px 12px 6px 6px;
+      font-size: 13px;
+      color: #cbd5e1;
+    }}
+    .hero-chain-step.hero-chain-active {{
+      background: #1d4ed8;
+      border-color: #60a5fa;
+      color: #fff;
+    }}
+    .hero-chain-num {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: #334155;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+    }}
+    .hero-chain-active .hero-chain-num {{ background: #fff; color: #1d4ed8; }}
+    .hero-chain-step:not(:last-child)::after {{
+      content: "→";
+      margin-left: 8px;
+      color: #64748b;
+    }}
+    .hero-excluded {{
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid #334155;
+      font-size: 14px;
+      color: #e2e8f0;
+    }}
+    .hero-excluded .table-wrap {{ background: #1e293b; border-color: #334155; }}
+    .hero-excluded th {{ background: #334155; color: #fff; }}
+    .hero-excluded td {{ color: #e2e8f0; border-bottom-color: #334155; }}
     .role-cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }}
     .role-card {{
       text-align: left; border: 2px solid var(--border); background: var(--surface);
@@ -3347,7 +3615,7 @@ def build_ui(
     }}
   </style>
 </head>
-<body>
+<body class="role-dispatcher">
   <header class="topbar">
     <div>
       <h1>GlasRoute &ndash; PreZero Demo UI (<span id="header-date-iso">{html.escape(date)}</span>)</h1>
@@ -3371,6 +3639,10 @@ def build_ui(
     </div>
   </header>
 
+  <div id="dispatcher-hero-mount" class="dispatcher-hero-shell" aria-live="polite">
+    {dispatcher_hero_html}
+  </div>
+
   {location_banner_html}
 
   {role_start_html}
@@ -3391,6 +3663,7 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-datacheck">8. Datencheck</button>
     <button type="button" class="tab-btn" data-target="view-upload">9. Upload</button>
     <button type="button" class="tab-btn" data-target="view-location-planning">10. Standortplanung</button>
+    <button type="button" class="tab-btn" data-target="view-demo">11. Bisher vs. Optimiert</button>
   </nav>
 
   <main class="analysis-workspace">
@@ -3444,6 +3717,10 @@ def build_ui(
     <section id="view-location-planning" class="view-panel">
       {location_planning_section_html}
     </section>
+
+    <section id="view-demo" class="view-panel">
+      {demo_section_html}
+    </section>
   </main>
 
   <script id="proposal-payload" type="application/json">{proposal_json}</script>
@@ -3451,7 +3728,7 @@ def build_ui(
   <script id="date-snapshots-payload" type="application/json">{snapshots_json}</script>
   <script>
     /* QRCode.js (MIT) – inlined so the driver QR code works offline. */
-    var QRCode;!function(){{function a(a){{this.mode=c.MODE_8BIT_BYTE,this.data=a,this.parsedData=[];for(var b=[],d=0,e=this.data.length;e>d;d++){{var f=this.data.charCodeAt(d);f>65536?(b[0]=240|(1835008&f)>>>18,b[1]=128|(258048&f)>>>12,b[2]=128|(4032&f)>>>6,b[3]=128|63&f):f>2048?(b[0]=224|(61440&f)>>>12,b[1]=128|(4032&f)>>>6,b[2]=128|63&f):f>128?(b[0]=192|(1984&f)>>>6,b[1]=128|63&f):b[0]=f,this.parsedData=this.parsedData.concat(b)}}this.parsedData.length!=this.data.length&&(this.parsedData.unshift(191),this.parsedData.unshift(187),this.parsedData.unshift(239))}}function b(a,b){{this.typeNumber=a,this.errorCorrectLevel=b,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}}function i(a,b){{if(void 0==a.length)throw new Error(a.length+"/"+b);for(var c=0;c<a.length&&0==a[c];)c++;this.num=new Array(a.length-c+b);for(var d=0;d<a.length-c;d++)this.num[d]=a[d+c]}}function j(a,b){{this.totalCount=a,this.dataCount=b}}function k(){{this.buffer=[],this.length=0}}function m(){{return"undefined"!=typeof CanvasRenderingContext2D}}function n(){{var a=!1,b=navigator.userAgent;return/android/i.test(b)&&(a=!0,aMat=b.toString().match(/android ([0-9]\.[0-9])/i),aMat&&aMat[1]&&(a=parseFloat(aMat[1]))),a}}function r(a,b){{for(var c=1,e=s(a),f=0,g=l.length;g>=f;f++){{var h=0;switch(b){{case d.L:h=l[f][0];break;case d.M:h=l[f][1];break;case d.Q:h=l[f][2];break;case d.H:h=l[f][3]}}if(h>=e)break;c++}}if(c>l.length)throw new Error("Too long data");return c}}function s(a){{var b=encodeURI(a).toString().replace(/\%[0-9a-fA-F]{{2}}/g,"a");return b.length+(b.length!=a?3:0)}}a.prototype={{getLength:function(){{return this.parsedData.length}},write:function(a){{for(var b=0,c=this.parsedData.length;c>b;b++)a.put(this.parsedData[b],8)}}}},b.prototype={{addData:function(b){{var c=new a(b);this.dataList.push(c),this.dataCache=null}},isDark:function(a,b){{if(0>a||this.moduleCount<=a||0>b||this.moduleCount<=b)throw new Error(a+","+b);return this.modules[a][b]}},getModuleCount:function(){{return this.moduleCount}},make:function(){{this.makeImpl(!1,this.getBestMaskPattern())}},makeImpl:function(a,c){{this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var d=0;d<this.moduleCount;d++){{this.modules[d]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[d][e]=null}}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(a,c),this.typeNumber>=7&&this.setupTypeNumber(a),null==this.dataCache&&(this.dataCache=b.createData(this.typeNumber,this.errorCorrectLevel,this.dataList)),this.mapData(this.dataCache,c)}},setupPositionProbePattern:function(a,b){{for(var c=-1;7>=c;c++)if(!(-1>=a+c||this.moduleCount<=a+c))for(var d=-1;7>=d;d++)-1>=b+d||this.moduleCount<=b+d||(this.modules[a+c][b+d]=c>=0&&6>=c&&(0==d||6==d)||d>=0&&6>=d&&(0==c||6==c)||c>=2&&4>=c&&d>=2&&4>=d?!0:!1)}},getBestMaskPattern:function(){{for(var a=0,b=0,c=0;8>c;c++){{this.makeImpl(!0,c);var d=f.getLostPoint(this);(0==c||a>d)&&(a=d,b=c)}}return b}},createMovieClip:function(a,b,c){{var d=a.createEmptyMovieClip(b,c),e=1;this.make();for(var f=0;f<this.modules.length;f++)for(var g=f*e,h=0;h<this.modules[f].length;h++){{var i=h*e,j=this.modules[f][h];j&&(d.beginFill(0,100),d.moveTo(i,g),d.lineTo(i+e,g),d.lineTo(i+e,g+e),d.lineTo(i,g+e),d.endFill())}}return d}},setupTimingPattern:function(){{for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2);for(var b=8;b<this.moduleCount-8;b++)null==this.modules[6][b]&&(this.modules[6][b]=0==b%2)}},setupPositionAdjustPattern:function(){{for(var a=f.getPatternPosition(this.typeNumber),b=0;b<a.length;b++)for(var c=0;c<a.length;c++){{var d=a[b],e=a[c];if(null==this.modules[d][e])for(var g=-2;2>=g;g++)for(var h=-2;2>=h;h++)this.modules[d+g][e+h]=-2==g||2==g||-2==h||2==h||0==g&&0==h?!0:!1}}}},setupTypeNumber:function(a){{for(var b=f.getBCHTypeNumber(this.typeNumber),c=0;18>c;c++){{var d=!a&&1==(1&b>>c);this.modules[Math.floor(c/3)][c%3+this.moduleCount-8-3]=d}}for(var c=0;18>c;c++){{var d=!a&&1==(1&b>>c);this.modules[c%3+this.moduleCount-8-3][Math.floor(c/3)]=d}}}},setupTypeInfo:function(a,b){{for(var c=this.errorCorrectLevel<<3|b,d=f.getBCHTypeInfo(c),e=0;15>e;e++){{var g=!a&&1==(1&d>>e);6>e?this.modules[e][8]=g:8>e?this.modules[e+1][8]=g:this.modules[this.moduleCount-15+e][8]=g}}for(var e=0;15>e;e++){{var g=!a&&1==(1&d>>e);8>e?this.modules[8][this.moduleCount-e-1]=g:9>e?this.modules[8][15-e-1+1]=g:this.modules[8][15-e-1]=g}}this.modules[this.moduleCount-8][8]=!a}},mapData:function(a,b){{for(var c=-1,d=this.moduleCount-1,e=7,g=0,h=this.moduleCount-1;h>0;h-=2)for(6==h&&h--;;){{for(var i=0;2>i;i++)if(null==this.modules[d][h-i]){{var j=!1;g<a.length&&(j=1==(1&a[g]>>>e));var k=f.getMask(b,d,h-i);k&&(j=!j),this.modules[d][h-i]=j,e--,-1==e&&(g++,e=7)}}if(d+=c,0>d||this.moduleCount<=d){{d-=c,c=-c;break}}}}}}}},b.PAD0=236,b.PAD1=17,b.createData=function(a,c,d){{for(var e=j.getRSBlocks(a,c),g=new k,h=0;h<d.length;h++){{var i=d[h];g.put(i.mode,4),g.put(i.getLength(),f.getLengthInBits(i.mode,a)),i.write(g)}}for(var l=0,h=0;h<e.length;h++)l+=e[h].dataCount;if(g.getLengthInBits()>8*l)throw new Error("code length overflow. ("+g.getLengthInBits()+">"+8*l+")");for(g.getLengthInBits()+4<=8*l&&g.put(0,4);0!=g.getLengthInBits()%8;)g.putBit(!1);for(;;){{if(g.getLengthInBits()>=8*l)break;if(g.put(b.PAD0,8),g.getLengthInBits()>=8*l)break;g.put(b.PAD1,8)}}return b.createBytes(g,e)}},b.createBytes=function(a,b){{for(var c=0,d=0,e=0,g=new Array(b.length),h=new Array(b.length),j=0;j<b.length;j++){{var k=b[j].dataCount,l=b[j].totalCount-k;d=Math.max(d,k),e=Math.max(e,l),g[j]=new Array(k);for(var m=0;m<g[j].length;m++)g[j][m]=255&a.buffer[m+c];c+=k;var n=f.getErrorCorrectPolynomial(l),o=new i(g[j],n.getLength()-1),p=o.mod(n);h[j]=new Array(n.getLength()-1);for(var m=0;m<h[j].length;m++){{var q=m+p.getLength()-h[j].length;h[j][m]=q>=0?p.get(q):0}}}}for(var r=0,m=0;m<b.length;m++)r+=b[m].totalCount;for(var s=new Array(r),t=0,m=0;d>m;m++)for(var j=0;j<b.length;j++)m<g[j].length&&(s[t++]=g[j][m]);for(var m=0;e>m;m++)for(var j=0;j<b.length;j++)m<h[j].length&&(s[t++]=h[j][m]);return s}};for(var c={{MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8}},d={{L:1,M:0,Q:3,H:2}},e={{PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7}},f={{PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(a){{for(var b=a<<10;f.getBCHDigit(b)-f.getBCHDigit(f.G15)>=0;)b^=f.G15<<f.getBCHDigit(b)-f.getBCHDigit(f.G15);return(a<<10|b)^f.G15_MASK}},getBCHTypeNumber:function(a){{for(var b=a<<12;f.getBCHDigit(b)-f.getBCHDigit(f.G18)>=0;)b^=f.G18<<f.getBCHDigit(b)-f.getBCHDigit(f.G18);return a<<12|b}},getBCHDigit:function(a){{for(var b=0;0!=a;)b++,a>>>=1;return b}},getPatternPosition:function(a){{return f.PATTERN_POSITION_TABLE[a-1]}},getMask:function(a,b,c){{switch(a){{case e.PATTERN000:return 0==(b+c)%2;case e.PATTERN001:return 0==b%2;case e.PATTERN010:return 0==c%3;case e.PATTERN011:return 0==(b+c)%3;case e.PATTERN100:return 0==(Math.floor(b/2)+Math.floor(c/3))%2;case e.PATTERN101:return 0==b*c%2+b*c%3;case e.PATTERN110:return 0==(b*c%2+b*c%3)%2;case e.PATTERN111:return 0==(b*c%3+(b+c)%2)%2;default:throw new Error("bad maskPattern:"+a)}}}},getErrorCorrectPolynomial:function(a){{for(var b=new i([1],0),c=0;a>c;c++)b=b.multiply(new i([1,g.gexp(c)],0));return b}},getLengthInBits:function(a,b){{if(b>=1&&10>b)switch(a){{case c.MODE_NUMBER:return 10;case c.MODE_ALPHA_NUM:return 9;case c.MODE_8BIT_BYTE:return 8;case c.MODE_KANJI:return 8;default:throw new Error("mode:"+a)}}else if(27>b)switch(a){{case c.MODE_NUMBER:return 12;case c.MODE_ALPHA_NUM:return 11;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 10;default:throw new Error("mode:"+a)}}else{{if(!(41>b))throw new Error("type:"+b);switch(a){{case c.MODE_NUMBER:return 14;case c.MODE_ALPHA_NUM:return 13;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 12;default:throw new Error("mode:"+a)}}}}}},getLostPoint:function(a){{for(var b=a.getModuleCount(),c=0,d=0;b>d;d++)for(var e=0;b>e;e++){{for(var f=0,g=a.isDark(d,e),h=-1;1>=h;h++)if(!(0>d+h||d+h>=b))for(var i=-1;1>=i;i++)0>e+i||e+i>=b||(0!=h||0!=i)&&g==a.isDark(d+h,e+i)&&f++;f>5&&(c+=3+f-5)}}for(var d=0;b-1>d;d++)for(var e=0;b-1>e;e++){{var j=0;a.isDark(d,e)&&j++,a.isDark(d+1,e)&&j++,a.isDark(d,e+1)&&j++,a.isDark(d+1,e+1)&&j++,(0==j||4==j)&&(c+=3)}}for(var d=0;b>d;d++)for(var e=0;b-6>e;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(c+=40);for(var e=0;b>e;e++)for(var d=0;b-6>d;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(c+=40);for(var k=0,e=0;b>e;e++)for(var d=0;b>d;d++)a.isDark(d,e)&&k++;var l=Math.abs(100*k/b/b-50)/5;return c+=10*l}}}},g={{glog:function(a){{if(1>a)throw new Error("glog("+a+")");return g.LOG_TABLE[a]}},gexp:function(a){{for(;0>a;)a+=255;for(;a>=256;)a-=255;return g.EXP_TABLE[a]}},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)}},h=0;8>h;h++)g.EXP_TABLE[h]=1<<h;for(var h=8;256>h;h++)g.EXP_TABLE[h]=g.EXP_TABLE[h-4]^g.EXP_TABLE[h-5]^g.EXP_TABLE[h-6]^g.EXP_TABLE[h-8];for(var h=0;255>h;h++)g.LOG_TABLE[g.EXP_TABLE[h]]=h;i.prototype={{get:function(a){{return this.num[a]}},getLength:function(){{return this.num.length}},multiply:function(a){{for(var b=new Array(this.getLength()+a.getLength()-1),c=0;c<this.getLength();c++)for(var d=0;d<a.getLength();d++)b[c+d]^=g.gexp(g.glog(this.get(c))+g.glog(a.get(d)));return new i(b,0)}},mod:function(a){{if(this.getLength()-a.getLength()<0)return this;for(var b=g.glog(this.get(0))-g.glog(a.get(0)),c=new Array(this.getLength()),d=0;d<this.getLength();d++)c[d]=this.get(d);for(var d=0;d<a.getLength();d++)c[d]^=g.gexp(g.glog(a.get(d))+b);return new i(c,0).mod(a)}}}},j.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],j.getRSBlocks=function(a,b){{var c=j.getRsBlockTable(a,b);if(void 0==c)throw new Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+b);for(var d=c.length/3,e=[],f=0;d>f;f++)for(var g=c[3*f+0],h=c[3*f+1],i=c[3*f+2],k=0;g>k;k++)e.push(new j(h,i));return e}},j.getRsBlockTable=function(a,b){{switch(b){{case d.L:return j.RS_BLOCK_TABLE[4*(a-1)+0];case d.M:return j.RS_BLOCK_TABLE[4*(a-1)+1];case d.Q:return j.RS_BLOCK_TABLE[4*(a-1)+2];case d.H:return j.RS_BLOCK_TABLE[4*(a-1)+3];default:return void 0}}}},k.prototype={{get:function(a){{var b=Math.floor(a/8);return 1==(1&this.buffer[b]>>>7-a%8)}},put:function(a,b){{for(var c=0;b>c;c++)this.putBit(1==(1&a>>>b-c-1))}},getLengthInBits:function(){{return this.length}},putBit:function(a){{var b=Math.floor(this.length/8);this.buffer.length<=b&&this.buffer.push(0),a&&(this.buffer[b]|=128>>>this.length%8),this.length++}}}};var l=[[17,14,11,7],[32,26,20,14],[53,42,32,24],[78,62,46,34],[106,84,60,44],[134,106,74,58],[154,122,86,64],[192,152,108,84],[230,180,130,98],[271,213,151,119],[321,251,177,137],[367,287,203,155],[425,331,241,177],[458,362,258,194],[520,412,292,220],[586,450,322,250],[644,504,364,280],[718,560,394,310],[792,624,442,338],[858,666,482,382],[929,711,509,403],[1003,779,565,439],[1091,857,611,461],[1171,911,661,511],[1273,997,715,535],[1367,1059,751,593],[1465,1125,805,625],[1528,1190,868,658],[1628,1264,908,698],[1732,1370,982,742],[1840,1452,1030,790],[1952,1538,1112,842],[2068,1628,1168,898],[2188,1722,1228,958],[2303,1809,1283,983],[2431,1911,1351,1051],[2563,1989,1423,1093],[2699,2099,1499,1139],[2809,2213,1579,1219],[2953,2331,1663,1273]],o=function(){{var a=function(a,b){{this._el=a,this._htOption=b}};return a.prototype.draw=function(a){{function g(a,b){{var c=document.createElementNS("http://www.w3.org/2000/svg",a);for(var d in b)b.hasOwnProperty(d)&&c.setAttribute(d,b[d]);return c}}var b=this._htOption,c=this._el,d=a.getModuleCount();Math.floor(b.width/d),Math.floor(b.height/d),this.clear();var h=g("svg",{{viewBox:"0 0 "+String(d)+" "+String(d),width:"100%",height:"100%",fill:b.colorLight}});h.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:xlink","http://www.w3.org/1999/xlink"),c.appendChild(h),h.appendChild(g("rect",{{fill:b.colorDark,width:"1",height:"1",id:"template"}}));for(var i=0;d>i;i++)for(var j=0;d>j;j++)if(a.isDark(i,j)){{var k=g("use",{{x:String(i),y:String(j)}});k.setAttributeNS("http://www.w3.org/1999/xlink","href","#template"),h.appendChild(k)}}}},a.prototype.clear=function(){{for(;this._el.hasChildNodes();)this._el.removeChild(this._el.lastChild)}},a}}(),p="svg"===document.documentElement.tagName.toLowerCase(),q=p?o:m()?function(){{function a(){{this._elImage.src=this._elCanvas.toDataURL("image/png"),this._elImage.style.display="block",this._elCanvas.style.display="none"}}function d(a,b){{var c=this;if(c._fFail=b,c._fSuccess=a,null===c._bSupportDataURI){{var d=document.createElement("img"),e=function(){{c._bSupportDataURI=!1,c._fFail&&_fFail.call(c)}},f=function(){{c._bSupportDataURI=!0,c._fSuccess&&c._fSuccess.call(c)}};return d.onabort=e,d.onerror=e,d.onload=f,d.src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",void 0}}c._bSupportDataURI===!0&&c._fSuccess?c._fSuccess.call(c):c._bSupportDataURI===!1&&c._fFail&&c._fFail.call(c)}}if(this._android&&this._android<=2.1){{var b=1/window.devicePixelRatio,c=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(a,d,e,f,g,h,i,j){{if("nodeName"in a&&/img/i.test(a.nodeName))for(var l=arguments.length-1;l>=1;l--)arguments[l]=arguments[l]*b;else"undefined"==typeof j&&(arguments[1]*=b,arguments[2]*=b,arguments[3]*=b,arguments[4]*=b);c.apply(this,arguments)}}}}var e=function(a,b){{this._bIsPainted=!1,this._android=n(),this._htOption=b,this._elCanvas=document.createElement("canvas"),this._elCanvas.width=b.width,this._elCanvas.height=b.height,a.appendChild(this._elCanvas),this._el=a,this._oContext=this._elCanvas.getContext("2d"),this._bIsPainted=!1,this._elImage=document.createElement("img"),this._elImage.style.display="none",this._el.appendChild(this._elImage),this._bSupportDataURI=null}};return e.prototype.draw=function(a){{var b=this._elImage,c=this._oContext,d=this._htOption,e=a.getModuleCount(),f=d.width/e,g=d.height/e,h=Math.round(f),i=Math.round(g);b.style.display="none",this.clear();for(var j=0;e>j;j++)for(var k=0;e>k;k++){{var l=a.isDark(j,k),m=k*f,n=j*g;c.strokeStyle=l?d.colorDark:d.colorLight,c.lineWidth=1,c.fillStyle=l?d.colorDark:d.colorLight,c.fillRect(m,n,f,g),c.strokeRect(Math.floor(m)+.5,Math.floor(n)+.5,h,i),c.strokeRect(Math.ceil(m)-.5,Math.ceil(n)-.5,h,i)}}this._bIsPainted=!0}},e.prototype.makeImage=function(){{this._bIsPainted&&d.call(this,a)}},e.prototype.isPainted=function(){{return this._bIsPainted}},e.prototype.clear=function(){{this._oContext.clearRect(0,0,this._elCanvas.width,this._elCanvas.height),this._bIsPainted=!1}},e.prototype.round=function(a){{return a?Math.floor(1e3*a)/1e3:a}},e}}():function(){{var a=function(a,b){{this._el=a,this._htOption=b}};return a.prototype.draw=function(a){{for(var b=this._htOption,c=this._el,d=a.getModuleCount(),e=Math.floor(b.width/d),f=Math.floor(b.height/d),g=['<table style="border:0;border-collapse:collapse;">'],h=0;d>h;h++){{g.push("<tr>");for(var i=0;d>i;i++)g.push('<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:'+e+"px;height:"+f+"px;background-color:"+(a.isDark(h,i)?b.colorDark:b.colorLight)+';"></td>');g.push("</tr>")}}g.push("</table>"),c.innerHTML=g.join("");var j=c.childNodes[0],k=(b.width-j.offsetWidth)/2,l=(b.height-j.offsetHeight)/2;k>0&&l>0&&(j.style.margin=l+"px "+k+"px")}},a.prototype.clear=function(){{this._el.innerHTML=""}},a}}();QRCode=function(a,b){{if(this._htOption={{width:256,height:256,typeNumber:4,colorDark:"#000000",colorLight:"#ffffff",correctLevel:d.H}},"string"==typeof b&&(b={{text:b}}),b)for(var c in b)this._htOption[c]=b[c];"string"==typeof a&&(a=document.getElementById(a)),this._android=n(),this._el=a,this._oQRCode=null,this._oDrawing=new q(this._el,this._htOption),this._htOption.text&&this.makeCode(this._htOption.text)}},QRCode.prototype.makeCode=function(a){{this._oQRCode=new b(r(a,this._htOption.correctLevel),this._htOption.correctLevel),this._oQRCode.addData(a),this._oQRCode.make(),this._el.title=a,this._oDrawing.draw(this._oQRCode),this.makeImage()}},QRCode.prototype.makeImage=function(){{"function"==typeof this._oDrawing.makeImage&&(!this._android||this._android>=3)&&this._oDrawing.makeImage()}},QRCode.prototype.clear=function(){{this._oDrawing.clear()}},QRCode.CorrectLevel=d}}();
+    var QRCode;!function(){{function a(a){{this.mode=c.MODE_8BIT_BYTE,this.data=a,this.parsedData=[];for(var b=[],d=0,e=this.data.length;e>d;d++){{var f=this.data.charCodeAt(d);f>65536?(b[0]=240|(1835008&f)>>>18,b[1]=128|(258048&f)>>>12,b[2]=128|(4032&f)>>>6,b[3]=128|63&f):f>2048?(b[0]=224|(61440&f)>>>12,b[1]=128|(4032&f)>>>6,b[2]=128|63&f):f>128?(b[0]=192|(1984&f)>>>6,b[1]=128|63&f):b[0]=f,this.parsedData=this.parsedData.concat(b)}}this.parsedData.length!=this.data.length&&(this.parsedData.unshift(191),this.parsedData.unshift(187),this.parsedData.unshift(239))}}function b(a,b){{this.typeNumber=a,this.errorCorrectLevel=b,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}}function i(a,b){{if(void 0==a.length)throw new Error(a.length+"/"+b);for(var c=0;c<a.length&&0==a[c];)c++;this.num=new Array(a.length-c+b);for(var d=0;d<a.length-c;d++)this.num[d]=a[d+c]}}function j(a,b){{this.totalCount=a,this.dataCount=b}}function k(){{this.buffer=[],this.length=0}}function m(){{return"undefined"!=typeof CanvasRenderingContext2D}}function n(){{var a=!1,b=navigator.userAgent;return/android/i.test(b)&&(a=!0,aMat=b.toString().match(/android ([0-9]\\.[0-9])/i),aMat&&aMat[1]&&(a=parseFloat(aMat[1]))),a}}function r(a,b){{for(var c=1,e=s(a),f=0,g=l.length;g>=f;f++){{var h=0;switch(b){{case d.L:h=l[f][0];break;case d.M:h=l[f][1];break;case d.Q:h=l[f][2];break;case d.H:h=l[f][3]}}if(h>=e)break;c++}}if(c>l.length)throw new Error("Too long data");return c}}function s(a){{var b=encodeURI(a).toString().replace(/\\%[0-9a-fA-F]{{2}}/g,"a");return b.length+(b.length!=a?3:0)}}a.prototype={{getLength:function(){{return this.parsedData.length}},write:function(a){{for(var b=0,c=this.parsedData.length;c>b;b++)a.put(this.parsedData[b],8)}}}},b.prototype={{addData:function(b){{var c=new a(b);this.dataList.push(c),this.dataCache=null}},isDark:function(a,b){{if(0>a||this.moduleCount<=a||0>b||this.moduleCount<=b)throw new Error(a+","+b);return this.modules[a][b]}},getModuleCount:function(){{return this.moduleCount}},make:function(){{this.makeImpl(!1,this.getBestMaskPattern())}},makeImpl:function(a,c){{this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var d=0;d<this.moduleCount;d++){{this.modules[d]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[d][e]=null}}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(a,c),this.typeNumber>=7&&this.setupTypeNumber(a),null==this.dataCache&&(this.dataCache=b.createData(this.typeNumber,this.errorCorrectLevel,this.dataList)),this.mapData(this.dataCache,c)}},setupPositionProbePattern:function(a,b){{for(var c=-1;7>=c;c++)if(!(-1>=a+c||this.moduleCount<=a+c))for(var d=-1;7>=d;d++)-1>=b+d||this.moduleCount<=b+d||(this.modules[a+c][b+d]=c>=0&&6>=c&&(0==d||6==d)||d>=0&&6>=d&&(0==c||6==c)||c>=2&&4>=c&&d>=2&&4>=d?!0:!1)}},getBestMaskPattern:function(){{for(var a=0,b=0,c=0;8>c;c++){{this.makeImpl(!0,c);var d=f.getLostPoint(this);(0==c||a>d)&&(a=d,b=c)}}return b}},createMovieClip:function(a,b,c){{var d=a.createEmptyMovieClip(b,c),e=1;this.make();for(var f=0;f<this.modules.length;f++)for(var g=f*e,h=0;h<this.modules[f].length;h++){{var i=h*e,j=this.modules[f][h];j&&(d.beginFill(0,100),d.moveTo(i,g),d.lineTo(i+e,g),d.lineTo(i+e,g+e),d.lineTo(i,g+e),d.endFill())}}return d}},setupTimingPattern:function(){{for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2);for(var b=8;b<this.moduleCount-8;b++)null==this.modules[6][b]&&(this.modules[6][b]=0==b%2)}},setupPositionAdjustPattern:function(){{for(var a=f.getPatternPosition(this.typeNumber),b=0;b<a.length;b++)for(var c=0;c<a.length;c++){{var d=a[b],e=a[c];if(null==this.modules[d][e])for(var g=-2;2>=g;g++)for(var h=-2;2>=h;h++)this.modules[d+g][e+h]=-2==g||2==g||-2==h||2==h||0==g&&0==h?!0:!1}}}},setupTypeNumber:function(a){{for(var b=f.getBCHTypeNumber(this.typeNumber),c=0;18>c;c++){{var d=!a&&1==(1&b>>c);this.modules[Math.floor(c/3)][c%3+this.moduleCount-8-3]=d}}for(var c=0;18>c;c++){{var d=!a&&1==(1&b>>c);this.modules[c%3+this.moduleCount-8-3][Math.floor(c/3)]=d}}}},setupTypeInfo:function(a,b){{for(var c=this.errorCorrectLevel<<3|b,d=f.getBCHTypeInfo(c),e=0;15>e;e++){{var g=!a&&1==(1&d>>e);6>e?this.modules[e][8]=g:8>e?this.modules[e+1][8]=g:this.modules[this.moduleCount-15+e][8]=g}}for(var e=0;15>e;e++){{var g=!a&&1==(1&d>>e);8>e?this.modules[8][this.moduleCount-e-1]=g:9>e?this.modules[8][15-e-1+1]=g:this.modules[8][15-e-1]=g}}this.modules[this.moduleCount-8][8]=!a}},mapData:function(a,b){{for(var c=-1,d=this.moduleCount-1,e=7,g=0,h=this.moduleCount-1;h>0;h-=2)for(6==h&&h--;;){{for(var i=0;2>i;i++)if(null==this.modules[d][h-i]){{var j=!1;g<a.length&&(j=1==(1&a[g]>>>e));var k=f.getMask(b,d,h-i);k&&(j=!j),this.modules[d][h-i]=j,e--,-1==e&&(g++,e=7)}}if(d+=c,0>d||this.moduleCount<=d){{d-=c,c=-c;break}}}}}}}},b.PAD0=236,b.PAD1=17,b.createData=function(a,c,d){{for(var e=j.getRSBlocks(a,c),g=new k,h=0;h<d.length;h++){{var i=d[h];g.put(i.mode,4),g.put(i.getLength(),f.getLengthInBits(i.mode,a)),i.write(g)}}for(var l=0,h=0;h<e.length;h++)l+=e[h].dataCount;if(g.getLengthInBits()>8*l)throw new Error("code length overflow. ("+g.getLengthInBits()+">"+8*l+")");for(g.getLengthInBits()+4<=8*l&&g.put(0,4);0!=g.getLengthInBits()%8;)g.putBit(!1);for(;;){{if(g.getLengthInBits()>=8*l)break;if(g.put(b.PAD0,8),g.getLengthInBits()>=8*l)break;g.put(b.PAD1,8)}}return b.createBytes(g,e)}},b.createBytes=function(a,b){{for(var c=0,d=0,e=0,g=new Array(b.length),h=new Array(b.length),j=0;j<b.length;j++){{var k=b[j].dataCount,l=b[j].totalCount-k;d=Math.max(d,k),e=Math.max(e,l),g[j]=new Array(k);for(var m=0;m<g[j].length;m++)g[j][m]=255&a.buffer[m+c];c+=k;var n=f.getErrorCorrectPolynomial(l),o=new i(g[j],n.getLength()-1),p=o.mod(n);h[j]=new Array(n.getLength()-1);for(var m=0;m<h[j].length;m++){{var q=m+p.getLength()-h[j].length;h[j][m]=q>=0?p.get(q):0}}}}for(var r=0,m=0;m<b.length;m++)r+=b[m].totalCount;for(var s=new Array(r),t=0,m=0;d>m;m++)for(var j=0;j<b.length;j++)m<g[j].length&&(s[t++]=g[j][m]);for(var m=0;e>m;m++)for(var j=0;j<b.length;j++)m<h[j].length&&(s[t++]=h[j][m]);return s}};for(var c={{MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8}},d={{L:1,M:0,Q:3,H:2}},e={{PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7}},f={{PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(a){{for(var b=a<<10;f.getBCHDigit(b)-f.getBCHDigit(f.G15)>=0;)b^=f.G15<<f.getBCHDigit(b)-f.getBCHDigit(f.G15);return(a<<10|b)^f.G15_MASK}},getBCHTypeNumber:function(a){{for(var b=a<<12;f.getBCHDigit(b)-f.getBCHDigit(f.G18)>=0;)b^=f.G18<<f.getBCHDigit(b)-f.getBCHDigit(f.G18);return a<<12|b}},getBCHDigit:function(a){{for(var b=0;0!=a;)b++,a>>>=1;return b}},getPatternPosition:function(a){{return f.PATTERN_POSITION_TABLE[a-1]}},getMask:function(a,b,c){{switch(a){{case e.PATTERN000:return 0==(b+c)%2;case e.PATTERN001:return 0==b%2;case e.PATTERN010:return 0==c%3;case e.PATTERN011:return 0==(b+c)%3;case e.PATTERN100:return 0==(Math.floor(b/2)+Math.floor(c/3))%2;case e.PATTERN101:return 0==b*c%2+b*c%3;case e.PATTERN110:return 0==(b*c%2+b*c%3)%2;case e.PATTERN111:return 0==(b*c%3+(b+c)%2)%2;default:throw new Error("bad maskPattern:"+a)}}}},getErrorCorrectPolynomial:function(a){{for(var b=new i([1],0),c=0;a>c;c++)b=b.multiply(new i([1,g.gexp(c)],0));return b}},getLengthInBits:function(a,b){{if(b>=1&&10>b)switch(a){{case c.MODE_NUMBER:return 10;case c.MODE_ALPHA_NUM:return 9;case c.MODE_8BIT_BYTE:return 8;case c.MODE_KANJI:return 8;default:throw new Error("mode:"+a)}}else if(27>b)switch(a){{case c.MODE_NUMBER:return 12;case c.MODE_ALPHA_NUM:return 11;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 10;default:throw new Error("mode:"+a)}}else{{if(!(41>b))throw new Error("type:"+b);switch(a){{case c.MODE_NUMBER:return 14;case c.MODE_ALPHA_NUM:return 13;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 12;default:throw new Error("mode:"+a)}}}}}},getLostPoint:function(a){{for(var b=a.getModuleCount(),c=0,d=0;b>d;d++)for(var e=0;b>e;e++){{for(var f=0,g=a.isDark(d,e),h=-1;1>=h;h++)if(!(0>d+h||d+h>=b))for(var i=-1;1>=i;i++)0>e+i||e+i>=b||(0!=h||0!=i)&&g==a.isDark(d+h,e+i)&&f++;f>5&&(c+=3+f-5)}}for(var d=0;b-1>d;d++)for(var e=0;b-1>e;e++){{var j=0;a.isDark(d,e)&&j++,a.isDark(d+1,e)&&j++,a.isDark(d,e+1)&&j++,a.isDark(d+1,e+1)&&j++,(0==j||4==j)&&(c+=3)}}for(var d=0;b>d;d++)for(var e=0;b-6>e;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(c+=40);for(var e=0;b>e;e++)for(var d=0;b-6>d;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(c+=40);for(var k=0,e=0;b>e;e++)for(var d=0;b>d;d++)a.isDark(d,e)&&k++;var l=Math.abs(100*k/b/b-50)/5;return c+=10*l}}}},g={{glog:function(a){{if(1>a)throw new Error("glog("+a+")");return g.LOG_TABLE[a]}},gexp:function(a){{for(;0>a;)a+=255;for(;a>=256;)a-=255;return g.EXP_TABLE[a]}},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)}},h=0;8>h;h++)g.EXP_TABLE[h]=1<<h;for(var h=8;256>h;h++)g.EXP_TABLE[h]=g.EXP_TABLE[h-4]^g.EXP_TABLE[h-5]^g.EXP_TABLE[h-6]^g.EXP_TABLE[h-8];for(var h=0;255>h;h++)g.LOG_TABLE[g.EXP_TABLE[h]]=h;i.prototype={{get:function(a){{return this.num[a]}},getLength:function(){{return this.num.length}},multiply:function(a){{for(var b=new Array(this.getLength()+a.getLength()-1),c=0;c<this.getLength();c++)for(var d=0;d<a.getLength();d++)b[c+d]^=g.gexp(g.glog(this.get(c))+g.glog(a.get(d)));return new i(b,0)}},mod:function(a){{if(this.getLength()-a.getLength()<0)return this;for(var b=g.glog(this.get(0))-g.glog(a.get(0)),c=new Array(this.getLength()),d=0;d<this.getLength();d++)c[d]=this.get(d);for(var d=0;d<a.getLength();d++)c[d]^=g.gexp(g.glog(a.get(d))+b);return new i(c,0).mod(a)}}}},j.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],j.getRSBlocks=function(a,b){{var c=j.getRsBlockTable(a,b);if(void 0==c)throw new Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+b);for(var d=c.length/3,e=[],f=0;d>f;f++)for(var g=c[3*f+0],h=c[3*f+1],i=c[3*f+2],k=0;g>k;k++)e.push(new j(h,i));return e}},j.getRsBlockTable=function(a,b){{switch(b){{case d.L:return j.RS_BLOCK_TABLE[4*(a-1)+0];case d.M:return j.RS_BLOCK_TABLE[4*(a-1)+1];case d.Q:return j.RS_BLOCK_TABLE[4*(a-1)+2];case d.H:return j.RS_BLOCK_TABLE[4*(a-1)+3];default:return void 0}}}},k.prototype={{get:function(a){{var b=Math.floor(a/8);return 1==(1&this.buffer[b]>>>7-a%8)}},put:function(a,b){{for(var c=0;b>c;c++)this.putBit(1==(1&a>>>b-c-1))}},getLengthInBits:function(){{return this.length}},putBit:function(a){{var b=Math.floor(this.length/8);this.buffer.length<=b&&this.buffer.push(0),a&&(this.buffer[b]|=128>>>this.length%8),this.length++}}}};var l=[[17,14,11,7],[32,26,20,14],[53,42,32,24],[78,62,46,34],[106,84,60,44],[134,106,74,58],[154,122,86,64],[192,152,108,84],[230,180,130,98],[271,213,151,119],[321,251,177,137],[367,287,203,155],[425,331,241,177],[458,362,258,194],[520,412,292,220],[586,450,322,250],[644,504,364,280],[718,560,394,310],[792,624,442,338],[858,666,482,382],[929,711,509,403],[1003,779,565,439],[1091,857,611,461],[1171,911,661,511],[1273,997,715,535],[1367,1059,751,593],[1465,1125,805,625],[1528,1190,868,658],[1628,1264,908,698],[1732,1370,982,742],[1840,1452,1030,790],[1952,1538,1112,842],[2068,1628,1168,898],[2188,1722,1228,958],[2303,1809,1283,983],[2431,1911,1351,1051],[2563,1989,1423,1093],[2699,2099,1499,1139],[2809,2213,1579,1219],[2953,2331,1663,1273]],o=function(){{var a=function(a,b){{this._el=a,this._htOption=b}};return a.prototype.draw=function(a){{function g(a,b){{var c=document.createElementNS("http://www.w3.org/2000/svg",a);for(var d in b)b.hasOwnProperty(d)&&c.setAttribute(d,b[d]);return c}}var b=this._htOption,c=this._el,d=a.getModuleCount();Math.floor(b.width/d),Math.floor(b.height/d),this.clear();var h=g("svg",{{viewBox:"0 0 "+String(d)+" "+String(d),width:"100%",height:"100%",fill:b.colorLight}});h.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:xlink","http://www.w3.org/1999/xlink"),c.appendChild(h),h.appendChild(g("rect",{{fill:b.colorDark,width:"1",height:"1",id:"template"}}));for(var i=0;d>i;i++)for(var j=0;d>j;j++)if(a.isDark(i,j)){{var k=g("use",{{x:String(i),y:String(j)}});k.setAttributeNS("http://www.w3.org/1999/xlink","href","#template"),h.appendChild(k)}}}},a.prototype.clear=function(){{for(;this._el.hasChildNodes();)this._el.removeChild(this._el.lastChild)}},a}}(),p="svg"===document.documentElement.tagName.toLowerCase(),q=p?o:m()?function(){{function a(){{this._elImage.src=this._elCanvas.toDataURL("image/png"),this._elImage.style.display="block",this._elCanvas.style.display="none"}}function d(a,b){{var c=this;if(c._fFail=b,c._fSuccess=a,null===c._bSupportDataURI){{var d=document.createElement("img"),e=function(){{c._bSupportDataURI=!1,c._fFail&&_fFail.call(c)}},f=function(){{c._bSupportDataURI=!0,c._fSuccess&&c._fSuccess.call(c)}};return d.onabort=e,d.onerror=e,d.onload=f,d.src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",void 0}}c._bSupportDataURI===!0&&c._fSuccess?c._fSuccess.call(c):c._bSupportDataURI===!1&&c._fFail&&c._fFail.call(c)}}if(this._android&&this._android<=2.1){{var b=1/window.devicePixelRatio,c=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(a,d,e,f,g,h,i,j){{if("nodeName"in a&&/img/i.test(a.nodeName))for(var l=arguments.length-1;l>=1;l--)arguments[l]=arguments[l]*b;else"undefined"==typeof j&&(arguments[1]*=b,arguments[2]*=b,arguments[3]*=b,arguments[4]*=b);c.apply(this,arguments)}}}}var e=function(a,b){{this._bIsPainted=!1,this._android=n(),this._htOption=b,this._elCanvas=document.createElement("canvas"),this._elCanvas.width=b.width,this._elCanvas.height=b.height,a.appendChild(this._elCanvas),this._el=a,this._oContext=this._elCanvas.getContext("2d"),this._bIsPainted=!1,this._elImage=document.createElement("img"),this._elImage.style.display="none",this._el.appendChild(this._elImage),this._bSupportDataURI=null}};return e.prototype.draw=function(a){{var b=this._elImage,c=this._oContext,d=this._htOption,e=a.getModuleCount(),f=d.width/e,g=d.height/e,h=Math.round(f),i=Math.round(g);b.style.display="none",this.clear();for(var j=0;e>j;j++)for(var k=0;e>k;k++){{var l=a.isDark(j,k),m=k*f,n=j*g;c.strokeStyle=l?d.colorDark:d.colorLight,c.lineWidth=1,c.fillStyle=l?d.colorDark:d.colorLight,c.fillRect(m,n,f,g),c.strokeRect(Math.floor(m)+.5,Math.floor(n)+.5,h,i),c.strokeRect(Math.ceil(m)-.5,Math.ceil(n)-.5,h,i)}}this._bIsPainted=!0}},e.prototype.makeImage=function(){{this._bIsPainted&&d.call(this,a)}},e.prototype.isPainted=function(){{return this._bIsPainted}},e.prototype.clear=function(){{this._oContext.clearRect(0,0,this._elCanvas.width,this._elCanvas.height),this._bIsPainted=!1}},e.prototype.round=function(a){{return a?Math.floor(1e3*a)/1e3:a}},e}}():function(){{var a=function(a,b){{this._el=a,this._htOption=b}};return a.prototype.draw=function(a){{for(var b=this._htOption,c=this._el,d=a.getModuleCount(),e=Math.floor(b.width/d),f=Math.floor(b.height/d),g=['<table style="border:0;border-collapse:collapse;">'],h=0;d>h;h++){{g.push("<tr>");for(var i=0;d>i;i++)g.push('<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:'+e+"px;height:"+f+"px;background-color:"+(a.isDark(h,i)?b.colorDark:b.colorLight)+';"></td>');g.push("</tr>")}}g.push("</table>"),c.innerHTML=g.join("");var j=c.childNodes[0],k=(b.width-j.offsetWidth)/2,l=(b.height-j.offsetHeight)/2;k>0&&l>0&&(j.style.margin=l+"px "+k+"px")}},a.prototype.clear=function(){{this._el.innerHTML=""}},a}}();QRCode=function(a,b){{if(this._htOption={{width:256,height:256,typeNumber:4,colorDark:"#000000",colorLight:"#ffffff",correctLevel:d.H}},"string"==typeof b&&(b={{text:b}}),b)for(var c in b)this._htOption[c]=b[c];"string"==typeof a&&(a=document.getElementById(a)),this._android=n(),this._el=a,this._oQRCode=null,this._oDrawing=new q(this._el,this._htOption),this._htOption.text&&this.makeCode(this._htOption.text)}},QRCode.prototype.makeCode=function(a){{this._oQRCode=new b(r(a,this._htOption.correctLevel),this._htOption.correctLevel),this._oQRCode.addData(a),this._oQRCode.make(),this._el.title=a,this._oDrawing.draw(this._oQRCode),this.makeImage()}},QRCode.prototype.makeImage=function(){{"function"==typeof this._oDrawing.makeImage&&(!this._android||this._android>=3)&&this._oDrawing.makeImage()}},QRCode.prototype.clear=function(){{this._oDrawing.clear()}},QRCode.CorrectLevel=d}}();
   </script>
   <script>
     (function() {{
@@ -3474,6 +3751,9 @@ def build_ui(
                 }}
               }} catch (err) {{}}
             }});
+            if (targetId === "view-demo" && window.invalidateDemoMaps) {{
+              try {{ window.invalidateDemoMaps(); }} catch(err) {{}}
+            }}
           }}
         }});
       }}
@@ -3497,8 +3777,60 @@ def build_ui(
       var roleNavBtns = document.querySelectorAll(".role-nav-btn");
       var analysisWorkspace = document.querySelectorAll(".analysis-workspace");
       var approvalKey = "glasroute-approved-" + currentDate;
+      function intDe(v) {{
+        if (v === null || v === undefined || isNaN(Number(v))) return "-";
+        return Math.round(Number(v)).toLocaleString("de-DE");
+      }}
+      function renderHeroHtml(snap) {{
+        if (!snap) return "";
+        var h = snap.hero || {{}};
+        var m = snap.metrics || {{}};
+        var statusKm = m.full_round_km > 0 ? m.full_round_km : (snap.status_quo_km || 0);
+        var inTour = h.in_tour_overfull_count || 0;
+        var excluded = h.excluded_overflow || [];
+        var steps = ["Daten", "Prognose", "Auswahl", "Tour", "Freigabe"];
+        var active = h.process_step || "Auswahl";
+        var chain = steps.map(function(name, idx) {{
+          var cls = name === active ? "hero-chain-step hero-chain-active" : "hero-chain-step";
+          return '<div class="' + cls + '"><span class="hero-chain-num">' + (idx + 1) + '</span>' +
+            '<span class="hero-chain-label">' + esc(name) + '</span></div>';
+        }}).join("");
+        var exRows = excluded.slice(0, 15).map(function(r) {{
+          var reason = "Kapazität / Schicht voll";
+          if (m.max_stops != null && (m.num_stops || 0) >= m.max_stops) {{
+            reason = "Kapazität voll (Stopplimit " + m.max_stops + ")";
+          }} else if ((m.max_vehicle_shift_hours || 0) >= (m.max_shift_hours_limit || 8) - 0.05) {{
+            reason = "Schicht voll (" + fmtDe(m.max_vehicle_shift_hours, 2) + " h)";
+          }}
+          return '<tr><td>' + esc(r.site_title) + '</td><td>' + esc(r.mat_label) + '</td>' +
+            '<td>' + fmtDe(r.today_pct, 0) + ' %</td><td>' + esc(reason) + '</td></tr>';
+        }}).join("");
+        var exBlock = excluded.length ? (
+          '<div class="hero-excluded"><strong>Heute überlaufend, aber nicht in dieser Tour:</strong>' +
+          '<div class="table-wrap" style="margin-top:8px;margin-bottom:0;"><table>' +
+          '<thead><tr><th>Standort</th><th>Glasart</th><th>Füllstand heute</th><th>Grund</th></tr></thead>' +
+          '<tbody>' + exRows + '</tbody></table></div></div>'
+        ) : "";
+        return '<div class="hero-block">' +
+          '<p class="hero-eyebrow">GlasRoute &middot; ' + esc(snap.stand_de) + '</p>' +
+          '<h2 class="hero-headline">Heute drohen <strong>' + intDe(snap.today_overfull_containers) +
+          ' Container</strong> bis ' + esc(snap.date_de) + ' überzulaufen</h2>' +
+          '<p class="hero-sub"><strong>' + intDe(inTour) + ' davon</strong> in der heutigen Tour &middot; ' +
+          '<strong>' + fmtDe(m.planned_km, 1) + ' km</strong> statt ' + fmtDe(statusKm, 1) + ' km (Status quo) &middot; ' +
+          'passt in <strong>' + intDe(m.vehicles_needed) + ' LKW</strong> &middot; ' +
+          '<strong>' + fmtDe(m.max_vehicle_shift_hours, 2) + ' h</strong> Schicht &middot; ' +
+          '<strong>' + fmtDe(m.t_collected, 2) + ' t</strong></p>' +
+          '<p class="hero-sentence">Wir leeren, was voll wird, nicht was im Plan steht – unter Kapazität und Arbeitszeit.</p>' +
+          '<div class="hero-chain">' + chain + '</div>' + exBlock + '</div>';
+      }}
+      function updateHeroMount(snap) {{
+        var mount = document.getElementById("dispatcher-hero-mount");
+        if (mount && snap) mount.innerHTML = renderHeroHtml(snap);
+      }}
       function showRole(role) {{
         if (startScreen) startScreen.style.display = "none";
+        document.body.classList.remove("role-dispatcher", "role-driver", "role-analysis");
+        document.body.classList.add("role-" + role);
         Object.keys(rolePanels).forEach(function(key) {{
           if (rolePanels[key]) rolePanels[key].classList.toggle("active", key === role);
         }});
@@ -3598,11 +3930,12 @@ def build_ui(
             var urls = currentMapsLegs[veh] || [];
             if (!urls.length) return "";
             hasLegs = true;
-            if (urls.length === 1) {{
-              return '<a class="secondary-btn" target="_blank" rel="noopener" href="' + esc(urls[0]) + '">Google Maps öffnen (Fahrzeug ' + esc(veh) + ')</a>';
+            var total = urls.length;
+            if (total === 1) {{
+              return '<a class="secondary-btn" target="_blank" rel="noopener" href="' + esc(urls[0]) + '">Fahrzeug ' + esc(veh) + ': komplette Route</a>';
             }}
             return urls.map(function(url, idx) {{
-              return '<a class="secondary-btn" target="_blank" rel="noopener" href="' + esc(url) + '">Google Maps Leg ' + esc(idx + 1) + ' (Fahrzeug ' + esc(veh) + ')</a>';
+              return '<a class="secondary-btn" target="_blank" rel="noopener" href="' + esc(url) + '">Fahrzeug ' + esc(veh) + ': Abschnitt ' + esc(idx + 1) + ' von ' + esc(total) + '</a>';
             }}).join("");
           }}).join("");
           legsWrap.innerHTML = html;
@@ -3664,6 +3997,7 @@ def build_ui(
       function applySelectedDate(newDate) {{
         var snap = dateSnapshots[newDate];
         if (!snap) return;
+        updateHeroMount(snap);
         currentDate = newDate;
         approvalKey = "glasroute-approved-" + currentDate;
         document.title = "GlasRoute UI – " + currentDate;
