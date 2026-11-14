@@ -38,7 +38,17 @@ def _score_color(score: float) -> str:
 
 
 def _is_simulated(source: str, confidence: str) -> bool:
-    return source == "synthetic_placeholder" or confidence == "synthetic"
+    """True when a coordinate is a placeholder rather than a real place.
+
+    A real place stays solid even when the *assignment* to an anonymised ID is
+    only heuristic (OSM sites). Only synthetic placeholders are drawn dashed.
+    """
+    if source in {"synthetic_placeholder", "synthetic"} or confidence == "synthetic":
+        return True
+    if source == "osm_assigned" and confidence == "simulated_mapping":
+        # A real OSM site whose ID assignment is simulated: real place.
+        return False
+    return False
 
 
 def _forecast_material_label(material: str) -> str:
@@ -167,13 +177,137 @@ def plot_trends(df: pd.DataFrame, output_path: str | Path = "trends.png") -> Pat
     return out
 
 
+def add_forecast_layers(
+    fmap: folium.Map,
+    forecast: pd.DataFrame,
+    locations: pd.DataFrame,
+    route_data: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Add +0/+7/+14/+21 forecast layers to an existing map.
+
+    Each layer holds one circle marker per container, coloured by forecast
+    status: green < 50, yellow 50-80, red > 80, black >= 110. Real OSM sites
+    are solid, placeholders dashed. The planned route is drawn on the
+    "Heute" layer. Returns one summary dict per layer.
+    """
+    work = forecast.copy()
+    if work.empty:
+        return []
+
+    merged = work.merge(
+        locations[["Location_id", "lat", "lon", "source", "confidence"]],
+        on="Location_id",
+        how="left",
+    )
+
+    route_layer = folium.FeatureGroup(name="Route (Heute)", show=True)
+    if route_data:
+        depot = route_data.get("depot", {"lat": 49.1427, "lon": 9.2109})
+        stops = route_data.get("stops", [])
+        if stops:
+            line = (
+                [[float(depot["lat"]), float(depot["lon"])]]
+                + [[float(s["lat"]), float(s["lon"])] for s in stops]
+                + [[float(depot["lat"]), float(depot["lon"])]]
+            )
+            folium.PolyLine(
+                locations=line,
+                color="#1d4ed8",
+                weight=4,
+                opacity=0.9,
+                tooltip=route_data.get("comparison", "Geplante Route"),
+            ).add_to(route_layer)
+    route_layer.add_to(fmap)
+
+    summaries: list[dict[str, Any]] = []
+    offsets = sorted(int(value) for value in merged["offset_days"].dropna().unique())
+    for index, offset in enumerate(offsets):
+        layer_data = merged[merged["offset_days"] == offset]
+        label = "Heute" if offset == 0 else f"+{offset} Tage"
+        critical = int(layer_data["status"].isin(["red", "black"]).sum())
+        layer = folium.FeatureGroup(name=f"{label}: {critical} kritisch", show=index == 0)
+
+        for row in layer_data.itertuples(index=False):
+            status = str(row.status)
+            color = FORECAST_STATUS_COLORS.get(status, "#64748b")
+            simulated = _is_simulated(str(row.source), str(row.confidence))
+            last_date = (
+                pd.Timestamp(row.last_date).strftime("%Y-%m-%d")
+                if pd.notna(row.last_date)
+                else "-"
+            )
+            material = _forecast_material_label(str(row.material_type))
+            popup = (
+                f"<b>ID:</b> {row.Location_id}<br>"
+                f"<b>Glasfarbe:</b> {material}<br>"
+                f"<b>Letzte Messung:</b> {float(row.last_fill_level):.1f}% ({last_date})<br>"
+                f"<b>Prognose ({label}):</b> {float(row.forecast_pct):.1f}%<br>"
+                f"<b>Status:</b> {status}<br>"
+                f"<b>Quelle:</b> {row.source}"
+            )
+            folium.CircleMarker(
+                location=[float(row.lat), float(row.lon)],
+                radius=6,
+                color=color,
+                weight=2,
+                dash_array="5, 5" if simulated else None,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.15 if simulated else 0.85,
+                popup=folium.Popup(popup, max_width=280),
+                tooltip=f"{row.Location_id} | {float(row.forecast_pct):.0f}% ({status})",
+            ).add_to(layer)
+        layer.add_to(fmap)
+
+        counts = layer_data["status"].value_counts()
+        summaries.append(
+            {
+                "offset_days": offset,
+                "label": label,
+                "critical": critical,
+                "red": int(counts.get("red", 0)),
+                "black": int(counts.get("black", 0)),
+            }
+        )
+
+    folium.LayerControl(collapsed=False).add_to(fmap)
+    _add_forecast_header(fmap, summaries)
+    return summaries
+
+
+def _add_forecast_header(fmap: folium.Map, summaries: list[dict[str, Any]]) -> None:
+    """Render one header line per layer with the critical count."""
+    rows = "".join(
+        f"<div><b>{item['label']}:</b> {item['critical']} Container voraussichtlich kritisch</div>"
+        for item in summaries
+    )
+    fmap.get_root().html.add_child(
+        folium.Element(
+            f"""
+            <div id="forecast-header" style="position: fixed; top: 10px; left: 50px; z-index: 9999;
+                        background: white; padding: 8px 12px; border-radius: 6px;
+                        border: 1px solid #ccc; font-size: 13px; line-height: 1.5;">
+              {rows}
+              <div style="font-size: 11px; color: #555;">Orange = geplante Route (Heute) &middot;
+                Standorte: OSM-Punkte, ID-Zuordnung simuliert</div>
+            </div>
+            """
+        )
+    )
+
+
 def plot_route(
     route: dict[str, Any] | str | Path,
     output_path: str | Path | None = None,
     scored: pd.DataFrame | None = None,
     locations: pd.DataFrame | None = None,
+    forecast: pd.DataFrame | None = None,
 ) -> Path:
-    """Render an interactive Folium route map colored by score and site provenance."""
+    """Render an interactive Folium route map colored by score and site provenance.
+
+    When ``forecast`` is given, +0/+7/+14/+21 day forecast layers are added to
+    the same map, so the demo needs a single file.
+    """
     if isinstance(route, (str, Path)):
         route_data = json.loads(Path(route).read_text(encoding="utf-8"))
     else:
@@ -261,6 +395,9 @@ def plot_route(
             popup=folium.Popup(popup_html, max_width=280),
             tooltip=f"#{stop['order']} ({stop['score']:.2f}) - {'SIM' if simulated else 'REAL'}",
         ).add_to(fmap)
+
+    if forecast is not None and not forecast.empty and locations is not None:
+        add_forecast_layers(fmap, forecast, locations, route_data)
 
     legend_html = f"""
     <div style="position: fixed; bottom: 20px; left: 20px; z-index: 9999;

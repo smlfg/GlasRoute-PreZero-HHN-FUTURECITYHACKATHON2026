@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from prezero.features import get_season_factor
 from prezero.model import Container, Site, build_model
 
 
@@ -83,3 +84,83 @@ def forecast_fill(
         )
 
     return pd.DataFrame(rows, columns=FORECAST_COLUMNS)
+
+
+#: Forecast horizons in days, as shown in the map layer switcher.
+FORECAST_OFFSETS: tuple[int, ...] = (0, 7, 14, 21)
+
+#: Columns the forecast reads from ``scored_<date>.csv``.
+SCORED_FORECAST_COLUMNS = [
+    "Location_id",
+    "material_type",
+    "last_fill_level",
+    "last_date",
+    "avg_daily_increase",
+    "season_factor",
+]
+
+
+def _status_for(forecast_pct: float) -> str:
+    """Map a forecast percentage onto the traffic-light status."""
+    return _status(forecast_pct)
+
+
+def forecast_from_scored(
+    scored: pd.DataFrame,
+    base_date: str | pd.Timestamp,
+    offsets: Iterable[int] = FORECAST_OFFSETS,
+) -> pd.DataFrame:
+    """Forecast every scored container for each horizon in ``offsets``.
+
+    ``forecast = last_fill_level + avg_daily_increase * days * season_factor``,
+    capped at 110 %. The result carries one row per container and offset.
+    """
+    if scored.empty:
+        return pd.DataFrame(columns=[*SCORED_FORECAST_COLUMNS, "offset_days", "forecast_pct", "status"])
+
+    base = pd.Timestamp(base_date)
+    rows: list[dict[str, object]] = []
+    for offset in offsets:
+        days = int(offset)
+        target = base + pd.Timedelta(days=days)
+        # The season factor of the *target* date dampens the growth; it is
+        # 1.0 in the Jan-Apr peak and lower in the summer.
+        season = get_season_factor(target)
+        for row in scored.itertuples(index=False):
+            last_fill = float(getattr(row, "last_fill_level", 0.0) or 0.0)
+            increase = float(getattr(row, "avg_daily_increase", 0.0) or 0.0)
+            row_season = float(getattr(row, "season_factor", 1.0) or 1.0)
+            forecast_pct = min(110.0, last_fill + increase * days * row_season * season)
+            rows.append(
+                {
+                    "Location_id": getattr(row, "Location_id"),
+                    "material_type": getattr(row, "material_type", ""),
+                    "last_fill_level": last_fill,
+                    "last_date": getattr(row, "last_date", pd.NaT),
+                    "avg_daily_increase": increase,
+                    "season_factor": row_season,
+                    "offset_days": days,
+                    "target_date": target.date().isoformat(),
+                    "forecast_pct": forecast_pct,
+                    "status": _status_for(forecast_pct),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def format_forecast_line(offset_days: int, frame: pd.DataFrame) -> str:
+    """Render one horizon as ``+7 Tage: 38 rot, 12 schwarz``."""
+    label = "Heute" if offset_days == 0 else f"+{offset_days} Tage"
+    if frame.empty:
+        return f"{label}: 0 rot, 0 schwarz"
+    counts = frame["status"].value_counts()
+    return (
+        f"{label}: {int(counts.get('red', 0))} rot, {int(counts.get('black', 0))} schwarz"
+    )
+
+
+def count_critical(frame: pd.DataFrame) -> int:
+    """Number of containers that are red or black (critical) in a horizon."""
+    if frame.empty:
+        return 0
+    return int(frame["status"].isin(["red", "black"]).sum())

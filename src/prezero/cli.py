@@ -9,7 +9,6 @@ import click
 import pandas as pd
 
 from prezero import approval, features, forecast, ingest, locations, routing, scoring, viz
-from prezero.model import build_model
 
 
 @click.group()
@@ -117,13 +116,11 @@ def route_cmd(
 
 
 @cli.command("forecast")
-@click.option("--date", "-d", required=True, help="First target date (YYYY-MM-DD).")
-@click.option("--weeks", default=4, show_default=True, type=click.IntRange(min=1), help="Number of weeks.")
+@click.option("--date", "-d", required=True, help="Base date (YYYY-MM-DD).")
 @click.option(
-    "--readings",
-    default="data/processed/cleaned_readings.csv",
-    show_default=True,
-    help="Path to cleaned readings CSV.",
+    "--scored",
+    default=None,
+    help="Path to scored_<date>.csv. Defaults to data/processed/scored_<date>.csv.",
 )
 @click.option(
     "--locations",
@@ -132,28 +129,58 @@ def route_cmd(
     show_default=True,
     help="Path to canonical locations CSV.",
 )
-@click.option("--output-dir", default=".", show_default=True, help="Directory for the forecast HTML.")
-def forecast_cmd(date: str, weeks: int, readings: str, locations_path: str, output_dir: str) -> None:
-    """Print weekly fill forecasts and write a switchable Folium map."""
-    start = pd.Timestamp(date)
-    sites = build_model(readings, locations_path)
-    frames: list[pd.DataFrame] = []
-    for offset in range(weeks):
-        target = start + pd.Timedelta(weeks=offset)
-        week_number = int(target.isocalendar().week)
-        frame = forecast.forecast_fill(sites, target)
-        frame["week"] = week_number
-        frames.append(frame)
-        counts = frame["status"].value_counts()
-        click.echo(
-            f"KW {week_number}: {int(counts.get('red', 0))} rot, "
-            f"{int(counts.get('black', 0))} schwarz"
+@click.option(
+    "--route",
+    default=None,
+    help="Path to route_<date>.json. Defaults to route_<date>.json in the output dir.",
+)
+@click.option("--output-dir", default=".", show_default=True, help="Directory for the map HTML.")
+def forecast_cmd(
+    date: str,
+    scored: str | None,
+    locations_path: str,
+    route: str | None,
+    output_dir: str,
+) -> None:
+    """Print the +0/+7/+14/+21 day forecast and extend the route map with it.
+
+    The forecast reuses the columns already computed by the pipeline
+    (last_fill_level, avg_daily_increase, season_factor); no new model.
+    """
+    out_dir = Path(output_dir)
+    scored_path = Path(scored) if scored else out_dir / "data" / "processed" / f"scored_{date}.csv"
+    if not scored_path.is_file():
+        scored_path = Path("data/processed") / f"scored_{date}.csv"
+    if not scored_path.is_file():
+        raise click.ClickException(
+            f"Scored data missing: {scored_path}. Run 'prezero-route run --date {date}' first."
         )
 
-    output = Path(output_dir) / f"forecast_{int(start.isocalendar().week):02d}.html"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    path = viz.plot_forecast_map(pd.concat(frames, ignore_index=True), int(start.isocalendar().week), output)
-    click.echo(f"Forecast map: {path}")
+    scored_df = pd.read_csv(scored_path, dtype={"Location_id": str, "material_type": str})
+    locs_df = locations.load_locations(locations_path)
+
+    forecast_df = forecast.forecast_from_scored(scored_df, date)
+    for offset in forecast.FORECAST_OFFSETS:
+        frame = forecast_df[forecast_df["offset_days"] == offset]
+        click.echo(forecast.format_forecast_line(offset, frame))
+
+    route_path = Path(route) if route else out_dir / f"route_{date}.json"
+    if not route_path.is_file():
+        route_path = Path(f"route_{date}.json")
+    if not route_path.is_file():
+        raise click.ClickException(
+            f"Route file missing: {route_path}. Run 'prezero-route run --date {date}' first."
+        )
+
+    map_path = out_dir / f"map_{date}.html"
+    path = viz.plot_route(
+        route_path,
+        map_path,
+        scored=scored_df,
+        locations=locs_df,
+        forecast=forecast_df,
+    )
+    click.echo(f"Forecast map with +0/+7/+14/+21 layers: {path}")
 
 
 @cli.command("visualize")
