@@ -12,7 +12,20 @@ historische und aktuelle Glascontainer-Füllstände in priorisierte, vom Mensche
 
 ---
 
-## 2. Pipeline-Überblick
+## 2. Aktive Schreiber
+
+**Ein Schreiber zur Zeit** (bis Sa 14:30 liefen zwei Agenten parallel — siehe Git-Historie).
+
+| Agent | Scope | Status |
+|---|---|---|
+| **Hauptsession (Samuel/OpenCode)** | `approval.py`, `cli.py`, `tests/test_approval.py`, `Pitch/`, `docs/PITCH.md`, `README.md`, `AGENTS.md` | aktiv |
+| frei | — | — |
+
+Vor jedem Commit: `git status` + `git log --oneline -3` prüfen, nur eigene Pfade stagen.
+
+---
+
+## 3. Pipeline-Überblick
 
 ```mermaid
 flowchart LR
@@ -44,7 +57,7 @@ flowchart LR
 
 ---
 
-## 3. Wo wir stehen
+## 4. Wo wir stehen
 
 **Testlauf:** `PYTHONPATH=src pytest -q` → **35 passed**.
 **End-to-End:** `PYTHONPATH=src python3 -m prezero.cli run --date 2026-04-15` läuft ohne Fehler.
@@ -63,7 +76,7 @@ flowchart LR
 
 ---
 
-## 4. Zahlen für den Pitch (belegt aus der Pipeline)
+## 5. Zahlen für den Pitch (belegt aus der Pipeline)
 
 Demo-Datum **15.04.2026**:
 
@@ -86,7 +99,7 @@ Annahmen sind vollständig in `route_2026-04-15.json` unter `assumptions` dokume
 
 ---
 
-## 5. Zeitplan bis zur Abgabe
+## 6. Zeitplan bis zur Abgabe
 
 ```mermaid
 flowchart LR
@@ -103,7 +116,7 @@ flowchart LR
 
 ---
 
-## 6. Nächste Schritte
+## 7. Nächste Schritte
 
 1. **Pitch-Deck** (Slides) für 13:00 — `docs/PITCH.md` liefert die belegten Zahlen und den Ablauf.
 2. **README-Demo-Ablauf durchspielen** — drei Befehle, ein Datum, mit Erwartungsausgaben.
@@ -116,7 +129,7 @@ Der Disponent-Freigabe-Schritt (Human-Agent-Interface) ist **fertig und getestet
 
 ---
 
-## 7. Risiken & Gegenmaßnahmen
+## 8. Risiken & Gegenmaßnahmen
 
 1. **Keine echten PreZero-Koordinaten** → 126 reale OSM-Standorte, Zuordnung bleibt
    `confidence=low`/`UNVERIFIED`; Rest sind benannte Platzhalter (Seed 2026). Austauschpfad:

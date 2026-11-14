@@ -23,15 +23,27 @@ nicht in Routen übersetzt werden.
 
 ## 3. Was man spart (Demo 15.04.2026)
 
-| Kennzahl | Wert | Herkunft |
+**Was wird verglichen:** die geplante Tour gegen den Status quo „heute fährt der Fahrer alle
+Container ab“. Das ist eine **Bedarfs-Ersparnis** (wir fahren nur die kritischen an), **keine
+Routing-Ersparnis** (nicht dieselben Stopps in besserer Reihenfolge).
+
+| Vergleich | Stopps | km |
+|---|---|---|
+| **Geplante Tour** (heute) | 25 | **119,75 km** |
+| **Volle Runde** (Status quo, alle Standorte mit Daten) | 431 | 157,72 km |
+| **Ersparte Strecke** | | **37,97 km = 24,1 %** |
+
+| Weitere Kennzahl | Wert | Herkunft |
 |---|---|---|
 | Kritische Container an diesem Tag | 169 | `scored_2026-04-15.csv` |
-| Route: 25 Stopps | **119,75 km** | `route_2026-04-15.json` |
-| Volle Runde: 431 Stopps | 157,72 km | `route_2026-04-15.json` |
-| **Ersparte Strecke** | **37,97 km = 24,1 %** | `route_2026-04-15.json` |
 | Fahrzeuge | 2 (1 Runde je Fahrzeug) | `route_2026-04-15.json` |
 | Schichtstunden | 8,52 h (Limit 8,0 h) | `route_2026-04-15.json` |
 | Sammelmenge | 41,8 t | `route_2026-04-15.json` |
+
+Formulierung im Pitch: „Heute fährt das Fahrzeug alle 431 Standorte mit Daten ab — 157,72 km.
+Unser Tool schlägt vor, die 25 kritischsten zuerst zu bedienen: 119,75 km, 24,1 % weniger Strecke,
+und die überlaufenden Container sind zuerst dran."
+
 
 **Saisonalität, belegt aus den Rohdaten** (Anteil `overfull` je Monat):
 
@@ -66,8 +78,11 @@ oder `--reject` erzeugt einen Beleg mit Zeitstempel, Route und den entscheidende
   `data/external/locations_real.csv` — ohne Codeänderung (`scripts/refresh_locations.py --real`).
 - Skalierbar: Betriebsvariablen (Fahrzeuglast, Schichtlänge, Standzeiten, Depot) liegen in einer
   Config-Datei, nicht im Code.
-- Ortsdaten heute: 126 reale OSM-Glascontainer in Heilbronn (`confidence=low`, Zuordnung
-  **unbestätigt**), Rest benannte Platzhalter — im Pitch offen als Demo-Daten gekennzeichnet.
+- Ortsdaten heute: **126 reale OSM-Glascontainer** in Heilbronn. Weil die PreZero-IDs anonymisiert
+  sind, ist die Zuordnung eine **Heuristik** (`confidence=low`, `source=osm_heuristic`, „UNVERIFIED“),
+  keine Identität. Die übrigen **323** Standorte sind deterministische Platzhalter (Seed 2026).
+  Im Pitch offen als Demo-Daten gekennzeichnet — mit dem Hinweis, dass PreZero die echte
+  Zuordnungstabelle ohne Codeänderung einspielen kann.
 
 ---
 

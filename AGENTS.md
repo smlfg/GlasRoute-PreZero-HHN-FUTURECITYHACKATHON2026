@@ -70,6 +70,17 @@ nicht umgekehrt.
 Prüfkriterien je Stufe stehen in `PLAN.md`. Eine Stufe gilt als fertig, wenn ihr Prüfkriterium
 erfüllt ist und ihr Output in `data/processed/` liegt.
 
+## Ein Schreiber zur Zeit
+
+Zwei Agenten haben bereits gleichzeitig in dieses Repo committet. **Ab jetzt schreibt nur einer
+zur Zeit.** Vor jedem Commit:
+
+1. `git status` + `git log --oneline -3` — ist die Arbeit eines anderen drin?
+2. Bei Konflikt: warten, bis dessen Commit durch ist, dann neu bauen. Nicht überschreiben.
+3. Commit nur den eigenen Scope (`git add <eigene Pfade>`), nicht `git add -A`.
+
+Wer gerade schreibt, steht in `docs/STATUS.md` unter „Aktive Schreiber“.
+
 ## Agenten
 
 **Arbeitsvertrag für jeden Worker:**
