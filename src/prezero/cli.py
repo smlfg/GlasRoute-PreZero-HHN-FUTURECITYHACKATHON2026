@@ -441,6 +441,101 @@ def approve_cmd(
     click.echo(approval.format_proposal_summary(record))
 
 
+@cli.command("ui")
+@click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
+@click.option(
+    "--readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--scored",
+    default=None,
+    help="Path to scored_<date>.csv. Defaults to data/processed/scored_<date>.csv.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option(
+    "--route",
+    default=None,
+    help="Path to route_<date>.json. Defaults to route_<date>.json in the output dir.",
+)
+@click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html.")
+def ui_cmd(
+    date: str,
+    readings: str,
+    scored: str | None,
+    locations_path: str,
+    route: str | None,
+    output_dir: str,
+) -> None:
+    """Build the 4-view local HTML UI (ui_<date>.html) from verifiable pipeline outputs."""
+    out_dir = Path(output_dir)
+    readings_path = Path(readings)
+    if not readings_path.is_file():
+        raise click.ClickException(f"Readings CSV not found: {readings_path}")
+
+    readings_df = pd.read_csv(
+        readings_path,
+        parse_dates=["date"],
+        dtype={"Location_id": str, "material_type": str},
+    )
+    locs_df = locations.load_locations(locations_path)
+
+    scored_df: pd.DataFrame | None = None
+    scored_candidates = (
+        [Path(scored)]
+        if scored is not None
+        else [out_dir / "data" / "processed" / f"scored_{date}.csv", Path("data/processed") / f"scored_{date}.csv"]
+    )
+    for candidate in scored_candidates:
+        if candidate.is_file():
+            scored_df = pd.read_csv(candidate, dtype={"Location_id": str, "material_type": str})
+            break
+    if scored_df is None:
+        feat_df = features.build_features(readings_df, date)
+        scored_df = scoring.score_containers(feat_df)
+
+    route_data: dict | None = None
+    route_candidates = (
+        [Path(route)]
+        if route is not None
+        else [out_dir / f"route_{date}.json", Path(f"route_{date}.json")]
+    )
+    for candidate in route_candidates:
+        if candidate.is_file():
+            route_data = json.loads(candidate.read_text(encoding="utf-8"))
+            break
+    if route_data is None:
+        cfg = routing.load_config()
+        route_data = routing.build_route(
+            scored_df,
+            locs_df,
+            depot=cfg.yard_depot,
+            date=date,
+            output_dir=out_dir,
+            config=cfg,
+        )
+
+    trends_candidate = out_dir / "trends.png"
+    out_path = viz.build_ui(
+        date=date,
+        readings_df=readings_df,
+        scored_df=scored_df,
+        locations_df=locs_df,
+        route_data=route_data,
+        output_path=out_dir / f"ui_{date}.html",
+        trends_path=trends_candidate if trends_candidate.is_file() else None,
+    )
+    click.echo(f"UI written: {out_path}")
+
+
 def _latest_route_file() -> Path:
     """Find the newest route_<date>.json in the working directory."""
     candidates = sorted(Path(".").glob("route_*.json"), key=lambda p: p.stat().st_mtime)
