@@ -182,7 +182,10 @@ def fetch_real_candidates(
                     return parse_overpass_payload(payload), payload, errors
                 errors.append(f"admin_level={admin_level}, mirror {mirror_number} {endpoint}: 0 elements")
             except (OverpassError, TimeoutError, OSError, ValueError) as exc:
-                errors.append(f"admin_level={admin_level}, mirror {mirror_number} {endpoint}: {exc}")
+                detail = str(exc)
+                if "HTTP 400" in detail:
+                    detail = "query rejected (HTTP 400)"
+                errors.append(f"admin_level={admin_level}, mirror {mirror_number} {endpoint}: {detail}")
             if mirror_number < len(mirrors):
                 sleep(1.0)
     return pd.DataFrame(columns=CANDIDATE_COLUMNS), None, errors
@@ -213,7 +216,7 @@ def main(argv: list[str] | None = None, transport: Transport | None = None) -> d
 
     args.raw_output.write_bytes(raw_payload)
     raw = pd.read_csv(args.raw, dtype={"Location_id": "string"})
-    resolved = match_osm_locations(raw, candidates)
+    resolved = assign_osm_sites(raw, candidates)
     provider = load_locations(DEFAULT_REAL) if DEFAULT_REAL.is_file() else None
     resolved = complete_locations(raw, baseline=resolved, provider=provider)
     resolved.to_csv(args.matched_output, index=False)

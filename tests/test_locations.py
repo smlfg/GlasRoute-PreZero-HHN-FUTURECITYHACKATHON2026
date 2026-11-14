@@ -58,30 +58,26 @@ def test_materials_from_colour_and_general_tags() -> None:
     assert general
 
 
-def test_matching_is_material_aware_unique_and_honest() -> None:
+def test_matching_is_simulated_and_honest() -> None:
     candidates = pd.DataFrame([
         candidate("node/all", "recycling:glass_brown;recycling:glass_green;recycling:glass_white"),
         candidate("node/white", "recycling:glass_white"),
         candidate("node/green", "recycling:glass_green"),
     ])
     result = match_osm_locations(raw_fixture(), candidates).set_index("Location_id")
-    assert set(result["confidence"]) == {"low"}
-    assert set(result["source"]) == {"osm_heuristic"}
-    assert result["lon"].nunique() == 1  # fixture values; IDs below prove one-to-one assignment
-    reasons = " ".join(result["match_reason"])
-    assert all(f"OSM=node/{name}" in reasons for name in ("all", "white", "green"))
-    assert result["match_reason"].str.contains("UNVERIFIED").all()
+    assert set(result["confidence"]) == {"simulated_mapping"}
+    assert set(result["source"]) == {"osm_assigned"}
+    assert set(result["match_reason"]) == {"real OSM site, ID assignment simulated"}
 
 
-def test_general_glass_beats_superset_for_single_colour() -> None:
-    raw = pd.DataFrame([("B", "white")], columns=["Location_id", "material_type"])
+def test_osm_assignment_is_deterministic() -> None:
     candidates = pd.DataFrame([
-        candidate("node/all", "recycling:glass_brown;recycling:glass_green;recycling:glass_white"),
-        candidate("node/general", "recycling:glass"),
+        candidate("node/one", "recycling:glass"),
+        candidate("node/two", "recycling:glass"),
     ])
-    result = match_osm_locations(raw, candidates).iloc[0]
-    assert "OSM=node/general" in result["match_reason"]
-    assert "general_glass_tag" in result["match_reason"]
+    first = match_osm_locations(raw_fixture(), candidates)
+    second = match_osm_locations(raw_fixture(), candidates)
+    pd.testing.assert_frame_equal(first, second)
 
 
 def test_synthetic_fallback_is_reproducible_and_labelled() -> None:
@@ -100,13 +96,13 @@ def test_direct_provider_overrides_baseline_and_missing_ids_fall_back() -> None:
     raw = raw_fixture()
     baseline = synthetic_locations(raw["Location_id"].unique())
     baseline.loc[baseline["Location_id"] == "B", ["source", "confidence", "match_reason"]] = [
-        "osm_heuristic", "low", "UNVERIFIED baseline"
+        "osm_assigned", "simulated_mapping", "real OSM site, ID assignment simulated"
     ]
     provider = pd.DataFrame([{"Location_id": "A", "lat": 49.2, "lon": 9.3}])
     result = complete_locations(raw, baseline=baseline, provider=provider).set_index("Location_id")
     assert (result.loc["A", "source"], result.loc["A", "confidence"]) == ("prezero_supplied", "high")
     assert result.loc["A", "lat"] == 49.2
-    assert result.loc["B", "source"] == "osm_heuristic"
+    assert result.loc["B", "source"] == "osm_assigned"
     assert result.loc["C", "confidence"] == "synthetic"
 
 

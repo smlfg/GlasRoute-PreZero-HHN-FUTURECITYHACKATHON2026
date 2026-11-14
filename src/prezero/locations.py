@@ -208,50 +208,8 @@ def match_osm_locations(
     raw_df: pd.DataFrame,
     candidates_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Assign each ID a distinct OSM site, preferring material-compatible sites.
-
-    The mapping is a heuristic, never a verified identity: anonymous PreZero IDs
-    carry no geographic key. Every result is therefore labelled
-    ``source=osm_heuristic``, ``confidence=low`` and an ``UNVERIFIED`` reason.
-    """
-    colours = material_sets(raw_df)
-    candidates = _candidate_table(candidates_df)
-    if not candidates:
-        return complete_locations(raw_df)
-
-    # Greedy assignment over the highest-scoring candidate per ID, keeping the
-    # mapping one-to-one: a site is consumed once it has been assigned.
-    ordered_ids = sorted(colours)
-    remaining = list(candidates)
-    rows: list[dict[str, object]] = []
-    for location_id in ordered_ids:
-        target = colours[location_id]
-        if not remaining:
-            break
-        best_index = max(
-            range(len(remaining)),
-            key=lambda index: (
-                _candidate_score(target, remaining[index]),
-                -index,
-            ),
-        )
-        candidate = remaining.pop(best_index)
-        score = _candidate_score(target, candidate)
-        tag_note = "general_glass_tag" if candidate["general"] else "colour_match"
-        rows.append({
-            "Location_id": location_id,
-            "lat": candidate["lat"],
-            "lon": candidate["lon"],
-            "source": "osm_heuristic",
-            "confidence": "low",
-            "match_reason": (
-                f"UNVERIFIED anonymous-ID assignment; OSM={candidate['id']}; "
-                f"{tag_note}; score={score}; no geographic PreZero key"
-            ),
-        })
-
-    assigned = pd.DataFrame(rows, columns=COLUMNS)
-    return complete_locations(raw_df, baseline=assigned)
+    """Assign IDs to real OSM sites with a deterministic simulated mapping."""
+    return assign_osm_sites(raw_df, candidates_df)
 
 
 def assign_osm_sites(
@@ -353,7 +311,6 @@ def location_stats(df: pd.DataFrame) -> dict[str, int]:
     return {
         "total": len(df),
         "provider_direct": int(counts.get("prezero_supplied", 0)),
-        "osm_heuristic": int(counts.get("osm_heuristic", 0)),
         "osm_assigned": int(counts.get("osm_assigned", 0)),
         "synthetic": int((df["confidence"] == "synthetic").sum()),
     }
