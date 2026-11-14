@@ -750,14 +750,18 @@ def plot_route(
         simulated = _is_simulated(str(stop.get("source", "")), str(stop.get("confidence", "")))
         color = _score_color(float(stop["score"]))
         site_kind = "Simulated (synthetic)" if simulated else f"Real/OSM ({stop.get('source', 'unknown')})"
+        mat_raw = str(stop.get("primary_material", "-")).lower()
+        mat_label = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas", "unload": "Entladung"}.get(mat_raw, stop.get("primary_material", "-"))
+        loc_str = str(stop.get("Location_id", "-"))
+        loc_display = "Entsorgungshof (Wertstoffhof)" if loc_str == "disposal_depot" else (f"{loc_str[:8]}..." if len(loc_str) > 12 else loc_str)
         popup_html = (
-            f"<b>Stop #{stop['order']}</b><br>"
-            f"ID: {stop['Location_id']}<br>"
-            f"Material: {stop.get('primary_material', '-')}<br>"
-            f"Score: {stop['score']:.3f}<br>"
-            f"Last fill: {stop.get('last_fill_level', '-')}%<br>"
-            f"Site: {site_kind}<br>"
-            f"Cumulative: {stop.get('cumulative_km', '-')} km"
+            f"<b>Stopp #{stop['order']}</b><br>"
+            f"Standort: {loc_display}<br>"
+            f"Glasart: {mat_label}<br>"
+            f"Dringlichkeit: {float(stop['score']):.2f}<br>"
+            f"Füllstand letzter Besuch: {stop.get('last_fill_level', '-')}%<br>"
+            f"Ortsquelle: {site_kind}<br>"
+            f"Strecke gesamt: {stop.get('cumulative_km', '-')} km"
         )
         stop_marker = folium.CircleMarker(
             location=[float(stop["lat"]), float(stop["lon"])],

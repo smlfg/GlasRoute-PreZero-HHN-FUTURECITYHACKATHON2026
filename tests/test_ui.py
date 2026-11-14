@@ -575,3 +575,115 @@ def test_build_ui_has_variables_tab_for_spec_3_and_4(tmp_path: Path) -> None:
         assert needle in html
     assert "grün 450" in html and "weiß 400" in html
     assert "Flotteneinsatz" in html
+
+
+def test_ui_visible_text_no_technical_leakage(tmp_path: Path) -> None:
+    """Audit test against Nielsen heuristic #2: No UUID, snake_case, True/False, or raw English enums in visible text."""
+    from bs4 import BeautifulSoup
+    import re
+
+    readings = _sample_readings().copy()
+    scored = _sample_scored().copy()
+    locs = _sample_locations().copy()
+    route = dict(_sample_route())
+
+    uuid_loc = "b3ebe810-724a-454e-83c5-68467048b3ec"
+    route["stops"] = [
+        {
+            "order": 1,
+            "stop_type": "collection",
+            "Location_id": uuid_loc,
+            "lat": 49.1339,
+            "lon": 9.2111,
+            "primary_material": "white",
+            "est_fill_level": 90.0,
+            "last_fill_level": 100.0,
+            "score": 0.8333,
+            "source": "osm_assigned",
+            "confidence": "simulated_mapping",
+            "leg_km": 1.318,
+            "cumulative_km": 1.318,
+        },
+        {
+            "order": 2,
+            "stop_type": "unload",
+            "Location_id": "disposal_depot",
+            "lat": 49.178,
+            "lon": 9.2085,
+            "primary_material": "unload",
+            "est_fill_level": 0.0,
+            "last_fill_level": 0.0,
+            "score": 0.0,
+            "source": "config",
+            "confidence": "high",
+            "leg_km": 7.874,
+            "cumulative_km": 9.192,
+        },
+    ]
+
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=readings,
+        scored_df=scored,
+        locations_df=locs,
+        route_data=route,
+        output_path=tmp_path / "ui_audit.html",
+    )
+    assert out.is_file()
+
+    soup = BeautifulSoup(out.read_text(encoding="utf-8"), "html.parser")
+    for tag in soup(["script", "style", "svg"]):
+        tag.decompose()
+
+    # 1. Driver & Dispatcher tour: no raw UUID, no disposal_depot, no English color enum, no True/False
+    driver_panel = soup.find(id="role-driver")
+    assert driver_panel is not None
+    driver_text = driver_panel.get_text()
+    assert re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", driver_text) is None
+    assert "disposal_depot" not in driver_text
+    assert "white" not in driver_text.split()
+    assert "True" not in driver_text.split()
+    assert "False" not in driver_text.split()
+    assert "Weißglas" in driver_text
+
+    # 2. Route view (view-route) table
+    route_panel = soup.find(id="view-route")
+    assert route_panel is not None
+    route_table = route_panel.find("table")
+    assert route_table is not None
+    table_text = route_table.get_text()
+    assert re.search(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", table_text) is None
+    assert "collection" not in table_text.split()
+    assert "Leerung" in table_text
+    assert "Entladung" in table_text
+    assert "white" not in table_text.split()
+    assert "Weißglas" in table_text
+    assert "osm_assigned" not in table_text
+    assert "simulated_mapping" not in table_text
+    assert "OSM-Standort" in table_text
+    assert "simulierte Zuordnung" in table_text
+    assert "0.8333" not in table_text
+    assert "0,83" in table_text
+
+    # 3. Copilot view
+    copilot_panel = soup.find(id="view-copilot")
+    assert copilot_panel is not None
+    copilot_text = copilot_panel.get_text()
+    assert "--no-llm" not in copilot_text
+    assert "explain_container" not in copilot_text
+    assert "max_shift_hours=" not in copilot_text
+    assert "vehicle_max_weight_kg=" not in copilot_text
+    assert "max_stops=" not in copilot_text
+
+    # 4. Datacheck view
+    datacheck_panel = soup.find(id="view-datacheck")
+    assert datacheck_panel is not None
+    datacheck_text = datacheck_panel.get_text()
+    assert "Overfull" not in datacheck_text
+    assert "Überfüllt" in datacheck_text
+
+    # 5. No raw boolean literals across visible text
+    all_text = soup.get_text()
+    words = set(all_text.split())
+    assert "True" not in words
+    assert "False" not in words

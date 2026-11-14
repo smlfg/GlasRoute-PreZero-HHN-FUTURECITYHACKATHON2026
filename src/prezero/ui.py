@@ -35,6 +35,43 @@ def _wrap_srcdoc_iframe(
     )
 
 
+MATERIAL_LABELS: dict[str, str] = {
+    "white": "Weißglas",
+    "green": "Grünglas",
+    "brown": "Braunglas",
+    "weiss": "Weißglas",
+    "weiß": "Weißglas",
+    "gruen": "Grünglas",
+    "grün": "Grünglas",
+    "braun": "Braunglas",
+    "glass_white": "Weißglas",
+    "glass_green": "Grünglas",
+    "glass_brown": "Braunglas",
+    "unload": "Entladung",
+}
+
+STOP_TYPE_LABELS: dict[str, str] = {
+    "collection": "Leerung",
+    "unload": "Entladung",
+    "depot": "Betriebshof",
+}
+
+SOURCE_LABELS: dict[str, str] = {
+    "prezero_supplied": "PreZero-Standort",
+    "osm_assigned": "OSM-Standort",
+    "osm_heuristic": "OSM (Heuristik)",
+    "synthetic_placeholder": "Platzhalter-Standort",
+    "config": "Betriebskonfiguration",
+}
+
+CONFIDENCE_LABELS: dict[str, str] = {
+    "high": "bestätigt",
+    "simulated_mapping": "simulierte Zuordnung",
+    "low": "unbestätigt",
+    "synthetic": "synthetisch",
+}
+
+
 def render_forecast_timeline_map_html(
     scored_df: pd.DataFrame,
     locations_df: pd.DataFrame,
@@ -498,26 +535,56 @@ def _build_route_section_html(
     for stop_idx, stop in enumerate(stops):
         stop_type = str(stop.get("stop_type", "collection"))
         stop_loc = html.escape(str(stop.get("Location_id", "")), quote=True)
-        stop_mat = html.escape(str(stop.get("primary_material", "")).strip().lower(), quote=True)
+        raw_mat = str(stop.get("primary_material", "")).strip().lower()
+        stop_mat = html.escape(raw_mat, quote=True)
         row_attr = (
             f' class="stop-row" data-stop-idx="{stop_idx}" data-loc="{stop_loc}" data-mat="{stop_mat}" '
             f'title="Klick: Warum dieser Stopp?"'
             if stop_type == "collection"
             else ""
         )
+        order_num = stop.get('order', '-')
+        loc_raw = str(stop.get('Location_id', '-'))
+        if loc_raw == "disposal_depot":
+            loc_cell = '<strong>Entsorgungshof</strong><br><span class="muted" style="font-size:11px;">(Wertstoffhof)</span>'
+        else:
+            short_id = loc_raw[:8] + "..." if len(loc_raw) > 12 else loc_raw
+            loc_cell = f'<strong>Standort #{order_num}</strong><br><span class="muted" style="font-size:11px;">(ID: <code>{html.escape(short_id)}</code>)</span>'
+
+        if raw_mat == "unload" or stop_type == "unload":
+            mat_cell = "Entladung"
+        else:
+            mat_cell = MATERIAL_LABELS.get(raw_mat, stop.get('primary_material', '-'))
+
+        action_label = STOP_TYPE_LABELS.get(stop_type, stop_type)
+
+        src_raw = str(stop.get('source', '-'))
+        conf_raw = str(stop.get('confidence', '-'))
+        src_label = SOURCE_LABELS.get(src_raw, src_raw)
+        conf_label = CONFIDENCE_LABELS.get(conf_raw, conf_raw)
+        source_display = f"{src_label} ({conf_label})"
+
+        score_val = stop.get('score')
+        score_display = f"{float(score_val):.2f}".replace(".", ",") if score_val is not None else "-"
+
+        leg_km = stop.get('leg_km')
+        leg_display = f"{float(leg_km):.1f} km".replace(".", ",") if leg_km is not None else "-"
+        cum_km = stop.get('cumulative_km')
+        cum_display = f"{float(cum_km):.1f} km".replace(".", ",") if cum_km is not None else "-"
+
         stop_rows.append(
             f"""
-            <tr{row_attr}>
-              <td>{html.escape(str(stop.get('order', '-')))}</td>
-              <td>{html.escape(stop_type)}</td>
-              <td><code>{html.escape(str(stop.get('Location_id', '-')))}</code></td>
-              <td>{html.escape(str(stop.get('primary_material', '-')))}</td>
+            <tr{row_attr} title="Standort-ID: {stop_loc}">
+              <td>{html.escape(str(order_num))}</td>
+              <td>{html.escape(action_label)}</td>
+              <td>{loc_cell}</td>
+              <td>{html.escape(str(mat_cell))}</td>
               <td>{_format_num(stop.get('est_fill_level'), '%')}</td>
               <td>{_format_num(stop.get('last_fill_level'), '%')}</td>
-              <td>{_format_num(stop.get('score'))}</td>
-              <td>{html.escape(str(stop.get('source', '-')))} ({html.escape(str(stop.get('confidence', '-')))})</td>
-              <td>{_format_num(stop.get('leg_km'), ' km')}</td>
-              <td>{_format_num(stop.get('cumulative_km'), ' km')}</td>
+              <td>{score_display}</td>
+              <td>{html.escape(source_display)}</td>
+              <td>{leg_display}</td>
+              <td>{cum_display}</td>
             </tr>
             """
         )
@@ -556,7 +623,7 @@ def _build_route_section_html(
         </div>
         <div class="approval-controls">
           <label for="dispatcher-name-input">Freigegeben durch:</label>
-          <input id="dispatcher-name-input" type="text" value="dispatcher" />
+          <input id="dispatcher-name-input" type="text" value="Disponent/in" placeholder="Name" />
           <button id="approve-route-btn" type="button">Freigeben</button>
           <span id="approval-status-badge" class="badge pending">Status: Vorgeschlagen</span>
         </div>
@@ -569,19 +636,19 @@ def _build_route_section_html(
       <div class="map-wrap">{route_iframe}</div>
 
       <h3>Stopp-Liste in Fahrreihenfolge</h3>
-      <p class="muted">Klick auf einen Stopp (Karte, Stopp-Liste oder Top-20) zeigt die vorberechnete Copilot-Erklärung für <code>(Location_id, material)</code>.</p>
+      <p class="muted">Klick auf einen Stopp (Karte, Stopp-Liste oder Top-20) zeigt die vorberechnete Copilot-Erklärung für Standort und Glasart.</p>
       <div id="explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>#</th>
-              <th>Typ</th>
-              <th>Location_id</th>
-              <th>Material</th>
+              <th>Aktion</th>
+              <th>Standort / Adresse</th>
+              <th>Glasart</th>
               <th>Füllstand jetzt (geschätzt)</th>
               <th>Beim letzten Besuch vorgefunden</th>
-              <th>Score</th>
+              <th>Dringlichkeit (Score)</th>
               <th>Ortsquelle</th>
               <th>Etappe</th>
               <th>Kumulativ</th>
@@ -609,21 +676,27 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
     )
 
     mat_rows = "".join(
-        f"<tr><td>{html.escape(r['material_type'])}</td><td>{r['reading_count']}</td><td>{r['mean_fill_pct']:.1f}%</td><td>{r['overfull_count']}</td></tr>"
+        f"<tr><td>{html.escape(MATERIAL_LABELS.get(r['material_type'].lower(), r['material_type']))}</td><td>{r['reading_count']}</td><td>{r['mean_fill_pct']:.1f}%</td><td>{r['overfull_count']}</td></tr>"
         for r in data_check["material_summary"]
     )
-    outlier_rows = "".join(
-        (
-            f"<tr><td><code>{html.escape(r['Location_id'])}</code></td>"
-            f"<td>{html.escape(r['material_type'])}</td>"
+    outlier_rows_list: list[str] = []
+    for r in data_check["outlier_series"]:
+        loc_str = str(r["Location_id"])
+        short_loc = loc_str[:8] + "..." if len(loc_str) > 12 else loc_str
+        mat_label = MATERIAL_LABELS.get(r["material_type"].lower(), r["material_type"])
+        reg_val = r.get("regularity_score")
+        reg_str = "-" if reg_val is None else f"{float(reg_val):.2f}".replace(".", ",")
+        outlier_rows_list.append(
+            f"<tr title='ID: {html.escape(loc_str, quote=True)}'>"
+            f"<td><code>{html.escape(short_loc)}</code></td>"
+            f"<td>{html.escape(mat_label)}</td>"
             f"<td>{r['reading_count']}</td>"
-            f"<td>{'-' if r['regularity_score'] is None else f'{r['regularity_score']:.3f}'}</td>"
+            f"<td>{reg_str}</td>"
             f"<td>{r['jumps_gt_50']}</td>"
             f"<td>{r['gaps_gt_90d']} (max {r['max_gap_days']} d)</td>"
             f"<td>{r['overfull_count']}</td></tr>"
         )
-        for r in data_check["outlier_series"]
-    )
+    outlier_rows = "".join(outlier_rows_list)
 
     return f"""
       <div class="section-head">
@@ -642,7 +715,7 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Glasfarbe</th><th>Messungen</th><th>Ø Füllstand</th><th>Overfull (&ge;110%)</th></tr>
+                <tr><th>Glasfarbe</th><th>Messungen</th><th>Ø Füllstand</th><th>Überfüllt (&ge; 110 %)</th></tr>
               </thead>
               <tbody>{mat_rows or '<tr><td colspan="4">Keine Daten</td></tr>'}</tbody>
             </table>
@@ -655,13 +728,13 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
         <table>
           <thead>
             <tr>
-              <th>Location_id</th>
-              <th>Material</th>
+              <th>Standort-ID</th>
+              <th>Glasart</th>
               <th>Messungen</th>
-              <th>Regularity Score</th>
+              <th>Regelmäßigkeit (Regularity Score)</th>
               <th>Sprünge &gt; 50 pp</th>
               <th>Lücken &gt; 90 d</th>
-              <th>Overfull</th>
+              <th>Überfüllt</th>
             </tr>
           </thead>
           <tbody>{outlier_rows or '<tr><td colspan="7">Keine Auffälligkeiten</td></tr>'}</tbody>
@@ -897,9 +970,9 @@ def _build_ask_html(ask_examples: list[dict[str, Any]]) -> str:
     first_answer = html.escape(ask_examples[0]["answer"])
     return f"""
       <div id="copilot-ask-box" class="copilot-box">
-        <strong>Copilot Ask (--no-llm, 5 vorberechnete Beispielfragen, kein Live-Server):</strong>
+        <strong>Copilot Fragestellung (vorberechnete Antworten aus Pipeline-Daten, offline):</strong>
         <div class="ask-controls">
-          <input id="copilot-ask-input" type="text" list="copilot-ask-datalist" value="{first_question}" placeholder="Beispielfrage wählen oder Container-Key (<Location_id>:<material>) eingeben..." />
+          <input id="copilot-ask-input" type="text" list="copilot-ask-datalist" value="{first_question}" placeholder="Beispielfrage wählen oder Standort und Glasfarbe eingeben (z. B. b3ebe810 : weiss)..." />
           <datalist id="copilot-ask-datalist">{options}</datalist>
           <button id="copilot-ask-submit" type="button">Antwort anzeigen</button>
         </div>
@@ -937,7 +1010,7 @@ def _build_copilot_section_html(
     options: list[str] = []
     seen_keys: set[str] = set()
     for stop in stops:
-        if str(stop.get("stop_type", "collection")) != "collection":
+        if str(stop.get("stop_type", "collection")) not in ("collection", "Leerung"):
             continue
         loc = str(stop.get("Location_id", "")).strip()
         mat = str(stop.get("primary_material", "")).strip().lower()
@@ -948,7 +1021,9 @@ def _build_copilot_section_html(
             continue
         seen_keys.add(key)
         order = stop.get("order", "-")
-        label = f"Stopp #{order}: {loc} ({mat})"
+        mat_label = MATERIAL_LABELS.get(mat, mat)
+        short_loc = f"{loc[:8]}..." if len(loc) > 12 else loc
+        label = f"Stopp #{order}: {mat_label} (Standort {short_loc})"
         options.append(
             f'<option value="{html.escape(key, quote=True)}">{html.escape(label)}</option>'
         )
@@ -961,7 +1036,9 @@ def _build_copilot_section_html(
         if key in seen_keys:
             continue
         seen_keys.add(key)
-        label = f"Top-20: {loc} ({mat})"
+        mat_label = MATERIAL_LABELS.get(mat, mat)
+        short_loc = f"{loc[:8]}..." if len(loc) > 12 else loc
+        label = f"Top-20: {mat_label} (Standort {short_loc})"
         options.append(
             f'<option value="{html.escape(key, quote=True)}">{html.escape(label)}</option>'
         )
@@ -978,13 +1055,13 @@ def _build_copilot_section_html(
     return f"""
       <div class="section-head">
         <h2>Disponenten-Copilot ({html.escape(route_date)})</h2>
-        <p class="muted">Deterministischer, quellengestützter Assistent (--no-llm, vorberechnet beim UI-Build). Alle Kennzahlen stammen direkt aus Pipeline-Dateien.</p>
+        <p class="muted">Deterministischer, quellengestützter Assistent (offline, vorberechnet beim UI-Build). Alle Kennzahlen stammen direkt aus verifizierten Pipeline-Daten.</p>
       </div>
       {overview_html}
       {what_if_html}
       {ask_html}
       <div id="copilot-explain-box" class="copilot-box">
-        <strong>Container-Erklärung (<code>explain_container</code>):</strong>
+        <strong>Container-Detailerklärung:</strong>
         <p class="muted" style="margin:4px 0 8px;">Container auswählen oder im Tab &bdquo;4. Route &amp; Freigabe&ldquo; bzw. &bdquo;1. Daten&ldquo; anklicken.</p>
         {select_html}
         <div id="copilot-explain-panel" class="explain-panel" hidden style="margin-top:10px;margin-bottom:0;"></div>
@@ -1160,9 +1237,24 @@ def _build_role_start_html(
             location.get("address")
             or location.get("site")
             or location.get("name")
-            or loc_id
         )
-        material = str(stop.get("primary_material") or stop.get("material_type") or "-")
+        order_val = stop.get("order", len(rows) + 1)
+        if loc_id == "disposal_depot":
+            site_title = "Entsorgungshof"
+            site_subtitle = "Wertstoffhof (Entladung)"
+        elif site and str(site).strip() != loc_id:
+            site_title = str(site)
+            site_subtitle = f"Standort-ID: {loc_id[:8]}..."
+        else:
+            site_title = f"Standort #{order_val}"
+            site_subtitle = f"ID: {loc_id[:8]}..."
+
+        raw_mat = str(stop.get("primary_material") or stop.get("material_type") or "-")
+        if raw_mat == "unload" or stop.get("stop_type") == "unload":
+            mat_display = "Entladung"
+        else:
+            mat_display = MATERIAL_LABELS.get(raw_mat.lower(), raw_mat)
+
         level = stop.get("est_fill_level", stop.get("last_fill_level"))
         try:
             level_text = "-" if level is None else f"{float(level):g} %"
@@ -1174,12 +1266,13 @@ def _build_role_start_html(
         rows.append(
             f"""
             <tr class="driver-stop" data-loc="{html.escape(loc_id, quote=True)}"
-                data-mat="{html.escape(material, quote=True)}"
+                data-mat="{html.escape(raw_mat, quote=True)}"
                 data-lat="{html.escape(str(lat or ''), quote=True)}"
-                data-lon="{html.escape(str(lon or ''), quote=True)}">
-              <td>{html.escape(str(stop.get("order", len(rows) + 1)))}</td>
-              <td><strong>{html.escape(str(site))}</strong><br><code>{html.escape(loc_id)}</code></td>
-              <td>{html.escape(material)}</td>
+                data-lon="{html.escape(str(lon or ''), quote=True)}"
+                title="Standort-ID: {html.escape(loc_id, quote=True)}">
+              <td>{html.escape(str(order_val))}</td>
+              <td><strong>{html.escape(site_title)}</strong><br><span class="muted" style="font-size:12px;">{html.escape(site_subtitle)}</span></td>
+              <td>{html.escape(mat_display)}</td>
               <td>{html.escape(level_text)}</td>
               <td><label class="driver-check"><input class="emptied" type="checkbox"> geleert</label></td>
               <td><input class="found-level" type="number" min="0" max="110" step="10"
@@ -1238,13 +1331,13 @@ def _build_role_start_html(
       </div>
       <div class="approval-box">
         <label for="role-dispatcher-name">Freigegeben durch</label>
-        <input id="role-dispatcher-name" type="text" value="dispatcher">
+        <input id="role-dispatcher-name" type="text" value="Disponent/in" placeholder="Name">
         <button type="button" class="primary-btn" id="role-approve-route-btn">Tour freigeben</button>
         <span id="role-approval-status" class="badge pending">Status: Vorgeschlagen</span>
       </div>
       <div class="approval-box">
         <strong>Fahrer-Rückmeldung übernehmen</strong>
-        <p class="muted">Die exportierte CSV hat das Eingabeschema plus die optionale Spalte <code>geleert</code>. Der statische Browser startet keine Pipeline; der CLI-Befehl erzeugt daraus die neuen Daten und die nächste Tour.</p>
+        <p class="muted">Die exportierte CSV enthält die Tourenstopps mit der optionalen Rückmeldespalte <code>geleert</code>. Der Browser bleibt offline; der CLI-Befehl erzeugt daraus die aktualisierten Daten und die nächste Tour.</p>
         <input id="feedback-file-input" type="file" accept=".csv,text/csv">
         <span id="feedback-upload-status" class="muted">Noch keine Rückmeldung ausgewählt.</span>
         <div class="command-box"><code id="feedback-command">prezero-route run --input &lt;feedback.csv&gt;</code><button type="button" class="secondary-btn" id="copy-feedback-command">Befehl kopieren</button></div>
@@ -1255,7 +1348,6 @@ def _build_role_start_html(
     """
 
 
-MATERIAL_LABELS = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
 MATERIAL_COLORS = {"white": "#64748b", "green": "#2e8b57", "brown": "#8b4513"}
 
 
@@ -1504,7 +1596,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         f'<tr class="top20-row" data-loc="{html.escape(row["Location_id"], quote=True)}" '
         f'data-mat="{html.escape(row["material_type"].strip().lower(), quote=True)}" '
         f'title="Klick: Copilot-Erklärung für ({html.escape(row["Location_id"], quote=True)}, {html.escape(row["material_type"].strip().lower(), quote=True)})">'
-        f"<td><code>{html.escape(row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'], row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
+        f"<td><code>{html.escape(row['Location_id'][:8] + '...' if len(row['Location_id']) > 12 else row['Location_id'])}</code></td><td>{html.escape(MATERIAL_LABELS.get(row['material_type'].strip().lower(), row['material_type']))}</td><td>{row['overfull_count']}</td><td>{row['measurement_count']}</td><td>{row['overfull_rate']:.1f}%</td></tr>"
         for row in analysis["top_overfull"]
     )
     interval_values = [row["interval_days"] for row in intervals]
@@ -1533,11 +1625,11 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         <div>{charts[3]}<p class="muted">Median des Scanintervalls: {"-" if median_interval is None else f"{median_interval:.1f} Tage"}.</p></div>
       </div>
       <div class="section-head"><h3>Top 20 Container nach Übervoll-Häufigkeit</h3>
-        <p class="muted">Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung für <code>(Location_id, material)</code>.</p>
+        <p class="muted">Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung für Standort und Glasart.</p>
       </div>
       <div id="top20-explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
-        <table><thead><tr><th>Container</th><th>Material</th><th>Übervoll</th><th>Messungen</th><th>Anteil</th></tr></thead>
+        <table><thead><tr><th>Container (Standort)</th><th>Glasart</th><th>Übervoll</th><th>Messungen</th><th>Anteil</th></tr></thead>
         <tbody>{top_rows or '<tr><td colspan="5">Keine Daten</td></tr>'}</tbody></table>
       </div>
       <div class="section-head"><h3>Vorhersagbarkeit: Forecast gegen reale Folgemessung</h3>
@@ -2047,7 +2139,18 @@ def build_ui(
             return "<tr><td>" + esc(r[1]) + "</td><td>" + fmt(b, r[2]) + "</td><td>" + fmt(s, r[2]) +
               "</td><td class='" + cls + "'>" + (d > 0 ? "+" : "") + d + esc(r[2]) + "</td></tr>";
           }}).join("");
-          var ov = Object.keys(p.overrides).map(function(k) {{ return k + " = " + p.overrides[k]; }}).join(", ");
+          var overrideLabels = {{
+            max_shift_hours: "Schichtlimit",
+            vehicle_max_weight_kg: "Fahrzeugkapazität",
+            max_stops: "Maximal-Stopps"
+          }};
+          var ov = Object.keys(p.overrides).map(function(k) {{
+            var lbl = overrideLabels[k] || k;
+            var val = p.overrides[k];
+            if (k === "max_shift_hours") val = val + " h";
+            else if (k === "vehicle_max_weight_kg") val = (val / 1000) + " t";
+            return lbl + " = " + val;
+          }}).join(", ");
           document.getElementById("whatif-result").innerHTML =
             "<p><b>" + esc(p.label) + ":</b> " + esc(p.description) + " <code>" + esc(ov) + "</code></p>" +
             "<div class='table-wrap'><table><thead><tr><th>Kennzahl</th><th>Baseline</th><th>Simulation</th><th>Delta</th></tr></thead><tbody>" +
@@ -2115,15 +2218,22 @@ def build_ui(
             content += "<pre class='copilot-pre'>" + esc(cExp.formatted) + "</pre>";
           }}
           if (e) {{
+            var matLabels = {{ white: "Weißglas", green: "Grünglas", brown: "Braunglas", weiss: "Weißglas", gruen: "Grünglas", braun: "Braunglas" }};
             var rows = e.containers.map(function(c) {{
-              return "<tr><td><code>" + esc(c.Location_id).slice(0, 8) + "…</code></td><td>" + esc(c.material_type) +
+              var mName = matLabels[normalizeMat(c.material_type)] || esc(c.material_type);
+              var shortLoc = esc(c.Location_id).slice(0, 8) + "…";
+              return "<tr><td><code>" + shortLoc + "</code></td><td>" + mName +
                 "</td><td>" + fmt(c.est_fill_level, " %") + "</td><td>" + c.last_fill_level + " %" + (c.days_since_last !== null && c.days_since_last !== undefined ? " (vor " + c.days_since_last + " d)" : "") + "</td><td>" + c.level_component + "</td><td>" + c.overfull_component +
                 "</td><td>" + c.season_component + "</td><td><b>" + c.score + "</b></td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
             }}).join("");
+            var srcMap = {{ osm_assigned: "OSM-Standort", prezero_supplied: "PreZero-Standort", config: "Betriebskonfiguration" }};
+            var confMap = {{ simulated_mapping: "simulierte Zuordnung", high: "bestätigt", low: "unbestätigt" }};
+            var srcText = srcMap[e.source] || esc(e.source);
+            var confText = confMap[e.confidence] || esc(e.confidence);
             content += "<div style='margin-top:8px'><b>Standort-Aufschlüsselung:</b> " + esc(e.reason) +
               "<br><span class='muted'>" + esc(e.formula) + " · kritisch ab " + e.critical_threshold +
-              " · Ortsquelle " + esc(e.source) + " (" + esc(e.confidence) + ")</span>" +
-              "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glas</th><th>jetzt (geschätzt)</th><th>beim letzten Besuch</th><th>0,5·Füllstand jetzt</th>" +
+              " · Ortsquelle: " + srcText + " (" + confText + ")</span>" +
+              "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glasart</th><th>jetzt (geschätzt)</th><th>beim letzten Besuch</th><th>0,5·Füllstand jetzt</th>" +
               "<th>0,3·Überlauf</th><th>0,2·Mat·Saison</th><th>Score</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div></div>";
           }}
         }}
@@ -2213,7 +2323,7 @@ def build_ui(
             return;
           }}
         }}
-        askOutput.textContent = "Offline-Modus (--no-llm, kein Live-Server): Bitte eine der 5 vorberechneten Beispielfragen oder '<Location_id>:<material>' wählen.";
+        askOutput.textContent = "Offline-Modus: Bitte eine der 5 vorberechneten Beispielfragen wählen oder Standort und Glasfarbe eingeben.";
       }}
       askBtns.forEach(function(btn) {{
         btn.addEventListener("click", function() {{
@@ -2268,7 +2378,7 @@ def build_ui(
 
       if (approveBtn) {{
         approveBtn.addEventListener("click", function() {{
-          var approver = (nameInput.value || "").trim() || "dispatcher";
+          var approver = (nameInput.value || "").trim() || "Disponent/in";
           var record = approveTour(approver);
 
           badge.textContent = "Freigegeben durch " + approver;
@@ -2293,7 +2403,7 @@ def build_ui(
       var roleApproveBtn = document.getElementById("role-approve-route-btn");
       if (roleApproveBtn) {{
         roleApproveBtn.addEventListener("click", function() {{
-          var roleName = (document.getElementById("role-dispatcher-name").value || "").trim() || "dispatcher";
+          var roleName = (document.getElementById("role-dispatcher-name").value || "").trim() || "Disponent/in";
           approveTour(roleName);
           var roleBadge = document.getElementById("role-approval-status");
           roleBadge.textContent = "Freigegeben durch " + roleName;
@@ -2334,7 +2444,7 @@ def build_ui(
           link.click();
           link.remove();
           URL.revokeObjectURL(url);
-          document.getElementById("export-status").textContent = "CSV exportiert: gleiche Spalten wie cleaned_readings.csv. Danach im Upload-Tab wieder einlesen.";
+          document.getElementById("export-status").textContent = "CSV exportiert: enthält Rückmeldespalte 'geleert'. Danach im Upload-Tab wieder einlesen.";
         }});
       }}
       var printBtn = document.getElementById("print-tour-btn");

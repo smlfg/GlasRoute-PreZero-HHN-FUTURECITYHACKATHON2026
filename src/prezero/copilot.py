@@ -1145,6 +1145,16 @@ def precompute_ui_copilot_bundle(
     if focus_key is None and container_explains:
         focus_key = next(iter(container_explains))
 
+    focus_label = "dieser Container"
+    if focus_key and ":" in focus_key:
+        floc, fmat = focus_key.split(":", 1)
+        mat_map = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
+        fmat_de = mat_map.get(fmat.lower(), fmat)
+        short_loc = floc[:8] + "..." if len(floc) > 12 else floc
+        focus_label = f"{fmat_de} (Standort {short_loc})"
+    elif focus_key:
+        focus_label = f"Standort {focus_key[:8]}..."
+
     assumptions = route_data.get("assumptions")
     base_cfg = (
         routing.OperationalConfig.from_dict(assumptions)
@@ -1154,7 +1164,7 @@ def precompute_ui_copilot_bundle(
     fixed_questions = [
         "Wie sieht der Touren-Überblick für den Stichtag aus?",
         (
-            f"Warum ist Container {focus_key} in der Tour?"
+            f"Warum ist Container {focus_label} in der Tour?"
             if focus_key
             else "Welche kritischen Stopps sind in der Tour?"
         ),
@@ -1167,13 +1177,16 @@ def precompute_ui_copilot_bundle(
         tool_name, args = _route_question_deterministically(question, date)
         if tool_name == "get_tour_overview":
             answer = overview_text
-        elif tool_name == "explain_container":
-            q_loc, q_mat = parse_container_key(args.get("location_id", ""), args.get("material"))
-            q_key = f"{q_loc}:{q_mat}"
-            if q_key in container_explains:
-                answer = container_explains[q_key]["formatted"]
+        elif tool_name == "explain_container" or (focus_key and "Warum ist Container" in question):
+            if focus_key and focus_key in container_explains:
+                answer = container_explains[focus_key]["formatted"]
             else:
-                answer = overview_text
+                q_loc, q_mat = parse_container_key(args.get("location_id", ""), args.get("material"))
+                q_key = f"{q_loc}:{q_mat}"
+                if q_key in container_explains:
+                    answer = container_explains[q_key]["formatted"]
+                else:
+                    answer = overview_text
         else:
             sim_res = _run_what_if_simulation(
                 date,
@@ -1350,10 +1363,19 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
         top_stops = result.get("top_stops", [])
         if top_stops:
             lines.append("Top-Stopps:")
+            mat_map = {"white": "Weißglas", "green": "Grünglas", "brown": "Braunglas"}
             for stop in top_stops:
+                ck = str(stop["container_key"])
+                if ":" in ck:
+                    loc_part, mat_part = ck.split(":", 1)
+                    mat_de = mat_map.get(mat_part.lower(), mat_part)
+                    short_l = loc_part[:8] + "..." if len(loc_part) > 12 else loc_part
+                    ck_display = f"{mat_de} (Standort {short_l})"
+                else:
+                    ck_display = ck
                 lines.append(
-                    f"  #{stop['order']}: {stop['container_key']} | Füllstand {stop['last_fill_level']:.0f}% | "
-                    f"Score {stop['score']:.3f} | Fzg {stop['vehicle']} Runde {stop['round']}"
+                    f"  #{stop['order']}: {ck_display} | Füllstand {stop['last_fill_level']:.0f} % | "
+                    f"Dringlichkeit {stop['score']:.2f} | Fzg {stop['vehicle']} Runde {stop['round']}"
                 )
         lines.append(f"Freigabe: {approval_hint}")
         lines.append(f"Quellen: {sources}")
