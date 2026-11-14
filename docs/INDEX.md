@@ -37,6 +37,7 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | [`../AGENTS.md`](../AGENTS.md) | Arbeitsvertrag: Ein-Schreiber-Regel, Datei-Ownership, Commit-Regeln, Scope | **aktuell** |
 | [`../Pitch/NOTES.md`](../Pitch/NOTES.md) | Bühnennotizen, Live-Demo-Skript, Fragen an PreZero, Zahlenstand | **aktuell** |
 | [`../Pitch/deck.md`](../Pitch/deck.md) | 10 Folien als Markdown-Quelle (3:30 Min) | **aktuell** |
+| [`../Pitch/VERGLEICHSWERT_WETTBEWERBER.md`](../Pitch/VERGLEICHSWERT_WETTBEWERBER.md) | Wettbewerbsanalyse („Garbage Collector“): Vergleichswerte, Stärken/Schwächen, Pitch-Hebel | **aktuell** |
 | [`../Projek-Management/proof/A3_pitch_zahlen.txt`](../Projek-Management/proof/A3_pitch_zahlen.txt) | Beleg: jede Pitch-Zahl gegen die Pipeline geprüft (`RESULT: ALL MATCH`) | **aktuell** |
 | [`../Projek-Management/proof/`](../Projek-Management/proof/) | A1 Freigabe-Verhalten, A2 Beleg, A4 README-Demo, A5 Tests | **aktuell** |
 | [`../PLAN.md`](../PLAN.md) | Hackathon-Plan mit Prüfkriterien je Stufe | **historisch** (14.11.) |
