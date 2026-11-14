@@ -1,5 +1,7 @@
 # Pitch – GlasRoute (PreZero Challenge)
 
+**Quartalsversuch mit gebündelten Leerungen:** Bei gleichem modelliertem Glasaufkommen brauchte GlasRoute im dritten Quartal fünf Fahrzeugschichten weniger als der historische Fahrplan. Bei 20 % höherem Zufluss brauchte GlasRoute zwei Schichten mehr. Ein Pilot mit realen Sensorwerten und Fahrzeugdaten kann zeigen, welcher Fall dem Betrieb entspricht.
+
 Dauer: ca. 3 Minuten · Demo-Datum: **15.04.2026**
 
 Alle Zahlen sind aus `data/raw/glass_fill_levels_anonymized_f.csv` und den Pipeline-Outputs

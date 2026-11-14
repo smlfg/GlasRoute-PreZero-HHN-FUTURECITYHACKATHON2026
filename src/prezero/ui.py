@@ -15,6 +15,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from prezero.dispatch_panel import comparison_panel
 from prezero import approval, cfo, copilot, features, forecast, location_planning, routing, scoring, tour
 
 
@@ -3442,7 +3443,7 @@ def build_ui(
       {upload_section_html}
     </section>
 
-    <section id="view-cost" class="view-panel">{cfo.panel()}</section>
+    <section id="view-cost" class="view-panel">{comparison_panel()}{cfo.panel()}</section>
     <section id="view-location-planning" class="view-panel">
       {location_planning_section_html}
     </section>
