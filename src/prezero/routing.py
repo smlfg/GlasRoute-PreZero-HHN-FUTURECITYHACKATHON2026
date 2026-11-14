@@ -163,6 +163,7 @@ def _aggregate_locations(
         critical_bins=("critical", "sum"),
         bins=("Location_id", "size"),
         mass_kg=("crit_mass_kg", "sum"),
+        total_mass_kg=("bin_mass_kg", "sum"),
         max_bin_mass_kg=("bin_mass_kg", "max"),
         source=("source", "first"),
         confidence=("confidence", "first"),
@@ -492,9 +493,12 @@ def build_route(
         stops, unload_stops, vehicles, planned_km, total_mass_kg = _simulate_constrained_routes(
             selected, cfg
         )
-        _, full_round_km = _nearest_neighbor_tour(
-            loc_scores, cfg.yard_depot, detour_factor=float(cfg.road_detour_factor)
+        # Status quo empties every bin at every site, under the SAME capacity/shift/unload
+        # rules as the planned tour (otherwise the comparison is not like-for-like).
+        status_quo = loc_scores.assign(
+            mass_kg=loc_scores["total_mass_kg"], critical_bins=loc_scores["bins"]
         )
+        _, _, full_vehicles, full_round_km, _ = _simulate_constrained_routes(status_quo, cfg)
         collection_stop_count = len(stops) - len(unload_stops)
         saved_km = max(0.0, full_round_km - planned_km)
         saved_pct = (saved_km / full_round_km * 100.0) if full_round_km > 0 else 0.0
@@ -524,11 +528,13 @@ def build_route(
             "km": round(planned_km, 2),
             "planned_km": round(planned_km, 2),
             "full_round_km": round(full_round_km, 2),
+            "full_round_vehicles": len(full_vehicles),
+            "full_round_vehicle_hours": round(sum(float(v["shift_hours"]) for v in full_vehicles), 2),
             "saved_km": round(saved_km, 2),
             "saved_pct": round(saved_pct, 1),
             "comparison": (
                 f"{round(planned_km, 2)} km planned ({collection_stop_count} stops) "
-                f"vs. {round(full_round_km, 2)} km full round ({len(loc_scores)} stops)"
+                f"vs. {round(full_round_km, 2)} km full round ({len(loc_scores)} stops, same capacity rules)"
             ),
             "assumptions": cfg.to_dict(),
             "vehicles": vehicles,

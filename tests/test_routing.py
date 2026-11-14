@@ -163,3 +163,35 @@ def test_config_override_json_and_yaml(tmp_path: Path) -> None:
     assert route["t_collected"] == pytest.approx(1.38)
     assert route["assumptions"]["density_kg_per_m3"] == pytest.approx(500.0)
     assert route["assumptions"]["yard_depot"] == [49.15, 9.22]
+
+
+def test_full_round_uses_same_capacity_rules_as_planned_tour() -> None:
+    import pandas as pd
+
+    from prezero import routing
+
+    n = 20
+    scored = pd.DataFrame(
+        {
+            "Location_id": [f"L{i}" for i in range(n)],
+            "material_type": ["white"] * n,
+            "score": [0.9 if i < 5 else 0.3 for i in range(n)],
+            "critical": [i < 5 for i in range(n)],
+            "last_fill_level": [100.0] * n,
+        }
+    )
+    locs = pd.DataFrame(
+        {
+            "Location_id": [f"L{i}" for i in range(n)],
+            "lat": [49.12 + 0.003 * i for i in range(n)],
+            "lon": [9.20 + 0.002 * i for i in range(n)],
+            "source": ["osm_assigned"] * n,
+            "confidence": ["simulated_mapping"] * n,
+        }
+    )
+    # 20 full bins x 1 t = 20 t > 11 t: the full round must unload at least once.
+    route = routing.build_route(scored, locs, config=routing.OperationalConfig())
+    assert route["num_stops"] == 5
+    assert route["full_round_km"] > route["planned_km"]
+    assert route["full_round_vehicles"] >= route["vehicles_needed"]
+    assert "same capacity rules" in route["comparison"]
