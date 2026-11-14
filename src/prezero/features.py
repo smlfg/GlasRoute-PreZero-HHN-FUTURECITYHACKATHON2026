@@ -5,12 +5,15 @@ Data semantics (PreZero process): the collection vehicle drives to a container, 
 visit, and the container restarts at ~0 % right after it. Consequences used throughout the package:
 
 * fill rate of an interval = level found at visit i / days since visit i-1 (it started empty);
-* estimated level now = fill rate x days since the last visit (x season), capped at 110 %;
+* estimated level now = fill rate x days since the last visit, capped at 110 %;
+* no fixed season factor: the backtest (scripts/backtest.py) showed the hard-coded factor biased
+  predictions by about -17 pp; ``season_factor`` is kept only as an informational column.
 * ``last_fill_level`` is the level *found* at the last visit, not the current level.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 HIGH_SEASON_MONTHS = frozenset({1, 2, 3, 4})
@@ -63,13 +66,10 @@ def fill_rates_after_emptying(dates: list, levels: list[float]) -> list[float]:
     return rates
 
 
-def season_weighted_days(start: str | pd.Timestamp, end: str | pd.Timestamp) -> float:
-    """Days in (start, end], each weighted by its own month's season factor (monotonic in end)."""
-    start_ts, end_ts = pd.Timestamp(start).normalize(), pd.Timestamp(end).normalize()
-    if end_ts <= start_ts:
-        return 0.0
-    days = pd.date_range(start_ts + pd.Timedelta(days=1), end_ts, freq="D")
-    return float(sum(get_season_factor(day) for day in days))
+def elapsed_days(start: str | pd.Timestamp, end: str | pd.Timestamp) -> float:
+    """Whole days from ``start`` to ``end`` (0 if ``end`` is not later)."""
+    delta = (pd.Timestamp(end).normalize() - pd.Timestamp(start).normalize()).days
+    return float(max(0, delta))
 
 
 def estimate_fill(rate_per_day: float, effective_days: float) -> float:
@@ -83,19 +83,14 @@ def date_reaching(
 ) -> pd.Timestamp | None:
     """First day the container (emptied at ``last_visit``) is estimated to reach ``level_pct``.
 
-    Walks forward day by day with each day's season factor; ``None`` if the rate is 0 or the
-    level is not reached within ``max_days``.
+    ``None`` if the rate is 0 or the level is not reached within ``max_days``.
     """
     if rate_per_day is None or float(rate_per_day) <= 0.0:
         return None
-    start = pd.Timestamp(last_visit).normalize()
-    accumulated = 0.0
-    for offset in range(1, max_days + 1):
-        day = start + pd.Timedelta(days=offset)
-        accumulated += float(rate_per_day) * get_season_factor(day)
-        if accumulated >= level_pct:
-            return day
-    return None
+    days = int(np.ceil(float(level_pct) / float(rate_per_day)))
+    if days > max_days:
+        return None
+    return pd.Timestamp(last_visit).normalize() + pd.Timedelta(days=max(1, days))
 
 
 def _avg_fill_rate(group: pd.DataFrame) -> float | None:
@@ -148,7 +143,7 @@ def build_features(df: pd.DataFrame, date: str | pd.Timestamp) -> pd.DataFrame:
         pd.to_numeric(out["avg_daily_increase"], errors="coerce").astype(float).fillna(fallback)
     )
     out["est_fill_level"] = [
-        round(estimate_fill(rate, season_weighted_days(last, target_date)), 1)
+        round(estimate_fill(rate, elapsed_days(last, target_date)), 1)
         for rate, last in zip(out["avg_daily_increase"], out["last_date"])
     ]
     # Timer per container: when must it be emptied (80 %) and when does it overflow (110 %)?

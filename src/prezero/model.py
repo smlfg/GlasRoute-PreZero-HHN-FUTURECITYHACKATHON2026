@@ -115,7 +115,7 @@ class Container:
 
     def est_fill(self, reference_date: str | pd.Timestamp | None = None) -> float:
         """Estimated current level: emptied at the last visit, refilled at the average rate."""
-        from prezero.features import estimate_fill, season_weighted_days
+        from prezero.features import elapsed_days, estimate_fill
 
         if not self.measurements:
             return 0.0
@@ -123,7 +123,7 @@ class Container:
         days = self.days_since_last(reference_date)
         return estimate_fill(
             self.avg_daily_increase(),
-            season_weighted_days(latest_ts, latest_ts + pd.Timedelta(days=days)),
+            elapsed_days(latest_ts, latest_ts + pd.Timedelta(days=days)),
         )
 
     def overfull_rate(self) -> float:

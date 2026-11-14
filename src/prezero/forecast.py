@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from prezero.features import estimate_fill, get_season_factor, season_weighted_days
+from prezero.features import elapsed_days, estimate_fill, get_season_factor
 from prezero.model import Container, Site, build_model
 
 
@@ -118,7 +118,7 @@ def _days_since_visit(row: object, base: pd.Timestamp) -> float:
 def _effective_days(row: object, base: pd.Timestamp, target: pd.Timestamp) -> float:
     """Season-weighted days from the last (emptying) visit to ``target``."""
     visit = base - pd.Timedelta(days=_days_since_visit(row, base))
-    return season_weighted_days(visit, target)
+    return elapsed_days(visit, target)
 
 
 def forecast_from_scored(
@@ -129,7 +129,7 @@ def forecast_from_scored(
     """Forecast every scored container for each horizon in ``offsets``.
 
     Measure-and-empty: the last visit emptied the container, so
-    ``forecast = avg_daily_increase * season-weighted days since that visit``,
+    ``forecast = avg_daily_increase * days since that visit``,
     capped at 110 %. The result carries one row per container and offset.
     """
     if scored.empty:

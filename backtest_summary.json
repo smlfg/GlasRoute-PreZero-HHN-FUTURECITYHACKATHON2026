@@ -1,0 +1,139 @@
+{
+  "predicted_visits": 9059,
+  "containers": 1257,
+  "full_share_pct": 46.3,
+  "due_level_pct": 80.0,
+  "methods": {
+    "model": "Timer-Modell (Füllrate x Tage)",
+    "model_season": "Timer mit altem Saisonfaktor",
+    "mean_past": "Basis: Durchschnitt bisher",
+    "last_value": "Basis: wie letztes Mal"
+  },
+  "overall": {
+    "model": {
+      "mae_pp": 19.9,
+      "within_20pp_pct": 63.7,
+      "full_precision_pct": 75.0,
+      "full_recall_pct": 59.4,
+      "spearman": 0.599
+    },
+    "model_season": {
+      "mae_pp": 26.5,
+      "within_20pp_pct": 47.4,
+      "full_precision_pct": 78.7,
+      "full_recall_pct": 34.0,
+      "spearman": 0.613
+    },
+    "mean_past": {
+      "mae_pp": 22.3,
+      "within_20pp_pct": 55.5,
+      "full_precision_pct": 64.9,
+      "full_recall_pct": 60.8,
+      "spearman": 0.479
+    },
+    "last_value": {
+      "mae_pp": 26.1,
+      "within_20pp_pct": 57.3,
+      "full_precision_pct": 60.1,
+      "full_recall_pct": 61.8,
+      "spearman": 0.375
+    }
+  },
+  "by_material": {
+    "brown": {
+      "model": {
+        "mae_pp": 21.9,
+        "within_20pp_pct": 62.6,
+        "full_precision_pct": 42.8,
+        "full_recall_pct": 40.2,
+        "spearman": 0.497
+      },
+      "model_season": {
+        "mae_pp": 22.1,
+        "within_20pp_pct": 60.8,
+        "full_precision_pct": 49.8,
+        "full_recall_pct": 30.3,
+        "spearman": 0.539
+      },
+      "mean_past": {
+        "mae_pp": 22.9,
+        "within_20pp_pct": 57.5,
+        "full_precision_pct": 58.7,
+        "full_recall_pct": 6.9,
+        "spearman": 0.246
+      },
+      "last_value": {
+        "mae_pp": 26.0,
+        "within_20pp_pct": 60.8,
+        "full_precision_pct": 30.8,
+        "full_recall_pct": 31.0,
+        "spearman": 0.266
+      }
+    },
+    "green": {
+      "model": {
+        "mae_pp": 20.8,
+        "within_20pp_pct": 60.9,
+        "full_precision_pct": 70.6,
+        "full_recall_pct": 57.7,
+        "spearman": 0.516
+      },
+      "model_season": {
+        "mae_pp": 26.7,
+        "within_20pp_pct": 47.0,
+        "full_precision_pct": 76.8,
+        "full_recall_pct": 35.2,
+        "spearman": 0.549
+      },
+      "mean_past": {
+        "mae_pp": 23.9,
+        "within_20pp_pct": 48.2,
+        "full_precision_pct": 55.2,
+        "full_recall_pct": 46.1,
+        "spearman": 0.253
+      },
+      "last_value": {
+        "mae_pp": 27.7,
+        "within_20pp_pct": 52.5,
+        "full_precision_pct": 53.1,
+        "full_recall_pct": 55.7,
+        "spearman": 0.226
+      }
+    },
+    "white": {
+      "model": {
+        "mae_pp": 17.9,
+        "within_20pp_pct": 67.1,
+        "full_precision_pct": 84.5,
+        "full_recall_pct": 63.7,
+        "spearman": 0.53
+      },
+      "model_season": {
+        "mae_pp": 29.2,
+        "within_20pp_pct": 39.3,
+        "full_precision_pct": 87.7,
+        "full_recall_pct": 33.8,
+        "spearman": 0.55
+      },
+      "mean_past": {
+        "mae_pp": 20.3,
+        "within_20pp_pct": 61.0,
+        "full_precision_pct": 69.4,
+        "full_recall_pct": 78.7,
+        "spearman": 0.153
+      },
+      "last_value": {
+        "mae_pp": 24.7,
+        "within_20pp_pct": 59.4,
+        "full_precision_pct": 69.3,
+        "full_recall_pct": 70.7,
+        "spearman": 0.105
+      }
+    }
+  },
+  "container_mae_quartiles_pp": [
+    13.1,
+    19.4,
+    27.0
+  ]
+}
