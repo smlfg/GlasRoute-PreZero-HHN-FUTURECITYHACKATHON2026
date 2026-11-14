@@ -129,20 +129,14 @@ def route_cmd(
     show_default=True,
     help="Path to canonical locations CSV.",
 )
-@click.option(
-    "--route",
-    default=None,
-    help="Path to route_<date>.json. Defaults to route_<date>.json in the output dir.",
-)
 @click.option("--output-dir", default=".", show_default=True, help="Directory for the map HTML.")
 def forecast_cmd(
     date: str,
     scored: str | None,
     locations_path: str,
-    route: str | None,
     output_dir: str,
 ) -> None:
-    """Print the +0/+7/+14/+21 day forecast and extend the route map with it.
+    """Print the +0/+7/+14/+21 day forecast and write a forecast-only map.
 
     The forecast reuses the columns already computed by the pipeline
     (last_fill_level, avg_daily_increase, season_factor); no new model.
@@ -162,25 +156,29 @@ def forecast_cmd(
     forecast_df = forecast.forecast_from_scored(scored_df, date)
     for offset in forecast.FORECAST_OFFSETS:
         frame = forecast_df[forecast_df["offset_days"] == offset]
-        click.echo(forecast.format_forecast_line(offset, frame))
-
-    route_path = Path(route) if route else out_dir / f"route_{date}.json"
-    if not route_path.is_file():
-        route_path = Path(f"route_{date}.json")
-    if not route_path.is_file():
-        raise click.ClickException(
-            f"Route file missing: {route_path}. Run 'prezero-route run --date {date}' first."
+        target = pd.Timestamp(date) + pd.Timedelta(days=offset)
+        counts = frame["status"].value_counts()
+        click.echo(
+            f"KW {int(target.isocalendar().week)}: "
+            f"{int(counts.get('red', 0))} rot, {int(counts.get('black', 0))} schwarz"
         )
 
-    map_path = out_dir / f"map_{date}.html"
-    path = viz.plot_route(
-        route_path,
-        map_path,
-        scored=scored_df,
-        locations=locs_df,
-        forecast=forecast_df,
+    map_frame = forecast_df.merge(
+        locs_df[["Location_id", "lat", "lon", "source", "confidence"]],
+        on="Location_id",
+        how="left",
     )
-    click.echo(f"Forecast map with +0/+7/+14/+21 layers: {path}")
+    map_frame = map_frame.rename(
+        columns={
+            "Location_id": "location_id",
+            "material_type": "material",
+            "last_fill_level": "last_fill",
+        }
+    )
+    map_frame["week"] = pd.to_datetime(map_frame["target_date"]).dt.isocalendar().week.astype(int)
+    map_path = out_dir / f"forecast_{int(pd.Timestamp(date).isocalendar().week):02d}.html"
+    path = viz.plot_forecast_map(map_frame, int(pd.Timestamp(date).isocalendar().week), map_path)
+    click.echo(f"Forecast map: {path}")
 
 
 @cli.command("visualize")

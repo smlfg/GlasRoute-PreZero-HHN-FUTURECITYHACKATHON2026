@@ -79,6 +79,7 @@ def plot_forecast_map(
         attr="© OpenStreetMap contributors",
     ).add_to(fmap)
 
+    layer_refs: list[tuple[str, str]] = []
     for index, current_week in enumerate(weeks):
         layer_data = work[work["week"] == current_week]
         critical_count = int(layer_data["status"].isin(["red", "black"]).sum())
@@ -110,8 +111,9 @@ def plot_forecast_map(
                 popup=folium.Popup(popup, max_width=280),
             ).add_to(layer)
         layer.add_to(fmap)
+        layer_refs.append((f"KW {current_week:02d}", layer.get_name()))
 
-    folium.LayerControl(collapsed=False).add_to(fmap)
+    _add_forecast_selector(fmap, layer_refs)
     first_data = work[work["week"] == weeks[0]]
     first_critical = int(first_data["status"].isin(["red", "black"]).sum())
     legend_html = f"""

@@ -94,6 +94,27 @@ def test_forecast_layers_are_added_to_the_route_map(tmp_path: Path) -> None:
     assert "Letzte Messung" in html
 
 
+def test_forecast_map_has_no_route_line(tmp_path: Path) -> None:
+    frame = pd.DataFrame(
+        {
+            "location_id": ["L1"],
+            "material": ["white"],
+            "lat": [49.14],
+            "lon": [9.21],
+            "source": ["osm_assigned"],
+            "last_fill": [90.0],
+            "last_date": ["2026-04-06"],
+            "forecast_pct": [100.0],
+            "status": ["red"],
+            "week": [16],
+        }
+    )
+    out = viz.plot_forecast_map(frame, 16, tmp_path / "forecast.html")
+    html = out.read_text(encoding="utf-8")
+    assert "forecast-week-selector" in html
+    assert "L.polyline" not in html
+
+
 def test_placeholder_is_dashed_and_real_site_is_solid(tmp_path: Path) -> None:
     scored = _scored()
     locs = _locations()
