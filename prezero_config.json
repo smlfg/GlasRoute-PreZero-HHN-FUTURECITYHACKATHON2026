@@ -1,0 +1,19 @@
+{
+  "density_kg_per_m3": 400.0,
+  "container_volume_m3": 2.5,
+  "vehicle_max_weight_kg": 11000.0,
+  "road_detour_factor": 1.35,
+  "avg_speed_kmh": 25.0,
+  "yard_depot": [
+    49.1427,
+    9.2109
+  ],
+  "disposal_depot": [
+    49.178,
+    9.2085
+  ],
+  "max_shift_hours": 8.0,
+  "stop_setup_min": 2.0,
+  "lift_time_per_bin_min": 3.0,
+  "unload_time_min": 20.0
+}

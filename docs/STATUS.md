@@ -118,14 +118,21 @@ flowchart LR
 
 ## 7. Nächste Schritte
 
-1. **Pitch-Deck** (Slides) für 13:00 — `docs/PITCH.md` liefert die belegten Zahlen und den Ablauf.
-2. **README-Demo-Ablauf durchspielen** — drei Befehle, ein Datum, mit Erwartungsausgaben.
-3. **Präsentationsfolien bauen** und einmal mit Timer durchgehen.
-4. **Optional, wenn Zeit bleibt:** CLI-Tests für `propose`/`approve` mit `CliRunner`.
+1. **Pitch-Deck** (Slides) für 13:00 — `Pitch/NOTES.md` + `docs/PITCH.md` liefern Struktur, Zahlen,
+   Live-Ablauf und die Fragen an PreZero.
+2. **Live-Hook üben:** die Betriebsvariablen aus `prezero_config.json` mit echten Zahlen füttern und
+   `prezero-route route --config prezero_config.json` laufen lassen (2 Fahrzeuge/120 km → 1/99 km).
+3. **README-Demo-Ablauf durchspielen** — drei Befehle, ein Datum, mit Erwartungsausgaben.
+4. **Präsentationsfolien bauen** und einmal mit Timer durchgehen.
+5. **Optional, wenn Zeit bleibt:** CLI-Tests für `propose`/`approve` mit `CliRunner`.
 
 Der Disponent-Freigabe-Schritt (Human-Agent-Interface) ist **fertig und getestet**:
 `prezero-route propose` → `prezero-route approve` (oder `--reject`) → Beleg in
 `data/processed/approval_<date>.json` mit Zeitstempel, Freigebender, Route und Kennzahlen.
+
+Der Stakeholder erwartet laut Readme/PPT **keine Koordinaten** — er will Muster, Priorisierung und
+eine Route gegen „alles abfahren". Alle vier Deliverables sind abgedeckt; die 11 Betriebsvariablen
+sind der Live-Hook (PreZero ist das ganze Wochenende bei HHN).
 
 ---
 

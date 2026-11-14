@@ -12,6 +12,14 @@ Alle Zahlen sind aus `data/raw/glass_fill_levels_anonymized_f.csv` und den Pipel
 Glascontainer in Heilbronn werden nach festem Plan geleert. Laster fahren zu halbleeren Containern,
 während andere überlaufen.
 
+**PreZero selbst formuliert es so (Pitch-Folie 2):**
+> „Emptying these containers usually takes place area by area. Then all containers in the area are emptied,
+> regardless of the actual fill level ('you'll drive past there anyway')."
+
+→ Das ist genau unser Vergleich: die „volle Runde" mit allen 431 Standorten ist der Status quo,
+den er beschreibt. Die 24,1 % sind also keine Routing-Optimierung, sondern **weniger zu fahren,
+weil nur die kritischen dringend sind**.
+
 **Belegt:** 11.701 Messungen, 449 Container, 1.192 `overfull`-Ereignisse — jeder vierte
 Überlauf-Fall betrifft Weißglas (731 von 1.192).
 
@@ -76,13 +84,15 @@ oder `--reject` erzeugt einen Beleg mit Zeitstempel, Route und den entscheidende
 - Python-CLI, modular (`ingest` → `features` → `scoring` → `routing` → `viz` → `approve`).
 - **Austauschbar:** echte Koordinaten kommen als `Location_id,lat,lon` in
   `data/external/locations_real.csv` — ohne Codeänderung (`scripts/refresh_locations.py --real`).
-- Skalierbar: Betriebsvariablen (Fahrzeuglast, Schichtlänge, Standzeiten, Depot) liegen in einer
-  Config-Datei, nicht im Code.
-- Ortsdaten heute: **126 reale OSM-Glascontainer** in Heilbronn. Weil die PreZero-IDs anonymisiert
-  sind, ist die Zuordnung eine **Heuristik** (`confidence=low`, `source=osm_heuristic`, „UNVERIFIED“),
-  keine Identität. Die übrigen **323** Standorte sind deterministische Platzhalter (Seed 2026).
-  Im Pitch offen als Demo-Daten gekennzeichnet — mit dem Hinweis, dass PreZero die echte
-  Zuordnungstabelle ohne Codeänderung einspielen kann.
+- **Generisch, wie in der Challenge gefordert** („incorporate configurable operational variables"):
+  11 Betriebsvariablen liegen in `prezero_config.json`, nicht im Code. Jede Annahme ist im Code als
+  „Annahme, von PreZero zu ersetzen" markiert.
+- Ortsdaten heute: **alle 449 Standorte sind echte OSM-Glascontainer** in Heilbronn. Weil die
+  PreZero-IDs anonymisiert sind, ist die Zuordnung **simuliert** (`source=osm_assigned`,
+  `confidence=simulated_mapping`) — im Pitch offen so gesagt. PreZero erwähnt in seiner Challenge
+  keine Koordinaten; die Datenanalyse steht im Mittelpunkt. Sobald PreZero die echte
+  Zuordnungstabelle einspielt, übernimmt das System sie ohne Codeänderung.
+
 
 ---
 
@@ -99,8 +109,30 @@ Erwartete Ausgabe:
 > Route proposal for 2026-04-15 — 25 stops · planned 119.75 km · saved 37.97 km (24.1 %) ·
 > vehicles 2 · shift 8.52 h · collected 41.8 t
 
+## Live-Nachfrage an PreZero: die Betriebsvariablen
+
+PreZero ist das ganze Wochenende bei HHN (*„Feel free to reach out anytime if you have questions or
+need additional data."*). Unsere 11 Betriebsvariablen sind im Code als **„Annahme, von PreZero zu
+ersetzen"** markiert — das ist exakt seine Anforderung „incorporate configurable operational variables".
+
+```bash
+# Vorher (Annahmen)
+prezero-route route --date 2026-04-15
+# → 2 Fahrzeuge, 5 Runden, 8,5 h, 41,8 t, 120 km
+
+# Nachher (Zahlen von PreZero)
+prezero-route route --date 2026-04-15 --config prezero_config.json
+# → 1 Fahrzeug, 4 Runden, 7,7 h, 31,4 t, 99 km
+```
+
+Live ausgetauscht (z. B. Dichte 400 → 300 kg/m³, Umwegfaktor 1,35 → 1,2) ändert sich das Ergebnis
+sichtbar: **1 statt 2 Fahrzeuge, 99 statt 120 km**. Das belegt live, dass das Tool nicht auf die
+Daten hineingebaut wurde, sondern konfigurierbar ist.
+
 ## Offene Punkte (bewusst offen)
 
-- Echte PreZero-Koordinaten fehlen → Ortszuordnung bleibt Heuristik.
+- Echte PreZero-Koordinaten fehlen → die Zuordnung der anonymisierten IDs bleibt simuliert
+  (`osm_assigned` / `simulated_mapping`); Austauschpfad ist vorbereitet.
 - Die Route ist eine Luftlinien-Näherung (Umwegfaktor 1,35), kein Straßenrouting.
 - Kein Multi-Fahrzeug-Optimum: gezeigt wird, dass 2 Fahrzeuge nötig sind, und wie man sie verteilt.
+- Die Betriebsvariablen sind Annahmen, bis PreZero Zahlen liefert — das ist der Live-Hook, kein Mangel.
