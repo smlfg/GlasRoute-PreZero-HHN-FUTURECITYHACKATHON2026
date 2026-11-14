@@ -18,6 +18,7 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 |---|---|---|
 | [`PITCH.md`](PITCH.md) | Pitch-Struktur (3 Min), belegte Zahlen, Demo-Ablauf, Betriebsvariablen als Live-Hook | **aktuell** |
 | [`EXPORT_RECHERCHE.md`](EXPORT_RECHERCHE.md) | Recherche zu GPX/KML/CSV-Export und Google Maps / OsmAnd / Garmin Support | **aktuell** |
+| [`KOSTENMODELL.md`](KOSTENMODELL.md) | Kosten- und Ledger-Vergleich: Status Quo vs. GlasRoute über 349 Tage | **aktuell** |
 | [`ARCHITEKTUR.md`](ARCHITEKTUR.md) | Module, Datenfluss, Verantwortlichkeiten, Geo-Swap | **aktuell** |
 | [`DATENMODELL.md`](DATENMODELL.md) | Dataclasses in `src/prezero/model.py` (Standort, Container, Messung, Fahrzeug) | **aktuell** |
 | [`BACKTEST.md`](BACKTEST.md) | Ist der Füllstand vorhersagbar? Leerungsrhythmus je Glasfarbe | **generiert** von `scripts/backtest.py` |
