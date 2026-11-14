@@ -1,0 +1,22 @@
+# Test suite
+
+$ PYTHONPATH=src python3 -m pytest tests/ -q
+  See https://docs.pytest.org/en/stable/deprecations.html#callspec2-renamed
+    from _pytest.python import CallSpec2
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+41 passed, 1 warning in 7.19s
+
+# End-to-end
+
+$ prezero-route run --date 2026-04-15
+Pipeline complete for 2026-04-15: 169 critical locations (213 pairs).
+119.75 km planned (25 stops) vs. 157.72 km full round (431 stops)
+Outputs: route_2026-04-15.json, map_2026-04-15.html, trends.png
+
+# Git state
+26448c9 feat(approval): add dispatcher approval with evidence for routes
+14204de feat(geo): add bbox fallback, raw payload and truthful geo docs
+0bf78cb feat(routing): capacity, shift and unload constraints
+?? Projek-Management/
+(clean = no output above)

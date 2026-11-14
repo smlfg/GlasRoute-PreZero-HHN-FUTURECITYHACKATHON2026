@@ -1,0 +1,30 @@
+# Every figure in docs/PITCH.md checked against route_2026-04-15.json
+
+$ python3 - <<'PY' ... verify ... PY
+
+OK       planned_km: got=119.75 expected=119.75
+OK       saved_km: got=37.97 expected=37.97
+OK       saved_pct: got=24.1 expected=24.1
+OK       num_stops: got=25 expected=25
+OK       vehicles_needed: got=2 expected=2
+OK       shift_hours: got=8.52 expected=8.52
+OK       t_collected: got=41.8 expected=41.8
+OK       total_critical_locations: got=169 expected=169
+OK       full_round_km: got=157.72 expected=157.72
+
+raw rows=11701 ids=449 overfull=1192
+month  n     mean   overfull  overfull%
+2025-10    741   55.6         3       0.4%
+2025-11    656   59.5        14       2.1%
+2025-12   1357   62.9        14       1.0%
+2026-01    783   76.1        91      11.6%
+2026-02    657   76.5        85      12.9%
+2026-03    776   85.2       292      37.6%
+2026-04    896   82.3       209      23.3%
+2026-05    951   74.4       216      22.7%
+2026-06   1501   53.7        78       5.2%
+2026-07   1310   61.4        65       5.0%
+2026-08   1215   57.5        34       2.8%
+2026-09    858   64.1        91      10.6%
+
+RESULT: ALL MATCH
