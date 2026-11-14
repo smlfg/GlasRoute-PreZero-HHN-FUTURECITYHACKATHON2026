@@ -15,8 +15,9 @@ A CLI tool that:
 1. Ingests fill-level CSV data.
 2. Analyzes patterns (material, season, overfull frequency).
 3. Scores container criticality for a target day.
-4. Builds a route for one collection vehicle.
-5. Presents the route for dispatcher approval (Human-Agent Interface).
+4. Builds a capacity-constrained route plan (Haversine; the demo date needs 2 vehicles in 5 rounds).
+5. Extends it with a weekly fill forecast.
+6. Presents the route for dispatcher approval (Human-Agent Interface).
 
 ## Quick start
 
@@ -72,18 +73,29 @@ protokolliert. **Ohne Freigabe wird nichts dispatcht.**
 |---|---|
 | `ingest` | Roh-CSV einlesen und bereinigen (`overfull` → 110 %) |
 | `score --date` | Features + Kritikalitäts-Score bis zum Stichtag |
-| `route --date` | Route für ein Fahrzeug (Haversine, Kapazität, Schicht, Umschlag) |
+| `route --date` | Routenplan (Haversine, Kapazität, Schicht, Umschlag); `--config` tauscht die Betriebsvariablen |
 | `visualize --date` | `trends.png` + `map_<date>.html` |
+| `forecast --date` | Wöchentliche Füllstandsprognose (KW 16–19) → `forecast_16.html` |
+| `ui --date` | Lokale 4-View-Weboberfläche aus Pipeline-Daten → `ui_<date>.html` |
 | `run --date` | Alles in einem Durchlauf |
 | `propose` | Route in einen freigabepflichtigen Vorschlag überführen |
 | `approve` | Vorschlag freigeben oder ablehnen, Beleg schreiben |
 
 ## Ortsdaten
 
+**Aktueller Stand:** alle 449 Standorte liegen auf echten OSM-Glascontainer-Punkten in Heilbronn
+(`source=osm_assigned`, `confidence=simulated_mapping`). Weil die PreZero-IDs anonymisiert sind,
+ist die **Zuordnung simuliert** (Punkte werden wiederverwendet) — das System sagt das offen dazu.
+Sobald PreZero die echte Zuordnungstabelle liefert, wird sie ohne Codeänderung übernommen.
+
 ```bash
 python scripts/fetch_locations.py    # OSM-Glascontainer holen (Area-Query, BBox-Fallback)
-python scripts/refresh_locations.py  # Alternativ: Standorte neu auflösen
+python scripts/refresh_locations.py  # Standorte neu auflösen
 ```
+
+Zwischenprodukte: `locations_real_attempt.csv` (rohe Overpass-Kandidaten) und
+`locations_matched.csv` (Auflösung vor dem Override) bleiben erhalten, das kanonische
+Pipeline-Input ist `data/external/locations.csv` (exakt 449 Zeilen).
 
 ## Data
 
@@ -96,9 +108,11 @@ python scripts/refresh_locations.py  # Alternativ: Standorte neu auflösen
 
 ## Geo coordinates / PreZero swap
 
-The location resolver is source-agnostic and labels every coordinate. OSM points are real places, but assigning them to anonymized IDs is heuristic unless PreZero supplies the mapping.
+The location resolver is source-agnostic and labels every coordinate. The OSM points are real
+places; because the anonymized IDs carry no mapping key, the assignment is **simulated** and
+labeled as such (`osm_assigned` / `simulated_mapping`).
 
-To replace synthetic or heuristic coordinates with real ones:
+To replace simulated coordinates with PreZero's real mapping:
 
 1. Place real coordinates in `data/external/locations_real.csv` (minimum columns: `Location_id, lat, lon`).
 2. Run `python scripts/refresh_locations.py --real data/external/locations_real.csv`.
@@ -121,8 +135,12 @@ df = load_locations()  # reads data/external/locations.csv by default
 - `docs/ANFORDERUNGEN.md` – challenge requirements
 - `docs/ARCHITEKTUR.md` – technical architecture and geo swap path
 - `docs/GEO_DATENQUELLEN.md` – checked open-data sources, limits, licenses/attribution
+- `docs/INDEX.md` – index of the 10 data analyses (`docs/analysen/`)
 - `docs/PITCH.md` – Sunday pitch structure with verified figures
+- `docs/PITCH_EXECUTIVE_SUMMARY.md` – one-page summary of the data findings
 - `docs/STATUS.md` – current state, pitch numbers, next steps
+- `docs/UI_PLAN.md` – plan for the local web UI
+- `Pitch/NOTES.md` – stage notes, live-demo script and the questions for PreZero
 - `PLAN.md` – hackathon plan with checkpoints
 - `AGENTS.md` – scope, data-truth rules and agent contract for this repo
 
@@ -132,6 +150,7 @@ df = load_locations()  # reads data/external/locations.csv by default
 PYTHONPATH=src python3 -m pytest tests/ -q
 ```
 
-41 Tests: Ingestion, Geo-Auflösung (inkl. 449-ID-Vertrag, Timeout-Fallback, Prioritätslogik),
-Features, Scoring, Routing, Visualisierung und Disponent-Freigabe.
+75 Tests: Ingestion, Geo-Auflösung (inkl. 449-ID-Vertrag, Timeout-Fallback, Prioritätslogik),
+Features, Scoring, Routing, Visualisierung inkl. Prognose- und Heatmap-Karten, lokale
+Weboberfläche und Disponent-Freigabe.
 

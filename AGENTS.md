@@ -50,6 +50,7 @@ Ortsdaten sind nicht Teil der Challenge. `data/external/locations.csv` führt je
 | source | confidence | Bedeutung |
 |---|---|---|
 | `prezero_supplied` | `high` | Direktes Mapping von PreZero |
+| `osm_assigned` | `simulated_mapping` | **Aktueller Stand:** echter OSM-Punkt, ID-Zuordnung simuliert (Punkte wiederverwendet) |
 | `osm_heuristic` | `low` | OSM-Standort, Zuordnung unbestätigt |
 | `synthetic_placeholder` | `synthetic` | Platzhalter, Seed 2026 |
 
@@ -114,7 +115,7 @@ Ein stiller Bypass ist verboten.
 - `03_HAI/LOGBUCH.md` — Entscheidungen, Fails, Lernregeln (append-only)
 - `UPSTREAM_SEARCH.md` — Upstream-Recherche vor eigenem Bau
 - `PLAN_VALIDATION_REPORT.md` — unabhängige Planfreigabe
-- `Projek-Managment/fails/NNNN-kurzname.json` — strukturierte Fail-Records
+- `Projek-Management/fails/NNNN-kurzname.json` — strukturierte Fail-Records
 
 Neue Erkenntnisse gehören in diese Dateien, nicht in den Chat.
 
