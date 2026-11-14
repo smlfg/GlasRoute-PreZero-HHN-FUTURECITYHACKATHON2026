@@ -18,6 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
+prezero = "prezero.cli:cli"
 prezero-route = "prezero.cli:cli"
 
 [tool.hatch.build.targets.wheel]
