@@ -81,28 +81,37 @@ def score_cmd(date: str, input: str, output: str | None) -> None:
     help="Path to canonical locations CSV.",
 )
 @click.option("--max-stops", default=25, show_default=True, type=int, help="Maximum stops.")
+@click.option(
+    "--config",
+    "-c",
+    "config_path",
+    default=None,
+    help="Path to YAML/JSON operational config.",
+)
 @click.option("--output-dir", default=".", show_default=True, help="Directory for route_<date>.json.")
 def route_cmd(
     date: str,
     scored: str | None,
     locations_path: str,
     max_stops: int,
+    config_path: str | None,
     output_dir: str,
 ) -> None:
     """Build nearest-neighbor collection route and write route_<date>.json."""
     scored_path = Path(scored) if scored is not None else Path("data/processed") / f"scored_{date}.csv"
     scored_df = pd.read_csv(scored_path, dtype={"Location_id": str, "material_type": str})
     locs_df = locations.load_locations(locations_path)
+    cfg = routing.load_config(config_path)
     route_data = routing.build_route(
         scored_df,
         locs_df,
-        depot=routing.DEFAULT_DEPOT,
+        depot=cfg.yard_depot,
         max_stops=max_stops,
         date=date,
         output_dir=output_dir,
+        config=cfg,
     )
-    click.echo(f"Route written to {Path(output_dir) / f'route_{date}.json'}")
-    click.echo(route_data["comparison"])
+    click.echo(routing.format_route_summary(route_data))
 
 
 @cli.command("visualize")
@@ -175,6 +184,13 @@ def visualize_cmd(
     help="Path to canonical locations CSV.",
 )
 @click.option("--max-stops", default=25, show_default=True, type=int, help="Maximum stops.")
+@click.option(
+    "--config",
+    "-c",
+    "config_path",
+    default=None,
+    help="Path to YAML/JSON operational config.",
+)
 @click.option("--output-dir", default=".", show_default=True, help="Output directory for artifacts.")
 def run_cmd(
     date: str,
@@ -182,6 +198,7 @@ def run_cmd(
     cleaned: str,
     locations_path: str,
     max_stops: int,
+    config_path: str | None,
     output_dir: str,
 ) -> None:
     """Run the full pipeline: ingest -> features -> score -> route -> visualize."""
@@ -195,13 +212,15 @@ def run_cmd(
     scored_df.to_csv(scored_out, index=False)
 
     locs_df = locations.load_locations(locations_path)
+    cfg = routing.load_config(config_path)
     route_data = routing.build_route(
         scored_df,
         locs_df,
-        depot=routing.DEFAULT_DEPOT,
+        depot=cfg.yard_depot,
         max_stops=max_stops,
         date=date,
         output_dir=out_dir,
+        config=cfg,
     )
     trends_path = viz.plot_trends(cleaned_df, out_dir / "trends.png")
     map_path = viz.plot_route(

@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from prezero.routing import DEFAULT_DEPOT, build_route, haversine_km
+from prezero.routing import DEFAULT_DEPOT, OperationalConfig, build_route, haversine_km, load_config
 
 
 def _sample_scored_and_locations() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -60,3 +60,106 @@ def test_build_route_writes_json_with_comparison(tmp_path: Path) -> None:
     assert payload["full_round_km"] > payload["planned_km"]
     assert "planned" in payload["comparison"] and "full round" in payload["comparison"]
     assert haversine_km(49.1427, 9.2109, 49.1427, 9.2109) == pytest.approx(0.0)
+
+
+def test_per_site_critical_only_mass_no_co_collection() -> None:
+    scored = pd.DataFrame(
+        {
+            "Location_id": ["L1", "L1"],
+            "material_type": ["white", "brown"],
+            "last_fill_level": [100.0, 40.0],
+            "score": [0.90, 0.30],
+            "critical": [True, False],
+        }
+    )
+    locations = pd.DataFrame(
+        {
+            "Location_id": ["L1"],
+            "lat": [49.1450],
+            "lon": [9.2120],
+            "source": ["osm_heuristic"],
+            "confidence": ["low"],
+        }
+    )
+    route = build_route(scored, locations)
+    # 2.5 m3 * (100/100) * 400 kg/m3 = 1000 kg = 1.0 t; brown bin (40%) is not critical so excluded.
+    assert route["t_collected"] == pytest.approx(1.0)
+    assert route["stops"][0]["critical_bins"] == 1
+
+
+def test_weight_limit_forces_unload_stop() -> None:
+    scored, locations = _sample_scored_and_locations()
+    cfg = OperationalConfig(vehicle_max_weight_kg=1500.0)
+    route = build_route(scored, locations, max_stops=2, config=cfg)
+
+    # Top 2 critical stops are L_near (110% -> 1100 kg) and L_mid (95% -> 950 kg).
+    # 1100 + 950 > 1500 forces an unload stop at disposal_depot between them.
+    assert route["vehicles_needed"] == 1
+    assert route["rounds_per_vehicle"] == [2]
+    assert route["num_stops"] == 2
+    assert len(route["unload_stops"]) == 1
+    assert [s["stop_type"] for s in route["stops"]] == ["collection", "unload", "collection"]
+    assert route["stops"][1]["Location_id"] == "disposal_depot"
+    assert route["t_collected"] == pytest.approx(2.05)
+
+
+def test_shift_limit_forces_second_vehicle() -> None:
+    scored, locations = _sample_scored_and_locations()
+    cfg = OperationalConfig(
+        max_shift_hours=0.25,
+        stop_setup_min=5.0,
+        lift_time_per_bin_min=5.0,
+    )
+    route = build_route(scored, locations, max_stops=3, config=cfg)
+
+    assert route["vehicles_needed"] >= 2
+    assert len(route["shift_hours_per_vehicle"]) == route["vehicles_needed"]
+    assert len(route["rounds_per_vehicle"]) == route["vehicles_needed"]
+    assert route["num_stops"] == 3
+
+
+def test_config_override_json_and_yaml(tmp_path: Path) -> None:
+    json_cfg = tmp_path / "cfg.json"
+    json_cfg.write_text(
+        json.dumps(
+            {
+                "density_kg_per_m3": 500.0,
+                "vehicle_max_weight_kg": 12000.0,
+                "road_detour_factor": 1.5,
+                "yard_depot": [49.15, 9.22],
+            }
+        ),
+        encoding="utf-8",
+    )
+    loaded_json = load_config(json_cfg)
+    assert loaded_json.density_kg_per_m3 == pytest.approx(500.0)
+    assert loaded_json.vehicle_max_weight_kg == pytest.approx(12000.0)
+    assert loaded_json.road_detour_factor == pytest.approx(1.5)
+    assert loaded_json.yard_depot == (49.15, 9.22)
+
+    yaml_cfg = tmp_path / "cfg.yaml"
+    yaml_cfg.write_text(
+        "\n".join(
+            [
+                "density_kg_per_m3: 300",
+                "avg_speed_kmh: 30",
+                "max_shift_hours: 6.5",
+                "disposal_depot:",
+                "  lat: 49.18",
+                "  lon: 9.21",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    loaded_yaml = load_config(yaml_cfg)
+    assert loaded_yaml.density_kg_per_m3 == pytest.approx(300.0)
+    assert loaded_yaml.avg_speed_kmh == pytest.approx(30.0)
+    assert loaded_yaml.max_shift_hours == pytest.approx(6.5)
+    assert loaded_yaml.disposal_depot == (49.18, 9.21)
+
+    scored, locations = _sample_scored_and_locations()
+    route = build_route(scored, locations, max_stops=1, config=loaded_json)
+    # 2.5 m3 * 1.10 * 500 kg/m3 = 1375 kg = 1.38 t
+    assert route["t_collected"] == pytest.approx(1.38)
+    assert route["assumptions"]["density_kg_per_m3"] == pytest.approx(500.0)
+    assert route["assumptions"]["yard_depot"] == [49.15, 9.22]
