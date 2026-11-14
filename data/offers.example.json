@@ -1,0 +1,28 @@
+[
+  {
+    "title": "BEISPIEL – nicht verwenden: Coding-Workshop für Kinder",
+    "institution": "aim",
+    "topic": "Coding",
+    "age_min": 8,
+    "age_max": 12,
+    "format": "Workshop",
+    "date": "2099-01-01",
+    "location": "Beispielort Heilbronn (nicht echt)",
+    "link": "https://example.com/lernlotse-beispiel-nicht-echt",
+    "description": "Erfundener Beispiel-Eintrag nur für das Datenformat. Nicht nach offers.json kopieren und nicht in der Demo verwenden.",
+    "tags": ["EXAMPLE", "nicht-echt", "anfaenger", "wochenende"]
+  },
+  {
+    "title": "BEISPIEL – nicht verwenden: KI-Schnupperkurs für Eltern",
+    "institution": "IPAI Foundation",
+    "topic": "AI",
+    "age_min": 18,
+    "age_max": 99,
+    "format": "Kurs",
+    "date": null,
+    "location": "Beispielort Heilbronn (nicht echt)",
+    "link": "https://example.com/lernlotse-beispiel-ki-nicht-echt",
+    "description": "Zweiter erfundener Eintrag, um optionales Datum null und ein anderes Format zu zeigen.",
+    "tags": ["EXAMPLE", "nicht-echt", "eltern"]
+  }
+]

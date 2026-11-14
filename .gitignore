@@ -1,0 +1,26 @@
+# Abhängigkeiten und Build
+node_modules/
+dist/
+build/
+.turbo/
+.cache/
+coverage/
+
+# Lokale Secrets und Cloudflare-Dev
+.env
+.env.*
+!.env.example
+.dev.vars
+.wrangler/
+.mf/
+
+# Logs und OS/Editor
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+__pycache__/
+*.pyc
