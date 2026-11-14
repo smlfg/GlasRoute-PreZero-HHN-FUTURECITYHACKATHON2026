@@ -7,19 +7,19 @@ three reproducible ID-to-coordinate mapping seeds (`7, 42, 1337`).
 
 Coordinates are rounded to 6 decimals and grouped before routing. At one point, all IDs and
 material bins are one stop and their masses are summed. On 2026-04-15 / seed 42 this leaves
-**121 real stops** overall and **95 critical stops**,
-from **169 critical IDs**. Every route uses `OperationalConfig`:
+**121 real stops** overall and **73 critical stops**,
+from **108 critical IDs**. Every route uses `OperationalConfig`:
 11 t vehicle capacity, 8 h shift, yard start/end, and unloading at `disposal_depot`.
 
 ## 2026-04-15 table (seed 42)
 
-| variant                   |   stops |      km |   vehicles |   rounds |      h |     t | nn_kept   |   runtime_s |
-|:--------------------------|--------:|--------:|-----------:|---------:|-------:|------:|:----------|------------:|
-| B0 status quo             |     121 | 1838.75 |        102 |      102 | 175.03 | 892.7 | False     |       0.004 |
-| B1 status quo optimized   |     121 | 1736.53 |        103 |      103 | 171.28 | 892.7 | False     |       0.164 |
-| B2 demand-driven NN       |      95 |  508.36 |         24 |       24 |  42.15 | 232.4 | False     |       0.096 |
-| B3 demand-driven + 2-opt  |      95 |  508.36 |         24 |       24 |  42.15 | 232.4 | True      |       0.207 |
-| B4 demand-driven + solver |      95 |  475.43 |         22 |       22 |  40.17 | 232.4 | False     |       5.124 |
+| variant                   |   stops |      km |   vehicles |   rounds |      h |      t | nn_kept   |   runtime_s |
+|:--------------------------|--------:|--------:|-----------:|---------:|-------:|-------:|:----------|------------:|
+| B0 status quo             |     121 | 1768.84 |         94 |       94 | 169.57 | 808.22 | False     |       0.005 |
+| B1 status quo optimized   |     121 | 1584.92 |         93 |       93 | 161.88 | 808.22 | False     |       0.142 |
+| B2 demand-driven NN       |      73 |  297.3  |         13 |       13 |  24.56 | 125.12 | False     |       0.058 |
+| B3 demand-driven + 2-opt  |      73 |  297.3  |         13 |       13 |  24.56 | 125.12 | True      |       0.166 |
+| B4 demand-driven + solver |      73 |  292.84 |         12 |       12 |  24.05 | 125.12 | False     |       5.073 |
 
 Runtime is measured per route calculation; solver time is capped at 30 seconds. B0 is the
 paper-list order (ID sort), B1 is all-site nearest neighbor, B2 is critical-only nearest
@@ -28,9 +28,9 @@ under 11 t and includes a disposal-depot unload and return.
 
 ## Effects
 
-* **Routing effect:** B2 → the best of B3/B4 saves **6.5%** of B2 distance with the same critical stops.
-* **Demand effect:** B1 → B2 saves **70.7%** by removing non-critical physical sites while keeping nearest neighbor.
-* **Overall effect:** B0 → the best variant saves **74.1%**.
+* **Routing effect:** B2 → the best of B3/B4 saves **1.5%** of B2 distance with the same critical stops.
+* **Demand effect:** B1 → B2 saves **81.2%** by removing non-critical physical sites while keeping nearest neighbor.
+* **Overall effect:** B0 → the best variant saves **83.4%**.
 
 ## Robustness (all dates × seeds)
 
@@ -38,11 +38,11 @@ Mean and min–max spread are shown for distance, hours, and runtime:
 
 | variant                   |   km_mean |   km_min |   km_max |   h_mean |   runtime_mean |   nn_kept_cases |   cases |   km_spread |
 |:--------------------------|----------:|---------:|---------:|---------:|---------------:|----------------:|--------:|------------:|
-| B0 status quo             |  1721.23  |  1655.08 |  1838.75 | 167.06   |      0.00475   |               0 |      12 |      183.67 |
-| B1 status quo optimized   |  1565.58  |  1440.54 |  1736.53 | 161.447  |      0.14725   |               0 |      12 |      295.99 |
-| B2 demand-driven NN       |   208.602 |    32.99 |   532.3  |  16.2142 |      0.02675   |               0 |      12 |      499.31 |
-| B3 demand-driven + 2-opt  |   204.255 |    32.63 |   523.25 |  15.9858 |      0.0605833 |               2 |      12 |      490.62 |
-| B4 demand-driven + solver |   190.571 |    32.63 |   475.43 |  15.245  |      5.03642   |               1 |      12 |      442.8  |
+| B0 status quo             |  1402.13  |  1125.95 |  1776.81 | 143.463  |     0.00683333 |               0 |      12 |      650.86 |
+| B1 status quo optimized   |  1037.52  |   628.85 |  1584.92 | 128.907  |     0.145167   |               0 |      12 |      956.07 |
+| B2 demand-driven NN       |   155.423 |    18.8  |   330.92 |  12.0592 |     0.0255     |               0 |      12 |      312.12 |
+| B3 demand-driven + 2-opt  |   147.981 |    18.8  |   313.41 |  11.735  |     0.0695     |               2 |      12 |      294.61 |
+| B4 demand-driven + solver |   146.313 |    18.8  |   298.55 |  11.5842 |     5.03425    |               1 |      12 |      279.75 |
 
 ## Assumptions
 

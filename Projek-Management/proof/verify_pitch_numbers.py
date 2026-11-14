@@ -18,38 +18,38 @@ from prezero.ui import compute_benchmark_summary
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# Numbers as written in the pitch documents.
+# Numbers as written in the pitch documents (measure-and-empty model, 14.11.2026 18:40).
 EXPECTED_ROUTE = {
     "num_stops": 25,
-    "total_critical_locations": 97,
+    "total_critical_locations": 72,
     "total_active_locations": 121,
-    "planned_km": 194.54,
+    "planned_km": 125.21,
     "vehicles_needed": 2,
-    "rounds": 11,
-    "shift_hours": 15.47,
-    "max_vehicle_shift_hours": 7.83,
-    "t_collected": 84.4,
-    "full_round_km": 1179.03,
-    "full_round_vehicles": 20,
+    "rounds": 7,
+    "shift_hours": 10.51,
+    "max_vehicle_shift_hours": 7.26,
+    "t_collected": 63.58,
+    "full_round_km": 1185.27,
+    "full_round_vehicles": 19,
 }
-EXPECTED_BENCH_KM = {"B0": 1838.75, "B1": 1736.53, "B2": 508.36, "B4": 475.43}
-EXPECTED_BENCH_STOPS = {"B1": 121, "B2": 95}
+EXPECTED_BENCH_KM = {"B0": 1768.84, "B1": 1584.92, "B2": 297.30, "B4": 292.84}
+EXPECTED_BENCH_STOPS = {"B1": 121, "B2": 73}
 EXPECTED_EFFECTS = {
-    "demand_pct": 70.7,
-    "routing_pct": 6.5,
-    "overall_vs_b1_pct": 72.6,
-    "overall_vs_b0_pct": 74.1,
+    "demand_pct": 81.2,
+    "routing_pct": 1.5,
+    "overall_vs_b1_pct": 81.5,
+    "overall_vs_b0_pct": 83.4,
 }
 EXPECTED_SPANS = {
-    "demand_pct": (68.6, 97.8),
-    "routing_pct": (1.1, 16.8),
-    "overall_vs_b1_pct": (72.6, 97.9),
+    "demand_pct": (79.0, 97.1),
+    "routing_pct": (0.0, 17.1),
+    "overall_vs_b1_pct": (81.0, 97.1),
 }
 EXPECTED_WHAT_IF = {
-    "shift_6h": {"vehicles_needed": 3, "max_vehicle_shift_hours": 5.55, "planned_km": 174.61},
-    "truck_8t": {"vehicles_needed": 3, "planned_km": 218.87},
-    "plus_vehicle": {"num_stops": 48, "planned_km": 244.32, "unserved_critical_locations": 49},
-    "all_critical": {"num_stops": 97, "planned_km": 382.87, "vehicles_needed": 5},
+    "shift_6h": {"vehicles_needed": 2, "max_vehicle_shift_hours": 5.57, "planned_km": 128.72},
+    "truck_8t": {"vehicles_needed": 2, "rounds": 10, "planned_km": 177.53},
+    "plus_vehicle": {"num_stops": 72, "planned_km": 253.65, "unserved_critical_locations": 0},
+    "all_critical": {"num_stops": 72, "planned_km": 253.65, "vehicles_needed": 3},
 }
 EXPECTED_RAW = {"rows": 11701, "ids": 449, "overfull": 1192}
 

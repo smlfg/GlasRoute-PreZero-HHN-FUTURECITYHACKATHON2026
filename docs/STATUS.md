@@ -82,14 +82,14 @@ Demo-Datum **15.04.2026**:
 
 | Kennzahl | Wert |
 |---|---|
-| Kritische Standorte | 97 physische Orte (169 IDs, 213 Container) |
+| Kritische Standorte | 72 physische Orte (108 IDs, 118 Container) |
 | Aktive Standorte gesamt | 121 physische Orte |
-| Tages-Tour (25 Stopps) | **194,54 km** |
-| Volle Runde, gleiche Regeln (121 Stopps) | 1.179,03 km |
-| **Fairer Vergleich (Benchmark)** | **Bedarfs-Effekt 70,7 % · Routing-Effekt 6,5 % · gesamt 72,6 %** |
-| Benötigte Fahrzeuge | 2 (11 Runden) |
-| Fahrzeugstunden gesamt / längste Schicht | 15,47 h / 7,83 h (Limit 8,0 h) |
-| Sammelmenge | 84,4 t (2,5 m³/Container, 400 kg/m³) |
+| Tages-Tour (25 Stopps) | **125,21 km** |
+| Volle Runde, gleiche Regeln (121 Stopps) | 1.185,27 km |
+| **Fairer Vergleich (Benchmark)** | **Bedarfs-Effekt 81,2 % · Routing-Effekt 1,5 % · gesamt 81,5 %** |
+| Benötigte Fahrzeuge | 2 (7 Runden) |
+| Fahrzeugstunden gesamt / längste Schicht | 10,51 h / 7,26 h (Limit 8,0 h) |
+| Sammelmenge | 63,6 t (geschätzter Stand heute, 2,5 m³/Container, 400 kg/m³) |
 
 Weitere Muster aus den Rohdaten: Weißglas erzeugt die meisten `overfull`-Ereignisse (731 von 1.192),
 saisonaler Peak Januar–April, Einbruch im Juni/Juli.
@@ -121,7 +121,7 @@ flowchart LR
 1. **Pitch-Deck** (Slides) für 13:00 — `Pitch/NOTES.md` + `docs/PITCH.md` liefern Struktur, Zahlen,
    Live-Ablauf und die Fragen an PreZero.
 2. **Live-Hook üben:** die Betriebsvariablen aus `prezero_config.json` mit echten Zahlen füttern und
-   `prezero-route route --config prezero_config.json` laufen lassen (11 Runden/195 km → 7 Runden/126 km bei Dichte 300, Umweg 1,2).
+   `prezero-route route --config prezero_config.json` laufen lassen (7 Runden/125 km → 5 Runden/100 km bei Dichte 300, Umweg 1,2).
 3. **README-Demo-Ablauf durchspielen** — drei Befehle, ein Datum, mit Erwartungsausgaben.
 4. **Präsentationsfolien bauen** und einmal mit Timer durchgehen.
 5. **Optional, wenn Zeit bleibt:** CLI-Tests für `propose`/`approve` mit `CliRunner`.

@@ -18,8 +18,8 @@ während andere überlaufen.
 > regardless of the actual fill level ('you'll drive past there anyway')."
 
 → Das ist unser Status quo (Benchmark B1): alle 121 physischen Standorte leeren. Der Großteil der
-Ersparnis (Bedarfs-Effekt 70,7 %) kommt daher, **nur die kritischen anzufahren**; das Routing selbst
-bringt bei gleichen Stopps weitere 6,5 %.
+Ersparnis (Bedarfs-Effekt 81,2 %) kommt daher, **nur die kritischen anzufahren**; das Routing selbst
+bringt bei gleichen Stopps nur weitere 1,5 %.
 
 **Belegt:** 11.701 Messungen, 449 Container, 1.192 `overfull`-Ereignisse — jeder vierte
 Überlauf-Fall betrifft Weißglas (731 von 1.192).
@@ -38,31 +38,31 @@ Stichtag 15.04.2026, Zuordnungs-Seed 42.
 
 | Variante | Standorte | km | Runden |
 |---|---|---|---|
-| B1 Status quo: alle Standorte, optimierte Reihenfolge | 121 | 1.736,53 | 103 |
-| B2 nur kritische, Nearest Neighbor | 95 | 508,36 | 24 |
-| B4 nur kritische, OR-Tools | 95 | **475,43** | 22 |
+| B1 Status quo: alle Standorte, optimierte Reihenfolge | 121 | 1.584,92 | 93 |
+| B2 nur kritische, Nearest Neighbor | 73 | 297,30 | 13 |
+| B4 nur kritische, OR-Tools | 73 | **292,84** | 12 |
 
 | Effekt | Wert | Spanne (4 Stichtage × 3 Seeds) |
 |---|---|---|
-| **Bedarfs-Effekt** (B1 → B2) | **70,7 %** | 68,6–97,8 % |
-| **Routing-Effekt** (B2 → B4) | **6,5 %** | 1,1–16,8 % |
-| **Gesamt** (B1 → B4) | **72,6 %** | 72,6–97,9 % |
+| **Bedarfs-Effekt** (B1 → B2) | **81,2 %** | 79,0–97,1 % |
+| **Routing-Effekt** (B2 → B4) | **1,5 %** | 0,0–17,1 % |
+| **Gesamt** (B1 → B4) | **81,5 %** | 81,0–97,1 % |
 
-Gilt pro kompletter Gebietsleerung (Status quo leert alle 892,7 t auf einmal). Die alte Zahl
+Gilt pro kompletter Gebietsleerung (Status quo leert alle 808,2 t auf einmal). Alle Füllstände sind der geschätzte Stand heute: Der Fahrer misst beim Besuch und leert, danach füllt sich der Container wieder ab ca. 0 %. Die alte Zahl
 24,1 % (119,75 vs. 157,72 km) ist ungültig: Sie verglich eine Tour mit Kapazitätsgrenzen gegen eine
 volle Runde ohne.
 
 | Tages-Tour (Stopp-Limit 25) | Wert | Herkunft |
 |---|---|---|
-| Kritische Standorte | 97 physische Orte (169 IDs) | `route_2026-04-15.json` |
-| In dieser Tour | 25 von 97 (72 offen) | `route_2026-04-15.json` |
-| Strecke | 194,54 km | `route_2026-04-15.json` |
-| Fahrzeuge / Runden | 2 / 11 | `route_2026-04-15.json` |
-| Fahrzeugstunden gesamt / längste Schicht | 15,47 h / 7,83 h (Limit 8 h) | `route_2026-04-15.json` |
-| Sammelmenge | 84,4 t | `route_2026-04-15.json` |
+| Kritische Standorte | 72 physische Orte (108 IDs) | `route_2026-04-15.json` |
+| In dieser Tour | 25 von 72 (47 offen) | `route_2026-04-15.json` |
+| Strecke | 125,21 km | `route_2026-04-15.json` |
+| Fahrzeuge / Runden | 2 / 7 | `route_2026-04-15.json` |
+| Fahrzeugstunden gesamt / längste Schicht | 10,51 h / 7,26 h (Limit 8 h) | `route_2026-04-15.json` |
+| Sammelmenge | 63,6 t | `route_2026-04-15.json` |
 
-Formulierung im Pitch: „Heute wird das ganze Gebiet geleert: 1.737 km. Nur die 95 kritischen
-Standorte: 508 km, 70,7 % weniger. Der Solver holt bei gleichen Stopps noch 6,5 % raus: 475 km.“
+Formulierung im Pitch: „Heute wird das ganze Gebiet geleert: 1.585 km. Nur die 73 kritischen
+Standorte: 297 km, 81,2 % weniger. Der Solver holt bei gleichen Stopps nur noch 1,5 % raus: 293 km.“
 
 **Saisonalität, belegt aus den Rohdaten** (Anteil `overfull` je Monat):
 
@@ -117,8 +117,8 @@ prezero-route approve --by "Disponentin"  # Freigabe + Beleg
 
 Erwartete Ausgabe:
 
-> Route proposal for 2026-04-15 — 25 stops · planned 194.54 km · vehicles 2 ·
-> vehicle hours 15.47 (longest shift 7.83 h) · collected 84.4 t
+> Route proposal for 2026-04-15 — 25 stops · planned 125.21 km · vehicles 2 ·
+> vehicle hours 10.51 (longest shift 7.26 h) · collected 63.58 t
 
 ## Live-Nachfrage an PreZero: die Betriebsvariablen
 
@@ -129,15 +129,15 @@ ersetzen"** markiert — das ist exakt seine Anforderung „incorporate configur
 ```bash
 # Vorher (Annahmen)
 prezero-route route --date 2026-04-15 --max-stops 25
-# → 2 Fahrzeuge, 11 Runden, 15,5 h, 84,4 t, 195 km
+# → 2 Fahrzeuge, 7 Runden, 10,5 h, 63,6 t, 125 km
 
 # Nachher (Zahlen von PreZero, z. B. Dichte 300, Umwegfaktor 1,2 in prezero_config.json)
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 2 Fahrzeuge, 7 Runden, 11,4 h, 63,3 t, 126 km
+# → 2 Fahrzeuge, 5 Runden, 8,8 h, 47,7 t, 100 km
 ```
 
 Live ausgetauscht (z. B. Dichte 400 → 300 kg/m³, Umwegfaktor 1,35 → 1,2) ändert sich das Ergebnis
-sichtbar: **7 statt 11 Runden, 126 statt 195 km**. Das belegt live, dass das Tool nicht auf die
+sichtbar: **5 statt 7 Runden, 100 statt 125 km**. Das belegt live, dass das Tool nicht auf die
 Daten hineingebaut wurde, sondern konfigurierbar ist.
 
 ## Offene Punkte (bewusst offen)

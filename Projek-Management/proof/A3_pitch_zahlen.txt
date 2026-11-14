@@ -1,49 +1,51 @@
-# Pitch-Zahlen (NEU, Stand 14.11.2026) geprüft gegen die Pipeline-Ausgaben
-# Ersetzt den alten Stand (119,75 / 157,72 km / 24,1 %): der Vergleich war nicht gleichartig.
+# Pitch-Zahlen (NEU, Stand 14.11.2026, 18:45, Messen-und-Leeren-Modell) geprüft gegen die Pipeline-Ausgaben
+# Der Fahrer schätzt den Füllstand beim Besuch und leert; Zahlen nutzen den geschätzten Stand heute.
+# Ersetzt die Stände 119,75 km / 24,1 % und 70,7 % / 6,5 % (Dauersensor-Annahme, falsch).
 # Erzeugt mit: python scripts/benchmark.py && prezero-route run --date 2026-04-15
 
 $ PYTHONPATH=src python Projek-Management/proof/verify_pitch_numbers.py
 
 # route_2026-04-15.json (prezero-route run --date 2026-04-15, max_stops 25)
 OK       num_stops: got=25 expected=25
-OK       total_critical_locations: got=97 expected=97
+OK       total_critical_locations: got=72 expected=72
 OK       total_active_locations: got=121 expected=121
-OK       planned_km: got=194.54 expected=194.54
+OK       planned_km: got=125.21 expected=125.21
 OK       vehicles_needed: got=2 expected=2
-OK       rounds: got=11 expected=11
-OK       shift_hours: got=15.47 expected=15.47
-OK       max_vehicle_shift_hours: got=7.83 expected=7.83
-OK       t_collected: got=84.4 expected=84.4
-OK       full_round_km: got=1179.03 expected=1179.03
-OK       full_round_vehicles: got=20 expected=20
+OK       rounds: got=7 expected=7
+OK       shift_hours: got=10.51 expected=10.51
+OK       max_vehicle_shift_hours: got=7.26 expected=7.26
+OK       t_collected: got=63.58 expected=63.58
+OK       full_round_km: got=1185.27 expected=1185.27
+OK       full_round_vehicles: got=19 expected=19
 
 # benchmark_results.csv (scripts/benchmark.py), 2026-04-15 / seed 42
-OK       B0 km: got=1838.75 expected=1838.75
-OK       B1 km: got=1736.53 expected=1736.53
-OK       B2 km: got=508.36 expected=508.36
-OK       B4 km: got=475.43 expected=475.43
+OK       B0 km: got=1768.84 expected=1768.84
+OK       B1 km: got=1584.92 expected=1584.92
+OK       B2 km: got=297.3 expected=297.3
+OK       B4 km: got=292.84 expected=292.84
 OK       B1 stops: got=121 expected=121
-OK       B2 stops: got=95 expected=95
-OK       demand_pct: got=70.7 expected=70.7
-OK       routing_pct: got=6.5 expected=6.5
-OK       overall_vs_b1_pct: got=72.6 expected=72.6
-OK       overall_vs_b0_pct: got=74.1 expected=74.1
-OK       demand_pct span over 12 cases: got=(68.6, 97.8) expected=(68.6, 97.8)
-OK       routing_pct span over 12 cases: got=(1.1, 16.8) expected=(1.1, 16.8)
-OK       overall_vs_b1_pct span over 12 cases: got=(72.6, 97.9) expected=(72.6, 97.9)
+OK       B2 stops: got=73 expected=73
+OK       demand_pct: got=81.2 expected=81.2
+OK       routing_pct: got=1.5 expected=1.5
+OK       overall_vs_b1_pct: got=81.5 expected=81.5
+OK       overall_vs_b0_pct: got=83.4 expected=83.4
+OK       demand_pct span over 12 cases: got=(79.0, 97.1) expected=(79.0, 97.1)
+OK       routing_pct span over 12 cases: got=(0.0, 17.1) expected=(0.0, 17.1)
+OK       overall_vs_b1_pct span over 12 cases: got=(81.0, 97.1) expected=(81.0, 97.1)
 
 # What-if presets embedded in ui_2026-04-15.html
-OK       shift_6h.vehicles_needed: got=3 expected=3
-OK       shift_6h.max_vehicle_shift_hours: got=5.55 expected=5.55
-OK       shift_6h.planned_km: got=174.61 expected=174.61
-OK       truck_8t.vehicles_needed: got=3 expected=3
-OK       truck_8t.planned_km: got=218.87 expected=218.87
-OK       plus_vehicle.num_stops: got=48 expected=48
-OK       plus_vehicle.planned_km: got=244.32 expected=244.32
-OK       plus_vehicle.unserved_critical_locations: got=49 expected=49
-OK       all_critical.num_stops: got=97 expected=97
-OK       all_critical.planned_km: got=382.87 expected=382.87
-OK       all_critical.vehicles_needed: got=5 expected=5
+OK       shift_6h.vehicles_needed: got=2 expected=2
+OK       shift_6h.max_vehicle_shift_hours: got=5.57 expected=5.57
+OK       shift_6h.planned_km: got=128.72 expected=128.72
+OK       truck_8t.vehicles_needed: got=2 expected=2
+OK       truck_8t.rounds: got=10 expected=10
+OK       truck_8t.planned_km: got=177.53 expected=177.53
+OK       plus_vehicle.num_stops: got=72 expected=72
+OK       plus_vehicle.planned_km: got=253.65 expected=253.65
+OK       plus_vehicle.unserved_critical_locations: got=0 expected=0
+OK       all_critical.num_stops: got=72 expected=72
+OK       all_critical.planned_km: got=253.65 expected=253.65
+OK       all_critical.vehicles_needed: got=3 expected=3
 
 # data/raw/glass_fill_levels_anonymized_f.csv
 OK       raw rows: got=11701 expected=11701
@@ -52,7 +54,7 @@ OK       raw overfull: got=1192 expected=1192
 
 RESULT: ALL MATCH
 
-# Monatsprofil aus data/raw (unverändert)
+# Monatsprofil aus data/raw (unverändert, vorgefundene Stände beim Besuch)
 month  n     mean   overfull  overfull%
 2025-10    741   55.6         3       0.4%
 2025-11    656   59.5        14       2.1%

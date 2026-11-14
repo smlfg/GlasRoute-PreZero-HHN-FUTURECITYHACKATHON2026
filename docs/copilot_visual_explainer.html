@@ -434,9 +434,9 @@ simulate_what_if(date="2026-04-15", overrides={"max_shift_hours": 6.0})`,
 {
   "container_key": "2f09e55b-87ab-4117-bf52-63210c670a4f:white",
   "metrics": { "last_fill_level": 110.0, "score": 1.0, "critical": true },
-  "baseline": { "num_stops": 25, "vehicles_needed": 2, "shift_hours": 15.47, "max_vehicle_shift_hours": 7.83, "planned_km": 194.54 },
-  "simulation": { "num_stops": 25, "vehicles_needed": 3, "shift_hours": 14.0, "max_vehicle_shift_hours": 5.55, "planned_km": 174.61 },
-  "delta": { "vehicles_needed_delta": 1, "max_vehicle_shift_hours_delta": -2.28, "planned_km_delta": -19.93 },
+  "baseline": { "num_stops": 25, "vehicles_needed": 2, "shift_hours": 10.51, "max_vehicle_shift_hours": 7.26, "planned_km": 125.21 },
+  "simulation": { "num_stops": 25, "vehicles_needed": 2, "shift_hours": 10.65, "max_vehicle_shift_hours": 5.57, "planned_km": 128.72 },
+  "delta": { "vehicles_needed_delta": 0, "max_vehicle_shift_hours_delta": -1.69, "planned_km_delta": 3.51 },
   // shift_hours = Fahrzeugstunden gesamt (Summe), max_vehicle_shift_hours = längste Einzelschicht
   "sources": ["data/processed/scored_2026-04-15.csv", "route_2026-04-15.json"]
 }`,
@@ -449,7 +449,7 @@ simulate_what_if(date="2026-04-15", overrides={"max_shift_hours": 6.0})`,
         title: "5. Strukturierte Antwort & explizite Freigabe über approval.py",
         desc: "Der Copilot zeigt die faktenbasierte Zusammenfassung mit Quellen und Baseline-Vergleich. Eine Freigabe erfolgt niemals über das Chat-LLM, sondern ausdrücklich durch den Disponenten per CLI ('prezero-route approve') oder UI-Button ('Freigeben') über approval.py.",
         code: `Copilot: "Container 2f09e55b-...:white liegt bei 110.0% (Score 1.000, kritisch).
-What-If (max_shift_hours=6.0) vs. Baseline: +1 Fahrzeug, längste Schicht 5,55 h statt 7,83 h, Strecke −19,93 km.
+What-If (max_shift_hours=6.0) vs. Baseline: weiter 2 Fahrzeuge, längste Schicht 5,57 h statt 7,26 h, Strecke +3,51 km.
 Quellen: data/processed/scored_2026-04-15.csv, route_2026-04-15.json"
 
 // Explizite Fachaktion außerhalb des Chats (einziger Erzeuger von approval_<date>.json):
