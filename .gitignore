@@ -23,7 +23,7 @@ data/processed/
 
 # Project management: keep reports, never the virtualenv
 Projek-Managment/.venv/
-Projek-Managment/tmp/
+Projek-Management/tmp/
 Projek-Managment/**/__pycache__/
 
 # IDE
