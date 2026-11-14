@@ -12,7 +12,20 @@ from prezero.model import Site, build_model
 
 START_DATE = pd.Timestamp("2025-10-17")
 END_DATE = pd.Timestamp("2026-09-30")
-MATERIAL_ORDER = {"glass_white": 0, "glass_green": 1, "glass_brown": 2}
+
+
+GLASS_COLOURS: frozenset[str] = frozenset({"white", "green", "brown"})
+
+
+def _display_material(material: str) -> str:
+    """Glass colours are shown as glass_<colour>; other streams keep their name."""
+    return f"glass_{material}" if material in GLASS_COLOURS else material
+
+
+def _material_sort_key(material: str) -> int:
+    """Stable ordering for materials in the heatmap."""
+    known = {"glass_white": 0, "glass_green": 1, "glass_brown": 2}
+    return known.get(material, 3)
 
 
 def _week_starts(start: pd.Timestamp, end: pd.Timestamp, freq: str) -> pd.DatetimeIndex:
@@ -96,7 +109,7 @@ def _build_reading_matrix(
             {
                 "key": key,
                 "location_id": location_id,
-                "material": f"glass_{material}",
+                "material": _display_material(material),
                 "values": values,
                 "predicted": predicted,
             }
@@ -150,12 +163,12 @@ def _build_reading_matrix(
             "end": end_ts.isoformat(),
             "freq": "W",
             "overfull_shares": {
-                f"glass_{material}": (
+                _display_material(material): (
                     overfull_counts.get(material, 0) / measurement_counts[material]
                     if measurement_counts.get(material, 0)
                     else 0.0
                 )
-                for material in ("white", "green", "brown")
+                for material in measurement_counts
             },
         }
     )
@@ -231,7 +244,7 @@ def build_heatmap_matrix(
     result = pd.DataFrame(rows).set_index("Location_id")
     order = sorted(
         range(len(rows)),
-        key=lambda index: (MATERIAL_ORDER.get(materials[index], 99), average_fills[index], rows[index]["Location_id"]),
+        key=lambda index: (_material_sort_key(materials[index]), average_fills[index], rows[index]["Location_id"]),
     )
     result = result.iloc[order]
     result.attrs.update(
@@ -253,7 +266,7 @@ def build_heatmap_matrix(
                     if measurement_counts.get(material, 0)
                     else 0.0
                 )
-                for material in ("glass_white", "glass_green", "glass_brown")
+                for material in measurement_counts
             },
         }
     )

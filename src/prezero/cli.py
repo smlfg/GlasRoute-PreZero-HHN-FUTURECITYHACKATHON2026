@@ -13,6 +13,50 @@ from prezero import approval, copilot, features, forecast, ingest, locations, ro
 from prezero.heatmap import END_DATE, START_DATE, build_heatmap_matrix
 from prezero.model import build_model
 
+STREAMS = ("glass", "paper", "bio", "gastro", "plastik")
+
+
+def _stream_raw_path(stream: str) -> str:
+    if stream == "glass":
+        return "data/raw/glass_fill_levels_anonymized_f.csv"
+    return f"data/synthetic/{stream}_fill_levels.csv"
+
+
+def _stream_cleaned_path(stream: str) -> str:
+    return (
+        "data/processed/cleaned_readings.csv"
+        if stream == "glass"
+        else f"data/processed/{stream}_cleaned_readings.csv"
+    )
+
+
+def _stream_scored_path(stream: str, date: str) -> str:
+    return (
+        f"data/processed/scored_{date}.csv"
+        if stream == "glass"
+        else f"data/processed/{stream}_scored_{date}.csv"
+    )
+
+
+def _stream_route_path(stream: str, date: str) -> str:
+    return f"{stream}_route_{date}.json" if stream != "glass" else f"route_{date}.json"
+
+
+def _stream_ui_path(stream: str, date: str) -> str:
+    return f"{stream}_ui_{date}.html" if stream != "glass" else f"ui_{date}.html"
+
+
+def _stream_map_path(stream: str, date: str) -> str:
+    return f"{stream}_map_{date}.html" if stream != "glass" else f"map_{date}.html"
+
+
+def _stream_heatmap_path(stream: str) -> str:
+    return f"{stream}_heatmap.html" if stream != "glass" else "heatmap.html"
+
+
+def _stream_trends_path(stream: str) -> str:
+    return f"{stream}_trends.png" if stream != "glass" else "trends.png"
+
 
 @click.group()
 def cli() -> None:
@@ -22,45 +66,64 @@ def cli() -> None:
 
 @cli.command("ingest")
 @click.option(
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
+    show_default=True,
+    help="Waste stream to ingest.",
+)
+@click.option(
     "--input",
     "-i",
-    default="data/raw/glass_fill_levels_anonymized_f.csv",
-    help="Path to raw CSV.",
+    default=None,
+    help="Path to raw CSV (overrides --stream default).",
 )
 @click.option(
     "--output",
     "-o",
-    default="data/processed/cleaned_readings.csv",
-    help="Path to cleaned output CSV.",
+    default=None,
+    help="Path to cleaned output CSV (overrides --stream default).",
 )
-def ingest_cmd(input: str, output: str) -> None:
+def ingest_cmd(stream: str, input: str | None, output: str | None) -> None:
     """Ingest and clean raw fill-level data."""
-    df = ingest.ingest(input, output)
-    click.echo(f"Cleaned data written to {output}")
+    input_path = input if input is not None else _stream_raw_path(stream)
+    output_path = output if output is not None else _stream_cleaned_path(stream)
+    df = ingest.ingest(input_path, output_path)
+    click.echo(f"Cleaned data written to {output_path}")
     ingest.print_stats(df)
 
 
 @cli.command("score")
 @click.option("--date", "-d", required=True, help="Target date (YYYY-MM-DD).")
 @click.option(
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
+    show_default=True,
+    help="Waste stream to score.",
+)
+@click.option(
     "--input",
     "-i",
-    default="data/processed/cleaned_readings.csv",
-    help="Path to cleaned readings CSV.",
+    default=None,
+    help="Path to cleaned readings CSV (overrides --stream default).",
 )
 @click.option(
     "--output",
     "-o",
     default=None,
-    help="Path to scored CSV (default: data/processed/scored_<date>.csv).",
+    help="Path to scored CSV (overrides --stream default).",
 )
-def score_cmd(date: str, input: str, output: str | None) -> None:
+def score_cmd(date: str, stream: str, input: str | None, output: str | None) -> None:
     """Build features and compute criticality scores up to --date."""
-    df = pd.read_csv(input, parse_dates=["date"], dtype={"Location_id": str, "material_type": str})
+    input_path = input if input is not None else _stream_cleaned_path(stream)
+    df = pd.read_csv(input_path, parse_dates=["date"], dtype={"Location_id": str, "material_type": str})
     feat = features.build_features(df, date)
     scored = scoring.score_containers(feat)
 
-    out_path = Path(output) if output is not None else Path("data/processed") / f"scored_{date}.csv"
+    out_path = Path(output) if output is not None else Path(_stream_scored_path(stream, date))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     scored.to_csv(out_path, index=False)
 
@@ -74,9 +137,17 @@ def score_cmd(date: str, input: str, output: str | None) -> None:
 @cli.command("route")
 @click.option("--date", "-d", required=True, help="Target date (YYYY-MM-DD).")
 @click.option(
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
+    show_default=True,
+    help="Waste stream to route.",
+)
+@click.option(
     "--scored",
     default=None,
-    help="Path to scored CSV (default: data/processed/scored_<date>.csv).",
+    help="Path to scored CSV (overrides --stream default).",
 )
 @click.option(
     "--locations",
@@ -92,9 +163,10 @@ def score_cmd(date: str, input: str, output: str | None) -> None:
     default=None,
     help="Path to YAML/JSON operational config.",
 )
-@click.option("--output-dir", default=".", show_default=True, help="Directory for route_<date>.json.")
+@click.option("--output-dir", default=".", show_default=True, help="Directory for route file.")
 def route_cmd(
     date: str,
+    stream: str,
     scored: str | None,
     locations_path: str,
     max_stops: int,
@@ -102,7 +174,7 @@ def route_cmd(
     output_dir: str,
 ) -> None:
     """Build nearest-neighbor collection route and write route_<date>.json."""
-    scored_path = Path(scored) if scored is not None else Path("data/processed") / f"scored_{date}.csv"
+    scored_path = Path(scored) if scored is not None else Path(_stream_scored_path(stream, date))
     scored_df = pd.read_csv(scored_path, dtype={"Location_id": str, "material_type": str})
     locs_df = locations.load_locations(locations_path)
     cfg = routing.load_config(config_path)
@@ -114,6 +186,7 @@ def route_cmd(
         date=date,
         output_dir=output_dir,
         config=cfg,
+        output_prefix=stream if stream != "glass" else None,
     )
     click.echo(routing.format_route_summary(route_data))
 
@@ -121,9 +194,17 @@ def route_cmd(
 @cli.command("forecast")
 @click.option("--date", "-d", required=True, help="Base date (YYYY-MM-DD).")
 @click.option(
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
+    show_default=True,
+    help="Waste stream to forecast.",
+)
+@click.option(
     "--scored",
     default=None,
-    help="Path to scored_<date>.csv. Defaults to data/processed/scored_<date>.csv.",
+    help="Path to scored_<date>.csv (overrides --stream default).",
 )
 @click.option(
     "--locations",
@@ -135,6 +216,7 @@ def route_cmd(
 @click.option("--output-dir", default=".", show_default=True, help="Directory for the map HTML.")
 def forecast_cmd(
     date: str,
+    stream: str,
     scored: str | None,
     locations_path: str,
     output_dir: str,
@@ -145,12 +227,13 @@ def forecast_cmd(
     (last_fill_level, avg_daily_increase, season_factor); no new model.
     """
     out_dir = Path(output_dir)
-    scored_path = Path(scored) if scored else out_dir / "data" / "processed" / f"scored_{date}.csv"
+    prefix = f"{stream}_" if stream != "glass" else ""
+    scored_path = Path(scored) if scored else out_dir / "data" / "processed" / f"{prefix}scored_{date}.csv"
     if not scored_path.is_file():
-        scored_path = Path("data/processed") / f"scored_{date}.csv"
+        scored_path = Path("data/processed") / f"{prefix}scored_{date}.csv"
     if not scored_path.is_file():
         raise click.ClickException(
-            f"Scored data missing: {scored_path}. Run 'prezero-route run --date {date}' first."
+            f"Scored data missing: {scored_path}. Run 'prezero-route run --stream {stream} --date {date}' first."
         )
 
     scored_df = pd.read_csv(scored_path, dtype={"Location_id": str, "material_type": str})
@@ -179,7 +262,7 @@ def forecast_cmd(
         }
     )
     map_frame["week"] = pd.to_datetime(map_frame["target_date"]).dt.isocalendar().week.astype(int)
-    map_path = out_dir / f"forecast_{int(pd.Timestamp(date).isocalendar().week):02d}.html"
+    map_path = out_dir / f"{prefix}forecast_{int(pd.Timestamp(date).isocalendar().week):02d}.html"
     path = viz.plot_forecast_map(map_frame, int(pd.Timestamp(date).isocalendar().week), map_path)
     click.echo(f"Forecast map: {path}")
 
@@ -187,11 +270,18 @@ def forecast_cmd(
 @cli.command("heatmap")
 @click.option("--date", "-d", required=True, help="Week to summarize (YYYY-MM-DD).")
 @click.option(
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
+    show_default=True,
+    help="Waste stream for heatmap.",
+)
+@click.option(
     "--input",
     "readings",
-    default="data/processed/cleaned_readings.csv",
-    show_default=True,
-    help="Path to cleaned readings CSV.",
+    default=None,
+    help="Path to cleaned readings CSV (overrides --stream default).",
 )
 @click.option(
     "--locations",
@@ -200,14 +290,15 @@ def forecast_cmd(
     show_default=True,
     help="Path to canonical locations CSV.",
 )
-@click.option("--output-dir", default=".", show_default=True, help="Directory for heatmap.html.")
-def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) -> None:
+@click.option("--output-dir", default=".", show_default=True, help="Directory for heatmap file.")
+def heatmap_cmd(date: str, stream: str, readings: str | None, locations_path: str, output_dir: str) -> None:
     """Write the offline data-only container heatmap."""
     selected_date = pd.Timestamp(date)
     if selected_date < START_DATE or selected_date > END_DATE:
         raise click.ClickException(f"--date must be between {START_DATE.date()} and {END_DATE.date()}.")
+    readings_path = readings if readings is not None else _stream_cleaned_path(stream)
     readings_df = pd.read_csv(
-        readings,
+        readings_path,
         parse_dates=["date"],
         dtype={"Location_id": str, "material_type": str},
     )
@@ -229,7 +320,7 @@ def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) 
         f"{int((statuses == 'black').sum())} schwarz, "
         f"{int((~predicted).sum())} gemessen / {int(predicted.sum())} prognostiziert"
     )
-    output = Path(output_dir) / "heatmap.html"
+    output = Path(output_dir) / _stream_heatmap_path(stream)
     path = viz.plot_heatmap(matrix, output, selected_week=label, map_date=date)
     click.echo(f"Heatmap: {path}")
 
@@ -237,10 +328,17 @@ def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) 
 @cli.command("visualize")
 @click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
 @click.option(
-    "--readings",
-    default="data/processed/cleaned_readings.csv",
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
     show_default=True,
-    help="Path to cleaned readings CSV.",
+    help="Waste stream to visualize.",
+)
+@click.option(
+    "--readings",
+    default=None,
+    help="Path to cleaned readings CSV (overrides --stream default).",
 )
 @click.option("--route", default=None, help="Path to route_<date>.json.")
 @click.option("--scored", default=None, help="Optional scored CSV for background markers.")
@@ -254,7 +352,8 @@ def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) 
 @click.option("--output-dir", default=".", show_default=True, help="Output directory for plots/maps.")
 def visualize_cmd(
     date: str,
-    readings: str,
+    stream: str,
+    readings: str | None,
     route: str | None,
     scored: str | None,
     locations_path: str,
@@ -262,11 +361,12 @@ def visualize_cmd(
 ) -> None:
     """Generate trends.png and map_<date>.html."""
     out_dir = Path(output_dir)
-    readings_df = pd.read_csv(readings, parse_dates=["date"], dtype={"Location_id": str, "material_type": str})
-    trends_path = viz.plot_trends(readings_df, out_dir / "trends.png")
+    readings_path = readings if readings is not None else _stream_cleaned_path(stream)
+    readings_df = pd.read_csv(readings_path, parse_dates=["date"], dtype={"Location_id": str, "material_type": str})
+    trends_path = viz.plot_trends(readings_df, out_dir / _stream_trends_path(stream))
 
-    route_path = Path(route) if route is not None else out_dir / f"route_{date}.json"
-    scored_path = Path(scored) if scored is not None else Path("data/processed") / f"scored_{date}.csv"
+    route_path = Path(route) if route is not None else out_dir / _stream_route_path(stream, date)
+    scored_path = Path(scored) if scored is not None else Path(_stream_scored_path(stream, date))
     scored_df = (
         pd.read_csv(scored_path, dtype={"Location_id": str, "material_type": str})
         if scored_path.is_file()
@@ -275,7 +375,7 @@ def visualize_cmd(
     locs_df = locations.load_locations(locations_path) if Path(locations_path).is_file() else None
     map_path = viz.plot_route(
         route_path,
-        out_dir / f"map_{date}.html",
+        out_dir / _stream_map_path(stream, date),
         scored=scored_df,
         locations=locs_df,
         container_keys=readings_df[["Location_id", "material_type"]],
@@ -286,18 +386,24 @@ def visualize_cmd(
 @cli.command("run")
 @click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
 @click.option(
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
+    show_default=True,
+    help="Waste stream to run.",
+)
+@click.option(
     "--raw",
     "--input",
     "raw",
-    default="data/raw/glass_fill_levels_anonymized_f.csv",
-    show_default=True,
-    help="Path to raw or driver feedback CSV.",
+    default=None,
+    help="Path to raw or driver feedback CSV (overrides --stream default).",
 )
 @click.option(
     "--cleaned",
-    default="data/processed/cleaned_readings.csv",
-    show_default=True,
-    help="Path to cleaned readings CSV.",
+    default=None,
+    help="Path to cleaned readings CSV (overrides --stream default).",
 )
 @click.option(
     "--locations",
@@ -317,8 +423,9 @@ def visualize_cmd(
 @click.option("--output-dir", default=".", show_default=True, help="Output directory for artifacts.")
 def run_cmd(
     date: str | None,
-    raw: str,
-    cleaned: str,
+    stream: str,
+    raw: str | None,
+    cleaned: str | None,
     locations_path: str,
     max_stops: int,
     config_path: str | None,
@@ -327,7 +434,9 @@ def run_cmd(
     """Run the full pipeline and write all artifacts plus the website ui_<date>.html."""
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    cleaned_df = ingest.ingest(raw, cleaned)
+    raw_path = raw if raw is not None else _stream_raw_path(stream)
+    cleaned_path = cleaned if cleaned is not None else _stream_cleaned_path(stream)
+    cleaned_df = ingest.ingest(raw_path, cleaned_path)
     if not date or str(date).strip().lower() in ("auto", "latest"):
         valid_dates = pd.to_datetime(cleaned_df["date"], errors="coerce").dropna() if not cleaned_df.empty else pd.Series(dtype="datetime64[ns]")
         target_date = valid_dates.max().strftime("%Y-%m-%d") if not valid_dates.empty else "2026-04-15"
@@ -336,7 +445,8 @@ def run_cmd(
     feat_df = features.build_features(cleaned_df, target_date)
     scored_df = scoring.score_containers(feat_df)
 
-    scored_out = Path(cleaned).parent / f"scored_{target_date}.csv"
+    prefix = f"{stream}_" if stream != "glass" else ""
+    scored_out = Path(cleaned_path).parent / f"{prefix}scored_{target_date}.csv"
     scored_out.parent.mkdir(parents=True, exist_ok=True)
     scored_df.to_csv(scored_out, index=False)
 
@@ -350,14 +460,15 @@ def run_cmd(
         date=target_date,
         output_dir=out_dir,
         config=cfg,
+        output_prefix=stream if stream != "glass" else None,
     )
-    stops_out = Path(cleaned).parent / f"stops_{target_date}.csv"
+    stops_out = Path(cleaned_path).parent / f"{prefix}stops_{target_date}.csv"
     routing.export_stops_csv(route_data, stops_out)
-    tour.export_tour_csv(route_data, Path(cleaned).parent / f"tour_{target_date}.csv")
-    trends_path = viz.plot_trends(cleaned_df, out_dir / "trends.png")
+    tour.export_tour_csv(route_data, Path(cleaned_path).parent / f"{prefix}tour_{target_date}.csv")
+    trends_path = viz.plot_trends(cleaned_df, out_dir / _stream_trends_path(stream))
     map_path = viz.plot_route(
         route_data,
-        out_dir / f"map_{target_date}.html",
+        out_dir / _stream_map_path(stream, target_date),
         scored=scored_df,
         locations=locs_df,
         container_keys=cleaned_df[["Location_id", "material_type"]],
@@ -377,7 +488,7 @@ def run_cmd(
         pass
     heatmap_path = viz.plot_heatmap(
         heatmap_matrix,
-        out_dir / "heatmap.html",
+        out_dir / _stream_heatmap_path(stream),
         selected_week=selected_week,
         map_date=target_date,
     )
@@ -388,21 +499,22 @@ def run_cmd(
         scored_df=scored_df,
         locations_df=locs_df,
         route_data=route_data,
-        output_path=out_dir / f"ui_{target_date}.html",
+        output_path=out_dir / _stream_ui_path(stream, target_date),
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
         benchmark_rows=_load_benchmark_rows(out_dir),
         backtest_summary=_load_backtest_summary(out_dir),
+        stream=stream,
     )
 
     crit = scored_df[scored_df["critical"]]
     click.echo(
-        f"Pipeline complete for {target_date}: {route_data.get('total_critical_locations', 0)} critical "
+        f"Pipeline complete for {stream} {target_date}: {route_data.get('total_critical_locations', 0)} critical "
         f"physical sites ({crit['Location_id'].nunique()} critical IDs, {len(crit)} containers)."
     )
     click.echo(route_data["comparison"])
     click.echo(
-        f"Outputs: {out_dir / f'route_{target_date}.json'}, {stops_out}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
+        f"Outputs: {out_dir / _stream_route_path(stream, target_date)}, {stops_out}, {map_path}, {trends_path}, {heatmap_path}, {site_path}"
     )
 
 
@@ -490,15 +602,22 @@ def approve_cmd(
 @cli.command("ui")
 @click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
 @click.option(
-    "--readings",
-    default="data/processed/cleaned_readings.csv",
+    "--stream",
+    "-s",
+    type=click.Choice(STREAMS),
+    default="glass",
     show_default=True,
-    help="Path to cleaned readings CSV.",
+    help="Waste stream to build UI for.",
+)
+@click.option(
+    "--readings",
+    default=None,
+    help="Path to cleaned readings CSV (overrides --stream default).",
 )
 @click.option(
     "--scored",
     default=None,
-    help="Path to scored_<date>.csv. Defaults to data/processed/scored_<date>.csv.",
+    help="Path to scored_<date>.csv (overrides --stream default).",
 )
 @click.option(
     "--locations",
@@ -510,12 +629,13 @@ def approve_cmd(
 @click.option(
     "--route",
     default=None,
-    help="Path to route_<date>.json. Defaults to route_<date>.json in the output dir.",
+    help="Path to route_<date>.json (overrides --stream default).",
 )
-@click.option("--output-dir", default=".", show_default=True, help="Directory for ui_<date>.html.")
+@click.option("--output-dir", default=".", show_default=True, help="Directory for ui file.")
 def ui_cmd(
     date: str | None,
-    readings: str,
+    stream: str,
+    readings: str | None,
     scored: str | None,
     locations_path: str,
     route: str | None,
@@ -524,7 +644,7 @@ def ui_cmd(
     """Build the single website ui_<date>.html from pipeline outputs."""
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    readings_path = Path(readings)
+    readings_path = Path(readings) if readings is not None else Path(_stream_cleaned_path(stream))
     if not readings_path.is_file():
         raise click.ClickException(f"Readings CSV not found: {readings_path}")
 
@@ -540,11 +660,15 @@ def ui_cmd(
         target_date = str(date)
     locs_df = locations.load_locations(locations_path)
 
+    prefix = f"{stream}_" if stream != "glass" else ""
     scored_df: pd.DataFrame | None = None
     scored_candidates = (
         [Path(scored)]
         if scored is not None
-        else [out_dir / "data" / "processed" / f"scored_{target_date}.csv", Path("data/processed") / f"scored_{target_date}.csv"]
+        else [
+            out_dir / "data" / "processed" / f"{prefix}scored_{target_date}.csv",
+            Path("data/processed") / f"{prefix}scored_{target_date}.csv",
+        ]
     )
     for candidate in scored_candidates:
         if candidate.is_file():
@@ -558,7 +682,7 @@ def ui_cmd(
     route_candidates = (
         [Path(route)]
         if route is not None
-        else [out_dir / f"route_{target_date}.json", Path(f"route_{target_date}.json")]
+        else [out_dir / _stream_route_path(stream, target_date), Path(_stream_route_path(stream, target_date))]
     )
     for candidate in route_candidates:
         if candidate.is_file():
@@ -573,14 +697,15 @@ def ui_cmd(
             date=target_date,
             output_dir=out_dir,
             config=cfg,
+            output_prefix=stream if stream != "glass" else None,
         )
 
-    trends_candidate = out_dir / "trends.png"
-    trends_path = trends_candidate if trends_candidate.is_file() else viz.plot_trends(readings_df, out_dir / "trends.png")
-    map_path = out_dir / f"map_{target_date}.html"
+    trends_candidate = out_dir / _stream_trends_path(stream)
+    trends_path = trends_candidate if trends_candidate.is_file() else viz.plot_trends(readings_df, out_dir / _stream_trends_path(stream))
+    map_path = out_dir / _stream_map_path(stream, target_date)
     if not map_path.is_file():
         viz.plot_route(route_data, map_path, scored=scored_df, locations=locs_df, container_keys=readings_df[["Location_id", "material_type"]])
-    heatmap_path = out_dir / "heatmap.html"
+    heatmap_path = out_dir / _stream_heatmap_path(stream)
     if not heatmap_path.is_file():
         heatmap_matrix = build_heatmap_matrix(readings_df, START_DATE, END_DATE, locations=locs_df)
         labels = heatmap_matrix.attrs.get("week_labels", [])
@@ -602,11 +727,12 @@ def ui_cmd(
         scored_df=scored_df,
         locations_df=locs_df,
         route_data=route_data,
-        output_path=out_dir / f"ui_{target_date}.html",
+        output_path=out_dir / _stream_ui_path(stream, target_date),
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
         benchmark_rows=_load_benchmark_rows(out_dir),
         backtest_summary=_load_backtest_summary(out_dir),
+        stream=stream,
     )
     click.echo(f"UI written: {out_path}")
 

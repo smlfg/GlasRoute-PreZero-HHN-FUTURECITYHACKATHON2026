@@ -29,21 +29,121 @@ DEFAULT_SEASON_FACTORS: dict[int, float] = {
 class WasteStream:
     """Waste category and physical/seasonal assumptions."""
 
-    name: str  # "glass_white" | "glass_green" | "glass_brown"
+    name: str  # e.g. "glass_white", "paper", "bio"
     density_kg_per_m3: float = 400.0  # Annahme, von PreZero zu ersetzen
+    container_volume_m3: float = 2.5  # Annahme, von PreZero zu ersetzen
+    fill_speed: float = 1.0  # relative speed factor for synthetic generation
     season_factor: dict[int, float] = field(
         default_factory=lambda: dict(DEFAULT_SEASON_FACTORS)  # Annahme, von PreZero zu ersetzen
     )
     overfull_value: float = 110.0  # Annahme, von PreZero zu ersetzen
+    display_name: str = ""
+    synthetic: bool = False  # True for streams without real PreZero data
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "display_name", self.display_name or self.name.replace("_", " ").title()
+        )
 
     def season_factor_for_month(self, month: int) -> float:
         """Return seasonal factor for a calendar month (1..12)."""
         return float(self.season_factor.get(int(month), 0.5))
 
 
-GLASS_WHITE = WasteStream(name="glass_white")
-GLASS_GREEN = WasteStream(name="glass_green")
-GLASS_BROWN = WasteStream(name="glass_brown")
+# Glass streams (real PreZero data).
+GLASS_WHITE = WasteStream(name="glass_white", display_name="Weißglas")
+GLASS_GREEN = WasteStream(name="glass_green", display_name="Grünglas")
+GLASS_BROWN = WasteStream(name="glass_brown", display_name="Braunglas")
+
+# Synthetic waste streams used to demonstrate transferability of the pipeline.
+PAPER = WasteStream(
+    name="paper",
+    density_kg_per_m3=80.0,
+    container_volume_m3=3.0,
+    fill_speed=1.3,
+    season_factor={
+        1: 1.2,
+        2: 0.9,
+        3: 0.8,
+        4: 0.8,
+        5: 0.8,
+        6: 0.7,
+        7: 0.7,
+        8: 0.8,
+        9: 0.9,
+        10: 1.0,
+        11: 1.3,
+        12: 1.4,
+    },
+    display_name="Papier",
+    synthetic=True,
+)
+BIO = WasteStream(
+    name="bio",
+    density_kg_per_m3=600.0,
+    container_volume_m3=2.4,
+    fill_speed=1.1,
+    season_factor={
+        1: 0.5,
+        2: 0.6,
+        3: 0.9,
+        4: 1.2,
+        5: 1.4,
+        6: 1.5,
+        7: 1.5,
+        8: 1.4,
+        9: 1.1,
+        10: 0.9,
+        11: 0.6,
+        12: 0.5,
+    },
+    display_name="Bio",
+    synthetic=True,
+)
+GASTRONOMIE = WasteStream(
+    name="gastro",
+    density_kg_per_m3=350.0,
+    container_volume_m3=1.5,
+    fill_speed=1.6,
+    season_factor={
+        1: 1.0,
+        2: 1.0,
+        3: 1.1,
+        4: 1.1,
+        5: 1.2,
+        6: 1.3,
+        7: 1.3,
+        8: 1.2,
+        9: 1.1,
+        10: 1.1,
+        11: 1.0,
+        12: 1.1,
+    },
+    display_name="Gastronomie",
+    synthetic=True,
+)
+PLASTIK = WasteStream(
+    name="plastik",
+    density_kg_per_m3=50.0,
+    container_volume_m3=2.8,
+    fill_speed=0.9,
+    season_factor={
+        1: 0.9,
+        2: 0.9,
+        3: 1.0,
+        4: 1.1,
+        5: 1.2,
+        6: 1.2,
+        7: 1.2,
+        8: 1.1,
+        9: 1.0,
+        10: 1.0,
+        11: 0.9,
+        12: 0.9,
+    },
+    display_name="Plastik",
+    synthetic=True,
+)
 
 WASTE_STREAMS: dict[str, WasteStream] = {
     "white": GLASS_WHITE,
@@ -52,7 +152,17 @@ WASTE_STREAMS: dict[str, WasteStream] = {
     "glass_white": GLASS_WHITE,
     "glass_green": GLASS_GREEN,
     "glass_brown": GLASS_BROWN,
+    "paper": PAPER,
+    "bio": BIO,
+    "gastro": GASTRONOMIE,
+    "plastik": PLASTIK,
 }
+
+
+def stream_for_material(material_name: str) -> WasteStream:
+    """Return the WasteStream for a material_type value."""
+    key = str(material_name).strip().lower()
+    return WASTE_STREAMS.get(key, GLASS_WHITE)
 
 
 @dataclass(frozen=True)
@@ -81,6 +191,11 @@ class Container:
     volume_m3: float = 2.5  # Annahme, von PreZero zu ersetzen
     measurements: list[Measurement] = field(default_factory=list)
     reference_date: pd.Timestamp | None = None
+
+    def __post_init__(self) -> None:
+        # Default volume comes from the waste stream if not explicitly supplied.
+        if self.volume_m3 == 2.5 and self.waste_stream.container_volume_m3 != 2.5:
+            object.__setattr__(self, "volume_m3", float(self.waste_stream.container_volume_m3))
 
     def last_fill(self) -> float:
         """Return latest recorded fill percentage (0.0 if no measurements)."""
@@ -288,7 +403,7 @@ def build_model(
                     )
                     for r in mat_readings.itertuples(index=False)
                 ]
-            stream = WASTE_STREAMS.get(material_name, GLASS_WHITE)
+            stream = stream_for_material(material_name)
             container = Container(
                 location_id=loc_id,
                 site_id=site.site_id,

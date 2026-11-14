@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields, replace
+from dataclasses import dataclass, field, fields, replace
 import json
 import math
 from pathlib import Path
@@ -10,6 +10,8 @@ from typing import Any, Mapping
 
 import pandas as pd
 import yaml
+
+from prezero.model import WASTE_STREAMS, stream_for_material
 
 # Fixed Heilbronn depot (TechCampus / city center area).
 DEFAULT_DEPOT: tuple[float, float] = (49.1427, 9.2109)
@@ -40,6 +42,8 @@ class OperationalConfig:
     location_planning_radius_m: float = 500.0
     location_planning_adoption_weeks: float = 8.0
     location_planning_logistic_steepness: float = 1.0
+    # Optional per-material densities from the "streams" section of prezero_config.json.
+    stream_density_overrides: dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation of all operational assumptions."""
@@ -66,14 +70,29 @@ class OperationalConfig:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> OperationalConfig:
-        """Construct OperationalConfig from a mapping, validating field names and coordinates."""
-        valid_fields = {f.name for f in fields(cls)}
-        unknown = sorted(set(data.keys()) - valid_fields)
-        if unknown:
-            raise ValueError(f"Unknown OperationalConfig field(s): {', '.join(unknown)}")
+        """Construct OperationalConfig from a mapping, validating field names and coordinates.
 
-        parsed: dict[str, Any] = {}
+        Unknown keys (e.g. ``streams``) are ignored so the same config file can carry
+        extra sections used by other parts of the pipeline.
+        """
+        valid_fields = {f.name for f in fields(cls)}
+
+        stream_density_overrides: dict[str, float] = {}
+        streams_section = data.get("streams")
+        if isinstance(streams_section, Mapping):
+            for stream_cfg in streams_section.values():
+                if not isinstance(stream_cfg, Mapping):
+                    continue
+                density = stream_cfg.get("density_kg_per_m3")
+                if density is None:
+                    continue
+                for material in stream_cfg.get("materials", []) or []:
+                    stream_density_overrides[str(material).strip().lower()] = float(density)
+
+        parsed: dict[str, Any] = {"stream_density_overrides": stream_density_overrides}
         for key, value in data.items():
+            if key not in valid_fields or key == "stream_density_overrides":
+                continue
             if key in {"yard_depot", "disposal_depot"}:
                 parsed[key] = _parse_coord_pair(value, key)
             elif value is None:
@@ -84,14 +103,29 @@ class OperationalConfig:
 
 
 def density_for(cfg: OperationalConfig, material: str) -> float:
-    """Bulk density for one waste stream (glass colour); falls back to density_kg_per_m3."""
-    key = str(material).strip().lower().replace("glass_", "")
-    specific = {
-        "white": cfg.density_white_kg_per_m3,
-        "green": cfg.density_green_kg_per_m3,
-        "brown": cfg.density_brown_kg_per_m3,
-    }.get(key)
-    return float(cfg.density_kg_per_m3 if specific is None else specific)
+    """Bulk density for one waste stream; falls back to config defaults.
+
+    Precedence: legacy per-glass colour overrides, then the per-material
+    densities from the ``streams`` config section, then the WasteStream value
+    for synthetic streams, then the generic ``density_kg_per_m3`` override.
+    """
+    key = str(material).strip().lower()
+    stream = stream_for_material(key)
+    material_key = stream.name.replace("glass_", "")
+    # Legacy per-glass overrides still win when present.
+    if stream.name.startswith("glass_"):
+        specific = {
+            "white": cfg.density_white_kg_per_m3,
+            "green": cfg.density_green_kg_per_m3,
+            "brown": cfg.density_brown_kg_per_m3,
+        }.get(material_key)
+        if specific is not None:
+            return float(specific)
+    if material_key in cfg.stream_density_overrides:
+        return float(cfg.stream_density_overrides[material_key])
+    if stream.synthetic:
+        return float(stream.density_kg_per_m3)
+    return float(cfg.density_kg_per_m3)
 
 
 def _opt_int(value: Any) -> int | None:
@@ -564,6 +598,7 @@ def build_route(
     date: str | None = None,
     output_dir: str | Path | None = ".",
     config: OperationalConfig | None = None,
+    output_prefix: str | None = None,
 ) -> dict[str, Any]:
     """Build a capacity- and shift-constrained nearest-neighbor route vs. full round."""
     cfg = _resolve_config(depot, config)
@@ -661,9 +696,10 @@ def build_route(
         }
 
     if date is not None and output_dir is not None:
-        out_path = Path(output_dir) / f"route_{date}.json"
+        prefix = f"{output_prefix}_" if output_prefix else ""
+        out_path = Path(output_dir) / f"{prefix}route_{date}.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(route_data, indent=2), encoding="utf-8")
-        export_stops_csv(route_data, Path(output_dir) / f"stops_{date}.csv")
+        export_stops_csv(route_data, Path(output_dir) / f"{prefix}stops_{date}.csv")
 
     return route_data

@@ -19,7 +19,29 @@ MATERIAL_COLORS = {
     "white": "#4a5568",
     "green": "#2e8b57",
     "brown": "#8b4513",
+    "paper": "#2563eb",
+    "bio": "#7c3aed",
+    "gastro": "#db2777",
+    "plastik": "#0891b2",
+    "glass_white": "#4a5568",
+    "glass_green": "#2e8b57",
+    "glass_brown": "#8b4513",
 }
+
+STREAM_LABELS = {
+    "glass": "Glas",
+    "paper": "Papier",
+    "bio": "Bio",
+    "gastro": "Gastronomie",
+    "plastik": "Plastik",
+}
+
+
+def _material_sort_key_for_viz(material: str) -> int:
+    """Stable visual ordering for heatmap material groups."""
+    known = {"glass_white": 0, "glass_green": 1, "glass_brown": 2}
+    return known.get(material, 3)
+
 
 FORECAST_STATUS_COLORS = {
     "green": "#16a34a",
@@ -72,12 +94,13 @@ def plot_heatmap(
     ]
 
     stored_shares = matrix.attrs.get("overfull_shares")
+    material_names = sorted(display_materials.unique().tolist(), key=_material_sort_key_for_viz)
     if stored_shares is not None:
-        overfull_shares = [float(stored_shares.get(material, 0.0)) for material in ("glass_white", "glass_green", "glass_brown")]
+        overfull_shares = [float(stored_shares.get(material, 0.0)) for material in material_names]
     else:
         overfull_shares = []
-        for material in ("glass_white", "glass_green", "glass_brown"):
-            material_rows = matrix.index[materials == material]
+        for material in material_names:
+            material_rows = matrix.index[display_materials == material]
             measured = matrix.loc[material_rows].where(~predicted.loc[material_rows])
             overfull_shares.append(
                 float((measured >= 110).sum().sum() / measured.notna().sum().sum())

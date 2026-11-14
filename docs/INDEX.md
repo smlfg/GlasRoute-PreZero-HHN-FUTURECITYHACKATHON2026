@@ -21,6 +21,7 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | [`KOSTENMODELL.md`](KOSTENMODELL.md) | Kosten- und Ledger-Vergleich: Status Quo vs. GlasRoute über 349 Tage | **aktuell** |
 | [`ARCHITEKTUR.md`](ARCHITEKTUR.md) | Module, Datenfluss, Verantwortlichkeiten, Geo-Swap | **aktuell** |
 | [`DATENMODELL.md`](DATENMODELL.md) | Dataclasses in `src/prezero/model.py` (Standort, Container, Messung, Fahrzeug) | **aktuell** |
+| [`ABFALLARTEN.md`](ABFALLARTEN.md) | `WasteStream`-Modell, 4 synthetische Abfallarten, Generator & CLI `--stream` | **aktuell** |
 | [`BACKTEST.md`](BACKTEST.md) | Ist der Füllstand vorhersagbar? Leerungsrhythmus je Glasfarbe | **generiert** von `scripts/backtest.py` |
 | [`BENCHMARK.md`](BENCHMARK.md) | Fairer Vergleich B0–B4 über 4 Stichtage × 3 Seeds | **generiert** von `scripts/benchmark.py` |
 | [`UI_PLAN.md`](UI_PLAN.md) | Soll-Zustand der Website: Datums-first (`#global-date-picker`), Rollen, Ansichtsgrenzen | **aktuell** (umgesetzt) |

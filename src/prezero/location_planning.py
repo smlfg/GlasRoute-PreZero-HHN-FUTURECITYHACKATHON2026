@@ -451,6 +451,10 @@ def plan_new_locations(
             for i, row in sites.iterrows()
         ],
         "affected_containers": len(total_taken),
+        "affected_location_material_keys": [
+            {"Location_id": key[0], "material_type": key[1]}
+            for key in lookup.keys()
+        ],
         "total_existing_demand_pp_day": round(total_existing_demand, 3),
         "total_transferred_demand_pp_day": round(total_transferred_demand, 3),
         "total_new_site_demand_pp_day": round(total_new_site_demand, 3),
