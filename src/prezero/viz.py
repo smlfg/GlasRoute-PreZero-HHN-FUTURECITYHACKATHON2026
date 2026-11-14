@@ -61,7 +61,13 @@ def plot_forecast_map(
     if not weeks:
         weeks = [week]
     center = [float(work["lat"].mean()), float(work["lon"].mean())] if not work.empty else [49.1427, 9.2109]
-    fmap = folium.Map(location=center, zoom_start=12)
+    fmap = folium.Map(location=center, zoom_start=12, tiles=None)
+    folium.TileLayer(
+        tiles="OpenStreetMap",
+        name="OpenStreetMap",
+        control=False,
+        attr="© OpenStreetMap contributors",
+    ).add_to(fmap)
 
     for index, current_week in enumerate(weeks):
         layer_data = work[work["week"] == current_week]
