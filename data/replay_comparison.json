@@ -3,9 +3,9 @@
   "start": "2025-10-17",
   "end": "2026-09-30",
   "operating_days": 229,
-  "threshold_pct": 80.0,
+  "threshold_pct": 80,
   "fleet_limit": 3,
-  "cold_rate_pp_day": 2.0,
+  "cold_rate_pp_day": 2,
   "assumptions": {
     "density_kg_per_m3": 400.0,
     "density_white_kg_per_m3": null,
@@ -184,5 +184,45 @@
     "mean_past": 22.3,
     "last_value": 26.1,
     "visits": 9059
+  },
+  "threshold_options": {
+    "70": {
+      "inventory": {
+        "beginning_kg": 0.0,
+        "admitted_kg": 775700.0,
+        "generated_kg": 9168848.256389298,
+        "collected_kg": 9495679.325961556,
+        "spill_kg": 4183.178411746501,
+        "ending_kg": 444685.7520159979
+      },
+      "emptyings": 13130,
+      "mean_fill_pct": 72.32048229978336,
+      "overflow_bin_days": 89,
+      "km": 27860.93,
+      "hours": 2295.65,
+      "vehicle_days": 389,
+      "rounds": 1156,
+      "peak": 3,
+      "due_backlog": 0
+    },
+    "90": {
+      "inventory": {
+        "beginning_kg": 0.0,
+        "admitted_kg": 775700.0,
+        "generated_kg": 9168848.256389298,
+        "collected_kg": 9364194.749344338,
+        "spill_kg": 18850.81728361812,
+        "ending_kg": 561502.6897613447
+      },
+      "emptyings": 10511,
+      "mean_fill_pct": 89.08947530534046,
+      "overflow_bin_days": 407,
+      "km": 26462.67,
+      "hours": 2067.9500000000003,
+      "vehicle_days": 365,
+      "rounds": 1134,
+      "peak": 3,
+      "due_backlog": 0
+    }
   }
 }

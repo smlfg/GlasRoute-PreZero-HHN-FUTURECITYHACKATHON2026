@@ -52,6 +52,16 @@ def main():
     report["observed"]["routes"] = {
         m: float(history[m].sum()) for m in result["allocated_by_lifts"]
     }
+    # Alternate thresholds are real reruns, never a financial scaling factor.
+    report["threshold_options"] = {}
+    for target in sorted({70, 80, 90} - {report["threshold_pct"]}):
+        _, alternate = simulate(
+            raw,
+            load_locations(ROOT / "data/external/locations.csv"),
+            load_config(config),
+            **(params | {"threshold": target}),
+        )
+        report["threshold_options"][str(target)] = alternate["optimized"]
     daily.to_csv(ROOT / "data/optimized_tours.csv", index=False)
     (ROOT / "data/replay_comparison.json").write_text(
         json.dumps(report, indent=2, allow_nan=False) + "\n"

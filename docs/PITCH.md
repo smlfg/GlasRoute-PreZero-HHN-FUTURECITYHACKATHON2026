@@ -162,3 +162,9 @@ Daten hineingebaut wurde, sondern konfigurierbar ist.
 - Die Route ist eine Luftlinien-Näherung (Umwegfaktor 1,35), kein Straßenrouting.
 - Kein Flottenoptimum: gezeigt wird eine Tages-Tour mit 4 Fahrzeugen und 19 Runden, nicht das Optimum über die Woche.
 - Die Betriebsvariablen sind Annahmen, bis PreZero Zahlen liefert — das ist der Live-Hook, kein Mangel.
+
+### Kosten & Nutzen: historischer Zeitraum statt einzelner Demo-Tag
+
+Bei 66,0 % gemessener Füllung wurden die Behälter geleert. Im Replay erreicht GlasRoute 80,9 %. Gegenüber denselben Besuchstagen mit identischem modelliertem Glaszufluss sammelt GlasRoute 1.515,7 t mehr. Die modellierten Kosten steigen um 169,4 €/Betriebstag. Keine belegte Flottenreduktion.
+
+Orte simuliert, Besuchstage aus Daten. Eurobeträge sind Szenariowerte, keine PreZero-Kostendaten. [Rechenweg und Grenzen](KOSTENMODELL.md).

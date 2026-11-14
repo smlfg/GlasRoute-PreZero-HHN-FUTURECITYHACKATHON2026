@@ -6,8 +6,10 @@ Pure view over ``route_data`` from ``routing.build_route``; no routing logic is 
 from __future__ import annotations
 
 import csv
+import html
 from pathlib import Path
 from typing import Any, Mapping
+from urllib.parse import quote
 
 from prezero import routing
 
@@ -154,3 +156,108 @@ def interleave(route_data: Mapping[str, Any]) -> list[tuple[int | None, dict[str
         end = tours[last_veh]["rows"][-1]
         out.append((None, yard("depot_end", last_veh, end, cum + end["leg_km"])))
     return out
+
+
+# ---------------------------------------------------------------------------
+# Driver-device exports: GPX route and Google Maps deep-links.
+# ---------------------------------------------------------------------------
+
+GOOGLE_MAPS_MAX_WAYPOINTS = 9  # documented limit for Maps URLs on desktop
+
+
+def _xml_escape(text: str) -> str:
+    """Escape text for XML element content / attributes."""
+    return html.escape(str(text), quote=True)
+
+
+def build_gpx(route_data: Mapping[str, Any]) -> str:
+    """Return a GPX 1.1 document with one ordered route per vehicle.
+
+    Each route contains the Betriebshof start, every collection/unload stop,
+    and the Betriebshof end as routepoints (`<rtept>`). Waypoints (`<wpt>`)
+    are also emitted for compatibility with Garmin/OsmAnd imports.
+    """
+    tours = build_tours(route_data)
+    date = str(route_data.get("date") or "")
+    lines: list[str] = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
+        '<gpx version="1.1" creator="GlasRoute" xmlns="http://www.topografix.com/GPX/1/1" '
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+        'xsi:schemaLocation="http://www.topografix.com/GPX/1/1 '
+        'http://www.topografix.com/GPX/1/1/gpx.xsd">',
+    ]
+    if date:
+        lines.append(f"  <metadata><name>{_xml_escape(date)}</name></metadata>")
+
+    waypoints = []
+    routes = []
+    for tour in tours:
+        veh = tour["vehicle"]
+        routes.append(f'  <rte><name>{_xml_escape(f"Tour {date} Fahrzeug {veh}")}</name>')
+        for r in tour["rows"]:
+            lat = float(r["lat"])
+            lon = float(r["lon"])
+            label = str(r["label"])
+            note = str(r.get("note", ""))
+            routes.append(f'    <rtept lat="{lat:.6f}" lon="{lon:.6f}">')
+            routes.append(f"      <name>{_xml_escape(label)}</name>")
+            if note:
+                routes.append(f"      <desc>{_xml_escape(note)}</desc>")
+            routes.append("    </rtept>")
+            # Also emit as waypoint so devices/apps that prefer waypoints still see every stop.
+            waypoints.append(f'  <wpt lat="{lat:.6f}" lon="{lon:.6f}">')
+            waypoints.append(f"    <name>{_xml_escape(label)}</name>")
+            if note:
+                waypoints.append(f"    <desc>{_xml_escape(note)}</desc>")
+            waypoints.append("  </wpt>")
+        routes.append("  </rte>")
+
+    lines.extend(waypoints)
+    lines.extend(routes)
+    lines.append("</gpx>")
+    return "\n".join(lines)
+
+
+def build_google_maps_legs(
+    route_data: Mapping[str, Any],
+    max_waypoints: int = GOOGLE_MAPS_MAX_WAYPOINTS,
+) -> dict[int, list[str]]:
+    """Return per-vehicle Google Maps direction URLs, split into legs if needed.
+
+    Google Maps URLs support at most ``max_waypoints`` intermediate waypoints
+    between origin and destination. If a tour has more points, it is split into
+    consecutive legs where the last point of leg *n* is the first point of
+    leg *n+1*.
+    """
+    if max_waypoints < 0:
+        raise ValueError("max_waypoints must be nonnegative")
+    tours = build_tours(route_data)
+    result: dict[int, list[str]] = {}
+    for tour in tours:
+        points = [
+            {"lat": float(r["lat"]), "lon": float(r["lon"]), "label": str(r["label"])}
+            for r in tour["rows"]
+        ]
+        n = len(points)
+        legs: list[str] = []
+        if n == 0:
+            result[tour["vehicle"]] = legs
+            continue
+
+        def coord(p: dict[str, Any]) -> str:
+            return f"{p['lat']:.6f},{p['lon']:.6f}"
+
+        start = 0
+        while start < n - 1:
+            # origin + max_waypoints intermediates + destination
+            end = min(start + max_waypoints + 1, n - 1)
+            origin = coord(points[start])
+            destination = coord(points[end])
+            waypoints = "|".join(coord(points[i]) for i in range(start + 1, end))
+            url = f"https://www.google.com/maps/dir/?api=1&origin={quote(origin, safe=',')}&destination={quote(destination, safe=',')}"
+            if waypoints:
+                url += f"&waypoints={quote(waypoints, safe=',|')}"
+            legs.append(url)
+            start = end
+        result[tour["vehicle"]] = legs
+    return result

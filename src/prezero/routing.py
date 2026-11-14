@@ -131,7 +131,7 @@ def load_config(path: str | Path | None = None) -> OperationalConfig:
 
     if not isinstance(loaded, Mapping):
         raise ValueError(f"Config file {cfg_path} must contain a mapping/object")
-    return OperationalConfig.from_dict(loaded)
+    return OperationalConfig.from_dict({k: v for k, v in loaded.items() if k not in {"replay", "economics"}})
 
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

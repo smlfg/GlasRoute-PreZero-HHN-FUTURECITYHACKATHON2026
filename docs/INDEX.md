@@ -55,3 +55,5 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | [`archiv/ROADMAP.md`](archiv/ROADMAP.md) | UI-Roadmap | veraltet seit `1577c74` (→ `TODO.md`) |
 | [`archiv/analysen/16_leerungen_erkennen.md`](archiv/analysen/16_leerungen_erkennen.md) | Leerungen über negative Sprünge erkennen | veraltet seit `127d502` |
 | [`archiv/ui_konzept/`](archiv/ui_konzept/) | Skizze, Blueprint, 03_ui_mockup (67,92 km / −74 %), UML, Integrationsplan | veraltet seit `2005f7f` |
+
+- [Kostenmodell und historischer Replay](KOSTENMODELL.md) — Mengenbilanz, Szenarien, Wirtschaftlichkeit und Grenzen.

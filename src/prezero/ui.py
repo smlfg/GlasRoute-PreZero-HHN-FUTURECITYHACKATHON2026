@@ -15,7 +15,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from prezero import approval, copilot, features, forecast, location_planning, routing, scoring, tour
+from prezero import approval, cfo, copilot, features, forecast, location_planning, routing, scoring, tour
 
 
 def _safe_json_for_html(payload: Any) -> str:
@@ -3391,6 +3391,7 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-datacheck">8. Datencheck</button>
     <button type="button" class="tab-btn" data-target="view-upload">9. Upload</button>
     <button type="button" class="tab-btn" data-target="view-location-planning">10. Standortplanung</button>
+    <button type="button" class="tab-btn" data-target="view-cost">11. Kosten &amp; Nutzen</button>
   </nav>
 
   <main class="analysis-workspace">
@@ -3441,6 +3442,7 @@ def build_ui(
       {upload_section_html}
     </section>
 
+    <section id="view-cost" class="view-panel">{cfo.panel()}</section>
     <section id="view-location-planning" class="view-panel">
       {location_planning_section_html}
     </section>
