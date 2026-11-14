@@ -4,6 +4,8 @@ Ziel: So 15.11.2026, 11:00 Europe/Berlin fertig (hart). Folien oder diese Karte 
 
 Länge knapp halten. Was nicht zuverlässig läuft, nicht als laufend verkaufen.
 
+Pflichtvorgaben und Don’ts: [ANFORDERUNGEN.md](ANFORDERUNGEN.md). Vor dem Pitch die Checkliste in der README durchgehen. Datenschutz und Löschkonzept: [DATENSCHUTZ.md](DATENSCHUTZ.md).
+
 ## Teil A — Idee
 
 ### 1. Problem und Nutzen
