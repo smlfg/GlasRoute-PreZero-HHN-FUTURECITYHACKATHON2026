@@ -98,6 +98,46 @@ def _metrics(actual: pd.Series, pred: pd.Series) -> dict[str, float]:
     }
 
 
+MATERIAL_DE = {"brown": "Braunglas", "green": "Grünglas", "white": "Weißglas"}
+
+
+def rhythm_analysis(readings: pd.DataFrame) -> dict:
+    """How well does today's emptying rhythm fit each container's fill rate?
+
+    Per container: ideal interval = 80 % / mean fill rate; actual = median days between visits.
+    'too often' = actual < 0.8 x ideal, 'too rarely' = actual > 1.2 x ideal.
+    """
+    work = readings.sort_values(["Location_id", "material_type", "date"]).copy()
+    work["gap"] = work.groupby(["Location_id", "material_type"])["date"].diff().dt.days
+    visits = work.dropna(subset=["gap"])
+    visits = visits[visits["gap"] > 0].copy()
+    level = visits["fill_level_numeric"].astype(float)
+    visits["rate"] = level / visits["gap"]
+    per = visits.groupby(["Location_id", "material_type"]).agg(
+        rate=("rate", "mean"), gap=("gap", "median")
+    )
+    per = per[per["rate"] > 0].copy()
+    per["ideal"] = DUE_FILL_PCT / per["rate"]
+
+    def block(frame: pd.DataFrame) -> dict:
+        return {
+            "containers": int(len(frame)),
+            "ideal_days_median": round(float(frame["ideal"].median()), 1),
+            "actual_days_median": round(float(frame["gap"].median()), 1),
+            "too_often_pct": round(float((frame["gap"] < 0.8 * frame["ideal"]).mean() * 100), 1),
+            "too_rarely_pct": round(float((frame["gap"] > 1.2 * frame["ideal"]).mean() * 100), 1),
+        }
+
+    return {
+        "visits": int(len(visits)),
+        "found_below_50_pct": round(float((level < 50).mean() * 100), 1),
+        "found_due_pct": round(float((level >= DUE_FILL_PCT).mean() * 100), 1),
+        "found_overfull_pct": round(float((level >= MAX_FILL_PCT).mean() * 100), 1),
+        "all": block(per),
+        "by_material": {mat: block(g) for mat, g in per.groupby(level="material_type")},
+    }
+
+
 def summarize(results: pd.DataFrame) -> dict:
     overall = {m: _metrics(results["actual"], results[m]) for m in METHODS}
     by_material = {
@@ -139,6 +179,29 @@ def _markdown(summary: dict) -> str:
         for mat, v in summary["by_material"].items()
     )
     q = summary["container_mae_quartiles_pp"]
+    rh = summary.get("rhythm")
+    rhythm_md = ""
+    if rh:
+        rows_rh = "\n".join(
+            f"| {MATERIAL_DE.get(mat, mat)} | {b['ideal_days_median']} | {b['actual_days_median']} | "
+            f"{b['too_often_pct']} % | {b['too_rarely_pct']} % |"
+            for mat, b in rh["by_material"].items()
+        )
+        a = rh["all"]
+        rhythm_md = f"""
+## Passt der heutige Leerungsrhythmus?
+
+Je Container: idealer Abstand = 80 % ÷ Füllrate; tatsächlicher Abstand = Median der Tage zwischen
+zwei Besuchen. „zu oft“ = tatsächlich < 0,8 × ideal, „zu selten“ = > 1,2 × ideal.
+
+| Glasfarbe | idealer Abstand (Tage) | tatsächlich (Tage) | zu oft geleert | zu selten geleert |
+|---|---|---|---|---|
+{rows_rh}
+| **alle** | {a['ideal_days_median']} | {a['actual_days_median']} | {a['too_often_pct']} % | {a['too_rarely_pct']} % |
+
+Bei {rh['found_below_50_pct']} % aller {rh['visits']} Besuche war der Container unter 50 % voll (Fahrt zu früh),
+bei {rh['found_overfull_pct']} % lief er über. **Braunglas wird viel zu oft geleert**, Weißglas teils zu selten.
+"""
     m, base = o["model"], o["mean_past"]
     better = m["mae_pp"] < base["mae_pp"]
     verdict = (
@@ -183,6 +246,7 @@ nicht erreichbar.
 **Streuung über Container:** Fehler Ø des Modells je Container, Quartile 25 / 50 / 75 %:
 {q[0]} / {q[1]} / {q[2]} pp. Manche Container sind gut vorhersagbar, andere kaum.
 
+{rhythm_md}
 ## Einordnung
 
 - Ist das Modell besser als „Durchschnitt bisher“, steckt in der Füllrate (Zeit seit der letzten
@@ -202,6 +266,7 @@ def main() -> None:
     readings = pd.read_csv(args.readings, parse_dates=["date"])
     results = walk_forward(readings)
     summary = summarize(results)
+    summary["rhythm"] = rhythm_analysis(readings)
     results.round(2).to_csv(args.output / "backtest_results.csv", index=False)
     (args.output / "backtest_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"

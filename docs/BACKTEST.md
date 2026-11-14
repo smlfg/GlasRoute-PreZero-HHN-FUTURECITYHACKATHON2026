@@ -36,6 +36,22 @@ nicht erreichbar.
 **Streuung über Container:** Fehler Ø des Modells je Container, Quartile 25 / 50 / 75 %:
 13.1 / 19.4 / 27.0 pp. Manche Container sind gut vorhersagbar, andere kaum.
 
+
+## Passt der heutige Leerungsrhythmus?
+
+Je Container: idealer Abstand = 80 % ÷ Füllrate; tatsächlicher Abstand = Median der Tage zwischen
+zwei Besuchen. „zu oft“ = tatsächlich < 0,8 × ideal, „zu selten“ = > 1,2 × ideal.
+
+| Glasfarbe | idealer Abstand (Tage) | tatsächlich (Tage) | zu oft geleert | zu selten geleert |
+|---|---|---|---|---|
+| Braunglas | 95.4 | 42.0 | 89.1 % | 2.1 % |
+| Grünglas | 42.3 | 34.0 | 45.1 % | 6.6 % |
+| Weißglas | 32.5 | 33.0 | 12.2 % | 15.8 % |
+| **alle** | 48.2 | 35.0 | 48.2 % | 8.3 % |
+
+Bei 30.1 % aller 10363 Besuche war der Container unter 50 % voll (Fahrt zu früh),
+bei 11.2 % lief er über. **Braunglas wird viel zu oft geleert**, Weißglas teils zu selten.
+
 ## Einordnung
 
 - Ist das Modell besser als „Durchschnitt bisher“, steckt in der Füllrate (Zeit seit der letzten

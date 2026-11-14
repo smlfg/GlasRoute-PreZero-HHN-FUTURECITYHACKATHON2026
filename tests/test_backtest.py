@@ -45,3 +45,21 @@ def test_summary_reports_model_and_baselines() -> None:
     assert summary["overall"]["model"]["mae_pp"] == pytest.approx(0.0)
     assert summary["overall"]["mean_past"]["mae_pp"] > 0
     assert set(summary["overall"]) == set(backtest.METHODS)
+
+
+def test_rhythm_flags_container_emptied_too_often() -> None:
+    # Fills 1 %/day -> ideal 80 days; emptied every 20 days -> too often.
+    readings = pd.DataFrame(
+        {
+            "Location_id": ["B"] * 4,
+            "material_type": ["brown"] * 4,
+            "date": pd.to_datetime(["2026-01-01", "2026-01-21", "2026-02-10", "2026-03-02"]),
+            "fill_level_numeric": [20.0, 20.0, 20.0, 20.0],
+        }
+    )
+    rh = backtest.rhythm_analysis(readings)
+    brown = rh["by_material"]["brown"]
+    assert brown["ideal_days_median"] == pytest.approx(80.0)
+    assert brown["actual_days_median"] == pytest.approx(20.0)
+    assert brown["too_often_pct"] == pytest.approx(100.0)
+    assert rh["found_below_50_pct"] == pytest.approx(100.0)

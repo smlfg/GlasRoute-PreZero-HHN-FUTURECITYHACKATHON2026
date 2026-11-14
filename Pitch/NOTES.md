@@ -37,6 +37,34 @@ und eine Route, die sich gegen „alles abfahren" beweist.
 
 ---
 
+## 🟤 Kernbotschaft: Braunglas wird viel zu oft geleert
+
+Beleg: `docs/BACKTEST.md`, Abschnitt „Passt der heutige Leerungsrhythmus?“ (`python scripts/backtest.py`,
+geprüft in A3). Je Container: idealer Abstand = 80 % ÷ Füllrate, tatsächlich = Median der Tage zwischen Besuchen.
+
+| Glasfarbe | ideal bis 80 % | heute tatsächlich | zu oft geleert | zu selten geleert |
+|---|---|---|---|---|
+| **Braunglas** | **95 Tage** | **42 Tage** | **89 %** der Container | 2 % |
+| Grünglas | 42 Tage | 34 Tage | 45 % | 7 % |
+| Weißglas | 33 Tage | 33 Tage | 12 % | **16 %** |
+
+- Bei **30 % aller Besuche** war der Container **unter 50 %** voll: Die Fahrt war zu früh.
+- Bei **11 %** lief er über.
+- **Braunglas könnte gut doppelt so lange stehen** (95 statt 42 Tage). Weißglas passt im Mittel, aber
+  jeder sechste Weißglas-Container wird zu selten geleert und läuft über.
+
+**So im Pitch sagen:**
+> „Sie haben gesagt: Wenn ich weiß, dass ein Container nur 20 % voll ist, komme ich eine Woche später.
+> Die Daten sagen genau das: Braunglas wird alle 42 Tage geleert, füllt sich aber erst nach 95 Tagen auf
+> 80 %. 89 % der Braunglas-Container werden zu oft angefahren. Weißglas dagegen läuft teils über.
+> Deshalb bekommt bei uns jeder Container einen eigenen Timer statt eines Gebietsrhythmus.“
+
+**Ehrlich dazusagen:** Die Füllrate stammt aus Schätzungen des Fahrers in 10-%-Stufen. Der Backtest
+zeigt: Die Vorhersage ist nicht zufällig (Fehler Ø 19,9 pp gegen 22,3 pp für „Durchschnitt bisher“),
+aber auch nicht exakt.
+
+---
+
 ## ⚠️ Drei Dinge, die du wissen musst
 
 ### 1. Standorte: alle 449 auf OSM-Punkten, Zuordnung simuliert
@@ -122,6 +150,11 @@ betrifft Weißglas (731 von 1.192).
 ### 2. Warum lösen (20 Sek.)
 Jede unnötige Fahrt kostet Sprit, Zeit und CO₂. Überfüllte Container ärgern Bürger. Der Disponent
 entscheidet heute aus dem Bauchgefühl, weil Füllstandsdaten nicht in Routen übersetzt werden.
+
+### 2b. Die Erkenntnis (30 Sek.) — Braunglas
+
+„Braunglas: alle 42 Tage geleert, voll erst nach 95. 89 % zu oft angefahren. Weißglas teils zu selten.
+30 % aller Fahrten kamen zu früh.“ → Jeder Container bekommt einen **Timer** (fällig am …).
 
 ### 3. Was wir sparen (60 Sek.) — Demo
 

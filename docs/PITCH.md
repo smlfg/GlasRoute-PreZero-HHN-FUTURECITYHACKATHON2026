@@ -24,6 +24,18 @@ bringt bei gleichen Stopps bis ca. 10 % (instabil: 0–13 % je nach Fall und Sol
 **Belegt:** 11.701 Messungen, 449 Container, 1.192 `overfull`-Ereignisse — jeder vierte
 Überlauf-Fall betrifft Weißglas (731 von 1.192).
 
+## 1b. Die Erkenntnis aus den Daten: Braunglas wird viel zu oft geleert
+
+| Glasfarbe | ideal bis 80 % | heute tatsächlich | zu oft geleert | zu selten geleert |
+|---|---|---|---|---|
+| **Braunglas** | **95 Tage** | **42 Tage** | **89 %** | 2 % |
+| Grünglas | 42 Tage | 34 Tage | 45 % | 7 % |
+| Weißglas | 33 Tage | 33 Tage | 12 % | 16 % |
+
+Bei 30 % aller Besuche war der Container unter 50 % voll, bei 11 % lief er über.
+Daraus folgt: **ein Timer pro Container** statt eines festen Gebietsrhythmus.
+Beleg: `docs/BACKTEST.md` (`python scripts/backtest.py`).
+
 ## 2. Warum löst es das?
 
 Jede unnötige Fahrt kostet Sprit, Zeit und CO₂. Überfüllte Container ärgern Bürger und

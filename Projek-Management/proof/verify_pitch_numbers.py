@@ -90,6 +90,23 @@ for preset_id, fields in EXPECTED_WHAT_IF.items():
     for key, value in fields.items():
         check(f"{preset_id}.{key}", presets[preset_id]["simulation"][key], value)
 
+print("\n# backtest_summary.json (scripts/backtest.py): Leerungsrhythmus")
+EXPECTED_RHYTHM = {
+    ("brown", "ideal_days_median"): 95.4,
+    ("brown", "actual_days_median"): 42.0,
+    ("brown", "too_often_pct"): 89.1,
+    ("white", "ideal_days_median"): 32.5,
+    ("white", "too_rarely_pct"): 15.8,
+    ("green", "too_often_pct"): 45.1,
+}
+bt = json.loads((ROOT / "backtest_summary.json").read_text(encoding="utf-8"))
+for (mat, key), value in EXPECTED_RHYTHM.items():
+    check(f"rhythm {mat}.{key}", bt["rhythm"]["by_material"][mat][key], value)
+check("rhythm found_below_50_pct", bt["rhythm"]["found_below_50_pct"], 30.1)
+check("rhythm found_overfull_pct", bt["rhythm"]["found_overfull_pct"], 11.2)
+check("backtest model mae_pp", bt["overall"]["model"]["mae_pp"], 19.9)
+check("backtest mean_past mae_pp", bt["overall"]["mean_past"]["mae_pp"], 22.3)
+
 print("\n# data/raw/glass_fill_levels_anonymized_f.csv")
 raw = pd.read_csv(ROOT / "data/raw/glass_fill_levels_anonymized_f.csv", dtype=str)
 check("raw rows", len(raw), EXPECTED_RAW["rows"])

@@ -135,5 +135,41 @@
     13.1,
     19.4,
     27.0
-  ]
+  ],
+  "rhythm": {
+    "visits": 10363,
+    "found_below_50_pct": 30.1,
+    "found_due_pct": 46.0,
+    "found_overfull_pct": 11.2,
+    "all": {
+      "containers": 1304,
+      "ideal_days_median": 48.2,
+      "actual_days_median": 35.0,
+      "too_often_pct": 48.2,
+      "too_rarely_pct": 8.3
+    },
+    "by_material": {
+      "brown": {
+        "containers": 423,
+        "ideal_days_median": 95.4,
+        "actual_days_median": 42.0,
+        "too_often_pct": 89.1,
+        "too_rarely_pct": 2.1
+      },
+      "green": {
+        "containers": 439,
+        "ideal_days_median": 42.3,
+        "actual_days_median": 34.0,
+        "too_often_pct": 45.1,
+        "too_rarely_pct": 6.6
+      },
+      "white": {
+        "containers": 442,
+        "ideal_days_median": 32.5,
+        "actual_days_median": 33.0,
+        "too_often_pct": 12.2,
+        "too_rarely_pct": 15.8
+      }
+    }
+  }
 }
