@@ -365,3 +365,20 @@ def test_build_ui_inline_scripts_are_valid_js(tmp_path: Path) -> None:
         js.write_text(body, encoding="utf-8")
         res = subprocess.run([node, "--check", str(js)], capture_output=True, text=True)
         assert res.returncode == 0, res.stderr
+
+
+def test_build_ui_labels_units_and_simulated_mapping(tmp_path: Path) -> None:
+    locs = _sample_locations().copy()
+    locs["confidence"] = "simulated_mapping"
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=locs,
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    assert "Standort-Zuordnung simuliert" in html
+    assert "kritische Container" in html
+    assert "kritischen Standorten in dieser Tour" in html

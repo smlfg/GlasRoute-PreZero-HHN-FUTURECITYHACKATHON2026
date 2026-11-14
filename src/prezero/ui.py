@@ -210,6 +210,7 @@ def render_route_view_data(
         "t_collected": route_dict.get("t_collected"),
         "comparison": route_dict.get("comparison"),
         "stops": route_dict.get("stops", []),
+        "max_stops": route_dict.get("max_stops"),
     }
     return route_map_html, {"proposal": proposal_payload, "metrics": metrics}
 
@@ -462,10 +463,11 @@ def _build_forecast_cards_html(summaries: list[dict[str, Any]]) -> str:
             f"""
             <div class="card">
               <div class="label">{html.escape(item['label'])} (KW {item['kw']:02d} · {html.escape(item['target_date'])})</div>
-              <div class="value">{item['critical']} kritisch</div>
+              <div class="value">{item['critical']} kritische Container</div>
               <div class="sub">
                 Rot (&gt;80%): {item['red']} · Schwarz (&ge;110%): {item['black']} ·
-                Gelb: {item['yellow']} · Grün: {item['green']}
+                Gelb: {item['yellow']} · Grün: {item['green']}<br>
+                Container = Standort-ID &times; Glasfarbe (nicht physische Standorte)
               </div>
             </div>
             """
@@ -483,10 +485,10 @@ def _build_route_section_html(
 
     kpi_cards = "\n".join(
         [
-            f'<div class="card"><div class="label">Geplante Tour ({metrics.get("num_stops", 0)} Stopps)</div><div class="value">{_format_num(metrics.get("planned_km"), " km")}</div><div class="sub">Volle Runde ({_format_num(metrics.get("total_active_locations"))} Standorte): {_format_num(metrics.get("full_round_km"), " km")}</div></div>',
-            f'<div class="card"><div class="label">Bedarfs-Ersparnis</div><div class="value">{_format_num(metrics.get("saved_km"), " km")}</div><div class="sub">{_format_num(metrics.get("saved_pct"), " %")} gegenüber voller Runde</div></div>',
+            f'<div class="card"><div class="label">Geplante Tour ({metrics.get("num_stops", 0)} Stopps)</div><div class="value">{_format_num(metrics.get("planned_km"), " km")}</div><div class="sub">Volle Runde ({_format_num(metrics.get("total_active_locations"))} physische Standorte, ohne Kapazitätsgrenze): {_format_num(metrics.get("full_round_km"), " km")}</div></div>',
+            f'<div class="card"><div class="label">Bedarfs-Ersparnis</div><div class="value">{_format_num(metrics.get("saved_km"), " km")}</div><div class="sub">{_format_num(metrics.get("saved_pct"), " %")} gegenüber voller Runde · fairer Vergleich mit gleichen Regeln: Tab &bdquo;Fairer Vergleich&ldquo;</div></div>',
             f'<div class="card"><div class="label">Fahrzeuge &amp; Runden</div><div class="value">{_format_num(metrics.get("vehicles_needed"))} Fahrzeuge</div><div class="sub">Runden: {_format_num(metrics.get("rounds"))} · Fahrzeugstunden gesamt: {_format_num(metrics.get("shift_hours"), " h")} · längste Schicht: {_format_num(metrics.get("max_vehicle_shift_hours"), " h")} (Limit {_format_num(metrics.get("max_shift_hours_limit"), " h")})</div></div>',
-            f'<div class="card"><div class="label">Sammelmenge &amp; Kritisch</div><div class="value">{_format_num(metrics.get("t_collected"), " t")}</div><div class="sub">Kritische Standorte: {_format_num(metrics.get("total_critical_locations"))}</div></div>',
+            f'<div class="card"><div class="label">Sammelmenge &amp; Kritisch</div><div class="value">{_format_num(metrics.get("t_collected"), " t")}</div><div class="sub">Kritische physische Standorte gesamt: {_format_num(metrics.get("total_critical_locations"))}</div></div>',
         ]
     )
 
@@ -518,14 +520,27 @@ def _build_route_section_html(
         route_map_html, height_px=500, title="Bestehende Route", frame_id="route-map-frame"
     )
     route_date = html.escape(str(metrics.get("date") or "unbekannt"))
+    served = int(metrics.get("num_stops") or 0)
+    total_crit = int(metrics.get("total_critical_locations") or 0)
+    open_crit = max(0, total_crit - served)
+    coverage_html = (
+        f'<div class="coverage-hint"><strong>{served} von {total_crit} kritischen Standorten in dieser Tour</strong>'
+        + (
+            f" &middot; {open_crit} bleiben offen (Stopp-Limit {html.escape(str(metrics.get('max_stops')))}). "
+            "What-if &bdquo;Alle kritischen&ldquo; zeigt den Aufwand für alle."
+            if open_crit
+            else " &middot; alle kritischen Standorte werden angefahren."
+        )
+        + "</div>"
+    )
     comparison_text = html.escape(str(metrics.get("comparison") or "-"))
 
     return f"""
       <div class="section-head">
         <h2>Bestehende Route ({route_date})</h2>
         <p class="muted">{comparison_text}</p>
-        <div class="map-banner">Standorte simuliert (OSM), Zuordnung seed 2026</div>
       </div>
+      {coverage_html}
       <div class="kpi-grid">{kpi_cards}</div>
 
       <div class="approval-box">
@@ -834,6 +849,28 @@ def _build_what_if_html(presets: list[dict[str, Any]]) -> str:
         <div id="whatif-result" class="muted">Szenario wählen: Baseline vs. Simulation.</div>
       </div>
     """
+
+
+def _build_location_banner_html(locations_df: pd.DataFrame) -> str:
+    """Page-wide notice that the ID-to-site mapping is simulated (counted from locations.csv)."""
+    if locations_df is None or locations_df.empty or "confidence" not in locations_df.columns:
+        return ""
+    total = int(len(locations_df))
+    conf = locations_df["confidence"].astype(str)
+    simulated = int((conf != "high").sum())
+    if simulated == 0:
+        return ""
+    points = (
+        int(locations_df[["lat", "lon"]].round(6).drop_duplicates().shape[0])
+        if {"lat", "lon"}.issubset(locations_df.columns)
+        else 0
+    )
+    return (
+        '<div class="location-banner"><strong>Standort-Zuordnung simuliert:</strong> '
+        f"{simulated} von {total} Standort-IDs liegen auf {points} echten OSM-Glascontainer-Punkten in Heilbronn. "
+        "Welche anonymisierte PreZero-ID zu welchem Punkt gehört, ist simuliert (mehrere IDs teilen sich einen Punkt). "
+        "Mit der echten Zuordnungstabelle von PreZero entfällt das ohne Codeänderung.</div>"
+    )
 
 
 def _build_heatmap_section_html(heatmap_src: str | None) -> str:
@@ -1204,6 +1241,7 @@ def build_ui(
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
     upload_section_html = _build_upload_section_html(upload_check)
     heatmap_section_html = _build_heatmap_section_html(heatmap_src)
+    location_banner_html = _build_location_banner_html(locations_df)
     benchmark_section_html = _build_benchmark_section_html(compute_benchmark_summary(benchmark_rows, date))
     data_section_html = _build_data_section_html(measurement_analysis)
 
@@ -1300,6 +1338,8 @@ def build_ui(
     .card .value {{ font-size: 20px; font-weight: 700; }}
     .card .sub {{ font-size: 12px; color: var(--muted); margin-top: 4px; }}
     .map-wrap {{ margin-bottom: 18px; }}
+    .location-banner {{ background: #fef3c7; border-bottom: 1px solid #f59e0b; color: #78350f; padding: 8px 20px; font-size: 13px; }}
+    .coverage-hint {{ background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }}
     .map-banner {{
       display: inline-block;
       margin: 4px 0 14px;
@@ -1412,6 +1452,8 @@ def build_ui(
     <div class="meta">Nur nachweisbare Pipeline-Daten · {upload_check['container_count']} Standorte · {upload_check['row_count']} Messungen</div>
   </header>
 
+  {location_banner_html}
+
   <nav class="tabs" role="tablist">
     <button type="button" class="tab-btn active" data-target="view-data">1. Daten</button>
     <button type="button" class="tab-btn" data-target="view-forecast">2. Forecast-Timeline</button>
@@ -1431,7 +1473,6 @@ def build_ui(
       <div class="section-head">
         <h2>Forecast-Timeline (+0 / +7 / +14 / +21 Tage)</h2>
         <p class="muted">Formel: last_fill_level + avg_daily_increase &times; Tage &times; Saisonfaktor, begrenzt auf 110 %.</p>
-        <div class="map-banner">Standorte simuliert (OSM), Zuordnung seed 2026</div>
       </div>
       <div class="kpi-grid">{forecast_cards_html}</div>
       <div class="map-wrap">{forecast_iframe}</div>
