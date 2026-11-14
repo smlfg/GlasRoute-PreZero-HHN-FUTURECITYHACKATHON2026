@@ -25,6 +25,7 @@ EVIDENCE_FIELDS = (
     "num_stops",
     "vehicles_needed",
     "shift_hours",
+    "max_vehicle_shift_hours",
     "t_collected",
     "total_critical_locations",
     "comparison",
@@ -130,7 +131,8 @@ def format_proposal_summary(proposal: Mapping[str, Any]) -> str:
         f"  planned:        {evidence.get('planned_km')} km",
         f"  saved:          {evidence.get('saved_km')} km ({evidence.get('saved_pct')} %)",
         f"  vehicles:       {evidence.get('vehicles_needed')}",
-        f"  shift hours:    {evidence.get('shift_hours')}",
+        f"  vehicle hours:  {evidence.get('shift_hours')} (sum over all vehicles)",
+        f"  longest shift:  {evidence.get('max_vehicle_shift_hours', '-')} h",
         f"  collected:      {evidence.get('t_collected')} t",
         f"  comparison:     {evidence.get('comparison')}",
     ]

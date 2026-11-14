@@ -386,8 +386,8 @@ def run_cmd(
 
     crit = scored_df[scored_df["critical"]]
     click.echo(
-        f"Pipeline complete for {date}: {crit['Location_id'].nunique()} critical locations "
-        f"({len(crit)} pairs)."
+        f"Pipeline complete for {date}: {route_data.get('total_critical_locations', 0)} critical "
+        f"physical sites ({crit['Location_id'].nunique()} critical IDs, {len(crit)} containers)."
     )
     click.echo(route_data["comparison"])
     click.echo(
