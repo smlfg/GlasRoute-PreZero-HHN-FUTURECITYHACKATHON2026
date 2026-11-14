@@ -26,9 +26,15 @@ FEATURE_COLUMNS = [
     "avg_daily_increase",
     "rate_source",
     "est_fill_level",
+    "due_date",
+    "days_until_due",
+    "overflow_date",
     "season_factor",
     "reading_count",
 ]
+
+#: Timer: a container is due for emptying once its estimated level reaches this value.
+DUE_FILL_PCT = 80.0  # Annahme, von PreZero zu ersetzen
 
 #: Readings are capped at this value; ``overfull`` is encoded as 110 %.
 MAX_FILL_PCT = 110.0
@@ -70,6 +76,26 @@ def estimate_fill(rate_per_day: float, effective_days: float) -> float:
     """Estimated current level of a container that was emptied ``effective_days`` ago."""
     value = float(rate_per_day) * max(0.0, float(effective_days))
     return max(0.0, min(MAX_FILL_PCT, value))
+
+
+def date_reaching(
+    rate_per_day: float, last_visit: str | pd.Timestamp, level_pct: float, max_days: int = 730
+) -> pd.Timestamp | None:
+    """First day the container (emptied at ``last_visit``) is estimated to reach ``level_pct``.
+
+    Walks forward day by day with each day's season factor; ``None`` if the rate is 0 or the
+    level is not reached within ``max_days``.
+    """
+    if rate_per_day is None or float(rate_per_day) <= 0.0:
+        return None
+    start = pd.Timestamp(last_visit).normalize()
+    accumulated = 0.0
+    for offset in range(1, max_days + 1):
+        day = start + pd.Timedelta(days=offset)
+        accumulated += float(rate_per_day) * get_season_factor(day)
+        if accumulated >= level_pct:
+            return day
+    return None
 
 
 def _avg_fill_rate(group: pd.DataFrame) -> float | None:
@@ -125,4 +151,17 @@ def build_features(df: pd.DataFrame, date: str | pd.Timestamp) -> pd.DataFrame:
         round(estimate_fill(rate, season_weighted_days(last, target_date)), 1)
         for rate, last in zip(out["avg_daily_increase"], out["last_date"])
     ]
+    # Timer per container: when must it be emptied (80 %) and when does it overflow (110 %)?
+    out["due_date"] = [
+        date_reaching(rate, last, DUE_FILL_PCT)
+        for rate, last in zip(out["avg_daily_increase"], out["last_date"])
+    ]
+    out["overflow_date"] = [
+        date_reaching(rate, last, MAX_FILL_PCT)
+        for rate, last in zip(out["avg_daily_increase"], out["last_date"])
+    ]
+    out["due_date"] = pd.to_datetime(out["due_date"])
+    out["overflow_date"] = pd.to_datetime(out["overflow_date"])
+    # Negative = overdue by that many days; NaN = no rate, no timer.
+    out["days_until_due"] = (out["due_date"] - target_date.normalize()).dt.days
     return out[FEATURE_COLUMNS]

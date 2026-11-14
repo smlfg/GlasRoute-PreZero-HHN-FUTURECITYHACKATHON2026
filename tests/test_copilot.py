@@ -134,9 +134,11 @@ def test_explain_container_distinguishes_materials_at_same_location(tmp_path: Pa
     assert white_res["material_type"] == "white"
     assert white_res["metrics"]["last_fill_level"] == pytest.approx(110.0)
     assert white_res["metrics"]["critical"] is True
-    assert white_res["score_breakdown"]["level_component"] == pytest.approx(0.5)
-    assert white_res["score_breakdown"]["overfull_component"] == pytest.approx(0.15)
-    assert white_res["score_breakdown"]["season_component"] == pytest.approx(0.2)
+    # Timer replaces the old weighted factors.
+    sb = white_res["score_breakdown"]
+    assert "Timer" in sb["formula"]
+    assert sb["due_level_pct"] == pytest.approx(80.0)
+    assert "status" in sb and "due_date" in sb and "est_fill_level" in sb
     assert white_res["in_planned_tour"] is True
     assert white_res["stop_order"] == 1
     assert len(white_res["site_containers"]) == 2
@@ -554,6 +556,6 @@ def test_precompute_what_if_presets_and_explain_stop(tmp_path: Path) -> None:
     exp = explain_stop(stop, scored, locs, "2026-04-15", max_stops=route.get("max_stops"))
     assert exp["containers"], exp
     c = exp["containers"][0]
-    assert c["score"] == pytest.approx(
-        c["level_component"] + c["overfull_component"] + c["season_component"], abs=0.002
-    )
+    # Score is the estimated level now scaled to 110 % = 1.0; the timer explains it.
+    assert c["score"] == pytest.approx(min(1.0, c["est_fill_level"] / 110.0), abs=0.002)
+    assert "status" in c and "due_date" in c

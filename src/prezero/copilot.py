@@ -604,31 +604,22 @@ def _build_container_explanation_payload(
     # Measure-and-empty: score uses the estimated current level, not the level found before emptying.
     est_fill = float(row["est_fill_level"]) if "est_fill_level" in row else last_fill
     overfull_rate = float(row["overfull_rate"]) if "overfull_rate" in row else 0.0
+    overfull_clipped = min(1.0, max(0.0, overfull_rate))
     season_factor = (
         float(row["season_factor"])
         if "season_factor" in row
         else (default_season if default_season is not None else features.get_season_factor(date))
     )
-    material_weight = float(scoring.MATERIAL_WEIGHTS.get(mat, 0.5))
-
-    level_norm = min(1.0, max(0.0, est_fill / 110.0))
-    overfull_clipped = min(1.0, max(0.0, overfull_rate))
-    material_season = min(1.0, max(0.0, material_weight * min(1.0, max(0.0, season_factor))))
     is_critical = (
         bool(row["critical"])
         if "critical" in row
         else float(row["score"]) >= scoring.CRITICAL_THRESHOLD
     )
+    timer = timer_info(row)
 
     score_breakdown = {
-        "formula": "0.5 * (est_fill_level / 110) + 0.3 * overfull_rate + 0.2 * (material_weight * season_factor)",
-        "level_norm": round(level_norm, 4),
-        "level_component": round(0.5 * level_norm, 4),
-        "overfull_rate": round(overfull_clipped, 4),
-        "overfull_component": round(0.3 * overfull_clipped, 4),
-        "material_weight": round(material_weight, 4),
-        "season_factor": round(season_factor, 4),
-        "season_component": round(0.2 * material_season, 4),
+        "formula": TIMER_FORMULA,
+        **timer,
         "critical_threshold": scoring.CRITICAL_THRESHOLD,
     }
 
@@ -649,7 +640,7 @@ def _build_container_explanation_payload(
         vehicle = int(loc_stop["vehicle"]) if loc_stop.get("vehicle") is not None else None
         round_num = int(loc_stop["round"]) if loc_stop.get("round") is not None else None
         tour_reason = (
-            f"Container {loc_id}:{mat} ist kritisch (Score {float(row['score']):.3f} >= {scoring.CRITICAL_THRESHOLD}) "
+            f"Container {loc_id}:{mat}: Timer abgelaufen ({timer['status']}, jetzt ca. {timer['est_fill_level']:.0f} %) "
             f"und als Stopp #{stop_order} in der geplanten Tour enthalten."
         )
     elif loc_stop is not None:
@@ -660,7 +651,7 @@ def _build_container_explanation_payload(
         tour_reason = (
             f"Standort {loc_id} wird zwar bei Stopp #{site_stop_order} angefahren "
             f"(primär {loc_stop.get('primary_material')}), dieser {mat}-Container ist jedoch "
-            f"nicht kritisch (Score {float(row['score']):.3f} < {scoring.CRITICAL_THRESHOLD}) und wird nicht mitgeleert."
+            f"noch nicht fällig ({timer['status']}, jetzt ca. {timer['est_fill_level']:.0f} %) und wird nicht mitgeleert."
         )
     elif is_critical:
         in_planned_tour = False
@@ -668,7 +659,7 @@ def _build_container_explanation_payload(
         vehicle = None
         round_num = None
         tour_reason = (
-            f"Container {loc_id}:{mat} ist kritisch (Score {float(row['score']):.3f}), "
+            f"Container {loc_id}:{mat}: Timer abgelaufen ({timer['status']}), "
             f"wurde aber durch das Stopp-Limit (max_stops={route_data.get('max_stops', 25)}) nicht in die Tour aufgenommen."
         )
     else:
@@ -677,8 +668,8 @@ def _build_container_explanation_payload(
         vehicle = None
         round_num = None
         tour_reason = (
-            f"Container {loc_id}:{mat} ist nicht kritisch (Score {float(row['score']):.3f} < "
-            f"{scoring.CRITICAL_THRESHOLD}) und nicht in der geplanten Tour."
+            f"Container {loc_id}:{mat} ist noch nicht fällig ({timer['status']}, jetzt ca. "
+            f"{timer['est_fill_level']:.0f} %) und nicht in der geplanten Tour."
         )
 
     site_containers = [
@@ -738,6 +729,43 @@ def _build_container_explanation_payload(
         "approval_hint": APPROVAL_HINT_TEXT,
         "sources": _dedupe_sources(sources),
     }
+
+
+def _date_str(value: Any) -> str | None:
+    if value is None or (not isinstance(value, str) and pd.isna(value)) or value == "":
+        return None
+    return str(pd.Timestamp(value).date())
+
+
+def timer_info(row: Mapping[str, Any] | pd.Series) -> dict[str, Any]:
+    """The emptying timer of one container (measure-and-empty model) as plain values."""
+    get = row.get if hasattr(row, "get") else (lambda k, d=None: d)
+    days = get("days_until_due", None)
+    days_int = None if days is None or pd.isna(days) else int(days)
+    if days_int is None:
+        status = "kein Timer (keine Füllrate)"
+    elif days_int < 0:
+        status = f"überfällig seit {-days_int} Tagen"
+    elif days_int == 0:
+        status = "heute fällig"
+    else:
+        status = f"fällig in {days_int} Tagen"
+    return {
+        "est_fill_level": round(float(get("est_fill_level", get("last_fill_level", 0.0)) or 0.0), 1),
+        "fill_rate_pct_per_day": round(float(get("avg_daily_increase", 0.0) or 0.0), 2),
+        "last_visit": _date_str(get("last_date", None)),
+        "due_date": _date_str(get("due_date", None)),
+        "overflow_date": _date_str(get("overflow_date", None)),
+        "days_until_due": days_int,
+        "due_level_pct": features.DUE_FILL_PCT,
+        "status": status,
+    }
+
+
+TIMER_FORMULA = (
+    "Timer: Füllrate = vorgefundener Stand / Tage seit der Leerung davor; fällig, sobald "
+    "Füllrate x Tage seit der letzten Leerung (je Tag mit Saisonfaktor) 80 % erreicht."
+)
 
 
 def explain_container(
@@ -921,26 +949,15 @@ def explain_stop(
     containers = []
     for _, r in rows.iterrows():
         mat = _normalize_material(str(r["material_type"]))
-        last_fill = float(r["last_fill_level"])
-        est_fill = float(r["est_fill_level"]) if "est_fill_level" in r else last_fill
-        overfull = min(1.0, max(0.0, float(r.get("overfull_rate", 0.0))))
-        season = float(r["season_factor"]) if "season_factor" in r else features.get_season_factor(date)
-        weight = float(scoring.MATERIAL_WEIGHTS.get(mat, 0.5))
-        level_c = 0.5 * min(1.0, max(0.0, est_fill / 110.0))
-        overfull_c = 0.3 * overfull
-        season_c = 0.2 * min(1.0, max(0.0, weight * min(1.0, max(0.0, season))))
+        timer = timer_info(r)
         score = float(r["score"])
         containers.append(
             {
                 "Location_id": str(r["Location_id"]),
                 "material_type": mat,
-                "last_fill_level": round(last_fill, 1),
-                "est_fill_level": round(est_fill, 1),
+                "last_fill_level": round(float(r["last_fill_level"]), 1),
+                **timer,
                 "days_since_last": int(r["days_since_last"]) if "days_since_last" in r else None,
-                "overfull_rate_pct": round(overfull * 100.0, 1),
-                "level_component": round(level_c, 3),
-                "overfull_component": round(overfull_c, 3),
-                "season_component": round(season_c, 3),
                 "score": round(score, 3),
                 "critical": bool(r.get("critical", score >= scoring.CRITICAL_THRESHOLD)),
             }
@@ -951,13 +968,13 @@ def explain_stop(
         reason = "Keine Score-Daten für diesen Standort."
     else:
         reason = (
-            f"{n_crit} von {len(containers)} Containern an diesem Standort sind kritisch "
-            f"(Score \u2265 {scoring.CRITICAL_THRESHOLD}). Höchster Score {top['score']:.3f} "
-            f"({top['material_type']}, jetzt geschätzt {top['est_fill_level']:.0f} % "
-            f"= Füllrate seit der letzten Leerung, beim letzten Besuch {top['last_fill_level']:.0f} % vorgefunden)."
+            f"Bei {n_crit} von {len(containers)} Containern an diesem Standort ist der Timer abgelaufen "
+            f"(geschätzt \u2265 {features.DUE_FILL_PCT:.0f} %). Am dringendsten: {top['material_type']}, "
+            f"{top['status']}, jetzt ca. {top['est_fill_level']:.0f} % (beim letzten Besuch "
+            f"{top['last_fill_level']:.0f} % vorgefunden und geleert)."
         )
         if max_stops is not None:
-            reason += f" Die Tour nimmt die {max_stops} kritischsten Standorte (nach Score)."
+            reason += f" Die Tour nimmt die {max_stops} dringendsten Standorte."
     return {
         "order": stop.get("order"),
         "Location_id": str(stop.get("Location_id")),
@@ -967,7 +984,7 @@ def explain_stop(
         "round": stop.get("round"),
         "source": stop.get("source"),
         "confidence": stop.get("confidence"),
-        "formula": "Score = 0,5 \u00b7 geschätzter Füllstand jetzt/110 + 0,3 \u00b7 Überlaufquote + 0,2 \u00b7 Material \u00b7 Saison",
+        "formula": TIMER_FORMULA,
         "critical_threshold": scoring.CRITICAL_THRESHOLD,
         "containers": containers,
         "reason": reason,
@@ -1141,9 +1158,9 @@ def precompute_ui_copilot_bundle(
             if focus_key
             else "Welche kritischen Stopps sind in der Tour?"
         ),
-        "Was passiert bei Schichtlimit max_shift_hours=6?",
-        "Was wäre mit einem 8 t Fahrzeug (vehicle_max_weight_kg=8000)?",
-        "Was passiert bei max_stops=20?",
+        "Was passiert bei einem Schichtlimit von 6 Stunden?",
+        "Was wäre mit einem 8 t Fahrzeug?",
+        "Was passiert bei maximal 20 Stopps?",
     ]
     ask_examples: list[dict[str, Any]] = []
     for question in fixed_questions:
@@ -1355,12 +1372,9 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             f"Identität:             Location_id={result['Location_id']}, material_type={result['material_type']}",
             f"Letzter Besuch:        {m['last_fill_level']:.1f}% vorgefunden und geleert am {m['last_date']} ({m['days_since_last']} Tage her, {m['reading_count']} Besuche)",
             f"Füllstand jetzt:       ca. {m.get('est_fill_level', m['last_fill_level']):.0f}% geschätzt (Füllrate {m['avg_daily_increase']:.2f} %/Tag seit der Leerung)",
-            f"Überlaufquote / Rate:  {m['overfull_rate'] * 100:.1f}% overfull, +{m['avg_daily_increase']:.2f} pp/Tag",
-            f"Kritikalitäts-Score:   {m['score']:.3f} (kritisch: {'ja' if m['critical'] else 'nein'}, Schwelle {sb['critical_threshold']})",
-            (
-                f"Score-Aufschlüsselung: Füllstand {sb['level_component']:.3f} + Überlauf {sb['overfull_component']:.3f} "
-                f"+ Material*Saison {sb['season_component']:.3f}"
-            ),
+            f"Timer:                 {sb['status']} (fällig am {sb['due_date'] or '-'}, überläuft ca. {sb['overflow_date'] or '-'})",
+            f"Kritisch:              {'ja' if m['critical'] else 'nein'} (Timer abgelaufen = geschätzt >= {sb['due_level_pct']:.0f} %)",
+            f"Überlauf-Historie:     {m['overfull_rate'] * 100:.1f}% der Besuche overfull (nur Info, kein Faktor)",
             f"Tourenstatus:          {'Ja, Stopp #' + str(result['stop_order']) if result['in_planned_tour'] else 'Nein'} — {result['tour_reason']}",
             f"Container am Standort: {siblings}",
             f"Geo-Provenienz:        source={prov['source']}, confidence={prov['confidence']}",
@@ -1425,7 +1439,7 @@ def _extract_what_if_overrides(question: str) -> dict[str, Any]:
         stops_match = re.search(r"\b(\d+)\s*(?:stopps?|stops?)\b", lowered)
         if stops_match:
             overrides["max_stops"] = int(stops_match.group(1))
-        weight_t_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:t|tonnen?)\b", lowered)
+        weight_t_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:-?\s*t|tonnen?)\b", lowered)
         if weight_t_match and any(w in lowered for w in ("kapazität", "kapazitaet", "fahrzeug", "lkw", "last")):
             overrides["vehicle_max_weight_kg"] = float(weight_t_match.group(1).replace(",", ".")) * 1000.0
     return overrides
