@@ -2387,7 +2387,7 @@ def _svg_variants_chart(variants: list[dict[str, Any]], active_id: str = "baseli
         return '<p class="muted">Keine Tourenvarianten verfügbar.</p>'
     w = 760
     row_h = 46
-    pad_l, pad_r, pad_t, pad_b = 205, 195, 28, 12
+    pad_l, pad_r, pad_t, pad_b = 205, 260, 28, 12
     h = pad_t + pad_b + row_h * len(variants)
     plot_w = w - pad_l - pad_r
     max_km = max([float(v.get("metrics", {}).get("planned_km", 0.0)) for v in variants] + [1.0])
@@ -4288,7 +4288,7 @@ def build_ui(
       }}
       function renderSvgVariants(variants, activeId) {{
         if (!variants || !variants.length) return '<p class="muted">Keine Tourenvarianten verfügbar.</p>';
-        var w = 760, rowH = 46, padL = 205, padR = 195, padT = 28, padB = 12;
+        var w = 760, rowH = 46, padL = 205, padR = 260, padT = 28, padB = 12;
         var h = padT + padB + rowH * variants.length, plotW = w - padL - padR;
         var maxKm = Math.max.apply(null, variants.map(function(v) {{ return Number((v.metrics || {{}}).planned_km || 0); }}).concat([1]));
         var p = ['<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Tourenvarianten im Vergleich" style="width:100%;height:auto;max-height:300px;display:block;">'];
