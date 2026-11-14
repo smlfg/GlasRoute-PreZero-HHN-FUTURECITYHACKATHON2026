@@ -925,6 +925,73 @@ def _build_what_if_html(presets: list[dict[str, Any]]) -> str:
     """
 
 
+def _build_copilot_section_html(
+    route_date: str,
+    overview_html: str,
+    what_if_html: str,
+    ask_html: str,
+    stops: list[dict[str, Any]],
+    top_overfull: list[dict[str, Any]] | None = None,
+) -> str:
+    """Render the dedicated Disponenten-Copilot view (Overview, What-if, Ask, Explain)."""
+    options: list[str] = []
+    seen_keys: set[str] = set()
+    for stop in stops:
+        if str(stop.get("stop_type", "collection")) != "collection":
+            continue
+        loc = str(stop.get("Location_id", "")).strip()
+        mat = str(stop.get("primary_material", "")).strip().lower()
+        if not loc or not mat:
+            continue
+        key = f"{loc}:{mat}"
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        order = stop.get("order", "-")
+        label = f"Stopp #{order}: {loc} ({mat})"
+        options.append(
+            f'<option value="{html.escape(key, quote=True)}">{html.escape(label)}</option>'
+        )
+    for row in top_overfull or []:
+        loc = str(row.get("Location_id", "")).strip()
+        mat = str(row.get("material_type", "")).strip().lower()
+        if not loc or not mat:
+            continue
+        key = f"{loc}:{mat}"
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        label = f"Top-20: {loc} ({mat})"
+        options.append(
+            f'<option value="{html.escape(key, quote=True)}">{html.escape(label)}</option>'
+        )
+
+    select_html = (
+        '<div class="ask-controls">'
+        '<label for="copilot-container-select" style="align-self:center;font-size:13px;">Container auswählen:</label>'
+        f'<select id="copilot-container-select" style="flex:1 1 320px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">{"".join(options)}</select>'
+        "</div>"
+        if options
+        else '<p class="muted">Keine Container für Erklärung geladen.</p>'
+    )
+
+    return f"""
+      <div class="section-head">
+        <h2>Disponenten-Copilot ({html.escape(route_date)})</h2>
+        <p class="muted">Deterministischer, quellengestützter Assistent (--no-llm, vorberechnet beim UI-Build). Alle Kennzahlen stammen direkt aus Pipeline-Dateien.</p>
+      </div>
+      {overview_html}
+      {what_if_html}
+      {ask_html}
+      <div id="copilot-explain-box" class="copilot-box">
+        <strong>Container-Erklärung (<code>explain_container</code>):</strong>
+        <p class="muted" style="margin:4px 0 8px;">Container auswählen oder im Tab &bdquo;4. Route &amp; Freigabe&ldquo; bzw. &bdquo;1. Daten&ldquo; anklicken.</p>
+        {select_html}
+        <div id="copilot-explain-panel" class="explain-panel" hidden style="margin-top:10px;margin-bottom:0;"></div>
+      </div>
+    """
+
+
 def _build_location_banner_html(locations_df: pd.DataFrame) -> str:
     """Page-wide notice that the ID-to-site mapping is simulated (counted from locations.csv)."""
     if locations_df is None or locations_df.empty or "confidence" not in locations_df.columns:
@@ -1174,6 +1241,13 @@ def _build_role_start_html(
         <input id="role-dispatcher-name" type="text" value="dispatcher">
         <button type="button" class="primary-btn" id="role-approve-route-btn">Tour freigeben</button>
         <span id="role-approval-status" class="badge pending">Status: Vorgeschlagen</span>
+      </div>
+      <div class="approval-box">
+        <strong>Fahrer-Rückmeldung übernehmen</strong>
+        <p class="muted">Die exportierte CSV hat das Eingabeschema plus die optionale Spalte <code>geleert</code>. Der statische Browser startet keine Pipeline; der CLI-Befehl erzeugt daraus die neuen Daten und die nächste Tour.</p>
+        <input id="feedback-file-input" type="file" accept=".csv,text/csv">
+        <span id="feedback-upload-status" class="muted">Noch keine Rückmeldung ausgewählt.</span>
+        <div class="command-box"><code id="feedback-command">prezero-route run --input &lt;feedback.csv&gt;</code><button type="button" class="secondary-btn" id="copy-feedback-command">Befehl kopieren</button></div>
       </div>
       <div class="table-wrap"><table><thead><tr><th>#</th><th>Standort</th><th>Glas</th><th>Priorität</th></tr></thead>
         <tbody>{''.join(rows) or '<tr><td colspan="4">Keine Stopps</td></tr>'}</tbody></table></div>
@@ -1513,9 +1587,14 @@ def build_ui(
     route_section_html = _build_route_section_html(
         route_map_html,
         route_bundle,
-        _build_what_if_html(insights["presets"]),
+    )
+    copilot_section_html = _build_copilot_section_html(
+        route_date=str(route_bundle["metrics"].get("date") or date),
         overview_html=_build_overview_html(insights.get("overview_text", "")),
+        what_if_html=_build_what_if_html(insights["presets"]),
         ask_html=_build_ask_html(insights.get("ask_examples", [])),
+        stops=route_bundle["metrics"].get("stops", []),
+        top_overfull=measurement_analysis.get("top_overfull", []),
     )
     insights_json = _safe_json_for_html(
         {
@@ -1816,6 +1895,8 @@ def build_ui(
     }}
     .primary-btn {{ border: 1px solid #166534; background: #16a34a; color: #fff; }}
     .secondary-btn {{ border: 1px solid var(--border); background: var(--surface); color: var(--text); }}
+    .command-box {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }}
+    .command-box code {{ flex: 1 1 360px; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 10px 12px; }}
     @media print {{
       body > *:not(#role-driver) {{ display: none !important; }}
       #role-driver, #role-driver #driver-tour {{ display: block !important; }}
@@ -1838,10 +1919,11 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-forecast">2. Forecast-Timeline</button>
     <button type="button" class="tab-btn" data-target="view-heatmap">3. Heatmap</button>
     <button type="button" class="tab-btn" data-target="view-route">4. Route &amp; Freigabe</button>
-    <button type="button" class="tab-btn" data-target="view-variables">5. Variablen</button>
-    <button type="button" class="tab-btn" data-target="view-benchmark">6. Fairer Vergleich</button>
-    <button type="button" class="tab-btn" data-target="view-datacheck">7. Datencheck</button>
-    <button type="button" class="tab-btn" data-target="view-upload">8. Upload</button>
+    <button type="button" class="tab-btn" data-target="view-copilot">5. Copilot</button>
+    <button type="button" class="tab-btn" data-target="view-variables">6. Variablen</button>
+    <button type="button" class="tab-btn" data-target="view-benchmark">7. Fairer Vergleich</button>
+    <button type="button" class="tab-btn" data-target="view-datacheck">8. Datencheck</button>
+    <button type="button" class="tab-btn" data-target="view-upload">9. Upload</button>
   </nav>
 
   <main class="analysis-workspace">
@@ -1865,6 +1947,10 @@ def build_ui(
 
     <section id="view-route" class="view-panel">
       {route_section_html}
+    </section>
+
+    <section id="view-copilot" class="view-panel">
+      {copilot_section_html}
     </section>
 
     <section id="view-variables" class="view-panel">
@@ -1993,9 +2079,11 @@ def build_ui(
         }}
         return null;
       }}
-      function showContainerExplain(loc, mat, stopIdx, panelId) {{
+      function showContainerExplain(loc, mat, stopIdx, panelId, skipScroll) {{
         var panel = document.getElementById(panelId || "explain-panel");
         var routePanel = document.getElementById("explain-panel");
+        var copilotPanel = document.getElementById("copilot-explain-panel");
+        var copilotSelect = document.getElementById("copilot-container-select");
         var normMat = normalizeMat(mat);
         var resolvedStopIdx = (stopIdx !== null && stopIdx !== undefined && stopIdx !== "") ? String(stopIdx) : findStopIdxByLoc(loc);
         var e = resolvedStopIdx !== null ? (insights.explains || {{}})[resolvedStopIdx] : null;
@@ -2004,6 +2092,16 @@ def build_ui(
         document.querySelectorAll("tr.stop-row").forEach(function(r) {{
           r.classList.toggle("selected", resolvedStopIdx !== null && r.getAttribute("data-stop-idx") === resolvedStopIdx);
         }});
+
+        if (copilotSelect) {{
+          var desiredKey = loc + ":" + normMat;
+          for (var oi = 0; oi < copilotSelect.options.length; oi++) {{
+            if (copilotSelect.options[oi].value === desiredKey) {{
+              copilotSelect.selectedIndex = oi;
+              break;
+            }}
+          }}
+        }}
 
         var content = "";
         if (!e && !cExp) {{
@@ -2029,15 +2127,37 @@ def build_ui(
               "<th>0,3·Überlauf</th><th>0,2·Mat·Saison</th><th>Score</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div></div>";
           }}
         }}
+        var openBtnHtml = "<div style='margin-top:8px;'><button type='button' class='secondary-btn copilot-open-tab-btn' style='padding:4px 10px;font-size:12px;'>Im Copilot-Tab öffnen &rarr;</button></div>";
         if (panel) {{
           panel.hidden = false;
-          panel.innerHTML = content;
-          panel.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
+          panel.innerHTML = panel === copilotPanel ? content : (content + openBtnHtml);
+          if (!skipScroll) panel.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
         }}
-        if (routePanel && routePanel !== panel) {{
+        if (routePanel && routePanel !== panel && panel !== copilotPanel) {{
           routePanel.hidden = false;
-          routePanel.innerHTML = content;
+          routePanel.innerHTML = content + openBtnHtml;
         }}
+        if (copilotPanel && copilotPanel !== panel) {{
+          copilotPanel.hidden = false;
+          copilotPanel.innerHTML = content;
+        }}
+      }}
+      document.addEventListener("click", function(evt) {{
+        if (evt.target && evt.target.classList && evt.target.classList.contains("copilot-open-tab-btn")) {{
+          activateTab("view-copilot");
+        }}
+      }});
+      var copilotSelectEl = document.getElementById("copilot-container-select");
+      if (copilotSelectEl) {{
+        function renderSelectedContainer(skipScroll) {{
+          var val = String(copilotSelectEl.value || "");
+          var sepIdx = val.indexOf(":");
+          if (sepIdx > 0) {{
+            showContainerExplain(val.slice(0, sepIdx), val.slice(sepIdx + 1), null, "copilot-explain-panel", !!skipScroll);
+          }}
+        }}
+        copilotSelectEl.addEventListener("change", function() {{ renderSelectedContainer(false); }});
+        if (copilotSelectEl.options.length > 0) renderSelectedContainer(true);
       }}
       document.querySelectorAll("tr.stop-row").forEach(function(row) {{
         row.addEventListener("click", function() {{
@@ -2219,6 +2339,47 @@ def build_ui(
       }}
       var printBtn = document.getElementById("print-tour-btn");
       if (printBtn) printBtn.addEventListener("click", function() {{ window.print(); }});
+
+      var feedbackInput = document.getElementById("feedback-file-input");
+      var feedbackStatus = document.getElementById("feedback-upload-status");
+      var copyFeedbackBtn = document.getElementById("copy-feedback-command");
+      var feedbackCommand = "prezero-route run --input <feedback.csv>";
+      if (feedbackInput) {{
+        feedbackInput.addEventListener("change", function() {{
+          var file = feedbackInput.files && feedbackInput.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(evt) {{
+            var text = String(evt.target.result || "");
+            var firstLine = text.split(/\\r?\\n/)[0] || "";
+            var headers = parseCsvLine(firstLine, firstLine.indexOf(";") !== -1 && firstLine.indexOf(",") === -1 ? ";" : ",");
+            var required = ["Location_id", "material_type", "date", "fill_level_perc"];
+            var missing = required.filter(function(name) {{ return headers.indexOf(name) < 0; }});
+            var accepted = missing.length === 0;
+            feedbackStatus.textContent = accepted
+              ? file.name + " akzeptiert (geleert ist optional). Befehl ausführen, um Daten und Forecast neu zu erzeugen."
+              : file.name + " abgelehnt: Pflichtspalten fehlen: " + missing.join(", ");
+            feedbackStatus.style.color = accepted ? "#166534" : "#b91c1c";
+          }};
+          reader.readAsText(file);
+        }});
+      }}
+      if (copyFeedbackBtn) {{
+        copyFeedbackBtn.addEventListener("click", function() {{
+          function copied() {{ copyFeedbackBtn.textContent = "Kopiert"; setTimeout(function() {{ copyFeedbackBtn.textContent = "Befehl kopieren"; }}, 1200); }}
+          if (navigator.clipboard && navigator.clipboard.writeText) {{
+            navigator.clipboard.writeText(feedbackCommand).then(copied);
+          }} else {{
+            var helper = document.createElement("textarea");
+            helper.value = feedbackCommand;
+            document.body.appendChild(helper);
+            helper.select();
+            document.execCommand("copy");
+            helper.remove();
+            copied();
+          }}
+        }});
+      }}
       updateDriverAccess();
 
       function parseCsvLine(line, delimiter) {{

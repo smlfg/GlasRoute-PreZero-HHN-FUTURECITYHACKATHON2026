@@ -437,14 +437,32 @@ def test_ui_copilot_overview_explain_whatif_ask_and_shift_limit(tmp_path: Path) 
     )
     html_text = out.read_text(encoding="utf-8")
 
-    # 1. Overview box appears at the top of the route tab (before KPI cards & approval box).
+    # 1. Copilot gets its own tab (view-copilot), while view-route stays focused on KPIs, approval, map & stops.
+    assert 'data-target="view-copilot"' in html_text
     route_start = html_text.index('id="view-route"')
-    overview_pos = html_text.index('id="copilot-overview-box"', route_start)
-    kpi_pos = html_text.index('class="kpi-grid"', route_start)
-    approve_pos = html_text.index('id="approve-route-btn"', route_start)
-    assert overview_pos < kpi_pos < approve_pos
-    assert 'id="copilot-overview-text"' in html_text
-    assert "Stopps geplant:" in html_text
+    copilot_start = html_text.index('id="view-copilot"')
+    copilot_end = html_text.index('id="view-variables"', copilot_start)
+    assert route_start < copilot_start < copilot_end
+    route_html = html_text[route_start:copilot_start]
+    copilot_html = html_text[copilot_start:copilot_end]
+
+    assert 'id="copilot-overview-box"' not in route_html
+    assert 'class="whatif-box"' not in route_html
+    assert 'id="copilot-ask-box"' not in route_html
+    assert 'id="route-map-frame"' in route_html
+    kpi_pos = route_html.index('class="kpi-grid"')
+    approve_pos = route_html.index('id="approve-route-btn"')
+    map_pos = route_html.index('id="route-map-frame"')
+    assert kpi_pos < approve_pos < map_pos
+
+    overview_pos = copilot_html.index('id="copilot-overview-box"')
+    whatif_pos = copilot_html.index('class="whatif-box"')
+    ask_pos = copilot_html.index('id="copilot-ask-box"')
+    explain_box_pos = copilot_html.index('id="copilot-explain-panel"')
+    assert overview_pos < whatif_pos < ask_pos < explain_box_pos
+    assert 'id="copilot-container-select"' in copilot_html
+    assert 'id="copilot-overview-text"' in copilot_html
+    assert "Stopps geplant:" in copilot_html
 
     # 2. Parse precomputed insights payload.
     payload_match = re.search(

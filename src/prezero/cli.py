@@ -287,9 +287,11 @@ def visualize_cmd(
 @click.option("--date", "-d", default="2026-04-15", show_default=True, help="Target date (YYYY-MM-DD).")
 @click.option(
     "--raw",
+    "--input",
+    "raw",
     default="data/raw/glass_fill_levels_anonymized_f.csv",
     show_default=True,
-    help="Path to raw fill-level CSV.",
+    help="Path to raw or driver feedback CSV.",
 )
 @click.option(
     "--cleaned",

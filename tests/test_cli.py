@@ -8,6 +8,7 @@ from pathlib import Path
 from click.testing import CliRunner
 import pandas as pd
 
+from prezero import features, forecast, ingest, scoring
 from prezero.cli import cli
 
 
@@ -65,6 +66,53 @@ def test_cli_run_produces_all_outputs(tmp_path: Path) -> None:
     assert trends_file.is_file()
     payload = json.loads(route_file.read_text(encoding="utf-8"))
     assert payload["num_stops"] >= 1
+
+
+def test_feedback_csv_reimports_and_changes_forecast(tmp_path: Path) -> None:
+    base = pd.DataFrame(
+        {
+            "Location_id": ["L1", "L1"],
+            "material_type": ["white", "white"],
+            "date": ["2026-04-01", "2026-04-10"],
+            "fill_level_perc": ["20", "40"],
+            "geleert": [True, True],
+        }
+    )
+    feedback = pd.DataFrame(
+        {
+            "Location_id": ["L1"],
+            "material_type": ["white"],
+            "date": ["2026-04-15"],
+            "fill_level_perc": ["90"],
+            "geleert": [True],
+        }
+    )
+    base_path = tmp_path / "base.csv"
+    feedback_path = tmp_path / "feedback.csv"
+    combined_path = tmp_path / "combined.csv"
+    base.to_csv(base_path, index=False)
+    feedback.to_csv(feedback_path, index=False)
+    pd.concat([base, pd.read_csv(feedback_path)], ignore_index=True).to_csv(combined_path, index=False)
+
+    before = ingest.ingest(base_path, tmp_path / "before-cleaned.csv")
+    after = ingest.ingest(combined_path, tmp_path / "after-cleaned.csv")
+    assert "geleert" in after.columns
+
+    before_scored = scoring.score_containers(features.build_features(before, "2026-04-15"))
+    after_scored = scoring.score_containers(features.build_features(after, "2026-04-15"))
+    before_forecast = forecast.forecast_from_scored(before_scored, "2026-04-15", offsets=[7])
+    after_forecast = forecast.forecast_from_scored(after_scored, "2026-04-15", offsets=[7])
+    assert before_forecast["forecast_pct"].tolist() != after_forecast["forecast_pct"].tolist()
+
+
+def test_cli_run_accepts_input_alias(tmp_path: Path) -> None:
+    raw_path, locs_path = _stage_sample_inputs(tmp_path)
+    result = CliRunner().invoke(
+        cli,
+        ["run", "--date", "2026-04-15", "--input", str(raw_path), "--locations", str(locs_path),
+         "--output-dir", str(tmp_path / "out")],
+    )
+    assert result.exit_code == 0, result.output
 
 
 def test_cli_stepwise_score_route_visualize(tmp_path: Path) -> None:
