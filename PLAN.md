@@ -52,6 +52,57 @@ ursprüngliche Rollenaufteilung unten ist Geschichte. Geliefert ist:
 Der Live-Hook: 11 Betriebsvariablen in `prezero_config.json` — mit PreZeros Zahlen gerechnet
 (2 Fahrzeuge/120 km → 1 Fahrzeug/99 km, getestet).
 
+## Challenge-Kernfragen: Status (Sa 17:15)
+
+| Kernfrage der Challenge | Status | Umsetzungsgrad & Befund |
+|---|---|---|
+| **1. Analyze:** Find patterns in collected data of >1 year | ✅ **90 %** | Saisonalität (März-Peak 37,6 % overfull), Materialtrend (61 % Weißglas) und Dynamiken belegt. Taggenaue Feiertags-/Ferienkorrelation fehlt noch. |
+| **2. Combine:** See if containers have the same “behavior” | ⚠️ **60 %** | Metriken (Füllrate, Overfull-Quote) und Kritikalitätsklassen vorhanden; formales Kohorten-/Cluster-Modell (z. B. „Hotspots“ vs. „Wohngebiet“) fehlt noch. |
+| **3. Build:** Universal tool where we see patterns | ✅ **95 %** | CLI-Pipeline + statische & interaktive Visualisierungen (`forecast_16.html`, `heatmap.py` mit Wochenslider, `ui_<date>.html` 4-View-Dashboard). |
+| **4. Create:** Generic route-planning tool on individual variables | ✅/⚠️ **80 %** | 11 Variablen in `prezero_config.json` externalisiert, Schicht-/Kapazitätsgrenzen aktiv; Flottensplitter auf 1 Fahrzeug fokussiert. |
+
+## Gap-Analyse zur Challenge-Vorgabe (Stand Sa 17:15)
+
+Abgleich der aktuellen Pipeline gegen die 5 Aufgabenpunkte der PreZero-Challenge:
+
+### 1. Analyze (Datenanalyse & Muster)
+- **Erfüllt:**
+  - Distinct Patterns & Saisonalität belegt (z. B. Peak im März mit 37,6 % `overfull`, Sommertief).
+  - Material-Trend belegt (Weißglas mit 61 % aller Überläufe).
+  - Container-Metriken (Füllrate, Overfull-Quote, Tage seit Leerung).
+- **Lücke (Gap):**
+  - **Externe Faktoren / Kalender-Events:** Explizite Auswertung von Ferienzeiten (BW) und Feiertagen (Ostern, Weihnachten, Pfingsten) ist in den Daten noch nicht als separates Feature/Visualisierung isoliert.
+
+### 2. Combine (Container-Gruppierung & Verhalten)
+- **Erfüllt:**
+  - Trennung nach Materialtypen und Priorisierung nach Kritikalitäts-Score.
+  - Per-Container-Verhaltensmetriken (`avg_daily_increase`, `overfull_rate`).
+- **Lücke (Gap):**
+  - **Verhaltens-Clustering:** Es gibt noch keine expliziten Cluster-Labels / Verhaltensgruppen (z. B. *„Schnellfüller / Hotspot“*, *„Regelmäßige Füller“*, *„Saisonale Ausreißer“*).
+
+### 3. Build & General Variables (Betriebsvariablen & Tooling)
+- **Erfüllt:**
+  - 11 Variablen in `prezero_config.json` externalisiert (Glasdichte 400 kg/m³, Container-Volumen 2,5 m³, Fahrzeugkapazität 11 t, Shift-Limit 8 h, Geschwindigkeiten, Depot-/Umschlagskoordinaten).
+  - Universelles Tooling mit CLI (`prezero-route`) und visuellen Dashboards (Heatmap, Forecast-Timeline, Tourenkarte).
+- **Lücke (Gap):**
+  - Keine funktionale Lücke — vollständig konfigurierbar wie gefordert.
+
+### 4. Create: Route Optimization & Fleet Deployment
+- **Erfüllt:**
+  - Dynamischer Tourenvorschlag basierend auf Kritikalitäts-Score unter Einhaltung von Schichtzeit, Fahrzeuglast und Umschlagstopps.
+  - Human-in-the-Loop-Freigabe (`propose` / `approve` / `--reject`).
+- **Lücke (Gap):**
+  - **Multi-Vehicle / Fleet Sizing:** Die Challenge fragt *„determine optimal fleet deployment (single or multiple vehicles required)"*. Aktuell ist das Routing als Ein-Fahrzeug-Tourenplanung ausgelegt (Hackathon-Scope). Es fehlt eine explizite Heuristik-Ausgabe wie: *„Für Tag X mit Y Tonnen / Z kritischen Stopps werden N Fahrzeuge empfohlen"*.
+
+### 5. Deliverables & Pitch
+- **Erfüllt:**
+  - Data Ingestion Tool (CLI-Pipeline).
+  - Visualisierungen (Heatmap mit Wochen-Slider, Forecast, Routenkarte, UI).
+  - Route Engine Prototyp + Dokumentation (`docs/ARCHITEKTUR.md`, `README.md`).
+- **Lücke (Gap):**
+  - Finales Pitch-Deck (Folien) erstellen.
+  - Rehearsal des Live-Hooks (`--config` Vorführung) und End-to-End Dry-Run vor Freeze.
+
 ## Solaufstellung & Re-Planning (historisch, Sa 15:00)
 
 ### 1. Rollen & Schritt 1 (Task 1 – Datengrundlage)
