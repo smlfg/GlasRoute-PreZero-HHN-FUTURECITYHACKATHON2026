@@ -276,3 +276,48 @@ def test_build_ui_without_heatmap_shows_hint(tmp_path: Path) -> None:
         output_path=tmp_path / "ui.html",
     )
     assert "Keine Heatmap erzeugt" in out.read_text(encoding="utf-8")
+
+
+def _benchmark_rows() -> list[dict]:
+    rows = []
+    for date in ("2026-04-15", "2026-07-15"):
+        for seed in (7, 42):
+            for variant, km in (
+                ("B0 status quo", 200.0),
+                ("B1 status quo optimized", 150.0),
+                ("B2 demand-driven NN", 100.0),
+                ("B3 demand-driven + 2-opt", 92.0),
+                ("B4 demand-driven + solver", 90.0),
+            ):
+                rows.append({"variant": variant, "date": date, "seed": seed, "km": km,
+                             "stops": 10, "h": 5.0, "rounds": 2, "vehicles": 2, "t": 8.0})
+    return rows
+
+
+def test_benchmark_summary_splits_routing_and_demand_effect() -> None:
+    from prezero.ui import compute_benchmark_summary
+
+    s = compute_benchmark_summary(_benchmark_rows(), "2026-04-15", 42)
+    assert s is not None
+    assert s["effects"]["demand_pct"] == 33.3  # 150 -> 100
+    assert s["effects"]["routing_pct"] == 10.0  # 100 -> best 90
+    assert s["effects"]["overall_vs_b1_pct"] == 40.0  # 150 -> 90
+    assert s["effects"]["overall_vs_b0_pct"] == 55.0  # 200 -> 90
+    assert [v["code"] for v in s["variants"]] == ["B0", "B1", "B2", "B4"]
+    assert s["cases"] == 4
+
+
+def test_build_ui_has_benchmark_tab(tmp_path: Path) -> None:
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui.html",
+        benchmark_rows=_benchmark_rows(),
+    )
+    html = out.read_text(encoding="utf-8")
+    assert 'id="view-benchmark"' in html
+    assert "Routing-Effekt" in html and "Bedarfs-Effekt" in html
+    assert "33.3 %" in html and "10.0 %" in html

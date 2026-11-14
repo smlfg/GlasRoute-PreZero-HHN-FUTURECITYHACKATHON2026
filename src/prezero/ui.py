@@ -629,6 +629,137 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
     """
 
 
+BENCHMARK_VARIANT_LABELS: dict[str, str] = {
+    "B0": "B0 Status quo (Listenreihenfolge, alle Standorte)",
+    "B1": "B1 Status quo optimiert (Nearest Neighbor, alle Standorte)",
+    "B2": "B2 Bedarfsgesteuert (nur kritische, Nearest Neighbor)",
+    "B3": "B3 Bedarfsgesteuert + 2-opt",
+    "B4": "B4 Bedarfsgesteuert + OR-Tools-Solver",
+}
+
+
+def _pct_saving(before: float, after: float) -> float:
+    return round((before - after) / before * 100.0, 1) if before > 0 else 0.0
+
+
+def compute_benchmark_summary(
+    rows: list[Mapping[str, Any]] | pd.DataFrame | None,
+    date: str = "2026-04-15",
+    seed: int = 42,
+) -> dict[str, Any] | None:
+    """Summarize benchmark_results.csv rows into B0/B1/B2/B4 KPIs and routing vs. demand effect."""
+    if rows is None:
+        return None
+    frame = rows.copy() if isinstance(rows, pd.DataFrame) else pd.DataFrame(list(rows))
+    if frame.empty or not {"variant", "date", "seed", "km"}.issubset(frame.columns):
+        return None
+    frame["code"] = frame["variant"].astype(str).str.slice(0, 2)
+    frame["date"] = frame["date"].astype(str)
+
+    def effects(case: pd.DataFrame) -> dict[str, float] | None:
+        km = case.set_index("code")["km"].astype(float)
+        if not {"B0", "B1", "B2"}.issubset(km.index):
+            return None
+        best = float(km[[c for c in ("B2", "B3", "B4") if c in km.index]].min())
+        return {
+            "routing_pct": _pct_saving(float(km["B2"]), best),
+            "demand_pct": _pct_saving(float(km["B1"]), float(km["B2"])),
+            "overall_vs_b1_pct": _pct_saving(float(km["B1"]), best),
+            "overall_vs_b0_pct": _pct_saving(float(km["B0"]), best),
+            "best_km": round(best, 2),
+        }
+
+    case = frame[(frame["date"] == date) & (frame["seed"].astype(int) == int(seed))]
+    if case.empty:
+        date = str(frame["date"].iloc[0])
+        seed = int(frame["seed"].iloc[0])
+        case = frame[(frame["date"] == date) & (frame["seed"].astype(int) == seed)]
+    main = effects(case)
+    if main is None:
+        return None
+
+    variants = []
+    for code in ("B0", "B1", "B2", "B4"):
+        sub = case[case["code"] == code]
+        if sub.empty:
+            continue
+        r = sub.iloc[0]
+        variants.append(
+            {
+                "code": code,
+                "label": BENCHMARK_VARIANT_LABELS[code],
+                "variant": str(r["variant"]),
+                "stops": int(r.get("stops", 0)),
+                "km": round(float(r["km"]), 2),
+                "h": round(float(r.get("h", 0.0)), 2),
+                "rounds": int(r.get("rounds", r.get("vehicles", 0))),
+                "t": round(float(r.get("t", 0.0)), 2),
+            }
+        )
+
+    per_case = [
+        e for e in (effects(g) for _, g in frame.groupby(["date", "seed"])) if e is not None
+    ]
+    robustness = {}
+    for key in ("routing_pct", "demand_pct", "overall_vs_b1_pct"):
+        values = [e[key] for e in per_case]
+        robustness[key] = {
+            "min": round(min(values), 1),
+            "max": round(max(values), 1),
+            "mean": round(sum(values) / len(values), 1),
+        }
+
+    return {
+        "date": date,
+        "seed": int(seed),
+        "variants": variants,
+        "effects": main,
+        "robustness": robustness,
+        "cases": len(per_case),
+        "dates": sorted(frame["date"].unique().tolist()),
+        "seeds": sorted(int(s) for s in frame["seed"].unique()),
+    }
+
+
+def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
+    head = """
+      <div class="section-head">
+        <h2>Fairer Vergleich: Routing-Effekt vs. Bedarfs-Effekt</h2>
+        <p class="muted">Alle Varianten mit denselben Regeln: 11 t pro Runde, Entladung am Wertstoffhof, max. 8 h pro Runde, Start/Ende Betriebshof.
+        Ein Stopp = ein physischer Standort (alle Glasfarben dort zusammen).</p>
+      </div>
+    """
+    if not summary:
+        return head + '<div class="card"><div class="label">Hinweis</div><div class="value">Kein Benchmark vorhanden</div><div class="sub">python scripts/benchmark.py erzeugt benchmark_results.csv.</div></div>'
+    e = summary["effects"]
+    rb = summary["robustness"]
+    cards = "\n".join(
+        [
+            f'<div class="card"><div class="label">Bedarfs-Effekt (B1 &rarr; B2)</div><div class="value">{e["demand_pct"]:.1f} %</div><div class="sub">nur kritische Standorte statt alle &middot; Spanne {rb["demand_pct"]["min"]:.1f}&ndash;{rb["demand_pct"]["max"]:.1f} %</div></div>',
+            f'<div class="card"><div class="label">Routing-Effekt (B2 &rarr; beste)</div><div class="value">{e["routing_pct"]:.1f} %</div><div class="sub">gleiche Stopps, bessere Reihenfolge &middot; Spanne {rb["routing_pct"]["min"]:.1f}&ndash;{rb["routing_pct"]["max"]:.1f} %</div></div>',
+            f'<div class="card"><div class="label">Gesamt vs. optimierter Status quo (B1)</div><div class="value">{e["overall_vs_b1_pct"]:.1f} %</div><div class="sub">{e["best_km"]:.2f} km statt B1 &middot; Spanne {rb["overall_vs_b1_pct"]["min"]:.1f}&ndash;{rb["overall_vs_b1_pct"]["max"]:.1f} %</div></div>',
+            f'<div class="card"><div class="label">Gesamt vs. Papierliste (B0)</div><div class="value">{e["overall_vs_b0_pct"]:.1f} %</div><div class="sub">obere Schranke, B0 ist nicht optimiert</div></div>',
+        ]
+    )
+    rows = "".join(
+        f"<tr><td>{html.escape(v['label'])}</td><td>{v['stops']}</td><td>{v['km']:.2f} km</td>"
+        f"<td>{v['h']:.2f} h</td><td>{v['rounds']}</td><td>{v['t']:.2f} t</td></tr>"
+        for v in summary["variants"]
+    )
+    return head + f"""
+      <div class="kpi-grid">{cards}</div>
+      <h3>Stichtag {html.escape(summary['date'])} (Zuordnungs-Seed {summary['seed']})</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variante</th><th>Stopps (Standorte)</th><th>Strecke</th><th>Fahrzeugstunden</th><th>Runden (&le; 11 t, &le; 8 h)</th><th>Menge</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+      <p class="muted">Spannen über {summary['cases']} Fälle: Stichtage {html.escape(', '.join(summary['dates']))} &times; Seeds {html.escape(', '.join(map(str, summary['seeds'])))}.
+      Jede Runde braucht ein Fahrzeug für bis zu 8 h. Quelle: scripts/benchmark.py &rarr; benchmark_results.csv.</p>
+    """
+
+
 def _build_heatmap_section_html(heatmap_src: str | None) -> str:
     head = """
       <div class="section-head">
@@ -963,6 +1094,7 @@ def build_ui(
     output_path: str | Path | None = None,
     trends_path: str | Path | None = None,
     heatmap_src: str | None = None,
+    benchmark_rows: list[Mapping[str, Any]] | pd.DataFrame | None = None,
 ) -> Path:
     """Build the single self-contained website ui_<date>.html from verifiable data."""
     out = Path(output_path) if output_path is not None else Path(f"ui_{date}.html")
@@ -990,6 +1122,7 @@ def build_ui(
     datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
     upload_section_html = _build_upload_section_html(upload_check)
     heatmap_section_html = _build_heatmap_section_html(heatmap_src)
+    benchmark_section_html = _build_benchmark_section_html(compute_benchmark_summary(benchmark_rows, date))
     data_section_html = _build_data_section_html(measurement_analysis)
 
     proposal_json = _safe_json_for_html(route_bundle["proposal"])
@@ -1195,8 +1328,9 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-forecast">2. Forecast-Timeline</button>
     <button type="button" class="tab-btn" data-target="view-heatmap">3. Heatmap</button>
     <button type="button" class="tab-btn" data-target="view-route">4. Route &amp; Freigabe</button>
-    <button type="button" class="tab-btn" data-target="view-datacheck">5. Datencheck</button>
-    <button type="button" class="tab-btn" data-target="view-upload">6. Upload</button>
+    <button type="button" class="tab-btn" data-target="view-benchmark">5. Fairer Vergleich</button>
+    <button type="button" class="tab-btn" data-target="view-datacheck">6. Datencheck</button>
+    <button type="button" class="tab-btn" data-target="view-upload">7. Upload</button>
   </nav>
 
   <main>
@@ -1220,6 +1354,10 @@ def build_ui(
 
     <section id="view-route" class="view-panel">
       {route_section_html}
+    </section>
+
+    <section id="view-benchmark" class="view-panel">
+      {benchmark_section_html}
     </section>
 
     <section id="view-datacheck" class="view-panel">

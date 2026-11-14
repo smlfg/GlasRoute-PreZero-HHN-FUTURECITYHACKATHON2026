@@ -381,6 +381,7 @@ def run_cmd(
         output_path=out_dir / f"ui_{date}.html",
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
+        benchmark_rows=_load_benchmark_rows(out_dir),
     )
 
     crit = scored_df[scored_df["critical"]]
@@ -588,6 +589,7 @@ def ui_cmd(
         output_path=out_dir / f"ui_{date}.html",
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
+        benchmark_rows=_load_benchmark_rows(out_dir),
     )
     click.echo(f"UI written: {out_path}")
 
@@ -609,6 +611,14 @@ def serve_cmd(directory: str, port: int) -> None:
             httpd.serve_forever()
         except KeyboardInterrupt:
             click.echo("Stopped.")
+
+
+def _load_benchmark_rows(out_dir: Path) -> pd.DataFrame | None:
+    """Load benchmark_results.csv (from scripts/benchmark.py) if present."""
+    for candidate in (out_dir / "benchmark_results.csv", Path("benchmark_results.csv")):
+        if candidate.is_file():
+            return pd.read_csv(candidate)
+    return None
 
 
 def _parse_cli_override_value(raw: str) -> Any:
