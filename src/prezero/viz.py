@@ -28,8 +28,8 @@ FORECAST_STATUS_COLORS = {
     "black": "#111827",
 }
 
-TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-TILE_ATTR = "© OpenStreetMap contributors © CARTO"
+TILE_URL = "https://tile.openstreetmap.de/{z}/{x}/{y}.png"
+TILE_ATTR = "© OpenStreetMap contributors, tile.openstreetmap.de"
 
 
 def _heatmap_status(value: float) -> str:
@@ -46,6 +46,7 @@ def plot_heatmap(
     matrix: pd.DataFrame,
     output_path: str | Path = "heatmap.html",
     selected_week: str | None = None,
+    map_date: str | None = None,
 ) -> Path:
     """Write an offline Plotly container tileboard with a week slider."""
     out = Path(output_path)
@@ -120,7 +121,8 @@ def plot_heatmap(
                 colors.append(rgba(status_color, 0.45 if is_predicted else 0.95))
                 hover_data.append(
                     [
-                        str(location_id),
+                        str(location_id).split(" · ", 1)[0],
+                        material.removeprefix("glass_"),
                         material_labels[material],
                         f"{value:.1f}%",
                         "prognostiziert" if is_predicted else "gemessen",
@@ -134,8 +136,8 @@ def plot_heatmap(
                 marker={"symbol": "square", "size": 15, "color": colors, "line": {"color": "white", "width": 1}},
                 customdata=hover_data,
                 hovertemplate=(
-                    "ID: %{customdata[0]}<br>Glas: %{customdata[1]}<br>"
-                    "Füllstand: %{customdata[2]}<br>%{customdata[3]}<extra>"
+                    "ID: %{customdata[0]}<br>Glas: %{customdata[2]}<br>"
+                    "Füllstand: %{customdata[3]}<br>%{customdata[4]}<extra>"
                     + label
                     + "</extra>"
                 ),
@@ -249,7 +251,26 @@ def plot_heatmap(
             }
         ],
     )
-    fig.write_html(str(out), include_plotlyjs="inline", full_html=True)
+    html = fig.to_html(include_plotlyjs="inline", full_html=True, div_id="heatmap-plot")
+    target_map = f"map_{map_date}.html" if map_date else "map_2026-04-15.html"
+    click_script = f"""
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {{
+        var plot = document.getElementById("heatmap-plot");
+        if (!plot) return;
+        plot.on("plotly_click", function(event) {{
+          var point = event.points && event.points[0];
+          if (!point || !point.customdata) return;
+          var locationId = encodeURIComponent(point.customdata[0]);
+          var material = encodeURIComponent(
+            String(point.customdata[1]).toLowerCase()
+          );
+          window.location.href = "{target_map}#loc=" + locationId + "&mat=" + material;
+        }});
+      }});
+    </script>
+    """
+    out.write_text(html.replace("</body>", click_script + "</body>"), encoding="utf-8")
     return out
 
 
@@ -576,6 +597,7 @@ def plot_route(
     scored: pd.DataFrame | None = None,
     locations: pd.DataFrame | None = None,
     forecast: pd.DataFrame | None = None,
+    container_keys: pd.DataFrame | None = None,
 ) -> Path:
     """Render an interactive Folium route map colored by score and site provenance.
 
@@ -610,22 +632,29 @@ def plot_route(
         icon=folium.Icon(color="black", icon="home", prefix="fa"),
     ).add_to(fmap)
 
-    stop_ids = {s["Location_id"] for s in stops}
-
     # Optional context layer of non-selected containers colored by score & site origin.
     if scored is not None and locations is not None and not scored.empty:
-        loc_scores = (
-            scored.sort_values(["Location_id", "score"], ascending=[True, False])
-            .groupby("Location_id", as_index=False)
-            .first()
-            .merge(locations[["Location_id", "lat", "lon", "source", "confidence"]], on="Location_id")
+        pair_frame = (
+            container_keys[["Location_id", "material_type"]].drop_duplicates()
+            if container_keys is not None
+            else scored[["Location_id", "material_type"]].drop_duplicates()
         )
+        loc_scores = pair_frame.merge(
+            scored,
+            on=["Location_id", "material_type"],
+            how="left",
+        ).merge(
+            locations[["Location_id", "lat", "lon", "source", "confidence"]],
+            on="Location_id",
+        )
+        loc_scores["score"] = loc_scores["score"].fillna(0.0)
+        container_markers: dict[str, tuple[str, str]] = {}
         for _, row in loc_scores.iterrows():
-            if row["Location_id"] in stop_ids:
-                continue
             simulated = _is_simulated(str(row["source"]), str(row["confidence"]))
             color = _score_color(float(row["score"]))
-            folium.CircleMarker(
+            material = str(row.get("material_type", "unknown")).strip().lower()
+            container_key = f"{row['Location_id']}|{material}"
+            marker = folium.CircleMarker(
                 location=[float(row["lat"]), float(row["lon"])],
                 radius=4,
                 color=color,
@@ -634,11 +663,25 @@ def plot_route(
                 fill=True,
                 fill_color=color,
                 fill_opacity=0.25 if simulated else 0.6,
+                popup=folium.Popup(
+                    (
+                        f"<b>ID:</b> {row['Location_id']}<br>"
+                        f"<b>Material:</b> {material}<br>"
+                        f"<b>Site:</b> "
+                        f"{'Zuordnung simuliert' if simulated else row['source']}"
+                    ),
+                    max_width=280,
+                ),
                 tooltip=(
-                    f"{row['Location_id']} | score={row['score']:.2f} | "
+                    f"{row['Location_id']} / {material} | score={row['score']:.2f} | "
                     f"{'simulated' if simulated else row['source']}"
                 ),
-            ).add_to(fmap)
+            )
+            marker.add_to(fmap)
+            marker.options["container_key"] = container_key
+            container_markers[container_key] = (marker.get_name(), "simulated" if simulated else "real")
+    else:
+        container_markers = {}
 
     if stops:
         line_coords = [depot_coords] + [[float(s["lat"]), float(s["lon"])] for s in stops] + [depot_coords]
@@ -693,8 +736,67 @@ def plot_route(
     </div>
     """
     fmap.get_root().html.add_child(folium.Element(legend_html))
+    _add_container_hash_handler(fmap, container_markers)
     fmap.save(str(out))
     return out
+
+
+def _add_container_hash_handler(
+    fmap: folium.Map,
+    container_markers: dict[str, tuple[str, str]],
+) -> None:
+    """Make heatmap container links focus and open their matching map marker."""
+    map_name = fmap.get_name()
+    marker_lookup = json.dumps(
+        {key: {"marker": marker, "site": site} for key, (marker, site) in container_markers.items()}
+    )
+    fmap.get_root().html.add_child(
+        folium.Element(
+            f"""
+            <script>
+              document.addEventListener("DOMContentLoaded", function() {{
+                var containerMarkers = {marker_lookup};
+                var containerMap = {map_name};
+                var notice = document.createElement("div");
+                notice.style.cssText =
+                  "position:fixed;top:10px;left:50%;transform:translateX(-50%);" +
+                  "z-index:9999;background:#fff3cd;padding:8px 12px;border:1px solid #e0b100;" +
+                  "border-radius:5px;font:13px sans-serif;display:none;";
+                document.body.appendChild(notice);
+                function showNotice(message) {{
+                  notice.textContent = message;
+                  notice.style.display = "block";
+                  window.setTimeout(function() {{ notice.style.display = "none"; }}, 3500);
+                }}
+                var hash = new URLSearchParams(window.location.hash.slice(1));
+                var locationId = hash.get("loc");
+                var material = hash.get("mat");
+                if (!locationId || !material) return;
+                var key = locationId + "|" + material.toLowerCase().replace(/^glas/, "");
+                var target = containerMarkers[key];
+                if (!target) {{
+                  showNotice("Container " + locationId + " / " + material + " nicht gefunden.");
+                  return;
+                }}
+                var marker = window[target.marker];
+                if (!marker) {{
+                  showNotice("Marker für " + locationId + " / " + material + " nicht verfügbar.");
+                  return;
+                }}
+                containerMap.setView(marker.getLatLng(), 17);
+                marker.openPopup();
+                marker.setStyle({{weight: 5, radius: 8}});
+                window.setTimeout(function() {{
+                  marker.setStyle({{weight: 1.5, radius: 4}});
+                }}, 3500);
+                if (target.site === "simulated") {{
+                  showNotice("Standortzuordnung simuliert.");
+                }}
+              }});
+            </script>
+            """
+        )
+    )
 
 
 from prezero.ui import build_ui, compute_data_check, compute_upload_check  # noqa: E402, F401

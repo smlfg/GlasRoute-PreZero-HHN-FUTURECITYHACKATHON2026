@@ -229,7 +229,7 @@ def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) 
         f"{int((~predicted).sum())} gemessen / {int(predicted.sum())} prognostiziert"
     )
     output = Path(output_dir) / "heatmap.html"
-    path = viz.plot_heatmap(matrix, output, selected_week=label)
+    path = viz.plot_heatmap(matrix, output, selected_week=label, map_date=date)
     click.echo(f"Heatmap: {path}")
 
 
@@ -277,6 +277,7 @@ def visualize_cmd(
         out_dir / f"map_{date}.html",
         scored=scored_df,
         locations=locs_df,
+        container_keys=readings_df[["Location_id", "material_type"]],
     )
     click.echo(f"Visualizations written: {trends_path}, {map_path}")
 
@@ -347,6 +348,7 @@ def run_cmd(
         out_dir / f"map_{date}.html",
         scored=scored_df,
         locations=locs_df,
+        container_keys=cleaned_df[["Location_id", "material_type"]],
     )
 
     crit = scored_df[scored_df["critical"]]

@@ -4,9 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from prezero import features, scoring
 from prezero.heatmap import build_heatmap_matrix
 from prezero.model import build_model
-from prezero.viz import plot_heatmap
+from prezero.viz import plot_heatmap, plot_route
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -53,9 +54,11 @@ def test_heatmap_is_offline_and_slider_matches_weeks(tmp_path: Path) -> None:
         for label in matrix.attrs["week_labels"]
     )
     assert "<script src=" not in html
+    assert "plotly_click" in html
+    assert "map_2026-04-15.html#loc=" in html
 
 
-def test_real_dataset_has_all_449_containers() -> None:
+def test_real_dataset_has_all_1338_material_containers() -> None:
     readings = pd.read_csv(
         ROOT / "data" / "processed" / "cleaned_readings.csv",
         parse_dates=["date"],
@@ -92,3 +95,34 @@ def test_raw_material_series_keep_brown_and_green() -> None:
     )
     assert len(matrix) == 1
     assert set(matrix.attrs["series_materials"]) == {"glass_white", "glass_green", "glass_brown"}
+
+
+def test_heatmap_and_map_have_identical_material_container_keys(tmp_path: Path) -> None:
+    readings = pd.read_csv(
+        ROOT / "data" / "processed" / "cleaned_readings.csv",
+        parse_dates=["date"],
+        dtype={"Location_id": str, "material_type": str},
+    )
+    locations = pd.read_csv(ROOT / "data" / "external" / "locations.csv", dtype={"Location_id": str})
+    matrix = build_heatmap_matrix(
+        readings,
+        "2025-10-17",
+        "2026-09-30",
+        locations=locations,
+    )
+    scored = scoring.score_containers(features.build_features(readings, "2026-04-15"))
+    map_path = plot_route(
+        {"date": "2026-04-15", "stops": []},
+        tmp_path / "map_2026-04-15.html",
+        scored=scored,
+        locations=locations,
+        container_keys=readings[["Location_id", "material_type"]],
+    )
+    html = map_path.read_text(encoding="utf-8")
+    heatmap_keys = {
+        f"{str(key).split(' · ', 1)[0]}|{str(material).removeprefix('glass_')}"
+        for key, material in matrix.attrs["series_materials"].items()
+    }
+    assert len(heatmap_keys) == 1338
+    assert html.count('"container_key":') == len(heatmap_keys)
+    assert all(f'"container_key": "{key}"' in html for key in heatmap_keys)
