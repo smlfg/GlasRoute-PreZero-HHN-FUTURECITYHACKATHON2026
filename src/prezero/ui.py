@@ -781,7 +781,8 @@ def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
       <div class="section-head">
         <h2>Fairer Vergleich: Routing-Effekt vs. Bedarfs-Effekt</h2>
         <p class="muted">Alle Varianten mit denselben Regeln: 11 t pro Runde, Entladung am Wertstoffhof, max. 8 h pro Runde, Start/Ende Betriebshof.
-        Ein Stopp = ein physischer Standort (alle Glasfarben dort zusammen).</p>
+        Ein Stopp = ein physischer Standort (alle Glasfarben dort zusammen).
+        Standorte sind selbst gescrapt und zufällig zugeordnet (nicht von PreZero): absolute km sind Illustration, die Prozent-Effekte sind die Aussage.</p>
       </div>
     """
     if not summary:
@@ -939,10 +940,13 @@ def _build_location_banner_html(locations_df: pd.DataFrame) -> str:
         else 0
     )
     return (
-        '<div class="location-banner"><strong>Standort-Zuordnung simuliert:</strong> '
-        f"{simulated} von {total} Standort-IDs liegen auf {points} echten OSM-Glascontainer-Punkten in Heilbronn. "
-        "Welche anonymisierte PreZero-ID zu welchem Punkt gehört, ist simuliert (mehrere IDs teilen sich einen Punkt). "
-        "Mit der echten Zuordnungstabelle von PreZero entfällt das ohne Codeänderung.</div>"
+        '<div class="location-banner"><strong>Ortsdaten erfunden, nicht von PreZero:</strong> '
+        "PreZero hat keine Standorte geliefert (die IDs sind anonymisiert). Auf eigene Initiative haben wir "
+        f"{points} Glascontainer-Punkte in Heilbronn aus OpenStreetMap gescrapt und die {simulated} von {total} IDs "
+        "zufällig darauf verteilt. Ob das PreZeros Container sind, ist unbekannt. "
+        "<b>Alle km, Fahrzeuge und Schichtstunden hängen an dieser erfundenen Geografie</b>; belastbar sind die "
+        "Verhältnisse (Bedarfs- vs. Routing-Effekt), nicht die absoluten Werte. "
+        "Mit PreZeros echter Standortliste ändert sich nur die Datei locations.csv, nicht der Code.</div>"
     )
 
 

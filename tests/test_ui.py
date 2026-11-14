@@ -379,7 +379,7 @@ def test_build_ui_labels_units_and_simulated_mapping(tmp_path: Path) -> None:
         output_path=tmp_path / "ui.html",
     )
     html = out.read_text(encoding="utf-8")
-    assert "Standort-Zuordnung simuliert" in html
+    assert "Ortsdaten erfunden, nicht von PreZero" in html
     assert "kritische Container" in html
     assert "kritischen Standorten in dieser Tour" in html
 
