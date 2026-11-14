@@ -12,6 +12,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 MATERIAL_COLORS = {
     "white": "#4a5568",
@@ -25,6 +27,178 @@ FORECAST_STATUS_COLORS = {
     "red": "#dc2626",
     "black": "#111827",
 }
+
+
+def _heatmap_status(value: float) -> str:
+    if value >= 110:
+        return "black"
+    if value > 80:
+        return "red"
+    if value >= 50:
+        return "yellow"
+    return "green"
+
+
+def plot_heatmap(
+    matrix: pd.DataFrame,
+    output_path: str | Path = "heatmap.html",
+    selected_week: str | None = None,
+) -> Path:
+    """Write an offline Plotly heatmap with a week slider."""
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    labels = list(matrix.attrs.get("week_labels", matrix.columns))
+    predicted = matrix.attrs.get("predicted")
+    if predicted is None:
+        predicted = pd.DataFrame(False, index=matrix.index, columns=matrix.columns)
+    materials = matrix.attrs.get("materials", pd.Series("unknown", index=matrix.index))
+    selected_index = labels.index(selected_week) if selected_week in labels else 0
+
+    values = matrix.to_numpy(dtype=float)
+    predicted_values = values.copy()
+    measured_values = values.copy()
+    predicted_mask = predicted.to_numpy(dtype=bool)
+    measured_values[predicted_mask] = float("nan")
+    predicted_values[~predicted_mask] = float("nan")
+    colorscale = [
+        [0.0, "#16a34a"],
+        [49.999 / 110, "#16a34a"],
+        [50 / 110, "#eab308"],
+        [80 / 110, "#eab308"],
+        [80.001 / 110, "#dc2626"],
+        [109.999 / 110, "#dc2626"],
+        [1.0, "#111827"],
+    ]
+
+    stored_shares = matrix.attrs.get("overfull_shares")
+    if stored_shares is not None:
+        overfull_shares = [float(stored_shares.get(material, 0.0)) for material in ("glass_white", "glass_green", "glass_brown")]
+    else:
+        overfull_shares = []
+        for material in ("glass_white", "glass_green", "glass_brown"):
+            material_rows = matrix.index[materials == material]
+            measured = matrix.loc[material_rows].where(~predicted.loc[material_rows])
+            overfull_shares.append(
+                float((measured >= 110).sum().sum() / measured.notna().sum().sum())
+                if measured.notna().sum().sum()
+                else 0.0
+            )
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[0.9, 0.1],
+        specs=[[{"type": "heatmap"}, {"type": "bar"}]],
+        horizontal_spacing=0.08,
+    )
+    hover = "ID: %{y}<br>Woche: %{x}<br>Füllstand: %{z:.1f}%<extra>gemessen</extra>"
+    fig.add_trace(
+        go.Heatmap(
+            z=measured_values,
+            x=list(range(len(labels))),
+            y=list(matrix.index),
+            zmin=0,
+            zmax=110,
+            colorscale=colorscale,
+            colorbar={"title": "%"},
+            hovertemplate=hover,
+            name="Gemessen",
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Heatmap(
+            z=predicted_values,
+            x=list(range(len(labels))),
+            y=list(matrix.index),
+            zmin=0,
+            zmax=110,
+            colorscale=colorscale,
+            opacity=0.45,
+            hovertemplate=hover.replace("gemessen", "prognostiziert"),
+            name="Prognostiziert",
+            showscale=False,
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=[f"{material.removeprefix('glass_')}" for material in ("glass_white", "glass_green", "glass_brown")],
+            y=overfull_shares,
+            marker_color=["#4a5568", "#2e8b57", "#8b4513"],
+            hovertemplate="%{x}: %{y:.1%} übervoll<extra></extra>",
+            name="Übervoll",
+        ),
+        row=1,
+        col=2,
+    )
+
+    def header(index: int) -> str:
+        values_at_week = matrix.iloc[:, index]
+        predicted_at_week = predicted.iloc[:, index]
+        statuses = values_at_week.map(_heatmap_status)
+        red = int((statuses == "red").sum())
+        black = int((statuses == "black").sum())
+        measured_count = int((~predicted_at_week).sum())
+        return (
+            f"{labels[index]}: {red} rot, {black} schwarz, "
+            f"{measured_count} gemessen / {len(matrix) - measured_count} prognostiziert"
+        )
+
+    steps = []
+    for index in range(len(labels)):
+        steps.append(
+            {
+                "label": labels[index],
+                "method": "relayout",
+                "args": [
+                    {
+                        "title.text": header(index),
+                        "shapes": [
+                            {
+                                "type": "rect",
+                                "xref": "x",
+                                "yref": "paper",
+                                "x0": index - 0.5,
+                                "x1": index + 0.5,
+                                "y0": 0,
+                                "y1": 1,
+                                "fillcolor": "#60a5fa",
+                                "opacity": 0.16,
+                                "line": {"color": "#2563eb", "width": 2},
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+    fig.update_layout(
+        title=header(selected_index),
+        template="plotly_white",
+        height=max(700, len(matrix) * 2),
+        xaxis={
+            "title": "Kalenderwoche",
+            "tickmode": "array",
+            "tickvals": list(range(len(labels))),
+            "ticktext": labels,
+        },
+        yaxis={"title": "Container", "autorange": "reversed"},
+        xaxis2={"title": "Glasfarbe", "tickangle": -45},
+        yaxis2={"title": "Anteil übervoll", "tickformat": ".0%"},
+        sliders=[
+            {
+                "active": selected_index,
+                "currentvalue": {"prefix": "Ausgewählte Woche: "},
+                "pad": {"t": 30},
+                "steps": steps,
+            }
+        ],
+        shapes=steps[selected_index]["args"][0]["shapes"],
+    )
+    fig.write_html(str(out), include_plotlyjs="inline", full_html=True)
+    return out
 
 
 def _score_color(score: float) -> str:

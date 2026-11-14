@@ -9,6 +9,8 @@ import click
 import pandas as pd
 
 from prezero import approval, features, forecast, ingest, locations, routing, scoring, viz
+from prezero.heatmap import END_DATE, START_DATE, build_heatmap_matrix
+from prezero.model import build_model
 
 
 @click.group()
@@ -179,6 +181,56 @@ def forecast_cmd(
     map_path = out_dir / f"forecast_{int(pd.Timestamp(date).isocalendar().week):02d}.html"
     path = viz.plot_forecast_map(map_frame, int(pd.Timestamp(date).isocalendar().week), map_path)
     click.echo(f"Forecast map: {path}")
+
+
+@cli.command("heatmap")
+@click.option("--date", "-d", required=True, help="Week to summarize (YYYY-MM-DD).")
+@click.option(
+    "--input",
+    "readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option("--output-dir", default=".", show_default=True, help="Directory for heatmap.html.")
+def heatmap_cmd(date: str, readings: str, locations_path: str, output_dir: str) -> None:
+    """Write the offline data-only container heatmap."""
+    selected_date = pd.Timestamp(date)
+    if selected_date < START_DATE or selected_date > END_DATE:
+        raise click.ClickException(f"--date must be between {START_DATE.date()} and {END_DATE.date()}.")
+    readings_df = pd.read_csv(
+        readings,
+        parse_dates=["date"],
+        dtype={"Location_id": str, "material_type": str},
+    )
+    locations_df = locations.load_locations(locations_path)
+    matrix = build_heatmap_matrix(build_model(readings_df, locations_df), START_DATE, END_DATE)
+    week_starts = [pd.Timestamp(value) for value in matrix.attrs["week_starts"]]
+    selected_index = next(
+        index
+        for index, week_start in enumerate(week_starts)
+        if week_start <= selected_date <= week_start + pd.Timedelta(days=6)
+    )
+    label = matrix.attrs["week_labels"][selected_index]
+    values = matrix.iloc[:, selected_index]
+    predicted = matrix.attrs["predicted"].iloc[:, selected_index]
+    statuses = values.map(viz._heatmap_status)
+    click.echo(
+        f"KW {int(week_starts[selected_index].isocalendar().week)}: "
+        f"{int((statuses == 'red').sum())} rot, "
+        f"{int((statuses == 'black').sum())} schwarz, "
+        f"{int((~predicted).sum())} gemessen / {int(predicted.sum())} prognostiziert"
+    )
+    output = Path(output_dir) / "heatmap.html"
+    path = viz.plot_heatmap(matrix, output, selected_week=label)
+    click.echo(f"Heatmap: {path}")
 
 
 @cli.command("visualize")
