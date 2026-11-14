@@ -566,6 +566,7 @@ def _build_route_section_html(
 
         score_val = stop.get('score')
         score_display = f"{float(score_val):.2f}".replace(".", ",") if score_val is not None else "-"
+        timer_display = _timer_text(stop.get("days_until_due"), stop.get("due_date"))
 
         leg_km = stop.get('leg_km')
         leg_display = f"{float(leg_km):.1f} km".replace(".", ",") if leg_km is not None else "-"
@@ -581,6 +582,7 @@ def _build_route_section_html(
               <td>{html.escape(str(mat_cell))}</td>
               <td>{_format_num(stop.get('est_fill_level'), '%')}</td>
               <td>{_format_num(stop.get('last_fill_level'), '%')}</td>
+              <td>{html.escape(timer_display)}</td>
               <td>{score_display}</td>
               <td>{html.escape(source_display)}</td>
               <td>{leg_display}</td>
@@ -656,6 +658,7 @@ def _build_route_section_html(
               <th>Glasart</th>
               <th>Füllstand jetzt (geschätzt)</th>
               <th>Beim letzten Besuch vorgefunden</th>
+              <th>Timer (dringendster Container)</th>
               <th>Dringlichkeit (Score)</th>
               <th>Ortsquelle</th>
               <th>Etappe</th>
@@ -1073,6 +1076,72 @@ def _build_copilot_section_html(
         <p class="muted" style="margin:4px 0 8px;">Container auswählen oder im Tab &bdquo;4. Route &amp; Freigabe&ldquo; bzw. &bdquo;1. Daten&ldquo; anklicken.</p>
         {select_html}
         <div id="copilot-explain-panel" class="explain-panel" hidden style="margin-top:10px;margin-bottom:0;"></div>
+      </div>
+    """
+
+
+def _timer_text(days: Any, due: Any) -> str:
+    if days is None or (isinstance(days, float) and pd.isna(days)):
+        return "-"
+    days = int(days)
+    when = f" ({due})" if due else ""
+    if days < 0:
+        return f"überfällig seit {-days} d{when}"
+    if days == 0:
+        return f"heute fällig{when}"
+    return f"fällig in {days} d{when}"
+
+
+_MAT_DE = {"brown": "Braunglas", "green": "Grünglas", "white": "Weißglas"}
+
+
+def _de(value: Any, digits: int = 1) -> str:
+    return f"{float(value):.{digits}f}".replace(".", ",")
+
+
+def _build_backtest_section_html(summary: Mapping[str, Any] | None) -> str:
+    """Backtest (is it predictable?) and emptying-rhythm table from backtest_summary.json."""
+    if not summary or "overall" not in summary:
+        return ""
+    o = summary["overall"]
+    names = summary.get("methods", {})
+    rows = "".join(
+        f"<tr><td>{html.escape(str(names.get(k, k)))}</td><td>{_de(o[k]['mae_pp'])} pp</td>"
+        f"<td>{_de(o[k]['within_20pp_pct'])} %</td><td>{_de(o[k]['full_precision_pct'])} %</td>"
+        f"<td>{_de(o[k]['full_recall_pct'])} %</td></tr>"
+        for k in ("model", "mean_past", "last_value", "model_season")
+        if k in o
+    )
+    rhythm = summary.get("rhythm") or {}
+    rh_rows = "".join(
+        f"<tr><td>{'<b>' if mat == 'brown' else ''}{_MAT_DE.get(mat, mat)}{'</b>' if mat == 'brown' else ''}</td>"
+        f"<td>{_de(b['ideal_days_median'], 0)} Tage</td><td>{_de(b['actual_days_median'], 0)} Tage</td>"
+        f"<td>{_de(b['too_often_pct'])} %</td><td>{_de(b['too_rarely_pct'])} %</td></tr>"
+        for mat, b in (rhythm.get("by_material") or {}).items()
+    )
+    m, base = o["model"], o["mean_past"]
+    verdict = (
+        f"<b>Nicht zufällig:</b> Aus den Besuchen davor sagt der Timer den vorgefundenen Füllstand mit "
+        f"{_de(m['mae_pp'])} pp Fehler voraus, „Durchschnitt bisher“ mit {_de(base['mae_pp'])} pp. "
+        f"Sagt er „voll“, stimmt es in {_de(m['full_precision_pct'])} % der Fälle."
+    )
+    rhythm_html = ""
+    if rh_rows:
+        rhythm_html = f"""
+        <h3>Passt der heutige Leerungsrhythmus?</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Glasart</th><th>ideal bis 80 %</th><th>heute tatsächlich</th><th>zu oft geleert</th><th>zu selten geleert</th></tr></thead>
+          <tbody>{rh_rows}</tbody></table></div>
+        <p class="muted">Bei {_de(rhythm['found_below_50_pct'])} % aller {rhythm['visits']} Besuche war der Container unter 50 % voll,
+        bei {_de(rhythm['found_overfull_pct'])} % lief er über. <b>Braunglas wird viel zu oft geleert</b> &rarr; ein Timer pro Container statt Gebietsrhythmus.</p>
+        """
+    return f"""
+      <div class="process-note"><strong>Backtest: Ist der Füllstand vorhersagbar?</strong> {verdict}
+        <div class="table-wrap" style="margin-top:8px"><table>
+          <thead><tr><th>Methode</th><th>Fehler Ø</th><th>Treffer ±20 pp</th><th>„voll“ stimmt</th><th>volle erkannt</th></tr></thead>
+          <tbody>{rows}</tbody></table></div>
+        <span class="muted">{summary.get('predicted_visits', '-')} Besuche, jeweils nur aus den Besuchen davor vorhergesagt (scripts/backtest.py).</span>
+        {rhythm_html}
       </div>
     """
 
@@ -1884,7 +1953,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
       <div class="section-head">
         <h2>Daten: Reale Messungen</h2>
         <p class="muted">Echte PreZero-Messdaten · {analysis['container_count']:,} Container · Füllstand 110 % = übervoll</p>
-        <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung (je Tag mit Saisonfaktor), max. 110&nbsp;%.</div>
+        <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung, max. 110&nbsp;%. <b>Timer:</b> fällig, sobald die Schätzung 80&nbsp;% erreicht.</div>
       </div>
       <div class="two-col">
         <div>{charts[0]}</div>
@@ -1950,6 +2019,7 @@ def build_ui(
     trends_path: str | Path | None = None,
     heatmap_src: str | None = None,
     benchmark_rows: list[Mapping[str, Any]] | pd.DataFrame | None = None,
+    backtest_summary: Mapping[str, Any] | None = None,
 ) -> Path:
     """Build the single self-contained website ui_<date>.html from verifiable data."""
     out = Path(output_path) if output_path is not None else Path(f"ui_{date}.html")
@@ -2005,6 +2075,7 @@ def build_ui(
     location_banner_html = _build_location_banner_html(locations_df)
     benchmark_section_html = _build_benchmark_section_html(compute_benchmark_summary(benchmark_rows, date))
     variables_section_html = _build_variables_section_html(route_data)
+    backtest_section_html = _build_backtest_section_html(backtest_summary)
     data_section_html = _build_data_section_html(measurement_analysis)
     role_start_html = _build_role_start_html(route_bundle, locations_df, date)
 
@@ -2332,8 +2403,10 @@ def build_ui(
     <section id="view-forecast" class="view-panel">
       <div class="section-head">
         <h2>Forecast-Timeline (+0 / +7 / +14 / +21 Tage)</h2>
-        <p class="muted">Prognose = Füllrate &times; Tage seit der letzten Leerung bis zum Zieldatum (je Tag mit Saisonfaktor), begrenzt auf 110 %.</p>
-        <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung (je Tag mit Saisonfaktor), max. 110&nbsp;%.</div>
+        <p class="muted">Prognose = Füllrate &times; Tage seit der letzten Leerung bis zum Zieldatum, begrenzt auf 110 %.
+        <b>Timer:</b> Ein Container ist fällig, sobald die Schätzung 80 % erreicht. Kein fester Saisonfaktor: der Backtest hat ihn widerlegt.</p>
+        {backtest_section_html}
+        <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung, max. 110&nbsp;%. <b>Timer:</b> fällig, sobald die Schätzung 80&nbsp;% erreicht.</div>
       </div>
       <div class="kpi-grid">{forecast_cards_html}</div>
       <div class="map-wrap">{forecast_iframe}</div>
@@ -2529,18 +2602,19 @@ def build_ui(
               var mName = matLabels[normalizeMat(c.material_type)] || esc(c.material_type);
               var shortLoc = esc(c.Location_id).slice(0, 8) + "…";
               return "<tr><td><code>" + shortLoc + "</code></td><td>" + mName +
-                "</td><td>" + fmt(c.est_fill_level, " %") + "</td><td>" + c.last_fill_level + " %" + (c.days_since_last !== null && c.days_since_last !== undefined ? " (vor " + c.days_since_last + " d)" : "") + "</td><td>" + c.level_component + "</td><td>" + c.overfull_component +
-                "</td><td>" + c.season_component + "</td><td><b>" + c.score + "</b></td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
+                "</td><td>" + fmt(c.est_fill_level, " %") + "</td><td>" + c.last_fill_level + " %" + (c.days_since_last !== null && c.days_since_last !== undefined ? " (vor " + c.days_since_last + " d)" : "") +
+                "</td><td>" + fmt(c.fill_rate_pct_per_day, " %/Tag") + "</td><td>" + esc(c.status || "-") + "</td><td>" + esc(c.due_date || "-") +
+                "</td><td>" + esc(c.overflow_date || "-") + "</td><td>" + (c.critical ? "ja" : "nein") + "</td></tr>";
             }}).join("");
             var srcMap = {{ osm_assigned: "OSM-Standort", prezero_supplied: "PreZero-Standort", config: "Betriebskonfiguration" }};
             var confMap = {{ simulated_mapping: "simulierte Zuordnung", high: "bestätigt", low: "unbestätigt" }};
             var srcText = srcMap[e.source] || esc(e.source);
             var confText = confMap[e.confidence] || esc(e.confidence);
             content += "<div style='margin-top:8px'><b>Standort-Aufschlüsselung:</b> " + esc(e.reason) +
-              "<br><span class='muted'>" + esc(e.formula) + " · kritisch ab " + e.critical_threshold +
+              "<br><span class='muted'>" + esc(e.formula) +
               " · Ortsquelle: " + srcText + " (" + confText + ")</span>" +
-              "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glasart</th><th>jetzt (geschätzt)</th><th>beim letzten Besuch</th><th>0,5·Füllstand jetzt</th>" +
-              "<th>0,3·Überlauf</th><th>0,2·Mat·Saison</th><th>Score</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div></div>";
+              "<div class='table-wrap'><table><thead><tr><th>ID</th><th>Glasart</th><th>jetzt (geschätzt)</th><th>beim letzten Besuch</th><th>Füllrate</th>" +
+              "<th>Timer</th><th>fällig am</th><th>läuft über am</th><th>kritisch</th></tr></thead><tbody>" + rows + "</tbody></table></div></div>";
           }}
         }}
         var openBtnHtml = "<div style='margin-top:8px;'><button type='button' class='secondary-btn copilot-open-tab-btn' style='padding:4px 10px;font-size:12px;'>Im Copilot-Tab öffnen &rarr;</button></div>";

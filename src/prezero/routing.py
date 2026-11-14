@@ -87,6 +87,14 @@ def density_for(cfg: OperationalConfig, material: str) -> float:
     return float(cfg.density_kg_per_m3 if specific is None else specific)
 
 
+def _opt_int(value: Any) -> int | None:
+    return None if value is None or pd.isna(value) else int(value)
+
+
+def _opt_date(value: Any) -> str | None:
+    return None if value is None or pd.isna(value) else str(pd.Timestamp(value).date())
+
+
 def _opt_float(value: float | None) -> float | None:
     return None if value is None else float(value)
 
@@ -165,6 +173,10 @@ def _aggregate_locations(
     # Mass to collect = current (estimated) level; the last reading was taken before emptying.
     if "est_fill_level" not in work.columns:
         work["est_fill_level"] = work["last_fill_level"]
+    if "days_until_due" not in work.columns:
+        work["days_until_due"] = float("nan")
+    if "due_date" not in work.columns:
+        work["due_date"] = pd.NaT
     work["bin_volume_m3"] = float(cfg.container_volume_m3) * (
         work["est_fill_level"].astype(float).clip(lower=0.0) / 100.0
     )
@@ -192,6 +204,9 @@ def _aggregate_locations(
         primary_material=("material_type", "first"),
         last_fill_level=("last_fill_level", "max"),
         est_fill_level=("est_fill_level", "max"),
+        # Timer of the most urgent container at the site (negative = overdue).
+        days_until_due=("days_until_due", "min"),
+        due_date=("due_date", "min"),
         critical_bins=("critical", "sum"),
         bins=("Location_id", "size"),
         mass_kg=("crit_mass_kg", "sum"),
@@ -448,6 +463,8 @@ def _simulate_constrained_routes(
                 "primary_material": str(cand["primary_material"]),
                 "last_fill_level": float(cand["last_fill_level"]),
                 "est_fill_level": float(cand["est_fill_level"]),
+                "days_until_due": _opt_int(cand.get("days_until_due")),
+                "due_date": _opt_date(cand.get("due_date")),
                 "source": str(cand["source"]),
                 "confidence": str(cand["confidence"]),
                 "vehicle": vehicle_idx,

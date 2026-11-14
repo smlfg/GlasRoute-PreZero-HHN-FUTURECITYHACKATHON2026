@@ -764,7 +764,7 @@ def timer_info(row: Mapping[str, Any] | pd.Series) -> dict[str, Any]:
 
 TIMER_FORMULA = (
     "Timer: Füllrate = vorgefundener Stand / Tage seit der Leerung davor; fällig, sobald "
-    "Füllrate x Tage seit der letzten Leerung (je Tag mit Saisonfaktor) 80 % erreicht."
+    "Füllrate x Tage seit der letzten Leerung 80 % erreicht."
 )
 
 

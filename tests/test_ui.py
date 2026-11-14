@@ -724,3 +724,35 @@ def test_compute_measurement_analysis_includes_behavior_groups() -> None:
     ]
     assert sum(g["container_count"] for g in analysis["behavior_groups"]) == analysis["container_count"]
     assert len(analysis["behavior_points"]) == analysis["container_count"]
+
+
+def test_build_ui_shows_timer_and_backtest(tmp_path: Path) -> None:
+    import json as _json
+
+    route = dict(_sample_route())
+    route["stops"] = [dict(s) for s in route["stops"]]
+    for s in route["stops"]:
+        if s.get("stop_type", "collection") == "collection":
+            s["days_until_due"] = -9
+            s["due_date"] = "2026-04-06"
+    summary = _json.loads(
+        """{"predicted_visits": 10, "methods": {"model": "Timer-Modell", "mean_past": "Durchschnitt bisher"},
+        "overall": {"model": {"mae_pp": 19.9, "within_20pp_pct": 63.7, "full_precision_pct": 75.0, "full_recall_pct": 59.4},
+                    "mean_past": {"mae_pp": 22.3, "within_20pp_pct": 55.5, "full_precision_pct": 64.9, "full_recall_pct": 60.8}},
+        "rhythm": {"visits": 100, "found_below_50_pct": 30.1, "found_overfull_pct": 11.2,
+                   "by_material": {"brown": {"ideal_days_median": 95.4, "actual_days_median": 42.0, "too_often_pct": 89.1, "too_rarely_pct": 2.1}}}}"""
+    )
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=route,
+        output_path=tmp_path / "ui.html",
+        backtest_summary=summary,
+    )
+    html = out.read_text(encoding="utf-8")
+    assert "überfällig seit 9 d (2026-04-06)" in html
+    assert "Ist der Füllstand vorhersagbar?" in html and "19,9 pp" in html
+    assert "Braunglas" in html and "95 Tage" in html and "89,1 %" in html
+    assert "Saisonfaktor)" not in html

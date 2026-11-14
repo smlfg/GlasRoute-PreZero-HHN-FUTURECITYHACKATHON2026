@@ -386,6 +386,7 @@ def run_cmd(
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
         benchmark_rows=_load_benchmark_rows(out_dir),
+        backtest_summary=_load_backtest_summary(out_dir),
     )
 
     crit = scored_df[scored_df["critical"]]
@@ -594,6 +595,7 @@ def ui_cmd(
         trends_path=trends_path,
         heatmap_src=heatmap_path.name,
         benchmark_rows=_load_benchmark_rows(out_dir),
+        backtest_summary=_load_backtest_summary(out_dir),
     )
     click.echo(f"UI written: {out_path}")
 
@@ -615,6 +617,14 @@ def serve_cmd(directory: str, port: int) -> None:
             httpd.serve_forever()
         except KeyboardInterrupt:
             click.echo("Stopped.")
+
+
+def _load_backtest_summary(out_dir: Path) -> dict | None:
+    """Load backtest_summary.json (from scripts/backtest.py) if present."""
+    for candidate in (out_dir / "backtest_summary.json", Path("backtest_summary.json")):
+        if candidate.is_file():
+            return json.loads(candidate.read_text(encoding="utf-8"))
+    return None
 
 
 def _load_benchmark_rows(out_dir: Path) -> pd.DataFrame | None:
