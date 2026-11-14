@@ -8,7 +8,8 @@ from pathlib import Path
 import click
 import pandas as pd
 
-from prezero import approval, features, ingest, locations, routing, scoring, viz
+from prezero import approval, features, forecast, ingest, locations, routing, scoring, viz
+from prezero.model import build_model
 
 
 @click.group()
@@ -113,6 +114,46 @@ def route_cmd(
         config=cfg,
     )
     click.echo(routing.format_route_summary(route_data))
+
+
+@cli.command("forecast")
+@click.option("--date", "-d", required=True, help="First target date (YYYY-MM-DD).")
+@click.option("--weeks", default=4, show_default=True, type=click.IntRange(min=1), help="Number of weeks.")
+@click.option(
+    "--readings",
+    default="data/processed/cleaned_readings.csv",
+    show_default=True,
+    help="Path to cleaned readings CSV.",
+)
+@click.option(
+    "--locations",
+    "locations_path",
+    default="data/external/locations.csv",
+    show_default=True,
+    help="Path to canonical locations CSV.",
+)
+@click.option("--output-dir", default=".", show_default=True, help="Directory for the forecast HTML.")
+def forecast_cmd(date: str, weeks: int, readings: str, locations_path: str, output_dir: str) -> None:
+    """Print weekly fill forecasts and write a switchable Folium map."""
+    start = pd.Timestamp(date)
+    sites = build_model(readings, locations_path)
+    frames: list[pd.DataFrame] = []
+    for offset in range(weeks):
+        target = start + pd.Timedelta(weeks=offset)
+        week_number = int(target.isocalendar().week)
+        frame = forecast.forecast_fill(sites, target)
+        frame["week"] = week_number
+        frames.append(frame)
+        counts = frame["status"].value_counts()
+        click.echo(
+            f"KW {week_number}: {int(counts.get('red', 0))} rot, "
+            f"{int(counts.get('black', 0))} schwarz"
+        )
+
+    output = Path(output_dir) / f"forecast_{int(start.isocalendar().week):02d}.html"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    path = viz.plot_forecast_map(pd.concat(frames, ignore_index=True), int(start.isocalendar().week), output)
+    click.echo(f"Forecast map: {path}")
 
 
 @cli.command("visualize")
