@@ -131,7 +131,8 @@ def test_placeholder_is_dashed_and_real_site_is_solid(tmp_path: Path) -> None:
 def test_forecast_summaries_report_counts() -> None:
     frame = forecast.forecast_from_scored(_scored(), "2026-04-15")
     today = frame[frame["offset_days"] == 0]
-    assert forecast.count_critical(today) == 2  # L1 red, L3 black
+    # Measure-and-empty: L1 10 %/d x 9 d = 90 % (red); L3 was emptied at 110 % with rate 0 (green).
+    assert forecast.count_critical(today) == 1
     line = forecast.format_forecast_line(7, frame[frame["offset_days"] == 7])
     assert line.startswith("+7 Tage: ")
     assert "rot" in line and "schwarz" in line

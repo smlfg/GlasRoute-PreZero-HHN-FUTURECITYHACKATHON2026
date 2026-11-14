@@ -29,7 +29,8 @@ def _forecast_at(container, target: pd.Timestamp) -> float:
     prior = [measurement for measurement in ordered if measurement.timestamp <= target]
     baseline = prior[-1] if prior else ordered[0]
     days = max(0, int((target - baseline.timestamp).days))
-    value = baseline.fill_pct + container.avg_daily_increase() * days
+    # The visit emptied the container: it refills from ~0 % at the measured rate.
+    value = container.avg_daily_increase() * days
     return max(0.0, min(110.0, float(value)))
 
 
@@ -41,10 +42,11 @@ def _series_values(
     ordered = series.sort_values("date")
     dates = list(pd.to_datetime(ordered["date"]))
     fills = [float(value) for value in ordered["fill_level_numeric"]]
+    # Measure-and-empty: each visit empties the container, so a rate is level found / days since visit.
     rates = [
-        (fills[index] - fills[index - 1]) / (dates[index] - dates[index - 1]).days
+        fills[index] / (dates[index] - dates[index - 1]).days
         for index in range(1, len(fills))
-        if (dates[index] - dates[index - 1]).days > 0 and fills[index] >= fills[index - 1]
+        if (dates[index] - dates[index - 1]).days > 0
     ]
     average_increase = sum(rates) / len(rates) if rates else 0.0
     values: list[float] = []
@@ -63,7 +65,7 @@ def _series_values(
         prior = [index for index, timestamp in enumerate(dates) if timestamp <= week_end]
         baseline_index = prior[-1] if prior else 0
         days = max(0, int((week_end - dates[baseline_index]).days))
-        values.append(max(0.0, min(110.0, fills[baseline_index] + average_increase * days)))
+        values.append(max(0.0, min(110.0, average_increase * days)) if prior else 0.0)
         predicted.append(True)
     return values, predicted
 

@@ -1,4 +1,13 @@
-"""Feature engineering for container behavior."""
+"""Feature engineering for container behavior.
+
+Data semantics (PreZero process): the collection vehicle drives to a container, the driver
+**estimates the fill level and then empties it**. Every reading is therefore the level found at a
+visit, and the container restarts at ~0 % right after it. Consequences used throughout the package:
+
+* fill rate of an interval = level found at visit i / days since visit i-1 (it started empty);
+* estimated level now = fill rate x days since the last visit (x season), capped at 110 %;
+* ``last_fill_level`` is the level *found* at the last visit, not the current level.
+"""
 
 from __future__ import annotations
 
@@ -15,9 +24,14 @@ FEATURE_COLUMNS = [
     "days_since_last",
     "overfull_rate",
     "avg_daily_increase",
+    "rate_source",
+    "est_fill_level",
     "season_factor",
     "reading_count",
 ]
+
+#: Readings are capped at this value; ``overfull`` is encoded as 110 %.
+MAX_FILL_PCT = 110.0
 
 
 def get_season_factor(date: str | pd.Timestamp) -> float:
@@ -30,21 +44,40 @@ def get_season_factor(date: str | pd.Timestamp) -> float:
     return 0.5
 
 
-def _avg_positive_daily_increase(group: pd.DataFrame) -> float:
-    """Compute average daily fill increase across non-emptying intervals."""
-    if len(group) < 2:
-        return 0.0
-    dates = group["date"].to_numpy()
-    levels = group["fill_level_numeric"].to_numpy(dtype=float)
+def fill_rates_after_emptying(dates: list, levels: list[float]) -> list[float]:
+    """Daily fill rates per interval: level found at a visit / days since the previous visit.
+
+    The previous visit emptied the container, so each interval starts at ~0 %.
+    """
     rates: list[float] = []
-    for i in range(1, len(group)):
-        dt_days = (dates[i] - dates[i - 1]) / pd.Timedelta(days=1)
-        delta = levels[i] - levels[i - 1]
-        if dt_days > 0 and delta >= 0:
-            rates.append(float(delta / dt_days))
-    if not rates:
+    for i in range(1, len(levels)):
+        dt_days = (pd.Timestamp(dates[i]) - pd.Timestamp(dates[i - 1])) / pd.Timedelta(days=1)
+        if dt_days > 0:
+            rates.append(float(levels[i]) / float(dt_days))
+    return rates
+
+
+def season_weighted_days(start: str | pd.Timestamp, end: str | pd.Timestamp) -> float:
+    """Days in (start, end], each weighted by its own month's season factor (monotonic in end)."""
+    start_ts, end_ts = pd.Timestamp(start).normalize(), pd.Timestamp(end).normalize()
+    if end_ts <= start_ts:
         return 0.0
-    return float(sum(rates) / len(rates))
+    days = pd.date_range(start_ts + pd.Timedelta(days=1), end_ts, freq="D")
+    return float(sum(get_season_factor(day) for day in days))
+
+
+def estimate_fill(rate_per_day: float, effective_days: float) -> float:
+    """Estimated current level of a container that was emptied ``effective_days`` ago."""
+    value = float(rate_per_day) * max(0.0, float(effective_days))
+    return max(0.0, min(MAX_FILL_PCT, value))
+
+
+def _avg_fill_rate(group: pd.DataFrame) -> float | None:
+    """Mean daily fill rate after emptying, or ``None`` with fewer than two visits."""
+    rates = fill_rates_after_emptying(
+        list(group["date"]), [float(v) for v in group["fill_level_numeric"]]
+    )
+    return float(sum(rates) / len(rates)) if rates else None
 
 
 def build_features(df: pd.DataFrame, date: str | pd.Timestamp) -> pd.DataFrame:
@@ -71,11 +104,25 @@ def build_features(df: pd.DataFrame, date: str | pd.Timestamp) -> pd.DataFrame:
                 "last_date": last_date,
                 "last_fill_level": float(last_row["fill_level_numeric"]),
                 "days_since_last": int((target_date - last_date).days),
-                "overfull_rate": float((group["fill_level_numeric"] >= 110.0).mean()),
-                "avg_daily_increase": _avg_positive_daily_increase(group),
+                "overfull_rate": float((group["fill_level_numeric"] >= MAX_FILL_PCT).mean()),
+                "avg_daily_increase": _avg_fill_rate(group),
                 "season_factor": season,
                 "reading_count": int(len(group)),
             }
         )
 
-    return pd.DataFrame(rows, columns=FEATURE_COLUMNS)
+    out = pd.DataFrame(rows)
+    # Containers with a single visit have no interval: use the median rate of their glass colour.
+    known = out["avg_daily_increase"].notna()
+    out["rate_source"] = known.map({True: "history", False: "material_median"})
+    medians = out[known].groupby("material_type")["avg_daily_increase"].median()
+    overall = float(out.loc[known, "avg_daily_increase"].median()) if known.any() else 0.0
+    fallback = out["material_type"].map(medians).astype(float).fillna(overall)
+    out["avg_daily_increase"] = (
+        pd.to_numeric(out["avg_daily_increase"], errors="coerce").astype(float).fillna(fallback)
+    )
+    out["est_fill_level"] = [
+        round(estimate_fill(rate, season_weighted_days(last, target_date)), 1)
+        for rate, last in zip(out["avg_daily_increase"], out["last_date"])
+    ]
+    return out[FEATURE_COLUMNS]

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from prezero.features import get_season_factor
+from prezero.features import estimate_fill, get_season_factor, season_weighted_days
 from prezero.model import Container, Site, build_model
 
 
@@ -68,7 +68,8 @@ def forecast_fill(
         )
         last_fill = container.last_fill()
         days = container.days_since_last(target)
-        forecast_pct = min(110.0, last_fill + container.avg_daily_increase() * days)
+        # The last visit emptied the container: it refills from ~0 % at the measured rate.
+        forecast_pct = container.est_fill(target)
         rows.append(
             {
                 "location_id": container.location_id,
@@ -96,6 +97,7 @@ SCORED_FORECAST_COLUMNS = [
     "last_fill_level",
     "last_date",
     "avg_daily_increase",
+    "days_since_last",
     "season_factor",
 ]
 
@@ -105,6 +107,20 @@ def _status_for(forecast_pct: float) -> str:
     return _status(forecast_pct)
 
 
+def _days_since_visit(row: object, base: pd.Timestamp) -> float:
+    """Days between the last (emptying) visit and ``base``; prefers ``last_date`` when present."""
+    last_date = getattr(row, "last_date", None)
+    if last_date is not None and not pd.isna(last_date):
+        return float(max(0, (base - pd.Timestamp(last_date)).days))
+    return float(getattr(row, "days_since_last", 0.0) or 0.0)
+
+
+def _effective_days(row: object, base: pd.Timestamp, target: pd.Timestamp) -> float:
+    """Season-weighted days from the last (emptying) visit to ``target``."""
+    visit = base - pd.Timedelta(days=_days_since_visit(row, base))
+    return season_weighted_days(visit, target)
+
+
 def forecast_from_scored(
     scored: pd.DataFrame,
     base_date: str | pd.Timestamp,
@@ -112,7 +128,8 @@ def forecast_from_scored(
 ) -> pd.DataFrame:
     """Forecast every scored container for each horizon in ``offsets``.
 
-    ``forecast = last_fill_level + avg_daily_increase * days * season_factor``,
+    Measure-and-empty: the last visit emptied the container, so
+    ``forecast = avg_daily_increase * season-weighted days since that visit``,
     capped at 110 %. The result carries one row per container and offset.
     """
     if scored.empty:
@@ -129,8 +146,8 @@ def forecast_from_scored(
         for row in scored.itertuples(index=False):
             last_fill = float(getattr(row, "last_fill_level", 0.0) or 0.0)
             increase = float(getattr(row, "avg_daily_increase", 0.0) or 0.0)
-            row_season = float(getattr(row, "season_factor", 1.0) or 1.0)
-            forecast_pct = min(110.0, last_fill + increase * days * row_season * season)
+            since_visit = _days_since_visit(row, base)
+            forecast_pct = estimate_fill(increase, _effective_days(row, base, target))
             rows.append(
                 {
                     "Location_id": getattr(row, "Location_id"),
@@ -138,7 +155,8 @@ def forecast_from_scored(
                     "last_fill_level": last_fill,
                     "last_date": getattr(row, "last_date", pd.NaT),
                     "avg_daily_increase": increase,
-                    "season_factor": row_season,
+                    "days_since_last": since_visit,
+                    "season_factor": season,
                     "offset_days": days,
                     "target_date": target.date().isoformat(),
                     "forecast_pct": forecast_pct,

@@ -102,17 +102,29 @@ class Container:
         return int((ref_ts - latest_ts).days)
 
     def avg_daily_increase(self) -> float:
-        """Return mean positive daily fill-level increase across consecutive measurements."""
+        """Mean daily fill rate: level found at a visit / days since the previous (emptying) visit."""
+        from prezero.features import fill_rates_after_emptying
+
         if len(self.measurements) < 2:
             return 0.0
         ordered = sorted(self.measurements, key=lambda m: m.timestamp)
-        rates: list[float] = []
-        for i in range(1, len(ordered)):
-            dt_days = (ordered[i].timestamp - ordered[i - 1].timestamp) / pd.Timedelta(days=1)
-            delta = ordered[i].fill_pct - ordered[i - 1].fill_pct
-            if dt_days > 0 and delta >= 0:
-                rates.append(float(delta / dt_days))
+        rates = fill_rates_after_emptying(
+            [m.timestamp for m in ordered], [m.fill_pct for m in ordered]
+        )
         return float(sum(rates) / len(rates)) if rates else 0.0
+
+    def est_fill(self, reference_date: str | pd.Timestamp | None = None) -> float:
+        """Estimated current level: emptied at the last visit, refilled at the average rate."""
+        from prezero.features import estimate_fill, season_weighted_days
+
+        if not self.measurements:
+            return 0.0
+        latest_ts = max(m.timestamp for m in self.measurements)
+        days = self.days_since_last(reference_date)
+        return estimate_fill(
+            self.avg_daily_increase(),
+            season_weighted_days(latest_ts, latest_ts + pd.Timedelta(days=days)),
+        )
 
     def overfull_rate(self) -> float:
         """Return fraction of measurements at or above overfull threshold."""
@@ -124,8 +136,8 @@ class Container:
         return float(overfull_count / len(self.measurements))
 
     def expected_mass_kg(self, fill: float | None = None) -> float:
-        """Return expected waste mass in kg for a given fill percentage (defaults to last_fill)."""
-        pct = self.last_fill() if fill is None else float(fill)
+        """Return expected waste mass in kg for a given fill percentage (defaults to est_fill)."""
+        pct = self.est_fill() if fill is None else float(fill)
         return float(self.volume_m3) * (pct / 100.0) * float(self.waste_stream.density_kg_per_m3)
 
 

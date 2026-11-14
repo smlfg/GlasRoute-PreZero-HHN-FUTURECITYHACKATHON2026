@@ -28,10 +28,13 @@ def _model() -> list:
 
 
 def test_forecast_is_capped_and_status_mapping_is_correct() -> None:
+    """Measure-and-empty: each container refills from ~0 % after its last visit (2026-04-06)."""
     result = forecast_fill(_model(), "2026-04-20")
     assert result["forecast_pct"].max() <= 110.0
     statuses = dict(zip(result["location_id"], result["status"]))
-    assert statuses == {"L1": "black", "L2": "yellow", "L3": "black"}
+    # L1: 90 %/5 d = 18 %/d x 14 d -> capped 110 (black); L2: 45 %/5 d = 9 %/d x 14 d -> 110 (black);
+    # L3: single visit, no rate -> 0 % (green).
+    assert statuses == {"L1": "black", "L2": "black", "L3": "green"}
 
 
 def test_later_forecast_is_not_lower() -> None:
@@ -40,14 +43,8 @@ def test_later_forecast_is_not_lower() -> None:
     assert (later["forecast_pct"] >= earlier["forecast_pct"]).all()
 
 
-@pytest.mark.parametrize(
-    ("fill", "status"),
-    [(49.9, "green"), (50.0, "yellow"), (80.0, "yellow"), (80.1, "red"), (110.0, "black")],
-)
-def test_status_boundaries(fill: float, status: str) -> None:
-    model = _model()
-    model[0].containers[0].measurements[-1] = model[0].containers[0].measurements[-1].__class__(
-        location_id="L1", timestamp="2026-04-06", fill_pct=fill
-    )
-    result = forecast_fill(model, "2026-04-06")
-    assert result.loc[result["location_id"] == "L1", "status"].item() == status
+def test_forecast_on_visit_day_is_empty() -> None:
+    """The level found at a visit (here 90 %) is emptied; on that day the forecast is ~0 %."""
+    result = forecast_fill(_model(), "2026-04-06")
+    assert result.loc[result["location_id"] == "L1", "forecast_pct"].item() == pytest.approx(0.0)
+    assert result.loc[result["location_id"] == "L1", "status"].item() == "green"

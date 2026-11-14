@@ -73,7 +73,10 @@ def test_container_and_measurement_helpers() -> None:
     )
     assert container.last_fill() == pytest.approx(110.0)
     assert container.days_since_last() == 9
-    assert container.avg_daily_increase() == pytest.approx(12.0)
+    # Measure-and-empty: 110 % found 5 days after the emptying visit -> 22 %/day.
+    assert container.avg_daily_increase() == pytest.approx(22.0)
+    # Emptied on 2026-04-06, 9 April days later: 9 x 22 = 198 -> capped at 110 %.
+    assert container.est_fill() == pytest.approx(110.0)
     assert container.overfull_rate() == pytest.approx(0.5)
     assert container.expected_mass_kg(100) == pytest.approx(2.5 * 400.0)
 

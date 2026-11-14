@@ -67,10 +67,12 @@ def test_status_mapping_boundaries() -> None:
             result["status"],
         )
     )
-    # L1 white: 90 % -> red ; L2 green: 45 % -> green ; L3 brown: 110 % -> black
+    # Measure-and-empty: level now = rate x days since the emptying visit (season 1.0 in April).
+    # L1 white: 10 %/d x 9 d = 90 % -> red ; L2 green: 1 %/d x 9 d = 9 % -> green ;
+    # L3 brown: found at 110 % but emptied, rate 0 -> 0 % -> green.
     assert statuses[("L1", "white")] == "red"
     assert statuses[("L2", "green")] == "green"
-    assert statuses[("L3", "brown")] == "black"
+    assert statuses[("L3", "brown")] == "green"
 
 
 @pytest.mark.parametrize(

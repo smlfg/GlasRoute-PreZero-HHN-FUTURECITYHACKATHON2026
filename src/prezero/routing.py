@@ -136,9 +136,12 @@ def _aggregate_locations(
         work["critical"] = work["score"] >= 0.7
 
     work["critical"] = work["critical"].astype(bool)
+    # Mass to collect = current (estimated) level; the last reading was taken before emptying.
+    if "est_fill_level" not in work.columns:
+        work["est_fill_level"] = work["last_fill_level"]
     work["bin_mass_kg"] = (
         float(cfg.container_volume_m3)
-        * (work["last_fill_level"].astype(float) / 100.0)
+        * (work["est_fill_level"].astype(float) / 100.0)
         * float(cfg.density_kg_per_m3)
     )
     work["crit_mass_kg"] = work["bin_mass_kg"].where(work["critical"], 0.0)
@@ -160,6 +163,7 @@ def _aggregate_locations(
         critical=("critical", "any"),
         primary_material=("material_type", "first"),
         last_fill_level=("last_fill_level", "max"),
+        est_fill_level=("est_fill_level", "max"),
         critical_bins=("critical", "sum"),
         bins=("Location_id", "size"),
         mass_kg=("crit_mass_kg", "sum"),
@@ -404,6 +408,7 @@ def _simulate_constrained_routes(
                 "critical": bool(cand["critical"]),
                 "primary_material": str(cand["primary_material"]),
                 "last_fill_level": float(cand["last_fill_level"]),
+                "est_fill_level": float(cand["est_fill_level"]),
                 "source": str(cand["source"]),
                 "confidence": str(cand["confidence"]),
                 "vehicle": vehicle_idx,

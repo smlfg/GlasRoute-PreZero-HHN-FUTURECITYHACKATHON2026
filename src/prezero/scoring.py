@@ -21,7 +21,10 @@ def score_containers(features: pd.DataFrame, date: str | None = None) -> pd.Data
         result["critical"] = pd.Series(dtype=bool)
         return result
 
-    level_norm = (result["last_fill_level"].astype(float) / 110.0).clip(0.0, 1.0)
+    # Current level: the container was emptied at its last visit, so use the estimate
+    # (fill rate x days since visit), not the level found before emptying.
+    level_col = "est_fill_level" if "est_fill_level" in result.columns else "last_fill_level"
+    level_norm = (result[level_col].astype(float) / 110.0).clip(0.0, 1.0)
     overfull = result["overfull_rate"].astype(float).clip(0.0, 1.0)
     material_weight = (
         result["material_type"].astype(str).str.strip().str.lower().map(MATERIAL_WEIGHTS).fillna(0.5)

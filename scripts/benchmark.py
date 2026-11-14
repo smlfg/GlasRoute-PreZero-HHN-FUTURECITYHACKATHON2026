@@ -34,7 +34,7 @@ def _physical_sites(scored: pd.DataFrame, locs: pd.DataFrame, cfg: OperationalCo
     work = scored.copy()
     work["critical"] = work.get("critical", work["score"] >= 0.7).astype(bool)
     work["mass_kg"] = (
-        work["last_fill_level"].astype(float) / 100.0
+        work.get("est_fill_level", work["last_fill_level"]).astype(float) / 100.0
         * cfg.container_volume_m3
         * cfg.density_kg_per_m3
     )
