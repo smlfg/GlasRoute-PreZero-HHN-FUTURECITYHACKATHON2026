@@ -4,7 +4,7 @@ Priorisierung und Tourenplanung für Glascontainer in Heilbronn. Prototyp für d
 
 ## Status
 
-Hackathon-Prototyp. Es gibt keine öffentlich erreichbare Demo-URL; die Oberfläche wird lokal als HTML erzeugt. Das Pitch-Deck liegt im Repository: [Pitch/pitch_deck.pdf](Pitch/pitch_deck.pdf), interaktiv als [Pitch/slides.html](Pitch/slides.html).
+Hackathon-Prototyp. Eine statische Demo der Oberfläche für den Stichtag 15.04.2026 ist live unter [smlfg.github.io/GlasRoute-PreZero-HHN-FUTURECITYHACKATHON2026](https://smlfg.github.io/GlasRoute-PreZero-HHN-FUTURECITYHACKATHON2026/). Die Seite läuft ohne Python-Backend; Kartenkacheln kommen von OpenStreetMap. Das Pitch-Deck liegt im Repository: [Pitch/pitch_deck.pdf](Pitch/pitch_deck.pdf), interaktiv als [Pitch/slides.html](Pitch/slides.html).
 
 ## Problem
 
