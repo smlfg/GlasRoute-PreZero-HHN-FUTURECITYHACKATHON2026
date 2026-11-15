@@ -11,7 +11,7 @@ import pytest
 from prezero.locations import load_locations
 from prezero.routing import load_config
 from prezero.sim.engine import WalkForwardEstimator, run_scenario, static_view
-from prezero.sim.policies import CoEmpty, FixedAreas, StatusQuo, ZeroOverflow, default_policies
+from prezero.sim.policies import AreaWeekRhythm, CoEmpty, FixedAreas, StatusQuo, ZeroOverflow, default_policies
 from prezero.sim.world import build_world, simulate_daily
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +69,7 @@ def test_all_policies_present(runs):
     assert set(results) == {
         "a_zero_overflow", "b_min_km", "c_max_fill", "d_status_quo", "e_mentor",
         "f_fixed_areas", "g_co_empty", "g_co_empty_x30", "g_co_empty_x70",
+        "h_area_week_rhythm", "h_area_week_rhythm_b10", "h_area_week_rhythm_b30",
     }
     for sid, res in results.items():
         assert res.events["bundled"].any() == sid.startswith("g_"), sid
@@ -166,3 +167,58 @@ def test_per_colour_truck_mode(runs, inputs):
     co = key[ev["bundled"].to_numpy()].drop_duplicates()
     assert len(co) > 0
     assert len(co.merge(trig, how="left", indicator=True).query("_merge == 'left_only'")) == 0
+
+
+H_IDS = ("h_area_week_rhythm", "h_area_week_rhythm_b10", "h_area_week_rhythm_b30")
+
+
+def test_week_rhythm_mass_balance_and_rhythm_range(runs):
+    _, pols, results = runs
+    for sid in H_IDS:
+        lg = results[sid].ledger
+        assert lg["collected_t"] + lg["end_stock_t"] == pytest.approx(lg["produced_t"], abs=1e-6), sid
+        assert not results[sid].events["bundled"].any(), sid
+        k = pols[sid].rhythm
+        assert k.min() >= 1 and k.max() <= 4, sid
+        assert len(set(k)) > 1, sid
+
+
+def test_week_rhythm_only_on_area_days(runs):
+    _, pols, results = runs
+    f = pols["f_fixed_areas"]
+    for sid in H_IDS:
+        pol: AreaWeekRhythm = pols[sid]
+        np.testing.assert_array_equal(pol.area, f.area)
+        ev = results[sid].events
+        assert len(ev) > 0
+        # area_day already includes the holiday shift to the next operating day
+        assert pol.area_day[pol.area[ev["c"].to_numpy()], ev["day"].to_numpy()].all(), sid
+
+
+def test_week_rhythm_ignores_future_readings(inputs):
+    readings, locations, cfg = inputs
+    cut = 150
+    base = run_scenario(AreaWeekRhythm(), readings, locations, cfg, evaluate_day=_null_evaluator)
+    world = build_world(readings, locations, cfg)
+    poisoned = readings.copy()
+    late = pd.to_datetime(poisoned["date"]).dt.date >= world.dates[cut]
+    poisoned.loc[late, "fill_level_numeric"] = 999.0
+    pois = run_scenario(AreaWeekRhythm(), poisoned, locations, cfg, evaluate_day=_null_evaluator)
+    a = base.events[base.events["day"] < cut][["day", "c", "bundled"]].reset_index(drop=True)
+    b = pois.events[pois.events["day"] < cut][["day", "c", "bundled"]].reset_index(drop=True)
+    assert len(a) > 500
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_containers_csv_rhythm_columns():
+    path = ROOT / "data/outputs/scenarios/containers.csv"
+    if not path.exists():
+        pytest.skip("run scripts/run_scenarios.py first")
+    df = pd.read_csv(path)
+    for col in ("interval_status_quo_days", "rhythm_weeks_status_quo", "rhythm_weeks_new",
+                "recommendation", "area_weekday", "area", "skip_14d"):
+        assert col in df.columns, col
+    assert set(df["recommendation"]) <= {"länger", "kürzer", "gleich"}
+    assert set(df["area_weekday"]) <= {"Mo", "Di", "Mi", "Do", "Fr"}
+    assert df["rhythm_weeks_new"].between(1, 4).all()
+    assert df["rhythm_weeks_status_quo"].dropna().between(1, 8).all()

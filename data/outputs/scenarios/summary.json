@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-15T12:20:46+00:00",
+  "generated_at": "2026-11-15T12:33:37+00:00",
   "period": {
     "start": "2025-10-17",
     "end": "2026-09-30",
@@ -41,7 +41,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.5
+      "runtime_s": 0.44
     },
     {
       "id": "b_min_km",
@@ -75,7 +75,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.42
+      "runtime_s": 0.41
     },
     {
       "id": "c_max_fill",
@@ -109,7 +109,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.43
+      "runtime_s": 0.44
     },
     {
       "id": "d_status_quo",
@@ -143,7 +143,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.31
+      "runtime_s": 0.33
     },
     {
       "id": "e_mentor",
@@ -177,7 +177,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.43
+      "runtime_s": 0.46
     },
     {
       "id": "f_fixed_areas",
@@ -211,7 +211,109 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.35
+      "runtime_s": 0.39
+    },
+    {
+      "id": "h_area_week_rhythm",
+      "policy_id": "h_area_week_rhythm",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %)",
+      "time_model": "km",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7351.65,
+      "end_stock_t": 262.3,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 42.33,
+      "overflow_events": 53,
+      "overfull_at_emptying": 38,
+      "emptyings": 17368,
+      "emptyings_saved_vs_status_quo": -7005,
+      "extra_emptyings_co": 0,
+      "stops": 5113,
+      "vehicle_days": 357,
+      "hours": 1869.7,
+      "km": 15902.1,
+      "cost_eur": 308497.16,
+      "cost_breakdown": {
+        "total_eur": 308497.16,
+        "vehicle_days_eur": 178500.0,
+        "crew_eur": 119660.8,
+        "km_eur": 10336.36
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
+      "runtime_s": 0.43
+    },
+    {
+      "id": "h_area_week_rhythm_b10",
+      "policy_id": "h_area_week_rhythm_b10",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %)",
+      "time_model": "km",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7346.03,
+      "end_stock_t": 267.92,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 44.49,
+      "overflow_events": 97,
+      "overfull_at_emptying": 69,
+      "emptyings": 16511,
+      "emptyings_saved_vs_status_quo": -6148,
+      "extra_emptyings_co": 0,
+      "stops": 4983,
+      "vehicle_days": 343,
+      "hours": 1821.7,
+      "km": 15812.0,
+      "cost_eur": 298366.6,
+      "cost_breakdown": {
+        "total_eur": 298366.6,
+        "vehicle_days_eur": 171500.0,
+        "crew_eur": 116588.8,
+        "km_eur": 10277.8
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
+      "runtime_s": 0.45
+    },
+    {
+      "id": "h_area_week_rhythm_b30",
+      "policy_id": "h_area_week_rhythm_b30",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %)",
+      "time_model": "km",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7376.65,
+      "end_stock_t": 237.29,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 39.26,
+      "overflow_events": 20,
+      "overfull_at_emptying": 19,
+      "emptyings": 18788,
+      "emptyings_saved_vs_status_quo": -8425,
+      "extra_emptyings_co": 0,
+      "stops": 5241,
+      "vehicle_days": 369,
+      "hours": 1951.3,
+      "km": 16120.9,
+      "cost_eur": 319861.79,
+      "cost_breakdown": {
+        "total_eur": 319861.79,
+        "vehicle_days_eur": 184500.0,
+        "crew_eur": 124883.2,
+        "km_eur": 10478.59
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": true
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
+      "runtime_s": 0.44
     },
     {
       "id": "g_co_empty",
@@ -276,7 +378,7 @@
       },
       "flags": {
         "cheapest": false,
-        "fewest_overflows": true
+        "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
       "runtime_s": 0.35
@@ -313,7 +415,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.42
+      "runtime_s": 0.43
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -347,7 +449,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.85
+      "runtime_s": 0.82
     },
     {
       "id": "d_status_quo_per_colour",
@@ -381,7 +483,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.81
+      "runtime_s": 0.85
     },
     {
       "id": "g_co_empty_per_colour",
@@ -415,7 +517,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.73
+      "runtime_s": 0.78
     },
     {
       "id": "a_zero_overflow",
@@ -449,7 +551,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.51
+      "runtime_s": 0.54
     },
     {
       "id": "b_min_km",
@@ -483,7 +585,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.42
+      "runtime_s": 0.47
     },
     {
       "id": "c_max_fill",
@@ -517,7 +619,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.49
+      "runtime_s": 0.47
     },
     {
       "id": "d_status_quo",
@@ -551,7 +653,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.38
+      "runtime_s": 0.34
     },
     {
       "id": "e_mentor",
@@ -585,7 +687,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.54
+      "runtime_s": 0.49
     },
     {
       "id": "f_fixed_areas",
@@ -619,7 +721,109 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.39
+      "runtime_s": 0.38
+    },
+    {
+      "id": "h_area_week_rhythm",
+      "policy_id": "h_area_week_rhythm",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %)",
+      "time_model": "real",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7351.65,
+      "end_stock_t": 262.3,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 42.33,
+      "overflow_events": 53,
+      "overfull_at_emptying": 38,
+      "emptyings": 17368,
+      "emptyings_saved_vs_status_quo": -7005,
+      "extra_emptyings_co": 0,
+      "stops": 5113,
+      "vehicle_days": 331,
+      "hours": 1687.6,
+      "km": 15902.1,
+      "cost_eur": 283842.77,
+      "cost_breakdown": {
+        "total_eur": 283842.77,
+        "vehicle_days_eur": 165500.0,
+        "crew_eur": 108006.4,
+        "km_eur": 10336.36
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
+      "runtime_s": 0.48
+    },
+    {
+      "id": "h_area_week_rhythm_b10",
+      "policy_id": "h_area_week_rhythm_b10",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %)",
+      "time_model": "real",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7346.03,
+      "end_stock_t": 267.92,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 44.49,
+      "overflow_events": 97,
+      "overfull_at_emptying": 69,
+      "emptyings": 16511,
+      "emptyings_saved_vs_status_quo": -6148,
+      "extra_emptyings_co": 0,
+      "stops": 4983,
+      "vehicle_days": 318,
+      "hours": 1648.4,
+      "km": 15812.0,
+      "cost_eur": 274775.4,
+      "cost_breakdown": {
+        "total_eur": 274775.4,
+        "vehicle_days_eur": 159000.0,
+        "crew_eur": 105497.6,
+        "km_eur": 10277.8
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
+      "runtime_s": 0.4
+    },
+    {
+      "id": "h_area_week_rhythm_b30",
+      "policy_id": "h_area_week_rhythm_b30",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %)",
+      "time_model": "real",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7376.65,
+      "end_stock_t": 237.29,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 39.26,
+      "overflow_events": 20,
+      "overfull_at_emptying": 19,
+      "emptyings": 18788,
+      "emptyings_saved_vs_status_quo": -8425,
+      "extra_emptyings_co": 0,
+      "stops": 5241,
+      "vehicle_days": 321,
+      "hours": 1708.3,
+      "km": 16120.9,
+      "cost_eur": 280309.79,
+      "cost_breakdown": {
+        "total_eur": 280309.79,
+        "vehicle_days_eur": 160500.0,
+        "crew_eur": 109331.2,
+        "km_eur": 10478.59
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": true
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
+      "runtime_s": 0.42
     },
     {
       "id": "g_co_empty",
@@ -684,10 +888,10 @@
       },
       "flags": {
         "cheapest": true,
-        "fewest_overflows": true
+        "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.35
+      "runtime_s": 0.33
     },
     {
       "id": "g_co_empty_x70",
@@ -721,7 +925,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.43
+      "runtime_s": 0.42
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -755,7 +959,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.86
+      "runtime_s": 0.98
     },
     {
       "id": "d_status_quo_per_colour",
@@ -789,7 +993,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.87
+      "runtime_s": 0.82
     },
     {
       "id": "g_co_empty_per_colour",
@@ -823,7 +1027,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.84
+      "runtime_s": 0.77
     },
     {
       "id": "a_zero_overflow",
@@ -857,7 +1061,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.51
+      "runtime_s": 0.47
     },
     {
       "id": "b_min_km",
@@ -891,7 +1095,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.44
+      "runtime_s": 0.43
     },
     {
       "id": "c_max_fill",
@@ -925,7 +1129,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.51
+      "runtime_s": 0.46
     },
     {
       "id": "d_status_quo",
@@ -959,7 +1163,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.36
+      "runtime_s": 0.34
     },
     {
       "id": "e_mentor",
@@ -993,7 +1197,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.51
+      "runtime_s": 0.47
     },
     {
       "id": "f_fixed_areas",
@@ -1027,7 +1231,109 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.44
+      "runtime_s": 0.42
+    },
+    {
+      "id": "h_area_week_rhythm",
+      "policy_id": "h_area_week_rhythm",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %)",
+      "time_model": "hop5",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7351.65,
+      "end_stock_t": 262.3,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 42.33,
+      "overflow_events": 53,
+      "overfull_at_emptying": 38,
+      "emptyings": 17368,
+      "emptyings_saved_vs_status_quo": -7005,
+      "extra_emptyings_co": 0,
+      "stops": 5113,
+      "vehicle_days": 250,
+      "hours": 1139.8,
+      "km": 15902.1,
+      "cost_eur": 208283.57,
+      "cost_breakdown": {
+        "total_eur": 208283.57,
+        "vehicle_days_eur": 125000.0,
+        "crew_eur": 72947.2,
+        "km_eur": 10336.36
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
+      "runtime_s": 0.4
+    },
+    {
+      "id": "h_area_week_rhythm_b10",
+      "policy_id": "h_area_week_rhythm_b10",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %)",
+      "time_model": "hop5",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7346.03,
+      "end_stock_t": 267.92,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 44.49,
+      "overflow_events": 97,
+      "overfull_at_emptying": 69,
+      "emptyings": 16511,
+      "emptyings_saved_vs_status_quo": -6148,
+      "extra_emptyings_co": 0,
+      "stops": 4983,
+      "vehicle_days": 255,
+      "hours": 1115.6,
+      "km": 15812.0,
+      "cost_eur": 209176.2,
+      "cost_breakdown": {
+        "total_eur": 209176.2,
+        "vehicle_days_eur": 127500.0,
+        "crew_eur": 71398.4,
+        "km_eur": 10277.8
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
+      "runtime_s": 0.42
+    },
+    {
+      "id": "h_area_week_rhythm_b30",
+      "policy_id": "h_area_week_rhythm_b30",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %)",
+      "time_model": "hop5",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7376.65,
+      "end_stock_t": 237.29,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 39.26,
+      "overflow_events": 20,
+      "overfull_at_emptying": 19,
+      "emptyings": 18788,
+      "emptyings_saved_vs_status_quo": -8425,
+      "extra_emptyings_co": 0,
+      "stops": 5241,
+      "vehicle_days": 254,
+      "hours": 1159.2,
+      "km": 16120.9,
+      "cost_eur": 211667.38,
+      "cost_breakdown": {
+        "total_eur": 211667.38,
+        "vehicle_days_eur": 127000.0,
+        "crew_eur": 74188.8,
+        "km_eur": 10478.59
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": true
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
+      "runtime_s": 0.42
     },
     {
       "id": "g_co_empty",
@@ -1061,7 +1367,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.36
+      "runtime_s": 0.38
     },
     {
       "id": "g_co_empty_x30",
@@ -1092,10 +1398,10 @@
       },
       "flags": {
         "cheapest": true,
-        "fewest_overflows": true
+        "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.33
+      "runtime_s": 0.39
     },
     {
       "id": "g_co_empty_x70",
@@ -1129,7 +1435,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.4
+      "runtime_s": 0.47
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -1163,7 +1469,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.98
+      "runtime_s": 0.96
     },
     {
       "id": "d_status_quo_per_colour",
@@ -1197,7 +1503,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.94
+      "runtime_s": 0.97
     },
     {
       "id": "g_co_empty_per_colour",
@@ -1231,7 +1537,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.85
+      "runtime_s": 0.93
     },
     {
       "id": "a_zero_overflow",
@@ -1265,7 +1571,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.58
+      "runtime_s": 0.53
     },
     {
       "id": "b_min_km",
@@ -1299,7 +1605,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.51
+      "runtime_s": 0.49
     },
     {
       "id": "c_max_fill",
@@ -1333,7 +1639,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.52
+      "runtime_s": 0.51
     },
     {
       "id": "d_status_quo",
@@ -1367,7 +1673,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.35
+      "runtime_s": 0.38
     },
     {
       "id": "e_mentor",
@@ -1401,7 +1707,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.5
+      "runtime_s": 0.54
     },
     {
       "id": "f_fixed_areas",
@@ -1435,7 +1741,109 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.41
+      "runtime_s": 0.43
+    },
+    {
+      "id": "h_area_week_rhythm",
+      "policy_id": "h_area_week_rhythm",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %)",
+      "time_model": "hop10",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7351.65,
+      "end_stock_t": 262.3,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 42.33,
+      "overflow_events": 53,
+      "overfull_at_emptying": 38,
+      "emptyings": 17368,
+      "emptyings_saved_vs_status_quo": -7005,
+      "extra_emptyings_co": 0,
+      "stops": 5113,
+      "vehicle_days": 327,
+      "hours": 1625.4,
+      "km": 15902.1,
+      "cost_eur": 277861.96,
+      "cost_breakdown": {
+        "total_eur": 277861.96,
+        "vehicle_days_eur": 163500.0,
+        "crew_eur": 104025.6,
+        "km_eur": 10336.36
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
+      "runtime_s": 0.46
+    },
+    {
+      "id": "h_area_week_rhythm_b10",
+      "policy_id": "h_area_week_rhythm_b10",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %)",
+      "time_model": "hop10",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7346.03,
+      "end_stock_t": 267.92,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 44.49,
+      "overflow_events": 97,
+      "overfull_at_emptying": 69,
+      "emptyings": 16511,
+      "emptyings_saved_vs_status_quo": -6148,
+      "extra_emptyings_co": 0,
+      "stops": 4983,
+      "vehicle_days": 316,
+      "hours": 1593.7,
+      "km": 15812.0,
+      "cost_eur": 270274.6,
+      "cost_breakdown": {
+        "total_eur": 270274.6,
+        "vehicle_days_eur": 158000.0,
+        "crew_eur": 101996.8,
+        "km_eur": 10277.8
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
+      "runtime_s": 0.46
+    },
+    {
+      "id": "h_area_week_rhythm_b30",
+      "policy_id": "h_area_week_rhythm_b30",
+      "label": "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %)",
+      "time_model": "hop10",
+      "truck_mode": "multi_chamber",
+      "co_empty_threshold_pct": null,
+      "collected_t": 7376.65,
+      "end_stock_t": 237.29,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 39.26,
+      "overflow_events": 20,
+      "overfull_at_emptying": 19,
+      "emptyings": 18788,
+      "emptyings_saved_vs_status_quo": -8425,
+      "extra_emptyings_co": 0,
+      "stops": 5241,
+      "vehicle_days": 329,
+      "hours": 1656.2,
+      "km": 16120.9,
+      "cost_eur": 280975.39,
+      "cost_breakdown": {
+        "total_eur": 280975.39,
+        "vehicle_days_eur": 164500.0,
+        "crew_eur": 105996.8,
+        "km_eur": 10478.59
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": true
+      },
+      "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
+      "runtime_s": 0.45
     },
     {
       "id": "g_co_empty",
@@ -1469,7 +1877,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.35
+      "runtime_s": 0.39
     },
     {
       "id": "g_co_empty_x30",
@@ -1500,10 +1908,10 @@
       },
       "flags": {
         "cheapest": true,
-        "fewest_overflows": true
+        "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.34
+      "runtime_s": 0.36
     },
     {
       "id": "g_co_empty_x70",
@@ -1537,7 +1945,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.42
+      "runtime_s": 0.43
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -1571,7 +1979,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.83
+      "runtime_s": 0.94
     },
     {
       "id": "d_status_quo_per_colour",
@@ -1605,7 +2013,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.83
+      "runtime_s": 0.91
     },
     {
       "id": "g_co_empty_per_colour",
@@ -1639,7 +2047,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.81
+      "runtime_s": 0.83
     }
   ]
 }
