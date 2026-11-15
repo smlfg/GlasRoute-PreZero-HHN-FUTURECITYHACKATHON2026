@@ -25,6 +25,7 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | [`BACKTEST.md`](BACKTEST.md) | Ist der Füllstand vorhersagbar? Leerungsrhythmus je Glasfarbe | **generiert** von `scripts/backtest.py` |
 | [`BENCHMARK.md`](BENCHMARK.md) | Fairer Vergleich B0–B4 über 4 Stichtage × 3 Seeds | **generiert** von `scripts/benchmark.py` |
 | [`UI_PLAN.md`](UI_PLAN.md) | Soll-Zustand der Website: Datums-first (`#global-date-picker`), Rollen, Ansichtsgrenzen | **aktuell** (umgesetzt) |
+| [`UI_DIFF_FINAL.md`](UI_DIFF_FINAL.md) | Finaler Frontend ↔ Backend Diff-Audit vor dem Freeze: Status aller Tabs & Seiten, S/M-Fixes | **aktuell** |
 | [`UI_SPRACHE.md`](UI_SPRACHE.md) | Nielsen #2: keine UUIDs, kein snake_case, keine englischen Enums in sichtbarem Text | **aktuell** |
 | [`STANDORTPLANUNG.md`](STANDORTPLANUNG.md) | Annahmen des Standortplanung-What-if Tabs (simulierte Koordinaten, Radius, Adoptionskurve) | **aktuell** |
 | [`ANFORDERUNGEN.md`](ANFORDERUNGEN.md) | Anforderungen aus der Challenge-Readme (Quelle, nicht verhandelbar) | **aktuell** |

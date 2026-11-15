@@ -574,7 +574,7 @@ def _build_route_section_html(
     kpi_cards = "\n".join(
         [
             f'<div class="card"><div class="label">Geplante Tour ({metrics.get("num_stops", 0)} Stopps)</div><div class="value">{_format_num(metrics.get("planned_km"), " km")}</div><div class="sub">Volle Runde ({_format_num(metrics.get("total_active_locations"))} physische Standorte, alle Behälter, gleiche Regeln 11 t / 8 h / Entladung): {_format_num(metrics.get("full_round_km"), " km")}</div></div>',
-            f'<div class="card"><div class="label">Weniger km als Status quo (diese Tour)</div><div class="value">{_format_num(metrics.get("saved_km"), " km")}</div><div class="sub">{_format_num(metrics.get("saved_pct"), " %")} gegenüber &bdquo;alles leeren&ldquo;. Achtung: Die Tour deckt nur {_format_num(metrics.get("num_stops"))} von {_format_num(metrics.get("total_critical_locations"))} kritischen Standorten. Pitch-Zahl (alle kritischen): Tab &bdquo;Fairer Vergleich&ldquo;</div></div>',
+            f'<div class="card"><div class="label">Weniger km als Status quo (diese Tour)</div><div class="value">{_format_num(metrics.get("saved_km"), " km")}</div><div class="sub">{_format_num(metrics.get("saved_pct"), " %")} gegenüber &bdquo;alles leeren&ldquo;. Achtung: Die Tour deckt nur {_format_num(metrics.get("num_stops"))} von {_format_num(metrics.get("total_critical_locations"))} kritischen Standorten. Pitch-Zahl (alle kritischen): <button type="button" class="tab-link-btn" onclick="activateTab(\'view-benchmark\')">Tab &bdquo;Fairer Vergleich&ldquo;</button></div></div>',
             f'<div class="card"><div class="label">Fahrzeuge &amp; Runden</div><div class="value">{_format_num(metrics.get("vehicles_needed"))} Fahrzeuge</div><div class="sub">Runden: {_format_num(metrics.get("rounds"))} · Fahrzeugstunden gesamt: {_format_num(metrics.get("shift_hours"), " h")} · längste Schicht: {_format_num(metrics.get("max_vehicle_shift_hours"), " h")} (Limit {_format_num(metrics.get("max_shift_hours_limit"), " h")})</div></div>',
             f'<div class="card"><div class="label">Sammelmenge &amp; Kritisch</div><div class="value">{_format_num(metrics.get("t_collected"), " t")}</div><div class="sub">Kritische physische Standorte gesamt: {_format_num(metrics.get("total_critical_locations"))}</div></div>',
         ]
@@ -735,7 +735,12 @@ def _build_route_section_html(
     """
 
 
-def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -> str:
+def _build_datacheck_section_html(
+    data_check: dict[str, Any],
+    trends_uri: str,
+    date: str = "",
+    stand_de: str = "",
+) -> str:
     mean_reg = "-" if data_check["mean_regularity"] is None else f"{data_check['mean_regularity']:.3f}"
     med_reg = "-" if data_check["median_regularity"] is None else f"{data_check['median_regularity']:.3f}"
 
@@ -744,7 +749,7 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
             f'<div class="card"><div class="label">Regularity Score (Mittel / Median)</div><div class="value">{mean_reg} / {med_reg}</div><div class="sub">Auswertbare Serien: {data_check["evaluable_series"]} von {data_check["total_series"]}</div></div>',
             f'<div class="card"><div class="label">Stufensprünge (&gt; 50 pp)</div><div class="value">{data_check["jumps_gt_50_total"]} ({data_check["jumps_gt_50_pct"]:.1f}%)</div><div class="sub">Übergänge gesamt: {data_check["total_transitions"]}</div></div>',
             f'<div class="card"><div class="label">Messlücken (&gt; 90 Tage)</div><div class="value">{data_check["series_with_gap_gt_90d"]} Serien</div><div class="sub">Serien mit mindestens einer &gt;90-Tage-Lücke</div></div>',
-            f'<div class="card"><div class="label">Überfüllungen (&ge; 110 %)</div><div class="value">{data_check["overfull_total"]}</div><div class="sub">Direkt aus cleaned_readings gezählt</div></div>',
+            f'<div class="card"><div class="label">Überfüllungen (&ge; 110 %)</div><div class="value">{data_check["overfull_total"]}</div><div class="sub">Direkt aus <code>cleaned_readings.csv</code> gezählt</div></div>',
         ]
     )
 
@@ -777,9 +782,17 @@ def _build_datacheck_section_html(data_check: dict[str, Any], trends_uri: str) -
         )
     outlier_rows = "".join(outlier_rows_list)
 
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
     return f"""
       <div class="section-head">
-        <h2>Datencheck: Berechnete Kennzahlen zur Prognostizierbarkeit</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Datencheck: Berechnete Kennzahlen zur Prognostizierbarkeit</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Alle Kennzahlen werden direkt aus den geladenen Messwerten berechnet.</p>
       </div>
       <div class="kpi-grid">{kpi_cards}</div>
@@ -928,10 +941,22 @@ def compute_benchmark_summary(
     }
 
 
-def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
-    head = """
+def _build_benchmark_section_html(
+    summary: dict[str, Any] | None,
+    date: str = "",
+    stand_de: str = "",
+) -> str:
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
+    head = f"""
       <div class="section-head">
-        <h2>Fairer Vergleich: Routing-Effekt vs. Bedarfs-Effekt</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Fairer Vergleich: Routing-Effekt vs. Bedarfs-Effekt</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Alle Varianten mit denselben Regeln: 11 t pro Runde, Entladung am Entsorgungshof (angenommen), max. 8 h pro Runde, Start/Ende Betriebshof.
         Ein Stopp = ein physischer Standort (alle Glasfarben dort zusammen).
         Standorte sind selbst gescrapt und zufällig zugeordnet (nicht von PreZero): absolute km sind Illustration, die Prozent-Effekte sind die Aussage.</p>
@@ -973,7 +998,7 @@ def _build_benchmark_section_html(summary: dict[str, Any] | None) -> str:
         </table>
       </div>
       <p class="muted">Spannen über {summary['cases']} Fälle: Stichtage {html.escape(', '.join(summary['dates']))} &times; Seeds {html.escape(', '.join(map(str, summary['seeds'])))}.
-      Jede Runde braucht ein Fahrzeug für bis zu 8 h. Quelle: scripts/benchmark.py &rarr; benchmark_results.csv.
+      Jede Runde braucht ein Fahrzeug für bis zu 8 h. Quelle: <code>scripts/benchmark.py</code> &rarr; <code>benchmark_results.csv</code>.
       {nn_note}</p>
     """
 
@@ -1263,7 +1288,11 @@ def _fmt_stand_de(date_str: str) -> str:
     return f"Stand: {date_str}"
 
 
-def _build_variables_section_html(route_data: Mapping[str, Any] | str | Path) -> str:
+def _build_variables_section_html(
+    route_data: Mapping[str, Any] | str | Path,
+    date: str = "",
+    stand_de: str = "",
+) -> str:
     """Spec 3 (configurable variables) and spec 4 (fleet deployment), read from the route's assumptions."""
     from prezero.routing import OperationalConfig, density_for
 
@@ -1318,9 +1347,17 @@ def _build_variables_section_html(route_data: Mapping[str, Any] | str | Path) ->
         f"{_fmt_de(route.get('t_collected'), 2)} t, längste Schicht "
         f"{_fmt_de(route.get('max_vehicle_shift_hours'), 2)} h (Limit {_fmt_de(cfg.max_shift_hours)} h)."
     )
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
     return f"""
       <div class="section-head">
-        <h2>Variablen (Spec 3) und Flotteneinsatz (Spec 4)</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Variablen (Spec 3) und Flotteneinsatz (Spec 4)</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Alle Werte sind <b>Annahmen, von PreZero zu ersetzen</b>. Sie stehen in <code>prezero_config.json</code>;
         <code>prezero-route run --date 2026-04-15 --config prezero_config.json</code> rechnet alles neu, ohne Codeänderung.</p>
       </div>
@@ -1337,7 +1374,7 @@ def _build_variables_section_html(route_data: Mapping[str, Any] | str | Path) ->
       <ul class="muted">
         <li>Mehrere Fahrzeugtypen und eine Obergrenze der Flotte (heute: ein Typ, Flotte unbegrenzt).</li>
         <li>Verschiedene Containertypen je Standort (heute: alle {_fmt_de(cfg.container_volume_m3)} m³).</li>
-        <li>Echtes Straßennetz (heute: Luftlinie &times; Umwegfaktor) und echte Standorte (heute selbst gescrapt).</li>
+        <li>Echtes Straßennetz (heute: Luftlinie &times; Umwegfaktor) und reale PreZero-Standorte (heute: simulierte Zuordnung auf OSM-Containerpunkten).</li>
       </ul>
     """
 
@@ -1474,6 +1511,8 @@ def _build_location_planning_section_html(
     location_plan: dict[str, Any],
     scored_df: pd.DataFrame,
     locations_df: pd.DataFrame,
+    date: str = "",
+    stand_de: str = "",
 ) -> str:
     """Render the Standortplanung what-if with simulated-location banner and timeline."""
     if not location_plan:
@@ -1597,9 +1636,17 @@ def _build_location_planning_section_html(
         f'<div class="sub">{"+" if km_delta >= 0 else ""}{km_delta:.1f} km (NN-Schätzung, simuliert)</div></div>'
     )
 
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
     return f"""
       <div class="section-head">
-        <h2>Standortplanung (What-if)</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Standortplanung (What-if)</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Bis zu 5 neue Glascontainer-Standorte dort, wo die Nachfrage hoch und die räumliche Abdeckung lückenhaft ist. Woche 0 = Aufstellung, Woche 12 = vollständige Adoption.</p>
       </div>
       {banner}
@@ -1612,13 +1659,25 @@ def _build_location_planning_section_html(
     """
 
 
-def _build_heatmap_section_html(heatmap_src: str | None) -> str:
-    head = """
+def _build_heatmap_section_html(
+    heatmap_src: str | None,
+    date: str = "",
+    stand_de: str = "",
+) -> str:
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
+    head = f"""
       <div class="section-head">
-        <h2>Heatmap: Füllstand je Container und Woche</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Heatmap: Füllstand je Container und Woche</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Ein Kästchen = ein Container (Standort &times; Glasfarbe). Wochen-Slider unten.
         Wochen mit Besuch zeigen den vorgefundenen Stand (danach geleert), Wochen ohne Besuch den geschätzten Wiederanstieg ab 0&nbsp;%.
-        Klick auf ein Kästchen springt in den Tab &bdquo;Route &amp; Freigabe&ldquo; und zeigt den Container auf der Karte.</p>
+        Klick auf ein Kästchen springt in den <button type="button" class="tab-link-btn" onclick="activateTab('view-route')">Tab &bdquo;Route &amp; Freigabe&ldquo;</button> und zeigt den Container auf der Karte.</p>
       </div>
     """
     if not heatmap_src:
@@ -1630,10 +1689,22 @@ def _build_heatmap_section_html(heatmap_src: str | None) -> str:
     )
 
 
-def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
+def _build_upload_section_html(
+    upload_check: dict[str, Any],
+    date: str = "",
+    stand_de: str = "",
+) -> str:
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
     return f"""
       <div class="section-head">
-        <h2>CSV Upload &amp; Datensatzprüfung</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>CSV Upload &amp; Datensatzprüfung</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Vorbelegt mit den geladenen Demo-Messdaten; per Drag &amp; Drop kann eine andere CSV lokal im Browser geprüft werden.</p>
       </div>
 
@@ -1644,9 +1715,9 @@ def _build_upload_section_html(upload_check: dict[str, Any]) -> str:
       </div>
 
       <div id="upload-check-results" class="kpi-grid">
-        <div class="card"><div class="label">Container / Standorte</div><div class="value" id="uc-containers">{upload_check['container_count']}</div><div class="sub">Serien: <span id="uc-series">{upload_check['series_count']}</span> · Zeilen: <span id="uc-rows">{upload_check['row_count']}</span></div></div>
+        <div class="card"><div class="label">Standorte (physisch)</div><div class="value" id="uc-containers">{upload_check['container_count']}</div><div class="sub">Container (Serien): <span id="uc-series">{upload_check['series_count']}</span> · Messzeilen: <span id="uc-rows">{upload_check['row_count']}</span></div></div>
         <div class="card"><div class="label">Zeitraum</div><div class="value" id="uc-period">{html.escape(upload_check['date_min'])} bis {html.escape(upload_check['date_max'])}</div><div class="sub">Messtage: <span id="uc-days">{upload_check['measurement_days']}</span></div></div>
-        <div class="card"><div class="label">Fehlende / ungültige Werte</div><div class="value" id="uc-missing">{upload_check['missing_values']}</div><div class="sub">Pflichtspalten: Location_id, material_type, date, fill</div></div>
+        <div class="card"><div class="label">Fehlende / ungültige Werte</div><div class="value" id="uc-missing">{upload_check['missing_values']}</div><div class="sub">Pflichtspalten: <code>Location_id</code>, <code>material_type</code>, <code>date</code>, <code>fill</code></div></div>
         <div class="card"><div class="label">Overfull-Ereignisse</div><div class="value" id="uc-overfull">{upload_check['overfull_count']}</div><div class="sub">Als &ge; 110 % kodiert</div></div>
       </div>
     """
@@ -1690,6 +1761,12 @@ def _fmt_short_de(date_str: str) -> str:
         return pd.Timestamp(date_str).strftime("%d.%m.")
     except Exception:
         return str(date_str)
+
+
+def _details_more_html(summary: str, content: str, open_default: bool = False) -> str:
+    """Wrap secondary content in a native <details> element with a summary label."""
+    open_attr = " open" if open_default else ""
+    return f'<details class="details-more"{open_attr}><summary>{html.escape(summary)}</summary>{content}</details>'
 
 
 def _timer_text_windowed(days: Any, due: Any, base_date: str) -> str:
@@ -3086,9 +3163,18 @@ def _add_event_markers_to_weekly_fig(fig: go.Figure, weeks: list[str]) -> None:
         )
 
 
-def _build_data_section_html(analysis: dict[str, Any]) -> str:
+def _build_data_section_html(
+    analysis: dict[str, Any],
+    date: str = "",
+    stand_de: str = "",
+) -> str:
     """Render the real-measurement dashboard without any map or location data."""
     street_lookup = _load_street_lookup()
+    stand_badge = (
+        f'<span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>'
+        if date and stand_de
+        else ""
+    )
     distribution = analysis["distribution"]
     fig_distribution = go.Figure()
     for material in ("white", "green", "brown"):
@@ -3239,7 +3325,10 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
     ]
     return f"""
       <div class="section-head">
-        <h2>Daten: Reale Messungen</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2>Daten: Reale Messungen</h2>
+          {stand_badge}
+        </div>
         <p class="muted">Echte PreZero-Messdaten · {analysis['container_count']:,} Container · Füllstand 110 % = übervoll</p>
         <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung, max. 110&nbsp;%. <b>Timer:</b> fällig, sobald die Schätzung 80&nbsp;% erreicht.</div>
       </div>
@@ -3282,7 +3371,7 @@ def _build_data_section_html(analysis: dict[str, Any]) -> str:
         </table>
       </div>
       <div class="section-head"><h3>Top 20 Container nach Übervoll-Häufigkeit</h3>
-        <p class="muted">Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung für Standort und Glasart.</p>
+        <p class="muted">Klick auf eine Zeile zeigt die vorberechnete Copilot-Erklärung für Standort und Glasart (oder direkt im <button type="button" class="tab-link-btn" onclick="activateTab('view-copilot')">Tab &bdquo;Copilot&ldquo;</button>).</p>
       </div>
       <div id="top20-explain-panel" class="explain-panel" hidden></div>
       <div class="table-wrap">
@@ -3364,14 +3453,27 @@ def build_ui(
             "csv_rows": [row for _, row in tour.interleave(route_bundle["metrics"])],
         }
     )
-    datacheck_section_html = _build_datacheck_section_html(data_check, trends_uri)
-    upload_section_html = _build_upload_section_html(upload_check)
-    heatmap_section_html = _build_heatmap_section_html(heatmap_src)
+    stand_de = _fmt_stand_de(date)
+    datacheck_section_html = _build_datacheck_section_html(
+        data_check, trends_uri, date=date, stand_de=stand_de
+    )
+    upload_section_html = _build_upload_section_html(
+        upload_check, date=date, stand_de=stand_de
+    )
+    heatmap_section_html = _build_heatmap_section_html(
+        heatmap_src, date=date, stand_de=stand_de
+    )
     location_banner_html = _build_location_banner_html(locations_df)
-    benchmark_section_html = _build_benchmark_section_html(compute_benchmark_summary(benchmark_rows, date))
-    variables_section_html = _build_variables_section_html(route_data)
+    benchmark_section_html = _build_benchmark_section_html(
+        compute_benchmark_summary(benchmark_rows, date), date=date, stand_de=stand_de
+    )
+    variables_section_html = _build_variables_section_html(
+        route_data, date=date, stand_de=stand_de
+    )
     backtest_section_html = _build_backtest_section_html(backtest_summary)
-    data_section_html = _build_data_section_html(measurement_analysis)
+    data_section_html = _build_data_section_html(
+        measurement_analysis, date=date, stand_de=stand_de
+    )
 
     raw_assumptions = route_bundle["metrics"].get("assumptions") or {}
     try:
@@ -3382,7 +3484,7 @@ def build_ui(
         scored_df, locations_df, operational_cfg
     )
     location_planning_section_html = _build_location_planning_section_html(
-        location_plan, scored_df, locations_df
+        location_plan, scored_df, locations_df, date=date, stand_de=stand_de
     )
     demo_playback = demo.build_demo_playback_dataset(
         readings_df, locations_df, operational_cfg
@@ -3390,7 +3492,6 @@ def build_ui(
     demo_section_html = demo.build_demo_section_html(demo_playback)
 
     street_lookup = _load_street_lookup()
-    stand_de = _fmt_stand_de(date)
     status_quo_km = _status_quo_km_from_benchmark(benchmark_rows, date)
     demo_dates, date_snapshots = _build_date_snapshots(
         selected_date=date,
@@ -3853,6 +3954,8 @@ def build_ui(
     }}
     .primary-btn {{ border: 1px solid #166534; background: #16a34a; color: #fff; }}
     .secondary-btn {{ border: 1px solid var(--border); background: var(--surface); color: var(--text); }}
+    .tab-link-btn {{ background: none; border: none; color: #2563eb; text-decoration: underline; cursor: pointer; padding: 0; font: inherit; font-size: inherit; display: inline; }}
+    .tab-link-btn:hover {{ color: #1d4ed8; }}
     .command-box {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }}
     .command-box code {{ flex: 1 1 360px; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 10px 12px; }}
     .topbar-controls {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }}
@@ -3983,6 +4086,7 @@ def build_ui(
         <div class="process-note"><strong>So entstehen die Daten:</strong> Das Fahrzeug fährt zum Container, der Fahrer <b>schätzt den Füllstand und leert</b> den Container. Jede Messung ist also der Stand <i>vor</i> der Leerung; danach startet der Container wieder bei ca. 0&nbsp;%. Füllrate = vorgefundener Stand &divide; Tage seit dem letzten Besuch. Stand heute (geschätzt) = Füllrate &times; Tage seit der letzten Leerung, max. 110&nbsp;%. <b>Timer:</b> fällig, sobald die Schätzung 80&nbsp;% erreicht.</div>
       </div>
       <div class="kpi-grid">{forecast_cards_html}</div>
+      <div class="location-banner"><strong>Kartenkoordinaten simuliert (OSM-Zuordnung):</strong> Die Füllstände und Prognosen basieren auf realen Messungen; die Kartenpunkte sind OSM-Glascontainer mit simulierter ID-Zuordnung.</div>
       <div class="map-wrap">{forecast_iframe}</div>
     </section>
 
