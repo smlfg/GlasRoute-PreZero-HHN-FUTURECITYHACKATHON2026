@@ -1,4 +1,4 @@
-"""Emptying policies a–f (docs/MODEL_SPEC.md §5, §9.4/§9.5).
+"""Emptying policies a–h (docs/MODEL_SPEC.md §5, §9.4/§9.5).
 
 Every policy only sees ``DayContext`` (walk-forward r̂, age since last emptying, calendar)
 and ``Static`` (geometry, calendar, real visit dates). Estimated fill = r̂_c(d) × age_c.
@@ -30,6 +30,7 @@ emptied (MODEL_SPEC §10, today's behaviour). Only (g) switches it on.
     ordered west→east by centroid longitude = Mon..Fri. Area days = that weekday every week;
     a holiday shifts it to the next operating day. On an area day empty c if its estimated
     fill on the area's NEXT area day would be ≥ target.
+(h) h_area_week_rhythm — Dispatcher's week rhythm on the areas of (f); see ``AreaWeekRhythm``.
 """
 
 from __future__ import annotations
@@ -240,6 +241,62 @@ class FixedAreas(_Base):
         return ctx.active & today & (ctx.est_rate * (ctx.age + horizon) >= self.target)
 
 
+class AreaWeekRhythm(FixedAreas):
+    """(h) Week rhythm per container on the 5 fixed areas of (f) (same k-means, same area days).
+
+    Owner persona: containers that are regularly half empty get a longer rhythm, the freed
+    time goes to the critical ones, the rhythm adapts after every new measurement.
+
+    Rule (buffer = ``buffer_pct``, default 20; also run with 10 / 30):
+      * rhythm k_c ∈ {1, 2, 3, 4} weeks = clamp(floor((100 − buffer) / (r̂_c · 7)), 1, 4),
+        r̂_c = walk-forward estimate of the day of emptying (ratio of sums, readings with
+        date < d only). k_c is recomputed after every emptying of c (``on_emptied``);
+        before c's first emptying k_c follows the current r̂_c daily.
+      * On c's area day empty c if age_c ≥ 7·k_c days since its last emptying/activation,
+        OR (safety) its estimated fill on the area's next area day would be ≥ 100 − buffer/2:
+        r̂_c · (age_c + days to next area day) ≥ 100 − buffer/2.
+      * Never off its area day (holiday shift as in (f)). Co-empty at a stop is OFF.
+    ``rhythm`` holds the current k per container (at the end of the run: the recommendation).
+    """
+
+    id = "h_area_week_rhythm"
+    label = "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2"
+
+    def __init__(self, *args, id: str | None = None, **kw):
+        super().__init__(*args, **kw)
+        if id:
+            self.id = id
+        self.label = f"{AreaWeekRhythm.label} (Puffer {self.buffer_pct:g} %)"
+
+    def rhythm_of(self, est_rate: np.ndarray) -> np.ndarray:
+        with np.errstate(divide="ignore"):
+            k = np.floor(self.target / (np.maximum(est_rate, 1e-9) * 7.0))
+        return np.clip(k, 1, 4).astype(np.int64)
+
+    def setup(self, static: Static) -> None:
+        super().setup(static)
+        self.rhythm = np.zeros(static.n, dtype=np.int64)  # 0 = not yet emptied
+        self.fixed = np.zeros(static.n, dtype=bool)
+
+    def decide(self, ctx: DayContext) -> np.ndarray:
+        # containers never emptied yet follow the current estimate
+        self.rhythm[~self.fixed] = self.rhythm_of(ctx.est_rate)[~self.fixed]
+        di = ctx.day
+        today = self.area_day[self.area, di]
+        if not today.any():
+            return np.zeros(ctx.active.size, dtype=bool)
+        n_days = self.area_day.shape[1]
+        nxt = self.next_area_day[self.area, min(di + 1, n_days)]
+        horizon = np.where(nxt >= INF_DAY, 7, nxt - di)
+        due = ctx.age >= 7 * self.rhythm
+        safety = ctx.est_rate * (ctx.age + horizon) >= 100.0 - self.buffer_pct / 2.0
+        return ctx.active & today & (due | safety)
+
+    def on_emptied(self, ctx: DayContext, sel: np.ndarray) -> None:
+        self.rhythm[sel] = self.rhythm_of(ctx.est_rate)[sel]
+        self.fixed |= sel
+
+
 class CoEmpty(ZeroOverflow):
     id = "g_co_empty"
     label = "(g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren"
@@ -258,6 +315,9 @@ def default_policies() -> list[_Base]:
         StatusQuo(),
         Mentor(),
         FixedAreas(),
+        AreaWeekRhythm(),
+        AreaWeekRhythm(buffer_pct=10.0, id="h_area_week_rhythm_b10"),
+        AreaWeekRhythm(buffer_pct=30.0, id="h_area_week_rhythm_b30"),
         CoEmpty(50.0),
         CoEmpty(30.0, id="g_co_empty_x30"),
         CoEmpty(70.0, id="g_co_empty_x70"),

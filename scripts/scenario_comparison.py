@@ -16,6 +16,7 @@ SC = ROOT / "data/outputs/scenarios"
 
 ORDER = [
     "d_status_quo", "a_zero_overflow", "b_min_km", "c_max_fill", "e_mentor", "f_fixed_areas",
+    "h_area_week_rhythm_b10", "h_area_week_rhythm", "h_area_week_rhythm_b30",
     "g_co_empty_x70", "g_co_empty", "g_co_empty_x30",
     "d_status_quo_per_colour", "a_zero_overflow_per_colour", "g_co_empty_per_colour",
 ]

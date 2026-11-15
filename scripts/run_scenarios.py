@@ -32,7 +32,7 @@ if str(ROOT / "src") not in sys.path:
 from prezero.locations import load_locations  # noqa: E402
 from prezero.routing import load_config  # noqa: E402
 from prezero.sim.engine import ScenarioResult, km_evaluator, run_scenario, static_view  # noqa: E402
-from prezero.sim.policies import FixedAreas, Mentor, default_policies, per_colour_policies  # noqa: E402
+from prezero.sim.policies import AreaWeekRhythm, FixedAreas, Mentor, default_policies, per_colour_policies  # noqa: E402
 from prezero.sim.world import build_world  # noqa: E402
 
 DAILY_COLUMNS = [
@@ -47,6 +47,20 @@ DAILY_COLUMNS = [
     "km",
     "cost_eur",
 ]
+
+
+WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr"]
+
+
+def container_intervals(world) -> np.ndarray:
+    """Median days between consecutive real readings (readings 2..n) per container; NaN if < 2."""
+    out = np.full(world.n, np.nan)
+    rd = world.readings.sort_values(["c", "date_only"])
+    for c, g in rd.groupby("c"):
+        dd = pd.Series(pd.to_datetime(g["date_only"])).diff().dt.days.dropna()
+        if len(dd):
+            out[int(c)] = float(dd.median())
+    return out
 
 
 def resolve_evaluator(time_model: str | None):
@@ -160,6 +174,14 @@ def main() -> None:
 
     # containers.csv
     f_pol = next(p for p in pols if isinstance(p, FixedAreas))
+    h_pol = next(p for p in pols if p.id == AreaWeekRhythm.id)
+    interval = container_intervals(world)
+    rhythm_sq = np.clip(np.round(interval / 7.0), 1, 8)
+    rhythm_new = h_pol.rhythm.astype(float)
+    reco = np.where(
+        np.isnan(rhythm_sq), "gleich",
+        np.where(rhythm_new > rhythm_sq, "länger", np.where(rhythm_new < rhythm_sq, "kürzer", "gleich")),
+    )
     m_pol = next(p for p in pols if isinstance(p, Mentor))
     mentor = by_id[m_pol.id]
     buffer = 20.0
@@ -179,6 +201,11 @@ def main() -> None:
             "avg_fill_mentor_pct": mentor.containers["avg_fill_pct"].round(2).to_numpy(),
             "overflow_events_status_quo": sq.containers["overflow_events"].to_numpy(),
             "skip_14d": m_pol.skipped_ever.astype(int),
+            "interval_status_quo_days": np.round(interval, 1),
+            "rhythm_weeks_status_quo": pd.array(rhythm_sq, dtype="Int64"),
+            "rhythm_weeks_new": h_pol.rhythm.astype(int),
+            "recommendation": reco,
+            "area_weekday": np.array(WEEKDAYS)[f_pol.area],
         }
     )
     cont.to_csv(out / "containers.csv", index=False)
