@@ -81,7 +81,9 @@ KEY_SENTENCE = (
 PENDING_HINT = "Daten folgen"
 
 #: Scenario id of the new area/week rhythm and its fallback.
-NEW_SCENARIO_IDS = ("h_area_week_rhythm", "f_fixed_areas")
+NEW_SCENARIO_IDS = ("h_area_week_rhythm_b10", "h_area_week_rhythm", "f_fixed_areas")
+#: Shown next to the area plan in the fill-class table (daily cadence per container).
+CADENCE_SCENARIO_ID = "c_max_fill"
 
 #: Hint shown when the scenario output is missing.
 MISSING_HINT = "Szenariodaten fehlen (scripts/run_scenarios.py ausführen)"
@@ -427,13 +429,52 @@ def build_impact_html(summary: Mapping[str, Any] | None, missing: Sequence[str] 
     def small(label: str, cell: str) -> str:
         return f'<div class="card"><div class="label">{label}</div><div class="value">{cell}</div></div>'
 
-    big_cards = (
-        big("Ø Füllgrad bei Leerung (heute → neu)",
-            _delta_cell(today.get("avg_fill_at_emptying_pct"), new.get("avg_fill_at_emptying_pct"), 1, " %", True))
-        + big("Überläufe (heute → neu)",
-              _delta_cell(today.get("overflow_events"), new.get("overflow_events"), 0, "", False))
-    )
+    has_classes = today.get("share_fits_pct") is not None and new.get("share_fits_pct") is not None
+    if has_classes:
+        big_cards = (
+            big("Leerungen im passenden Fenster 50–100 % (heute → neu)",
+                _delta_cell(today.get("share_fits_pct"), new.get("share_fits_pct"), 1, " %", True))
+            + big("Überläufe (heute → neu)",
+                  _delta_cell(today.get("overflow_events"), new.get("overflow_events"), 0, "", False))
+        )
+    else:
+        big_cards = (
+            big("Ø Füllgrad bei Leerung (heute → neu)",
+                _delta_cell(today.get("avg_fill_at_emptying_pct"), new.get("avg_fill_at_emptying_pct"), 1, " %", True))
+            + big("Überläufe (heute → neu)",
+                  _delta_cell(today.get("overflow_events"), new.get("overflow_events"), 0, "", False))
+        )
+    class_rows = ""
+    if has_classes:
+        cadence = next(
+            (sc for sc in summary.get("scenarios", [])
+             if sc.get("id") == CADENCE_SCENARIO_ID and str(sc.get("time_model")) == DEFAULT_TIME_MODEL),
+            None,
+        )
+        rows = [("Heute (Status quo)", today), ("Neu: feste Gebiete + Wochentakt", new)]
+        if cadence is not None and cadence.get("share_fits_pct") is not None:
+            rows.append(("Ausblick: Takt pro Container (täglich)", cadence))
+        body = "".join(
+            f"<tr><td>{_esc(name)}</td><td>{_de(sc.get('share_too_early_pct'), 1)} %</td>"
+            f"<td><strong>{_de(sc.get('share_fits_pct'), 1)} %</strong></td>"
+            f"<td>{_de(sc.get('share_overfull_pct'), 1)} %</td>"
+            f"<td>{_de(sc.get('avg_fill_at_emptying_pct'), 1)} %</td></tr>"
+            for name, sc in rows
+        )
+        class_rows = f"""
+      <div class="card">
+        <div class="label">Der Durchschnitt versteckt zwei Probleme: zu früh geleert und übergelaufen.</div>
+        <table class="slide-table cadence-classes">
+          <thead><tr><th>Leerungen</th><th>zu früh (&lt; 50 %)</th><th>passt (50–100 %)</th>
+          <th>übervoll (&gt; 100 %)</th><th>Ø Füllgrad</th></tr></thead>
+          <tbody>{body}</tbody>
+        </table>
+        <p class="muted">Ø Füllgrad heute enthält übergelaufenes Glas (über 100 %); deshalb zählt der
+          Anteil im passenden Fenster.</p>
+      </div>"""
     small_cards = (
+        small("Ø Füllgrad", _delta_cell(today.get("avg_fill_at_emptying_pct"), new.get("avg_fill_at_emptying_pct"), 1, " %", True))
+        +
         small("Leerungen", _delta_cell(today.get("emptyings"), new.get("emptyings"), 0, "", None))
         + small("Stunden", _delta_cell(today.get("hours"), new.get("hours"), 0, " h", False))
         + small("Kosten", _delta_cell(today.get("cost_eur"), new.get("cost_eur"), 0, " €", False))
@@ -448,6 +489,7 @@ def build_impact_html(summary: Mapping[str, Any] | None, missing: Sequence[str] 
         {f'<p class="muted">{_esc(note)}</p>' if note else ''}
       </div>
       <div class="kpi-grid impact-big-grid">{big_cards}</div>
+      {class_rows}
       <div class="kpi-grid impact-small-grid">{small_cards}</div>
     </section>
     """

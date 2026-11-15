@@ -1,6 +1,6 @@
 # Szenario-Vergleich (gleiche Glasmenge)
 
-Erzeugt von `scripts/scenario_comparison.py` aus `data/outputs/scenarios/summary.json` (generated_at 2026-11-15T12:41:36+00:00), `km_decomposition.json`, `skip_savings.json`. Keine Zahl ist von Hand eingetragen. Modell: `docs/MODEL_SPEC.md`.
+Erzeugt von `scripts/scenario_comparison.py` aus `data/outputs/scenarios/summary.json` (generated_at 2026-11-15T12:47:11+00:00), `km_decomposition.json`, `skip_savings.json`. Keine Zahl ist von Hand eingetragen. Modell: `docs/MODEL_SPEC.md`.
 
 **Zeitraum:** 2025-10-17 bis 2026-09-30 (349 Tage). **Produziertes Glas: 7.613,95 t in jedem Szenario** (Massenbilanz `gesammelt + Endbestand = produziert` geprüft je Szenario, `mass_balance_ok` = True).
 

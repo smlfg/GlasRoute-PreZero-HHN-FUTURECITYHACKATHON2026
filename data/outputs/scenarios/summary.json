@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-15T12:41:36+00:00",
+  "generated_at": "2026-11-15T12:47:11+00:00",
   "period": {
     "start": "2025-10-17",
     "end": "2026-09-30",
@@ -22,6 +22,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -41,7 +44,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.42
+      "runtime_s": 0.46
     },
     {
       "id": "b_min_km",
@@ -56,6 +59,9 @@
       "avg_fill_at_emptying_pct": 86.04,
       "overflow_events": 7079,
       "overfull_at_emptying": 923,
+      "share_too_early_pct": 12.1,
+      "share_fits_pct": 63.2,
+      "share_overfull_pct": 24.6,
       "emptyings": 8094,
       "emptyings_saved_vs_status_quo": 2269,
       "extra_emptyings_co": 0,
@@ -75,7 +81,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.38
+      "runtime_s": 0.41
     },
     {
       "id": "c_max_fill",
@@ -90,6 +96,9 @@
       "avg_fill_at_emptying_pct": 71.63,
       "overflow_events": 2502,
       "overfull_at_emptying": 300,
+      "share_too_early_pct": 15.5,
+      "share_fits_pct": 79.0,
+      "share_overfull_pct": 5.5,
       "emptyings": 9912,
       "emptyings_saved_vs_status_quo": 451,
       "extra_emptyings_co": 0,
@@ -109,7 +118,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.41
+      "runtime_s": 0.42
     },
     {
       "id": "d_status_quo",
@@ -124,6 +133,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -143,7 +155,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.31
+      "runtime_s": 0.32
     },
     {
       "id": "e_mentor",
@@ -158,6 +170,9 @@
       "avg_fill_at_emptying_pct": 52.69,
       "overflow_events": 485,
       "overfull_at_emptying": 101,
+      "share_too_early_pct": 45.2,
+      "share_fits_pct": 53.4,
+      "share_overfull_pct": 1.3,
       "emptyings": 13676,
       "emptyings_saved_vs_status_quo": -3313,
       "extra_emptyings_co": 0,
@@ -177,7 +192,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.43
+      "runtime_s": 0.48
     },
     {
       "id": "f_fixed_areas",
@@ -192,6 +207,9 @@
       "avg_fill_at_emptying_pct": 60.32,
       "overflow_events": 1958,
       "overfull_at_emptying": 216,
+      "share_too_early_pct": 27.7,
+      "share_fits_pct": 69.2,
+      "share_overfull_pct": 3.2,
       "emptyings": 11842,
       "emptyings_saved_vs_status_quo": -1479,
       "extra_emptyings_co": 0,
@@ -226,6 +244,9 @@
       "avg_fill_at_emptying_pct": 53.73,
       "overflow_events": 475,
       "overfull_at_emptying": 124,
+      "share_too_early_pct": 40.2,
+      "share_fits_pct": 57.9,
+      "share_overfull_pct": 1.9,
       "emptyings": 13492,
       "emptyings_saved_vs_status_quo": -3129,
       "extra_emptyings_co": 0,
@@ -245,7 +266,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.37
+      "runtime_s": 0.38
     },
     {
       "id": "h_area_week_rhythm_b10",
@@ -260,6 +281,9 @@
       "avg_fill_at_emptying_pct": 59.01,
       "overflow_events": 819,
       "overfull_at_emptying": 215,
+      "share_too_early_pct": 35.7,
+      "share_fits_pct": 60.8,
+      "share_overfull_pct": 3.5,
       "emptyings": 12234,
       "emptyings_saved_vs_status_quo": -1871,
       "extra_emptyings_co": 0,
@@ -279,7 +303,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.37
+      "runtime_s": 0.39
     },
     {
       "id": "h_area_week_rhythm_b30",
@@ -294,6 +318,9 @@
       "avg_fill_at_emptying_pct": 47.55,
       "overflow_events": 256,
       "overfull_at_emptying": 73,
+      "share_too_early_pct": 50.5,
+      "share_fits_pct": 48.5,
+      "share_overfull_pct": 1.0,
       "emptyings": 15321,
       "emptyings_saved_vs_status_quo": -4958,
       "extra_emptyings_co": 0,
@@ -328,6 +355,9 @@
       "avg_fill_at_emptying_pct": 57.19,
       "overflow_events": 581,
       "overfull_at_emptying": 105,
+      "share_too_early_pct": 28.9,
+      "share_fits_pct": 69.5,
+      "share_overfull_pct": 1.6,
       "emptyings": 12584,
       "emptyings_saved_vs_status_quo": -2221,
       "extra_emptyings_co": 8698,
@@ -362,6 +392,9 @@
       "avg_fill_at_emptying_pct": 45.63,
       "overflow_events": 159,
       "overfull_at_emptying": 45,
+      "share_too_early_pct": 59.7,
+      "share_fits_pct": 39.7,
+      "share_overfull_pct": 0.6,
       "emptyings": 15976,
       "emptyings_saved_vs_status_quo": -5613,
       "extra_emptyings_co": 13168,
@@ -396,6 +429,9 @@
       "avg_fill_at_emptying_pct": 66.58,
       "overflow_events": 1636,
       "overfull_at_emptying": 223,
+      "share_too_early_pct": 18.4,
+      "share_fits_pct": 77.9,
+      "share_overfull_pct": 3.7,
       "emptyings": 10695,
       "emptyings_saved_vs_status_quo": -332,
       "extra_emptyings_co": 3226,
@@ -415,7 +451,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.38
+      "runtime_s": 0.37
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -430,6 +466,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -464,6 +503,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -483,7 +525,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=km)",
-      "runtime_s": 0.73
+      "runtime_s": 0.72
     },
     {
       "id": "g_co_empty_per_colour",
@@ -498,6 +540,9 @@
       "avg_fill_at_emptying_pct": 60.79,
       "overflow_events": 1034,
       "overfull_at_emptying": 155,
+      "share_too_early_pct": 23.9,
+      "share_fits_pct": 73.9,
+      "share_overfull_pct": 2.2,
       "emptyings": 11800,
       "emptyings_saved_vs_status_quo": -1437,
       "extra_emptyings_co": 5796,
@@ -532,6 +577,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -551,7 +599,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.47
+      "runtime_s": 0.46
     },
     {
       "id": "b_min_km",
@@ -566,6 +614,9 @@
       "avg_fill_at_emptying_pct": 86.04,
       "overflow_events": 7079,
       "overfull_at_emptying": 923,
+      "share_too_early_pct": 12.1,
+      "share_fits_pct": 63.2,
+      "share_overfull_pct": 24.6,
       "emptyings": 8094,
       "emptyings_saved_vs_status_quo": 2269,
       "extra_emptyings_co": 0,
@@ -585,7 +636,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.42
+      "runtime_s": 0.41
     },
     {
       "id": "c_max_fill",
@@ -600,6 +651,9 @@
       "avg_fill_at_emptying_pct": 71.63,
       "overflow_events": 2502,
       "overfull_at_emptying": 300,
+      "share_too_early_pct": 15.5,
+      "share_fits_pct": 79.0,
+      "share_overfull_pct": 5.5,
       "emptyings": 9912,
       "emptyings_saved_vs_status_quo": 451,
       "extra_emptyings_co": 0,
@@ -619,7 +673,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.45
+      "runtime_s": 0.48
     },
     {
       "id": "d_status_quo",
@@ -634,6 +688,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -653,7 +710,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.33
+      "runtime_s": 0.37
     },
     {
       "id": "e_mentor",
@@ -668,6 +725,9 @@
       "avg_fill_at_emptying_pct": 52.69,
       "overflow_events": 485,
       "overfull_at_emptying": 101,
+      "share_too_early_pct": 45.2,
+      "share_fits_pct": 53.4,
+      "share_overfull_pct": 1.3,
       "emptyings": 13676,
       "emptyings_saved_vs_status_quo": -3313,
       "extra_emptyings_co": 0,
@@ -687,7 +747,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.47
+      "runtime_s": 0.54
     },
     {
       "id": "f_fixed_areas",
@@ -702,6 +762,9 @@
       "avg_fill_at_emptying_pct": 60.32,
       "overflow_events": 1958,
       "overfull_at_emptying": 216,
+      "share_too_early_pct": 27.7,
+      "share_fits_pct": 69.2,
+      "share_overfull_pct": 3.2,
       "emptyings": 11842,
       "emptyings_saved_vs_status_quo": -1479,
       "extra_emptyings_co": 0,
@@ -721,7 +784,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.37
+      "runtime_s": 0.42
     },
     {
       "id": "h_area_week_rhythm",
@@ -736,6 +799,9 @@
       "avg_fill_at_emptying_pct": 53.73,
       "overflow_events": 475,
       "overfull_at_emptying": 124,
+      "share_too_early_pct": 40.2,
+      "share_fits_pct": 57.9,
+      "share_overfull_pct": 1.9,
       "emptyings": 13492,
       "emptyings_saved_vs_status_quo": -3129,
       "extra_emptyings_co": 0,
@@ -755,7 +821,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.39
+      "runtime_s": 0.44
     },
     {
       "id": "h_area_week_rhythm_b10",
@@ -770,6 +836,9 @@
       "avg_fill_at_emptying_pct": 59.01,
       "overflow_events": 819,
       "overfull_at_emptying": 215,
+      "share_too_early_pct": 35.7,
+      "share_fits_pct": 60.8,
+      "share_overfull_pct": 3.5,
       "emptyings": 12234,
       "emptyings_saved_vs_status_quo": -1871,
       "extra_emptyings_co": 0,
@@ -789,7 +858,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.42
+      "runtime_s": 0.47
     },
     {
       "id": "h_area_week_rhythm_b30",
@@ -804,6 +873,9 @@
       "avg_fill_at_emptying_pct": 47.55,
       "overflow_events": 256,
       "overfull_at_emptying": 73,
+      "share_too_early_pct": 50.5,
+      "share_fits_pct": 48.5,
+      "share_overfull_pct": 1.0,
       "emptyings": 15321,
       "emptyings_saved_vs_status_quo": -4958,
       "extra_emptyings_co": 0,
@@ -823,7 +895,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.45
+      "runtime_s": 0.41
     },
     {
       "id": "g_co_empty",
@@ -838,6 +910,9 @@
       "avg_fill_at_emptying_pct": 57.19,
       "overflow_events": 581,
       "overfull_at_emptying": 105,
+      "share_too_early_pct": 28.9,
+      "share_fits_pct": 69.5,
+      "share_overfull_pct": 1.6,
       "emptyings": 12584,
       "emptyings_saved_vs_status_quo": -2221,
       "extra_emptyings_co": 8698,
@@ -857,7 +932,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.4
+      "runtime_s": 0.35
     },
     {
       "id": "g_co_empty_x30",
@@ -872,6 +947,9 @@
       "avg_fill_at_emptying_pct": 45.63,
       "overflow_events": 159,
       "overfull_at_emptying": 45,
+      "share_too_early_pct": 59.7,
+      "share_fits_pct": 39.7,
+      "share_overfull_pct": 0.6,
       "emptyings": 15976,
       "emptyings_saved_vs_status_quo": -5613,
       "extra_emptyings_co": 13168,
@@ -891,7 +969,7 @@
         "fewest_overflows": true
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.38
+      "runtime_s": 0.32
     },
     {
       "id": "g_co_empty_x70",
@@ -906,6 +984,9 @@
       "avg_fill_at_emptying_pct": 66.58,
       "overflow_events": 1636,
       "overfull_at_emptying": 223,
+      "share_too_early_pct": 18.4,
+      "share_fits_pct": 77.9,
+      "share_overfull_pct": 3.7,
       "emptyings": 10695,
       "emptyings_saved_vs_status_quo": -332,
       "extra_emptyings_co": 3226,
@@ -925,7 +1006,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.48
+      "runtime_s": 0.41
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -940,6 +1021,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -959,7 +1043,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.89
+      "runtime_s": 0.83
     },
     {
       "id": "d_status_quo_per_colour",
@@ -974,6 +1058,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -1008,6 +1095,9 @@
       "avg_fill_at_emptying_pct": 60.79,
       "overflow_events": 1034,
       "overfull_at_emptying": 155,
+      "share_too_early_pct": 23.9,
+      "share_fits_pct": 73.9,
+      "share_overfull_pct": 2.2,
       "emptyings": 11800,
       "emptyings_saved_vs_status_quo": -1437,
       "extra_emptyings_co": 5796,
@@ -1027,7 +1117,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=real)",
-      "runtime_s": 0.76
+      "runtime_s": 0.79
     },
     {
       "id": "a_zero_overflow",
@@ -1042,6 +1132,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -1076,6 +1169,9 @@
       "avg_fill_at_emptying_pct": 86.04,
       "overflow_events": 7079,
       "overfull_at_emptying": 923,
+      "share_too_early_pct": 12.1,
+      "share_fits_pct": 63.2,
+      "share_overfull_pct": 24.6,
       "emptyings": 8094,
       "emptyings_saved_vs_status_quo": 2269,
       "extra_emptyings_co": 0,
@@ -1095,7 +1191,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.41
+      "runtime_s": 0.42
     },
     {
       "id": "c_max_fill",
@@ -1110,6 +1206,9 @@
       "avg_fill_at_emptying_pct": 71.63,
       "overflow_events": 2502,
       "overfull_at_emptying": 300,
+      "share_too_early_pct": 15.5,
+      "share_fits_pct": 79.0,
+      "share_overfull_pct": 5.5,
       "emptyings": 9912,
       "emptyings_saved_vs_status_quo": 451,
       "extra_emptyings_co": 0,
@@ -1129,7 +1228,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.46
+      "runtime_s": 0.51
     },
     {
       "id": "d_status_quo",
@@ -1144,6 +1243,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -1163,7 +1265,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.33
+      "runtime_s": 0.38
     },
     {
       "id": "e_mentor",
@@ -1178,6 +1280,9 @@
       "avg_fill_at_emptying_pct": 52.69,
       "overflow_events": 485,
       "overfull_at_emptying": 101,
+      "share_too_early_pct": 45.2,
+      "share_fits_pct": 53.4,
+      "share_overfull_pct": 1.3,
       "emptyings": 13676,
       "emptyings_saved_vs_status_quo": -3313,
       "extra_emptyings_co": 0,
@@ -1197,7 +1302,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.46
+      "runtime_s": 0.55
     },
     {
       "id": "f_fixed_areas",
@@ -1212,6 +1317,9 @@
       "avg_fill_at_emptying_pct": 60.32,
       "overflow_events": 1958,
       "overfull_at_emptying": 216,
+      "share_too_early_pct": 27.7,
+      "share_fits_pct": 69.2,
+      "share_overfull_pct": 3.2,
       "emptyings": 11842,
       "emptyings_saved_vs_status_quo": -1479,
       "extra_emptyings_co": 0,
@@ -1231,7 +1339,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.37
+      "runtime_s": 0.44
     },
     {
       "id": "h_area_week_rhythm",
@@ -1246,6 +1354,9 @@
       "avg_fill_at_emptying_pct": 53.73,
       "overflow_events": 475,
       "overfull_at_emptying": 124,
+      "share_too_early_pct": 40.2,
+      "share_fits_pct": 57.9,
+      "share_overfull_pct": 1.9,
       "emptyings": 13492,
       "emptyings_saved_vs_status_quo": -3129,
       "extra_emptyings_co": 0,
@@ -1265,7 +1376,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.42
+      "runtime_s": 0.48
     },
     {
       "id": "h_area_week_rhythm_b10",
@@ -1280,6 +1391,9 @@
       "avg_fill_at_emptying_pct": 59.01,
       "overflow_events": 819,
       "overfull_at_emptying": 215,
+      "share_too_early_pct": 35.7,
+      "share_fits_pct": 60.8,
+      "share_overfull_pct": 3.5,
       "emptyings": 12234,
       "emptyings_saved_vs_status_quo": -1871,
       "extra_emptyings_co": 0,
@@ -1299,7 +1413,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.39
+      "runtime_s": 0.38
     },
     {
       "id": "h_area_week_rhythm_b30",
@@ -1314,6 +1428,9 @@
       "avg_fill_at_emptying_pct": 47.55,
       "overflow_events": 256,
       "overfull_at_emptying": 73,
+      "share_too_early_pct": 50.5,
+      "share_fits_pct": 48.5,
+      "share_overfull_pct": 1.0,
       "emptyings": 15321,
       "emptyings_saved_vs_status_quo": -4958,
       "extra_emptyings_co": 0,
@@ -1333,7 +1450,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.45
+      "runtime_s": 0.4
     },
     {
       "id": "g_co_empty",
@@ -1348,6 +1465,9 @@
       "avg_fill_at_emptying_pct": 57.19,
       "overflow_events": 581,
       "overfull_at_emptying": 105,
+      "share_too_early_pct": 28.9,
+      "share_fits_pct": 69.5,
+      "share_overfull_pct": 1.6,
       "emptyings": 12584,
       "emptyings_saved_vs_status_quo": -2221,
       "extra_emptyings_co": 8698,
@@ -1367,7 +1487,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.38
+      "runtime_s": 0.35
     },
     {
       "id": "g_co_empty_x30",
@@ -1382,6 +1502,9 @@
       "avg_fill_at_emptying_pct": 45.63,
       "overflow_events": 159,
       "overfull_at_emptying": 45,
+      "share_too_early_pct": 59.7,
+      "share_fits_pct": 39.7,
+      "share_overfull_pct": 0.6,
       "emptyings": 15976,
       "emptyings_saved_vs_status_quo": -5613,
       "extra_emptyings_co": 13168,
@@ -1401,7 +1524,7 @@
         "fewest_overflows": true
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.37
+      "runtime_s": 0.33
     },
     {
       "id": "g_co_empty_x70",
@@ -1416,6 +1539,9 @@
       "avg_fill_at_emptying_pct": 66.58,
       "overflow_events": 1636,
       "overfull_at_emptying": 223,
+      "share_too_early_pct": 18.4,
+      "share_fits_pct": 77.9,
+      "share_overfull_pct": 3.7,
       "emptyings": 10695,
       "emptyings_saved_vs_status_quo": -332,
       "extra_emptyings_co": 3226,
@@ -1435,7 +1561,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.46
+      "runtime_s": 0.43
     },
     {
       "id": "a_zero_overflow_per_colour",
@@ -1450,6 +1576,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -1469,7 +1598,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.91
+      "runtime_s": 0.84
     },
     {
       "id": "d_status_quo_per_colour",
@@ -1484,6 +1613,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -1503,7 +1635,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.79
+      "runtime_s": 0.83
     },
     {
       "id": "g_co_empty_per_colour",
@@ -1518,6 +1650,9 @@
       "avg_fill_at_emptying_pct": 60.79,
       "overflow_events": 1034,
       "overfull_at_emptying": 155,
+      "share_too_early_pct": 23.9,
+      "share_fits_pct": 73.9,
+      "share_overfull_pct": 2.2,
       "emptyings": 11800,
       "emptyings_saved_vs_status_quo": -1437,
       "extra_emptyings_co": 5796,
@@ -1537,7 +1672,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop5)",
-      "runtime_s": 0.74
+      "runtime_s": 0.82
     },
     {
       "id": "a_zero_overflow",
@@ -1552,6 +1687,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -1571,7 +1709,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.46
+      "runtime_s": 0.5
     },
     {
       "id": "b_min_km",
@@ -1586,6 +1724,9 @@
       "avg_fill_at_emptying_pct": 86.04,
       "overflow_events": 7079,
       "overfull_at_emptying": 923,
+      "share_too_early_pct": 12.1,
+      "share_fits_pct": 63.2,
+      "share_overfull_pct": 24.6,
       "emptyings": 8094,
       "emptyings_saved_vs_status_quo": 2269,
       "extra_emptyings_co": 0,
@@ -1605,7 +1746,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.42
+      "runtime_s": 0.47
     },
     {
       "id": "c_max_fill",
@@ -1620,6 +1761,9 @@
       "avg_fill_at_emptying_pct": 71.63,
       "overflow_events": 2502,
       "overfull_at_emptying": 300,
+      "share_too_early_pct": 15.5,
+      "share_fits_pct": 79.0,
+      "share_overfull_pct": 5.5,
       "emptyings": 9912,
       "emptyings_saved_vs_status_quo": 451,
       "extra_emptyings_co": 0,
@@ -1639,7 +1783,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.47
+      "runtime_s": 0.49
     },
     {
       "id": "d_status_quo",
@@ -1654,6 +1798,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -1688,6 +1835,9 @@
       "avg_fill_at_emptying_pct": 52.69,
       "overflow_events": 485,
       "overfull_at_emptying": 101,
+      "share_too_early_pct": 45.2,
+      "share_fits_pct": 53.4,
+      "share_overfull_pct": 1.3,
       "emptyings": 13676,
       "emptyings_saved_vs_status_quo": -3313,
       "extra_emptyings_co": 0,
@@ -1722,6 +1872,9 @@
       "avg_fill_at_emptying_pct": 60.32,
       "overflow_events": 1958,
       "overfull_at_emptying": 216,
+      "share_too_early_pct": 27.7,
+      "share_fits_pct": 69.2,
+      "share_overfull_pct": 3.2,
       "emptyings": 11842,
       "emptyings_saved_vs_status_quo": -1479,
       "extra_emptyings_co": 0,
@@ -1756,6 +1909,9 @@
       "avg_fill_at_emptying_pct": 53.73,
       "overflow_events": 475,
       "overfull_at_emptying": 124,
+      "share_too_early_pct": 40.2,
+      "share_fits_pct": 57.9,
+      "share_overfull_pct": 1.9,
       "emptyings": 13492,
       "emptyings_saved_vs_status_quo": -3129,
       "extra_emptyings_co": 0,
@@ -1775,7 +1931,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.43
+      "runtime_s": 0.42
     },
     {
       "id": "h_area_week_rhythm_b10",
@@ -1790,6 +1946,9 @@
       "avg_fill_at_emptying_pct": 59.01,
       "overflow_events": 819,
       "overfull_at_emptying": 215,
+      "share_too_early_pct": 35.7,
+      "share_fits_pct": 60.8,
+      "share_overfull_pct": 3.5,
       "emptyings": 12234,
       "emptyings_saved_vs_status_quo": -1871,
       "extra_emptyings_co": 0,
@@ -1809,7 +1968,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.39
+      "runtime_s": 0.38
     },
     {
       "id": "h_area_week_rhythm_b30",
@@ -1824,6 +1983,9 @@
       "avg_fill_at_emptying_pct": 47.55,
       "overflow_events": 256,
       "overfull_at_emptying": 73,
+      "share_too_early_pct": 50.5,
+      "share_fits_pct": 48.5,
+      "share_overfull_pct": 1.0,
       "emptyings": 15321,
       "emptyings_saved_vs_status_quo": -4958,
       "extra_emptyings_co": 0,
@@ -1843,7 +2005,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.41
+      "runtime_s": 0.39
     },
     {
       "id": "g_co_empty",
@@ -1858,6 +2020,9 @@
       "avg_fill_at_emptying_pct": 57.19,
       "overflow_events": 581,
       "overfull_at_emptying": 105,
+      "share_too_early_pct": 28.9,
+      "share_fits_pct": 69.5,
+      "share_overfull_pct": 1.6,
       "emptyings": 12584,
       "emptyings_saved_vs_status_quo": -2221,
       "extra_emptyings_co": 8698,
@@ -1877,7 +2042,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.35
+      "runtime_s": 0.34
     },
     {
       "id": "g_co_empty_x30",
@@ -1892,6 +2057,9 @@
       "avg_fill_at_emptying_pct": 45.63,
       "overflow_events": 159,
       "overfull_at_emptying": 45,
+      "share_too_early_pct": 59.7,
+      "share_fits_pct": 39.7,
+      "share_overfull_pct": 0.6,
       "emptyings": 15976,
       "emptyings_saved_vs_status_quo": -5613,
       "extra_emptyings_co": 13168,
@@ -1911,7 +2079,7 @@
         "fewest_overflows": true
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.33
+      "runtime_s": 0.32
     },
     {
       "id": "g_co_empty_x70",
@@ -1926,6 +2094,9 @@
       "avg_fill_at_emptying_pct": 66.58,
       "overflow_events": 1636,
       "overfull_at_emptying": 223,
+      "share_too_early_pct": 18.4,
+      "share_fits_pct": 77.9,
+      "share_overfull_pct": 3.7,
       "emptyings": 10695,
       "emptyings_saved_vs_status_quo": -332,
       "extra_emptyings_co": 3226,
@@ -1960,6 +2131,9 @@
       "avg_fill_at_emptying_pct": 68.05,
       "overflow_events": 2237,
       "overfull_at_emptying": 259,
+      "share_too_early_pct": 17.8,
+      "share_fits_pct": 77.8,
+      "share_overfull_pct": 4.4,
       "emptyings": 10427,
       "emptyings_saved_vs_status_quo": -64,
       "extra_emptyings_co": 0,
@@ -1994,6 +2168,9 @@
       "avg_fill_at_emptying_pct": 67.0,
       "overflow_events": 19047,
       "overfull_at_emptying": 1196,
+      "share_too_early_pct": 35.9,
+      "share_fits_pct": 48.0,
+      "share_overfull_pct": 16.1,
       "emptyings": 10363,
       "emptyings_saved_vs_status_quo": 0,
       "extra_emptyings_co": 0,
@@ -2028,6 +2205,9 @@
       "avg_fill_at_emptying_pct": 60.79,
       "overflow_events": 1034,
       "overfull_at_emptying": 155,
+      "share_too_early_pct": 23.9,
+      "share_fits_pct": 73.9,
+      "share_overfull_pct": 2.2,
       "emptyings": 11800,
       "emptyings_saved_vs_status_quo": -1437,
       "extra_emptyings_co": 5796,
@@ -2047,7 +2227,7 @@
         "fewest_overflows": false
       },
       "source": "scripts/run_scenarios.py (engine=prezero.sim.engine, evaluator=hop10)",
-      "runtime_s": 0.76
+      "runtime_s": 0.74
     }
   ]
 }

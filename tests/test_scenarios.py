@@ -222,3 +222,13 @@ def test_containers_csv_rhythm_columns():
     assert set(df["area_weekday"]) <= {"Mo", "Di", "Mi", "Do", "Fr"}
     assert df["rhythm_weeks_new"].between(1, 8).all()
     assert df["rhythm_weeks_status_quo"].dropna().between(1, 8).all()
+
+
+def test_summary_fill_classes_sum_to_100():
+    """Fill classes at emptying (too early / fits / overfull) cover every emptying."""
+    import json
+
+    summary = json.loads((ROOT / "data/outputs/scenarios/summary.json").read_text(encoding="utf-8"))
+    for sc in summary["scenarios"]:
+        total = sc["share_too_early_pct"] + sc["share_fits_pct"] + sc["share_overfull_pct"]
+        assert abs(total - 100.0) <= 0.2, sc["id"]

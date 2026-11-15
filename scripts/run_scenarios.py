@@ -95,6 +95,10 @@ def scenario_entry(res: ScenarioResult, sq_emptyings: int, time_model: str) -> d
         "avg_fill_at_emptying_pct": round(lg["avg_fill_at_emptying_pct"], 2),
         "overflow_events": int(lg["overflow_container_days"]),
         "overfull_at_emptying": int(lg["overfull_at_emptying"]),
+        # fill classes at emptying (share of emptyings, %): too early < 50, fits 50–100, overfull > 100
+        "share_too_early_pct": round(float((res.events["fill_pct"] < 50).mean() * 100), 1),
+        "share_fits_pct": round(float(res.events["fill_pct"].between(50, 100).mean() * 100), 1),
+        "share_overfull_pct": round(float((res.events["fill_pct"] > 100).mean() * 100), 1),
         "emptyings": int(lg["n_emptyings"]),
         "emptyings_saved_vs_status_quo": int(sq_emptyings - lg["n_emptyings"]),
         "extra_emptyings_co": int(res.events["bundled"].sum()),
