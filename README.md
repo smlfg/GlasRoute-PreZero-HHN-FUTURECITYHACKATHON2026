@@ -58,3 +58,5 @@ Creates `route_2026-04-15.json`, `map_2026-04-15.html` and `trends.png`.
 - No multi-day fleet optimisation yet.
 
 Next: real PreZero coordinates, real operational variables, street-routing integration.
+
+Multi-stream teaser (paper, bio, gastro, plastik — synthetic data): [Pitch/streams_teaser.html](Pitch/streams_teaser.html).
