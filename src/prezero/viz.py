@@ -50,6 +50,28 @@ FORECAST_STATUS_COLORS = {
     "black": "#111827",
 }
 
+VEHICLE_COLORS = {
+    1: "#2563eb",  # Lkw 1: Blau
+    2: "#7c3aed",  # Lkw 2: Lila
+    3: "#ea580c",  # Lkw 3: Orange
+    4: "#0891b2",  # Lkw 4: Cyan
+    5: "#059669",  # Lkw 5: Smaragdgrün
+    6: "#dc2626",  # Lkw 6: Rot
+}
+DEFAULT_VEHICLE_COLOR = "#2563eb"
+
+
+def _vehicle_color(vehicle_id: int | str | None) -> str:
+    """Return distinct color for vehicle ID (1-based integer or string)."""
+    try:
+        vid = int(vehicle_id) if vehicle_id is not None else 1
+        if vid in VEHICLE_COLORS:
+            return VEHICLE_COLORS[vid]
+        return VEHICLE_COLORS.get((vid - 1) % len(VEHICLE_COLORS) + 1, DEFAULT_VEHICLE_COLOR)
+    except (ValueError, TypeError):
+        return DEFAULT_VEHICLE_COLOR
+
+
 TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 TILE_ATTR = "© OpenStreetMap contributors, ODbL"
 
@@ -514,12 +536,14 @@ def add_forecast_layers(
                 + [[float(s["lat"]), float(s["lon"])] for s in stops]
                 + [[float(depot["lat"]), float(depot["lon"])]]
             )
+            planned_km = route_data.get("planned_km") or route_data.get("km")
+            route_tooltip = f"Geplante Route ({float(planned_km):.1f} km)" if planned_km is not None else "Geplante Route"
             folium.PolyLine(
                 locations=line,
                 color="#1d4ed8",
                 weight=4,
                 opacity=0.9,
-                tooltip=route_data.get("comparison", "Geplante Route"),
+                tooltip=route_tooltip,
             ).add_to(route_layer)
     route_layer.add_to(fmap)
 
@@ -766,29 +790,65 @@ def plot_route(
     else:
         container_markers = {}
 
+    vehicle_groups: dict[int, list[dict[str, Any]]] = {}
     if stops:
-        prev = depot_coords
-        prev_veh = None
-        for stop in stops + [None]:
-            veh = None if stop is None else stop.get("vehicle", 1)
-            if stop is not None and veh != prev_veh and prev_veh is not None:
-                folium.PolyLine([prev, depot_coords], color="#1d4ed8", weight=3.5, opacity=0.85).add_to(fmap)
-                prev = depot_coords
-            cur = depot_coords if stop is None else [float(stop["lat"]), float(stop["lon"])]
-            to_unload = stop is not None and stop.get("stop_type") == "unload"
-            from_unload = prev == [float(disposal["lat"]), float(disposal["lon"])] if disposal else False
+        disposal_coords = [float(disposal["lat"]), float(disposal["lon"])] if disposal else None
+        for stop in stops:
+            v = stop.get("vehicle", 1)
+            try:
+                v_num = int(v) if v is not None else 1
+            except (ValueError, TypeError):
+                v_num = 1
+            vehicle_groups.setdefault(v_num, []).append(stop)
+
+        for v_num, v_stops in vehicle_groups.items():
+            veh_color = _vehicle_color(v_num)
+            prev = depot_coords
+            prev_was_unload = False
+            for s in v_stops:
+                cur = [float(s["lat"]), float(s["lon"])]
+                is_at_disposal = (
+                    disposal_coords is not None
+                    and abs(cur[0] - disposal_coords[0]) < 1e-5
+                    and abs(cur[1] - disposal_coords[1]) < 1e-5
+                )
+                to_unload = (
+                    s.get("stop_type") == "unload"
+                    or str(s.get("Location_id", "")) == "disposal_depot"
+                    or is_at_disposal
+                )
+                is_unload_leg = to_unload or prev_was_unload
+                folium.PolyLine(
+                    locations=[prev, cur],
+                    color="#6b7280" if is_unload_leg else veh_color,
+                    weight=1.8 if is_unload_leg else 3.5,
+                    opacity=0.4 if is_unload_leg else 0.85,
+                    dash_array="4, 6" if is_unload_leg else None,
+                    tooltip=f"Lkw {v_num}: Entladefahrt" if is_unload_leg else f"Lkw {v_num}",
+                ).add_to(fmap)
+                prev = cur
+                prev_was_unload = to_unload
+
+            # Return to depot
+            cur = depot_coords
+            prev_was_disposal = (
+                disposal_coords is not None
+                and abs(prev[0] - disposal_coords[0]) < 1e-5
+                and abs(prev[1] - disposal_coords[1]) < 1e-5
+            )
+            is_unload_leg = prev_was_unload or prev_was_disposal
             folium.PolyLine(
                 locations=[prev, cur],
-                color="#16a34a" if (to_unload or from_unload) else "#1d4ed8",
-                weight=3.5,
-                opacity=0.85,
-                dash_array="8, 8" if to_unload else None,
-                tooltip=route_data.get("comparison", "Planned route"),
+                color="#6b7280" if is_unload_leg else veh_color,
+                weight=1.8 if is_unload_leg else 3.5,
+                opacity=0.4 if is_unload_leg else 0.85,
+                dash_array="4, 6" if is_unload_leg else None,
+                tooltip=f"Lkw {v_num}: Entladefahrt (Rückfahrt Betriebshof)" if is_unload_leg else f"Lkw {v_num} (Rückfahrt Betriebshof)",
             ).add_to(fmap)
-            prev, prev_veh = cur, veh
 
     stop_markers: list[dict[str, Any]] = []
     for stop in stops:
+        v_num = stop.get("vehicle", 1)
         simulated = _is_simulated(str(stop.get("source", "")), str(stop.get("confidence", "")))
         color = _score_color(float(stop["score"]))
         site_kind = "Simulated (synthetic)" if simulated else f"Real/OSM ({stop.get('source', 'unknown')})"
@@ -798,6 +858,7 @@ def plot_route(
         loc_display = "Entsorgungshof (angenommen)" if loc_str == "disposal_depot" else (f"Standort #{stop['order']}" if stop.get("order") is not None else (f"{loc_str[:8]}..." if len(loc_str) > 12 else loc_str))
         popup_html = (
             f"<b>Stopp #{stop['order']}</b><br>"
+            f"Fahrzeug: Lkw {v_num}<br>"
             f"Standort: {loc_display}<br>"
             f"Glasart: {mat_label}<br>"
             f"Dringlichkeit: {float(stop['score']):.2f}<br>"
@@ -838,17 +899,94 @@ def plot_route(
     if forecast is not None and not forecast.empty and locations is not None:
         add_forecast_layers(fmap, forecast, locations, route_data)
 
+    planned_km = route_data.get("planned_km") or route_data.get("km")
+    num_stops_val = route_data.get("num_stops")
+    if num_stops_val is None and stops:
+        num_stops_val = len([s for s in stops if s.get("stop_type") != "unload" and str(s.get("Location_id", "")) != "disposal_depot"])
+    t_collected = route_data.get("t_collected")
+    vehicles_needed = route_data.get("vehicles_needed")
+
+    summary_items = []
+    if planned_km is not None:
+        summary_items.append(f"<b>Geplant:</b> {float(planned_km):.2f} km")
+    if num_stops_val:
+        summary_items.append(f"{num_stops_val} Standorte")
+    if t_collected is not None:
+        summary_items.append(f"{float(t_collected):.1f} t Glas")
+    if vehicles_needed is not None:
+        summary_items.append(f"{vehicles_needed} Fahrzeuge")
+
+    if summary_items:
+        summary_line = f"<div>{' &middot; '.join(summary_items)}</div>"
+    else:
+        raw_comp = str(route_data.get("comparison", ""))
+        clean_comp = raw_comp.split(" vs. ")[0].replace("planned", "geplant").replace("stops", "Stopps")
+        summary_line = f"<div>{clean_comp}</div>" if clean_comp else ""
+
+    vehicles_info = route_data.get("vehicles", [])
+    vehicle_rows = []
+    if vehicles_info:
+        for v_info in vehicles_info:
+            v_id = v_info.get("vehicle", 1)
+            v_color = _vehicle_color(v_id)
+            km_val = v_info.get("km")
+            st_val = v_info.get("stops")
+            h_val = v_info.get("shift_hours")
+            t_val = v_info.get("t_collected")
+            parts = []
+            if km_val is not None:
+                parts.append(f"{float(km_val):.1f} km")
+            if st_val is not None:
+                parts.append(f"{st_val} Stopps")
+            if h_val is not None:
+                parts.append(f"{float(h_val):.2f} h")
+            if t_val is not None:
+                parts.append(f"{float(t_val):.1f} t")
+            det = f" ({', '.join(parts)})" if parts else ""
+            vehicle_rows.append(
+                f'<div style="margin: 2px 0;">'
+                f'<span style="display:inline-block;width:14px;height:4px;background-color:{v_color};'
+                f'border-radius:2px;vertical-align:middle;margin-right:6px;"></span>'
+                f'<b>Lkw {v_id}</b>{det}'
+                f'</div>'
+            )
+    else:
+        v_keys = sorted(vehicle_groups.keys()) if stops else [1]
+        for v_id in v_keys:
+            v_color = _vehicle_color(v_id)
+            v_cnt = len([s for s in vehicle_groups.get(v_id, []) if s.get("stop_type") != "unload"])
+            det = f" ({v_cnt} Stopps)" if v_cnt else ""
+            vehicle_rows.append(
+                f'<div style="margin: 2px 0;">'
+                f'<span style="display:inline-block;width:14px;height:4px;background-color:{v_color};'
+                f'border-radius:2px;vertical-align:middle;margin-right:6px;"></span>'
+                f'<b>Lkw {v_id}</b>{det}'
+                f'</div>'
+            )
+    vehicle_legend_html = "".join(vehicle_rows)
+
     legend_html = f"""
     <div style="position: fixed; bottom: 20px; left: 20px; z-index: 9999;
                 background: white; padding: 10px 14px; border-radius: 6px;
-                border: 1px solid #ccc; font-size: 12px; line-height: 1.4;">
-      <b>GlasRoute – {route_date}</b><br>
-      {route_data.get('comparison', '')}<br>
-      <span style="color:#b91c1c;">&#9679;</span> Score &ge; 0.85 &nbsp;
-      <span style="color:#ea580c;">&#9679;</span> &ge; 0.70 (critical) &nbsp;
-      <span style="color:#d97706;">&#9679;</span> &ge; 0.45 &nbsp;
-      <span style="color:#16a34a;">&#9679;</span> &lt; 0.45<br>
-      Solid border = real/OSM site &middot; Dashed/translucent = simulated site
+                border: 1px solid #ccc; font-size: 12px; line-height: 1.45; max-width: 340px; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 3px;">GlasRoute – {route_date}</div>
+      {summary_line}
+      <div style="margin-top: 5px; border-top: 1px solid #e5e7eb; padding-top: 4px;">
+        <div style="font-weight: 600; margin-bottom: 2px; color: #374151;">Fahrzeuge:</div>
+        {vehicle_legend_html}
+        <div style="margin: 2px 0;">
+          <span style="display:inline-block;width:14px;height:0;border-top:1.8px dashed #6b7280;vertical-align:middle;margin-right:6px;opacity:0.6;"></span>
+          <span style="color:#4b5563;">Entladefahrt (dezent gestrichelt)</span>
+        </div>
+      </div>
+      <div style="margin-top: 5px; border-top: 1px solid #e5e7eb; padding-top: 4px;">
+        <div style="font-weight: 600; margin-bottom: 2px; color: #374151;">Dringlichkeit (Score):</div>
+        <span style="color:#b91c1c;">&#9679;</span> &ge; 0.85 &nbsp;
+        <span style="color:#ea580c;">&#9679;</span> &ge; 0.70 &nbsp;
+        <span style="color:#d97706;">&#9679;</span> &ge; 0.45 &nbsp;
+        <span style="color:#16a34a;">&#9679;</span> &lt; 0.45<br>
+        <span style="font-size: 11px; color: #4b5563;">Durchgezogen = Real/OSM &middot; Gestrichelt = Simuliert</span>
+      </div>
     </div>
     """
     fmap.get_root().html.add_child(folium.Element(legend_html))
