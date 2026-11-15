@@ -1185,23 +1185,44 @@ def _build_overview_html(
 
     top_stops = data.get("top_stops", [])
     top_stops_rows: list[str] = []
+    street_lookup = _load_street_lookup()
     for s in top_stops[:5]:
         ord_num = s.get("order", 1)
-        lbl = str(s.get("label", ""))
+        lbl = str(s.get("label", "")).strip()
+        loc_id = str(s.get("Location_id", "")).strip()
+        mat_raw = str(s.get("primary_material", "")).strip().lower()
+        if not lbl and loc_id:
+            street = _get_street_name(loc_id, None, None, street_lookup)
+            mat_name = MATERIAL_LABELS.get(mat_raw, mat_raw)
+            if street:
+                lbl = f"Standort #{ord_num} · {street} · {mat_name}"
+            else:
+                lbl = f"Standort #{ord_num} · {mat_name}"
+
         fill = float(s.get("fill_level", s.get("last_fill_level", 0.0)))
         score = float(s.get("score", 0.0))
-        assign = str(s.get("assignment", ""))
+        assign = str(s.get("assignment", "")).strip()
         if not assign and "vehicle" in s and "round" in s:
             assign = f"Fzg {s['vehicle']} Runde {s['round']}"
 
+        if not mat_raw and lbl:
+            lbl_lower = lbl.lower()
+            if "braunglas" in lbl_lower or "brown" in lbl_lower:
+                mat_raw = "brown"
+            elif "grünglas" in lbl_lower or "green" in lbl_lower:
+                mat_raw = "green"
+            elif "weißglas" in lbl_lower or "white" in lbl_lower:
+                mat_raw = "white"
+
         mat_badge = ""
-        lbl_lower = lbl.lower()
-        if "braunglas" in lbl_lower or "brown" in lbl_lower:
+        if mat_raw in ("brown", "braun", "braunglas", "glass_brown"):
             mat_badge = '<span class="badge-glass-brown">Braunglas</span>'
-        elif "grünglas" in lbl_lower or "green" in lbl_lower:
+        elif mat_raw in ("green", "gruen", "grün", "grünglas", "glass_green"):
             mat_badge = '<span class="badge-glass-green">Grünglas</span>'
-        elif "weißglas" in lbl_lower or "white" in lbl_lower:
+        elif mat_raw in ("white", "weiss", "weiß", "weißglas", "glass_white"):
             mat_badge = '<span class="badge-glass-white">Weißglas</span>'
+        elif mat_raw:
+            mat_badge = f'<span class="badge" style="background:#f1f5f9;color:#475569;">{html.escape(mat_raw)}</span>'
 
         fill_badge = (
             f'<span class="badge-fill-alarm">{fill:.0f} %</span>'
@@ -1814,9 +1835,19 @@ def _build_location_planning_section_html(
     )
 
     map_html = _build_location_planning_map_html(location_plan, scored_df, locations_df)
-    map_section = (
-        f'<h3>Kartenansicht</h3><div class="map-wrap">{map_html}</div>'
+    map_iframe = (
+        _wrap_srcdoc_iframe(
+            map_html,
+            height_px=560,
+            title="Standortplanung Karte",
+            frame_id="location-planning-map-frame",
+        )
         if map_html
+        else ""
+    )
+    map_section = (
+        f'<h3>Kartenansicht</h3><div class="map-wrap">{map_iframe}</div>'
+        if map_iframe
         else ""
     )
 
@@ -4258,6 +4289,83 @@ def build_ui(
     .copilot-card-sources {{
       font-style: italic;
     }}
+    .stream-teaser-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }}
+    .stream-teaser-card {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }}
+    .stream-teaser-card.real {{
+      border: 2px solid #10b981;
+    }}
+    .stream-badge-real {{
+      display: inline-block;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #10b981;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-align: center;
+    }}
+    .stream-badge-synth {{
+      display: inline-block;
+      background: #fffbeb;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-align: center;
+    }}
+    .stream-metrics {{
+      list-style: none;
+      margin: 0;
+      padding: 8px 0 0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }}
+    .stream-metrics li {{
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }}
+    .stream-constraint-wt {{
+      margin-top: auto;
+      background: #fef2f2;
+      color: #991b1b;
+      border-radius: 6px;
+      padding: 7px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }}
+    .stream-constraint-vol {{
+      margin-top: auto;
+      background: #eff6ff;
+      color: #1e40af;
+      border-radius: 6px;
+      padding: 7px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }}
     .ask-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }}
     .ask-controls input {{
       flex: 1 1 320px;
@@ -4580,6 +4688,7 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-upload">9. Upload</button>
     <button type="button" class="tab-btn" data-target="view-location-planning">10. Standortplanung</button>
     <button type="button" class="tab-btn" data-target="view-demo">11. Bisher vs. Optimiert</button>
+    <button type="button" class="tab-btn" data-target="view-streams">12. Weitere Abfallströme</button>
   </nav>
 
   <main class="analysis-workspace">
@@ -4637,6 +4746,73 @@ def build_ui(
 
     <section id="view-demo" class="view-panel">
       {demo_section_html}
+    </section>
+
+    <section id="view-streams" class="view-panel">
+      <div class="section-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>Übertragbarkeit: Gleiche Pipeline, 5 Abfallströme (Stichtag 15.04.2026)</h2>
+          <p class="muted">Identische Auswahl-, Kapazitäts- (11 t &amp; 26 m&sup3;) und Schichtregeln (8 h) per <code>--stream</code> ohne Codeänderung. Die Software erkennt automatisch, ob <strong>Gewicht</strong> oder <strong>Volumen</strong> zuerst begrenzt.</p>
+        </div>
+        <a class="secondary-btn" href="../../Pitch/streams_teaser.html" target="_blank" rel="noopener">Standalone-Teaser öffnen</a>
+      </div>
+      <div class="stream-teaser-grid">
+        <article class="stream-teaser-card real">
+          <span class="stream-badge-real">echte PreZero-Daten</span>
+          <strong>Glas (<code>--stream glass</code>)</strong>
+          <ul class="stream-metrics">
+            <li><span class="muted">Fällig heute</span><strong>509 Container (25 Stopps)</strong></li>
+            <li><span class="muted">Strecke</span><strong>227,2 km</strong></li>
+            <li><span class="muted">Fahrzeuge</span><strong>3 LKW (16 Runden)</strong></li>
+            <li><span class="muted">Saison-Peak</span><strong>März (37,6 % übervoll)</strong></li>
+          </ul>
+          <div class="stream-constraint-wt">Engpass: Gewicht (11 t) &middot; 116,2 t</div>
+        </article>
+        <article class="stream-teaser-card">
+          <span class="stream-badge-synth">synthetische Daten</span>
+          <strong>Papier (<code>--stream paper</code>)</strong>
+          <ul class="stream-metrics">
+            <li><span class="muted">Fällig heute</span><strong>6 Container (6 Stopps)</strong></li>
+            <li><span class="muted">Strecke</span><strong>30,1 km</strong></li>
+            <li><span class="muted">Fahrzeuge</span><strong>1 LKW (1 Runde)</strong></li>
+            <li><span class="muted">Saison-Peak</span><strong>Dezember (&Oslash; 61,8 %)</strong></li>
+          </ul>
+          <div class="stream-constraint-vol">Engpass: Volumen (26 m&sup3;) &middot; 13,1 m&sup3;</div>
+        </article>
+        <article class="stream-teaser-card">
+          <span class="stream-badge-synth">synthetische Daten</span>
+          <strong>Bio (<code>--stream bio</code>)</strong>
+          <ul class="stream-metrics">
+            <li><span class="muted">Fällig heute</span><strong>0 fällig (25 Top-Stopps)</strong></li>
+            <li><span class="muted">Strecke</span><strong>75,7 km</strong></li>
+            <li><span class="muted">Fahrzeuge</span><strong>1 LKW (1 Runde)</strong></li>
+            <li><span class="muted">Saison-Peak</span><strong>Oktober (&Oslash; 55,9 %)</strong></li>
+          </ul>
+          <div class="stream-constraint-wt">Engpass: Gewicht (11 t) &middot; 10,4 t</div>
+        </article>
+        <article class="stream-teaser-card">
+          <span class="stream-badge-synth">synthetische Daten</span>
+          <strong>Gastro (<code>--stream gastro</code>)</strong>
+          <ul class="stream-metrics">
+            <li><span class="muted">Fällig heute</span><strong>0 fällig (25 Top-Stopps)</strong></li>
+            <li><span class="muted">Strecke</span><strong>66,8 km</strong></li>
+            <li><span class="muted">Fahrzeuge</span><strong>1 LKW (1 Runde)</strong></li>
+            <li><span class="muted">Saison-Peak</span><strong>September (1,2 % übervoll)</strong></li>
+          </ul>
+          <div class="stream-constraint-vol">Engpass: Volumen (26 m&sup3;) &middot; 24,2 m&sup3;</div>
+        </article>
+        <article class="stream-teaser-card">
+          <span class="stream-badge-synth">synthetische Daten</span>
+          <strong>Plastik (<code>--stream plastik</code>)</strong>
+          <ul class="stream-metrics">
+            <li><span class="muted">Fällig heute</span><strong>0 fällig (25 Top-Stopps)</strong></li>
+            <li><span class="muted">Strecke</span><strong>65,0 km</strong></li>
+            <li><span class="muted">Fahrzeuge</span><strong>1 LKW (1 Runde)</strong></li>
+            <li><span class="muted">Saison-Peak</span><strong>November (&Oslash; 45,9 %)</strong></li>
+          </ul>
+          <div class="stream-constraint-vol">Engpass: Volumen (26 m&sup3;) &middot; 22,7 m&sup3;</div>
+        </article>
+      </div>
     </section>
   </main>
 
