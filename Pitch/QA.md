@@ -75,7 +75,7 @@ Der Schwellenwert 80 % ist eine Annahme „von PreZero zu ersetzen“ (`src/prez
 
 ## 11. Wie verlässlich sind eure Betriebsannahmen und Standorte?
 
-**Sie sind Annahmen, und wir markieren sie.** Alle 11 Betriebsvariablen tragen im Code `# Annahme, von PreZero zu ersetzen` (`src/prezero/routing.py:22-46`); bei Dichte 300 statt 400 kg/m³ und Umwegfaktor 1,2 sinkt die Flotte von 4 auf 3 Fahrzeuge (`Pitch/NOTES.md`), die Ergebnisse sind also sensibel.
+**Sie sind Annahmen, und wir markieren sie.** Alle 11 Betriebsvariablen tragen im Code `# Annahme, von PreZero zu ersetzen` (`src/prezero/routing.py:22-46`); bei Dichte 300 statt 400 kg/m³ und Umwegfaktor 1,2 bleibt die Flotte bei 3 Fahrzeugen und die Strecke sinkt von 227 auf 197 km (`Pitch/NOTES.md`), die Ergebnisse sind also sensibel.
 Alle 449 Standorte sind echte OSM-Punkte, aber die Zuordnung zu den anonymen IDs ist simuliert (`src/prezero/locations.py:230-238`, `simulated_mapping`), jeder Punkt wird bis zu 9× vergeben, und das Banner sagt „Ortsdaten erfunden, nicht von PreZero“; absolute km, Fahrzeuge und Schichten sind deshalb Illustration, belastbar sind nur die Verhältnisse.
 
 ## 12. Wie lange läuft es, und was kostet der Betrieb? — **OPEN**
