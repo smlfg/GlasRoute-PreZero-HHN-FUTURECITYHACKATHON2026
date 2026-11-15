@@ -113,29 +113,35 @@ def main() -> None:
     ap.add_argument("--locations", type=Path, default=ROOT / "data/external/locations.csv")
     ap.add_argument("--config", type=Path, default=ROOT / "prezero_config.json")
     ap.add_argument("--output-dir", type=Path, default=ROOT / "data/outputs/scenarios")
-    ap.add_argument("--time-model", choices=["real", "hop5", "hop10"], default=None)
+    ap.add_argument("--time-model", nargs="+", choices=["km", "real", "hop5", "hop10"], default=["km"],
+                    help="one or more day evaluators; all go into one summary.json")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
     readings = pd.read_csv(args.readings)
     locations = load_locations(args.locations)
-    evaluate_day, tm = resolve_evaluator(args.time_model)
-
-    world, pols, results = run_all(readings, locations, cfg, evaluate_day)
-    produced = world.produced_kg() / 1000.0
-    by_id = {r.id: r for r in results if r.truck_mode == "multi_chamber"}
-    sq = by_id["d_status_quo"]
-    sq_empt = int(sq.ledger["n_emptyings"])
-
-    entries = [scenario_entry(r, sq_empt, tm) for r in results]
-    min_ovf = min(e["overflow_events"] for e in entries)
-    for e in entries:
-        e["flags"]["fewest_overflows"] = e["overflow_events"] == min_ovf
-        assert e["mass_balance_ok"], e["id"]
-    assert all(abs(r.ledger["produced_t"] - produced) < 1e-9 for r in results)
-
     out = args.output_dir
     out.mkdir(parents=True, exist_ok=True)
+    entries: list[dict] = []
+    first = None
+    for tm_req in args.time_model:
+        evaluate_day, tm = resolve_evaluator(tm_req)
+        world, pols, results = run_all(readings, locations, cfg, evaluate_day)
+        produced = world.produced_kg() / 1000.0
+        by_id = {r.id: r for r in results if r.truck_mode == "multi_chamber"}
+        sq_empt = int(by_id["d_status_quo"].ledger["n_emptyings"])
+        for r in results:
+            e = scenario_entry(r, sq_empt, tm)
+            assert e["mass_balance_ok"], e["id"]
+            entries.append(e)
+            sid = r.id if r.truck_mode == "multi_chamber" else f"{r.id}_{r.truck_mode}"
+            r.daily[DAILY_COLUMNS].to_csv(out / f"{sid}__{tm}_daily.csv", index=False)
+        assert all(abs(r.ledger["produced_t"] - produced) < 1e-9 for r in results)
+        if first is None:
+            first = (world, pols, results, by_id)
+    world, pols, results, by_id = first
+    sq = by_id["d_status_quo"]
+    produced = world.produced_kg() / 1000.0
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "period": {"start": str(world.dates[0]), "end": str(world.dates[-1]), "days": len(world.dates)},
@@ -144,10 +150,13 @@ def main() -> None:
         "model_spec": "docs/MODEL_SPEC.md",
         "scenarios": entries,
     }
+    try:  # W5: cost (Annahme) + cheapest/fewest_overflows per time_model group
+        from prezero.sim.cost import annotate_summary
+
+        summary = annotate_summary(summary)
+    except ImportError:
+        print("NOTE: prezero.sim.cost missing, cost fields stay null.")
     (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    for r in results:
-        sid = r.id if r.truck_mode == "multi_chamber" else f"{r.id}_{r.truck_mode}"
-        r.daily[DAILY_COLUMNS].to_csv(out / f"{sid}__{tm}_daily.csv", index=False)
 
     # containers.csv
     f_pol = next(p for p in pols if isinstance(p, FixedAreas))
