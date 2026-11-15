@@ -1603,13 +1603,13 @@ def get_replay_comparison(
         h_hours = round(float(h_df["shift_hours"].sum()), 1)
         o_hours = round(float(o_df["shift_hours"].sum()), 1)
     else:
-        h_empty, o_empty = 11701, 11321
-        h_over, o_over = 1192, 0
-        h_fill, o_fill = 66.0, 83.5
-        h_km, o_km = 20538.5, 28497.8
-        h_vdays, o_vdays = 345, 381
-        h_tons, o_tons = 7719.2, 9451.0
-        h_hours, o_hours = 1749.7, 2237.0
+        h_empty, o_empty = 10363, 10954
+        h_over, o_over = 1196, 1698
+        h_fill, o_fill = 67.0, 65.3
+        h_km, o_km = 19007.6, 25684.6
+        h_vdays, o_vdays = 317, 339
+        h_tons, o_tons = 6943.5, 7157.5
+        h_hours, o_hours = 1593.3, 2026.2
 
     stand = f"Stand {_fmt_date_de(date)}"
     return {

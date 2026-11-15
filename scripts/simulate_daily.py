@@ -1,17 +1,26 @@
 """Generate historical_daily.csv and optimized_daily.csv over the same period.
 
-1. data/outputs/historical_daily.csv:
-   Status quo reconstructed from real visits (measure+empty process).
-   Per day: date, n_emptyings, n_containers_overfull_at_visit, avg_fill_at_emptying_pct,
-   tonnage_t, est_km, vehicles_needed, shift_hours, n_overflows_simulated (0), source ('real').
+One world, two policies (docs/MODEL_SPEC.md §1): ``true_fill_rates`` is the fixed
+ground-truth demand r_c of every container (ratio of sums over the real readings).
+Both sides are replayed against it, start at 0 % at the container's first reading,
+reset to exactly 0 % after an emptying and are never capped (110 % only counts an
+overflow event). ``mass_ledger(df)`` returns produced / collected / end stock per side
+with collected + end_stock == produced == ``produced_total(readings)``.
 
-2. data/outputs/optimized_daily.csv:
-   Simulated emptyings with the PreZero timer pipeline, strictly walk-forward:
-   For each day d, fit fill rates ONLY from measurements before d (no look-ahead).
-   Estimate each container's fill on d, empty if forecast >= threshold (80 %) or would
-   overflow before the next possible visit, respecting capacity/shift/vehicles.
-   After emptying, reset container to ~0 % and let it fill at its learned rate.
-   Same columns, plus n_overflows_simulated, source ('simulated').
+1. data/outputs/historical_daily.csv (status quo, source='real'):
+   the REAL visit dates of each container replayed against the world; each visit
+   collects the model fill. n_overflows_simulated is 0 (overflow container-days of the
+   status quo are reported in the ledger / docs/KOSTENMODELL.md).
+
+2. data/outputs/optimized_daily.csv (timer policy, source='simulated'):
+   the decision rule only sees walk-forward rate estimates from readings with date < d
+   (no look-ahead) and empties when the believed fill is >= 80 % or would reach 110 %
+   before the next operating day; the truck collects the TRUE fill of the world.
+   n_overflows_simulated = container-days with true fill >= 110 %.
+
+Columns: date, n_emptyings, n_containers_overfull_at_visit, avg_fill_at_emptying_pct
+(uncapped, may exceed 100 %), tonnage_t (collected in the window), est_km,
+vehicles_needed, shift_hours, n_overflows_simulated, source.
 """
 
 from __future__ import annotations
@@ -147,13 +156,13 @@ def fit_fill_rates(
     return c_rates
 
 
-def build_historical_daily(
-    readings: pd.DataFrame,
-    locations: pd.DataFrame,
-    cfg: OperationalConfig | None = None,
-) -> pd.DataFrame:
-    """Reconstruct daily loads, fill levels, and routing from historical visits."""
-    config = cfg or OperationalConfig()
+ContainerKey = tuple[str, str]
+
+
+def _prepare_inputs(
+    readings: pd.DataFrame, locations: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, list[date]]:
+    """Normalise readings/locations and return the replay calendar (first..last reading day)."""
     work = readings.copy()
     work["date"] = pd.to_datetime(work["date"])
     work["date_only"] = work["date"].dt.date
@@ -169,83 +178,264 @@ def build_historical_daily(
     start_date = work["date_only"].min()
     end_date = work["date_only"].max()
     all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+    return work, locs, all_dates
 
+
+def true_fill_rates(readings: pd.DataFrame) -> dict[ContainerKey, float]:
+    """Ground-truth glass demand per container in %-points of the container per day.
+
+    WORLD, NOT BELIEF (docs/MODEL_SPEC.md §1/§2): this is the demand that *generates*
+    glass in every scenario. It uses the whole data set on purpose (the world is fixed);
+    decision rules must never read it, they only see walk-forward estimates.
+
+    r_c = Σ level_i / Σ Δt_i over the intervals from the 2nd reading on (ratio of sums;
+    each visit empties the container, so level_i is the glass of interval i). This is
+    unbiased for a constant rate, unlike the mean of quotients (+15.5 %). Replaying the
+    real visit dates against r_c therefore reproduces the measured in-window mass
+    Σ_{i≥2} level_i exactly. Containers with < 2 readings get the median rate of their
+    material (falls back to DEFAULT_RATES if a material has no fitted container).
+    """
+    work = readings.copy()
+    work["date"] = pd.to_datetime(work["date"])
+    work["Location_id"] = work["Location_id"].astype(str)
+    work["material_type"] = work["material_type"].astype(str).str.lower()
+    work["fill_level_numeric"] = pd.to_numeric(work["fill_level_numeric"])
+
+    rates: dict[ContainerKey, float] = {}
+    by_material: dict[str, list[float]] = {}
+    for (loc, mat), group in work.sort_values("date").groupby(["Location_id", "material_type"]):
+        key = (str(loc), str(mat))
+        if len(group) < 2:
+            continue
+        levels = group["fill_level_numeric"].to_numpy(dtype=float)[1:]
+        span_days = (group["date"].iloc[-1] - group["date"].iloc[0]).days
+        if span_days <= 0:
+            continue
+        rate = float(levels.sum() / span_days)
+        rates[key] = rate
+        by_material.setdefault(key[1], []).append(rate)
+
+    medians = {m: float(np.median(v)) for m, v in by_material.items()}
+    for row in work[["Location_id", "material_type"]].drop_duplicates().itertuples(index=False):
+        key = (str(row.Location_id), str(row.material_type))
+        if key not in rates:
+            rates[key] = medians.get(key[1], DEFAULT_RATES.get(key[1], 1.5))
+    return rates
+
+
+def _mass_kg(fill_pct: float, material: str, config: OperationalConfig) -> float:
+    """Collected mass for a fill level; uncapped (overflow glass is picked up too)."""
+    return (fill_pct / 100.0) * float(config.container_volume_m3) * density_for(config, material)
+
+
+def _produced_kg(
+    world: dict[ContainerKey, float],
+    first_dates: dict[ContainerKey, date],
+    end_date: date,
+    config: OperationalConfig,
+) -> float:
+    """Glass produced in the window: r_c per day from the day after the first reading on."""
+    return float(
+        sum(
+            _mass_kg(world[c] * (end_date - first_d).days, c[1], config)
+            for c, first_d in first_dates.items()
+        )
+    )
+
+
+def produced_total(readings: pd.DataFrame, cfg: OperationalConfig | None = None) -> float:
+    """Total glass (t) the world produces in the replay window, identical for every scenario.
+
+    produced = Σ_c r_c × active_days_c, active days = window end − first reading of c
+    (production starts the day after the first reading, starting stock 0). Every
+    scenario must reconcile to it: collected_t + end_stock_t == produced_total.
+    """
+    config = cfg or OperationalConfig()
+    work = readings.copy()
+    work["date_only"] = pd.to_datetime(work["date"]).dt.date
+    work["Location_id"] = work["Location_id"].astype(str)
+    work["material_type"] = work["material_type"].astype(str).str.lower()
+    first_dates = {
+        (str(loc), str(mat)): d
+        for (loc, mat), d in work.groupby(["Location_id", "material_type"])["date_only"].min().items()
+    }
+    world = true_fill_rates(work)
+    return _produced_kg(world, first_dates, work["date_only"].max(), config) / 1000.0
+
+
+def _empty_row(source: str, overflows: int = 0) -> dict[str, Any]:
+    return {
+        "n_emptyings": 0,
+        "n_containers_overfull_at_visit": 0,
+        "avg_fill_at_emptying_pct": 0.0,
+        "tonnage_t": 0.0,
+        "est_km": 0.0,
+        "vehicles_needed": 0,
+        "shift_hours": 0.0,
+        "n_overflows_simulated": overflows,
+        "source": source,
+    }
+
+
+def _ledger(
+    produced_kg: float,
+    collected_kg: float,
+    end_stock_kg: float,
+    overflow_container_days: int,
+    n_emptyings: int,
+    fill_sum_pct: float,
+    n_fill: int,
+) -> dict[str, float]:
+    return {
+        "produced_t": produced_kg / 1000.0,
+        "collected_t": collected_kg / 1000.0,
+        "end_stock_t": end_stock_kg / 1000.0,
+        "overflow_container_days": int(overflow_container_days),
+        "n_emptyings": int(n_emptyings),
+        "avg_fill_at_emptying_pct": fill_sum_pct / n_fill if n_fill else 0.0,
+    }
+
+
+def mass_ledger(daily: pd.DataFrame) -> dict[str, float]:
+    """Mass ledger of a replay frame: produced_t, collected_t, end_stock_t (+ overflow days).
+
+    Invariant (exact up to float rounding, per side): collected_t + end_stock_t == produced_t.
+    collected_t is the unrounded sum; daily ``tonnage_t`` is rounded to 3 decimals.
+    """
+    ledger = daily.attrs.get("ledger")
+    if ledger is None:
+        raise ValueError("frame has no mass ledger (only frames fresh from build_*/simulate_*)")
+    return dict(ledger)
+
+
+def build_historical_daily(
+    readings: pd.DataFrame,
+    locations: pd.DataFrame,
+    cfg: OperationalConfig | None = None,
+) -> pd.DataFrame:
+    """Status quo: replay the REAL visit dates of every container against the world model.
+
+    Mass accounting (docs/MODEL_SPEC.md §1, identical boundary to the simulation):
+    - glass is generated by ``true_fill_rates`` (r_c per day) from the day after the
+      container's first reading; the stock at the first reading is 0 (pre-window glass,
+      776 t, is outside the system boundary on BOTH sides);
+    - the first reading is the START of the system boundary (like the simulation, which
+      activates the container there at 0 %): it is not an emptying, not routed and carries
+      no mass on either side. Hence n_emptyings = readings − containers = 11,701 − 1,338
+      = 10,363. (Counting it as a 0-mass emptying would keep 11,701 but break every
+      CSV-weighted average fill: n_emptyings × avg_fill would no longer equal Σ fill.)
+    - every later visit collects the current model fill (uncapped) and resets it to exactly 0;
+      fill ≥ 110 % at a visit counts as overfull; glass left after the last visit is end stock.
+    ``n_overflows_simulated`` stays 0 (column reserved for the simulation); the world's
+    overflow container-days of the status quo are in ``mass_ledger(df)``.
+    """
+    config = cfg or OperationalConfig()
+    work, locs, all_dates = _prepare_inputs(readings, locations)
+    world = true_fill_rates(work)
+    coords = locs.drop_duplicates("Location_id").set_index("Location_id")[["lat", "lon"]]
+
+    visits_by_day: dict[date, list[ContainerKey]] = {}
+    first_dates: dict[ContainerKey, date] = {}
+    for row in work.sort_values("date").itertuples(index=False):
+        key = (str(row.Location_id), str(row.material_type))
+        first_dates.setdefault(key, row.date_only)
+        visits_by_day.setdefault(row.date_only, []).append(key)
+    activation: dict[date, list[ContainerKey]] = {}
+    for key, first_d in first_dates.items():
+        activation.setdefault(first_d, []).append(key)
+
+    fill: dict[ContainerKey, float] = {}
+    collected_kg = 0.0
+    overflow_days = 0
+    fill_sum = 0.0
+    n_fill = 0
+    n_total = 0
     rows: list[dict[str, Any]] = []
 
     for d in all_dates:
-        sub = work[work["date_only"] == d].copy()
-        if sub.empty:
-            rows.append(
-                {
-                    "date": str(d),
-                    "n_emptyings": 0,
-                    "n_containers_overfull_at_visit": 0,
-                    "avg_fill_at_emptying_pct": 0.0,
-                    "tonnage_t": 0.0,
-                    "est_km": 0.0,
-                    "vehicles_needed": 0,
-                    "shift_hours": 0.0,
-                    "n_overflows_simulated": 0,
-                    "source": "real",
-                }
-            )
+        for key in fill:  # glass produced on day d (containers active since an earlier day)
+            fill[key] += world[key]
+        for key in activation.get(d, []):
+            fill[key] = 0.0
+
+        # first reading = activation (boundary start), not an in-window emptying
+        day_visits = [k for k in visits_by_day.get(d, []) if first_dates[k] != d]
+        if not day_visits:
+            overflows = sum(1 for v in fill.values() if v >= MAX_FILL_PCT)
+            overflow_days += overflows
+            rows.append({"date": str(d), **_empty_row("real")})
             continue
 
-        n_emptyings = int(len(sub))
-        n_overfull = int((sub["fill_level_numeric"] >= MAX_FILL_PCT).sum())
-        avg_fill = round(float(sub["fill_level_numeric"].mean()), 2)
+        recs: list[dict[str, Any]] = []
+        day_fills: list[float] = []
+        for key in day_visits:
+            f_val = fill[key]
+            m_kg = _mass_kg(f_val, key[1], config)
+            recs.append(
+                {
+                    "Location_id": key[0],
+                    "material_type": key[1],
+                    "fill": f_val,
+                    "mass_kg": m_kg,
+                    "volume_m3": (f_val / 100.0) * float(config.container_volume_m3),
+                }
+            )
+            day_fills.append(f_val)
+            collected_kg += m_kg
+            fill[key] = 0.0
+        overflow_days += sum(1 for v in fill.values() if v >= MAX_FILL_PCT)
 
-        sub["mass_kg"] = (
-            (sub["fill_level_numeric"] / 100.0)
-            * float(config.container_volume_m3)
-            * sub["material_type"].map(lambda m: density_for(config, m))
-        )
-        sub["volume_m3"] = (sub["fill_level_numeric"] / 100.0) * float(config.container_volume_m3)
-        tonnage_t = round(float(sub["mass_kg"].sum() / 1000.0), 3)
+        sub = pd.DataFrame(recs)
+        n_total += len(sub)
+        fill_sum += float(sum(day_fills))
+        n_fill += len(day_fills)
 
-        # Merge locations and aggregate to physical sites for routing
-        merged = sub.merge(locs[["Location_id", "lat", "lon"]], on="Location_id", how="inner")
+        merged = sub.join(coords, on="Location_id", how="inner")
         if merged.empty:
             planned_km = 0.0
-            vehicles = []
+            vehicles: list[dict[str, Any]] = []
         else:
-            sites = (
-                merged.groupby(["lat", "lon"], as_index=False)
-                .agg(
-                    Location_id=("Location_id", "min"),
-                    critical_bins=("Location_id", "size"),
-                    mass_kg=("mass_kg", "sum"),
-                    volume_m3=("volume_m3", "sum"),
-                    score=("fill_level_numeric", lambda s: float(s.max() / 100.0)),
-                    critical=("fill_level_numeric", lambda s: bool((s >= DUE_FILL_PCT).any())),
-                    primary_material=("material_type", "first"),
-                    last_fill_level=("fill_level_numeric", "max"),
-                    est_fill_level=("fill_level_numeric", "max"),
-                    source=("Location_id", lambda _: "osm_assigned"),
-                    confidence=("Location_id", lambda _: "simulated_mapping"),
-                )
+            sites = merged.groupby(["lat", "lon"], as_index=False).agg(
+                Location_id=("Location_id", "min"),
+                critical_bins=("Location_id", "size"),
+                mass_kg=("mass_kg", "sum"),
+                volume_m3=("volume_m3", "sum"),
+                score=("fill", lambda s: float(s.max() / 100.0)),
+                critical=("fill", lambda s: bool((s >= DUE_FILL_PCT).any())),
+                primary_material=("material_type", "first"),
+                last_fill_level=("fill", "max"),
+                est_fill_level=("fill", "max"),
+                source=("Location_id", lambda _: "osm_assigned"),
+                confidence=("Location_id", lambda _: "simulated_mapping"),
             )
-            stops, unloads, vehicles, planned_km, mass = _simulate_constrained_routes(sites, config)
-
-        shift_h = round(float(sum(v["shift_hours"] for v in vehicles)), 2)
+            _stops, _unloads, vehicles, planned_km, _mass = _simulate_constrained_routes(
+                sites, config
+            )
 
         rows.append(
             {
                 "date": str(d),
-                "n_emptyings": n_emptyings,
-                "n_containers_overfull_at_visit": n_overfull,
-                "avg_fill_at_emptying_pct": avg_fill,
-                "tonnage_t": tonnage_t,
+                "n_emptyings": int(len(sub)),
+                "n_containers_overfull_at_visit": int((sub["fill"] >= MAX_FILL_PCT).sum()),
+                "avg_fill_at_emptying_pct": round(float(np.mean(day_fills)), 2)
+                if day_fills
+                else 0.0,
+                "tonnage_t": round(float(sub["mass_kg"].sum()) / 1000.0, 3),
                 "est_km": round(planned_km, 2),
                 "vehicles_needed": len(vehicles),
-                "shift_hours": shift_h,
+                "shift_hours": round(float(sum(v["shift_hours"] for v in vehicles)), 2),
                 "n_overflows_simulated": 0,
                 "source": "real",
             }
         )
 
-    out = pd.DataFrame(rows)
-    return out[OUTPUT_COLUMNS]
+    end_stock_kg = float(sum(_mass_kg(v, k[1], config) for k, v in fill.items()))
+    produced_kg = _produced_kg(world, first_dates, all_dates[-1], config)
+    out = pd.DataFrame(rows)[OUTPUT_COLUMNS]
+    out.attrs["ledger"] = _ledger(
+        produced_kg, collected_kg, end_stock_kg, overflow_days, n_total, fill_sum, n_fill
+    )
+    return out
 
 
 def simulate_optimized_daily(
@@ -254,68 +444,60 @@ def simulate_optimized_daily(
     cfg: OperationalConfig | None = None,
     seed: int = 42,
 ) -> pd.DataFrame:
-    """Simulate walk-forward timer-based emptyings over the identical date range."""
+    """Walk-forward timer policy over the identical date range, against the same world.
+
+    - TRUTH: glass is generated by ``true_fill_rates`` (same r_c and same start as the
+      status quo: from the day after the container's first reading, starting at 0).
+    - BELIEF: the decision rule only sees rates estimated from readings with date < d
+      (mean of level/Δt per container, material median fallback) and its own believed
+      fill (estimated rate accumulated since the last emptying). No look-ahead.
+    - A due container (belief ≥ 80 % or belief would reach 110 % before the next
+      operating day) is routed; served containers hand over their TRUE fill mass
+      (uncapped) and reset to exactly 0. Fill ≥ 110 % counts as an overflow event
+      (per container-day, ``n_overflows_simulated``), it is never capped.
+    ``seed`` is kept for API compatibility; the simulation is deterministic.
+    """
+    del seed  # deterministic: no random reset any more (was +283 t phantom mass)
     config = cfg or OperationalConfig()
-    work = readings.copy()
-    work["date"] = pd.to_datetime(work["date"])
-    work["date_only"] = work["date"].dt.date
-    work["Location_id"] = work["Location_id"].astype(str)
-    work["material_type"] = work["material_type"].astype(str).str.lower()
-    work["fill_level_numeric"] = pd.to_numeric(work["fill_level_numeric"])
+    work, locs, all_dates = _prepare_inputs(readings, locations)
+    world = true_fill_rates(work)
 
-    locs = locations.copy()
-    locs["Location_id"] = locs["Location_id"].astype(str)
-    locs["lat"] = pd.to_numeric(locs["lat"])
-    locs["lon"] = pd.to_numeric(locs["lon"])
-
-    # Unique containers with coordinates
     containers = (
         work[["Location_id", "material_type"]]
         .drop_duplicates()
-        .merge(locs[["Location_id", "lat", "lon"]], on="Location_id", how="inner")
+        .merge(locs[["Location_id", "lat", "lon"]].drop_duplicates("Location_id"), on="Location_id", how="inner")
         .sort_values(["Location_id", "material_type"])
         .reset_index(drop=True)
     )
-
-    # First and last measurement date per container
-    first_dates = {
-        (str(row.Location_id), str(row.material_type)): row.min_date
-        for row in work.groupby(["Location_id", "material_type"])["date_only"]
+    first_dates: dict[ContainerKey, date] = {
+        (str(r.Location_id), str(r.material_type)): r.min_date
+        for r in work.groupby(["Location_id", "material_type"])["date_only"]
         .min()
         .reset_index(name="min_date")
         .itertuples(index=False)
     }
+    activation: dict[date, list[ContainerKey]] = {}
+    for key, first_d in first_dates.items():
+        activation.setdefault(first_d, []).append(key)
 
-    start_date = work["date_only"].min()
-    end_date = work["date_only"].max()
-    all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
-
-    # Pre-index readings for fast walk-forward rate fitting
-    readings_by_c: dict[tuple[str, str], list[tuple[date, float]]] = {}
-    for (loc, mat), g in work.groupby(["Location_id", "material_type"]):
+    readings_by_c: dict[ContainerKey, list[tuple[date, float]]] = {}
+    for (loc, mat), g in work.sort_values("date").groupby(["Location_id", "material_type"]):
         readings_by_c[(str(loc), str(mat))] = list(zip(g["date_only"], g["fill_level_numeric"]))
 
-    rng = np.random.default_rng(seed)
-
-    # Containers enter the active pool when their first measurement arrives
-    active_containers: set[tuple[str, str]] = set()
-    current_fill: dict[tuple[str, str], float] = {}
-
+    true_fill: dict[ContainerKey, float] = {}
+    belief_fill: dict[ContainerKey, float] = {}
+    collected_kg = 0.0
+    overflow_days = 0
+    fill_sum = 0.0
+    n_total = 0
     rows: list[dict[str, Any]] = []
 
-    for day_idx, d in enumerate(all_dates):
-        # Activate containers that enter the pilot on date d
-        for c_key, first_d in first_dates.items():
-            if first_d == d:
-                active_containers.add(c_key)
-                # Starts at 0% after initial setup/first service
-                current_fill[c_key] = 0.0
-
-        # 1. Walk-forward rate fitting strictly from past data (date < d)
-        c_rates: dict[tuple[str, str], float] = {}
+    for d in all_dates:
+        # 1. Belief: walk-forward rate estimates strictly from readings before d
+        c_rates: dict[ContainerKey, float] = {}
         mat_rates: dict[str, list[float]] = {"white": [], "green": [], "brown": []}
-        for (loc, mat), visits in readings_by_c.items():
-            past = [(t, l) for t, l in visits if t < d]
+        for key, visits in readings_by_c.items():
+            past = [(t, lvl) for t, lvl in visits if t < d]
             if len(past) >= 2:
                 r_list = [
                     past[i][1] / (past[i][0] - past[i - 1][0]).days
@@ -324,216 +506,222 @@ def simulate_optimized_daily(
                 ]
                 if r_list:
                     m_r = float(np.mean(r_list))
-                    c_rates[(loc, mat)] = m_r
-                    if mat in mat_rates:
-                        mat_rates[mat].append(m_r)
-
+                    c_rates[key] = m_r
+                    mat_rates.setdefault(key[1], []).append(m_r)
         mat_medians = {
-            m: float(np.median(vals)) if vals else DEFAULT_RATES.get(m, 1.5)
-            for m, vals in mat_rates.items()
+            m: float(np.median(v)) if v else DEFAULT_RATES.get(m, 1.5) for m, v in mat_rates.items()
         }
-        for (loc, mat) in readings_by_c:
-            if (loc, mat) not in c_rates:
-                c_rates[(loc, mat)] = mat_medians.get(mat, DEFAULT_RATES.get(mat, 1.5))
+        for key in readings_by_c:
+            if key not in c_rates:
+                c_rates[key] = mat_medians.get(key[1], DEFAULT_RATES.get(key[1], 1.5))
 
-        # 2. Advance simulated fill for all active containers by 1 day
-        for c_key in active_containers:
-            current_fill[c_key] = min(MAX_FILL_PCT, current_fill[c_key] + c_rates[c_key])
+        # 2. World produces glass on day d; belief advances by the estimated rate
+        for key in true_fill:
+            true_fill[key] += world[key]
+            belief_fill[key] += c_rates[key]
+        for key in activation.get(d, []):
+            true_fill[key] = 0.0
+            belief_fill[key] = 0.0
 
-        # 3. Check candidate emptyings
+        # 3. Decision on belief only
         op = is_operating_day(d)
-        next_op = get_next_operating_day(d)
-        days_to_next = max(1, (next_op - d).days)
-
-        due_containers: list[tuple[Any, float]] = []
+        days_to_next = max(1, (get_next_operating_day(d) - d).days)
+        due: list[Any] = []
         if op:
             for c_row in containers.itertuples(index=False):
-                c_key = (str(c_row.Location_id), str(c_row.material_type))
-                if c_key not in active_containers:
+                key = (str(c_row.Location_id), str(c_row.material_type))
+                if key not in true_fill:
                     continue
-                f_now = current_fill[c_key]
-                r = c_rates[c_key]
-                # Empty if forecast >= 80% or would overflow before next possible visit
-                if f_now >= DUE_FILL_PCT or (f_now + days_to_next * r) >= MAX_FILL_PCT:
-                    due_containers.append((c_row, f_now))
+                b_now = belief_fill[key]
+                if b_now >= DUE_FILL_PCT or (b_now + days_to_next * c_rates[key]) >= MAX_FILL_PCT:
+                    due.append(c_row)
 
-        if not due_containers or not op:
-            overflows_today = sum(
-                1 for c_key in active_containers if current_fill[c_key] >= MAX_FILL_PCT
-            )
-            rows.append(
-                {
-                    "date": str(d),
-                    "n_emptyings": 0,
-                    "n_containers_overfull_at_visit": 0,
-                    "avg_fill_at_emptying_pct": 0.0,
-                    "tonnage_t": 0.0,
-                    "est_km": 0.0,
-                    "vehicles_needed": 0,
-                    "shift_hours": 0.0,
-                    "n_overflows_simulated": overflows_today,
-                    "source": "simulated",
-                }
-            )
+        if not due:
+            overflows = sum(1 for v in true_fill.values() if v >= MAX_FILL_PCT)
+            overflow_days += overflows
+            rows.append({"date": str(d), **_empty_row("simulated", overflows)})
             continue
 
-        # Group due containers by physical site
         site_dict: dict[tuple[float, float], dict[str, Any]] = {}
-        for c_row, f_val in due_containers:
+        for c_row in due:
+            key = (str(c_row.Location_id), str(c_row.material_type))
             pt = (round(float(c_row.lat), 6), round(float(c_row.lon), 6))
-            mat = str(c_row.material_type)
-            m_kg = (f_val / 100.0) * float(config.container_volume_m3) * density_for(config, mat)
-            v_m3 = (f_val / 100.0) * float(config.container_volume_m3)
+            f_true = true_fill[key]
+            score = belief_fill[key] / 100.0
+            m_kg = _mass_kg(f_true, key[1], config)
+            v_m3 = (f_true / 100.0) * float(config.container_volume_m3)
             if pt not in site_dict:
                 site_dict[pt] = {
                     "lat": pt[0],
                     "lon": pt[1],
-                    "Location_id": str(c_row.Location_id),
+                    "Location_id": key[0],
                     "critical_bins": 0,
                     "mass_kg": 0.0,
                     "volume_m3": 0.0,
-                    "score": f_val / 100.0,
+                    "score": score,
                     "critical": True,
-                    "primary_material": mat,
-                    "last_fill_level": f_val,
-                    "est_fill_level": f_val,
+                    "primary_material": key[1],
+                    "last_fill_level": belief_fill[key],
+                    "est_fill_level": belief_fill[key],
                     "source": "osm_assigned",
                     "confidence": "simulated_mapping",
                     "container_keys": [],
                 }
-            site_dict[pt]["critical_bins"] += 1
-            site_dict[pt]["mass_kg"] += m_kg
-            site_dict[pt]["volume_m3"] += v_m3
-            site_dict[pt]["score"] = max(site_dict[pt]["score"], f_val / 100.0)
-            site_dict[pt]["container_keys"].append((str(c_row.Location_id), mat, f_val, m_kg))
+            site = site_dict[pt]
+            site["critical_bins"] += 1
+            site["mass_kg"] += m_kg  # the truck carries the real glass, not the belief
+            site["volume_m3"] += v_m3
+            site["score"] = max(site["score"], score)
+            site["container_keys"].append(key)
 
         sites_df = (
             pd.DataFrame(list(site_dict.values()))
             .sort_values("score", ascending=False)
             .reset_index(drop=True)
         )
-
-        stops, unloads, vehicles, planned_km, mass = _simulate_constrained_routes(sites_df, config)
-
-        # Identify served sites
+        stops, _unloads, vehicles, planned_km, _mass = _simulate_constrained_routes(
+            sites_df, config
+        )
         served_pts = {
             (round(float(s["lat"]), 6), round(float(s["lon"]), 6))
             for s in stops
             if s.get("stop_type") == "collection"
         }
 
-        emptied_today: list[float] = []
+        emptied: list[float] = []
         mass_today_kg = 0.0
-        overfull_today = 0
         for pt in served_pts:
-            s_data = site_dict[pt]
-            for (c_loc, c_mat, c_fill, c_mkg) in s_data["container_keys"]:
-                emptied_today.append(c_fill)
-                mass_today_kg += c_mkg
-                if c_fill >= MAX_FILL_PCT:
-                    overfull_today += 1
-                # Reset container after emptying to ~0%
-                current_fill[(c_loc, c_mat)] = float(rng.uniform(0.0, 5.0))
+            for key in site_dict[pt]["container_keys"]:
+                f_true = true_fill[key]
+                emptied.append(f_true)
+                mass_today_kg += _mass_kg(f_true, key[1], config)
+                true_fill[key] = 0.0
+                belief_fill[key] = 0.0
+        collected_kg += mass_today_kg
+        n_total += len(emptied)
+        fill_sum += float(sum(emptied))
 
-        # Check containers that crossed 110 % without being emptied today
-        overflows_today = sum(
-            1 for c_key in active_containers if current_fill[c_key] >= MAX_FILL_PCT
-        )
-        avg_fill = round(float(np.mean(emptied_today)), 2) if emptied_today else 0.0
-        shift_h = round(float(sum(v["shift_hours"] for v in vehicles)), 2)
-
+        overflows = sum(1 for v in true_fill.values() if v >= MAX_FILL_PCT)
+        overflow_days += overflows
         rows.append(
             {
                 "date": str(d),
-                "n_emptyings": len(emptied_today),
-                "n_containers_overfull_at_visit": overfull_today,
-                "avg_fill_at_emptying_pct": avg_fill,
+                "n_emptyings": len(emptied),
+                "n_containers_overfull_at_visit": int(sum(1 for f in emptied if f >= MAX_FILL_PCT)),
+                "avg_fill_at_emptying_pct": round(float(np.mean(emptied)), 2) if emptied else 0.0,
                 "tonnage_t": round(mass_today_kg / 1000.0, 3),
                 "est_km": round(planned_km, 2),
                 "vehicles_needed": len(vehicles),
-                "shift_hours": shift_h,
-                "n_overflows_simulated": overflows_today,
+                "shift_hours": round(float(sum(v["shift_hours"] for v in vehicles)), 2),
+                "n_overflows_simulated": overflows,
                 "source": "simulated",
             }
         )
 
-    out = pd.DataFrame(rows)
-    return out[OUTPUT_COLUMNS]
+    end_stock_kg = float(sum(_mass_kg(v, k[1], config) for k, v in true_fill.items()))
+    produced_kg = _produced_kg(
+        world, {k: v for k, v in first_dates.items() if k in true_fill}, all_dates[-1], config
+    )
+    out = pd.DataFrame(rows)[OUTPUT_COLUMNS]
+    out.attrs["ledger"] = _ledger(
+        produced_kg, collected_kg, end_stock_kg, overflow_days, n_total, fill_sum, n_total
+    )
+    return out
 
 
 def generate_cost_model_markdown(
     historical_df: pd.DataFrame,
     optimized_df: pd.DataFrame,
 ) -> str:
-    """Generate Markdown summary table for docs/KOSTENMODELL.md."""
+    """Generate Markdown summary table for docs/KOSTENMODELL.md (needs fresh frames with ledger)."""
+    lh = mass_ledger(historical_df)
+    lo = mass_ledger(optimized_df)
+
+    def de(x: float, nd: int = 1) -> str:
+        return f"{x:,.{nd}f}".replace(",", "_").replace(".", ",").replace("_", ".")
+
     h_emptyings = int(historical_df["n_emptyings"].sum())
     o_emptyings = int(optimized_df["n_emptyings"].sum())
-
-    h_tonnage = float(historical_df["tonnage_t"].sum())
-    o_tonnage = float(optimized_df["tonnage_t"].sum())
-
-    h_active_emptyings = historical_df[historical_df["n_emptyings"] > 0]
-    o_active_emptyings = optimized_df[optimized_df["n_emptyings"] > 0]
-
-    h_avg_fill = float(
-        (historical_df["avg_fill_at_emptying_pct"] * historical_df["n_emptyings"]).sum()
-        / h_emptyings
-    )
-    o_avg_fill = float(
-        (optimized_df["avg_fill_at_emptying_pct"] * optimized_df["n_emptyings"]).sum()
-        / o_emptyings
-    )
-
+    h_avg_fill = float(lh["avg_fill_at_emptying_pct"])
+    o_avg_fill = float(lo["avg_fill_at_emptying_pct"])
     h_overfull = int(historical_df["n_containers_overfull_at_visit"].sum())
     o_overfull = int(optimized_df["n_containers_overfull_at_visit"].sum())
-    o_overflow_days = int((optimized_df["n_overflows_simulated"] > 0).sum())
+    h_ovd = int(lh["overflow_container_days"])
+    o_ovd = int(lo["overflow_container_days"])
 
     h_km = float(historical_df["est_km"].sum())
     o_km = float(optimized_df["est_km"].sum())
-
     h_veh_days = int(historical_df["vehicles_needed"].sum())
     o_veh_days = int(optimized_df["vehicles_needed"].sum())
-
     h_shift_h = float(historical_df["shift_hours"].sum())
     o_shift_h = float(optimized_df["shift_hours"].sum())
 
-    emptyings_diff_pct = ((o_emptyings - h_emptyings) / h_emptyings) * 100.0
-    fill_diff_pp = o_avg_fill - h_avg_fill
+    def pct(o: float, h: float) -> str:
+        return f"{(o - h) / h * 100.0:+.1f} %".replace(".", ",") if h else "–"
+
+    rows = [
+        ("Ø Füllstand bei Leerung (wahrer Füllstand, ungekappt)",
+         f"{de(h_avg_fill)} %", f"{de(o_avg_fill)} %",
+         f"{o_avg_fill - h_avg_fill:+.1f} pp".replace(".", ",")),
+        ("Leerungen", de(h_emptyings, 0), de(o_emptyings, 0), pct(o_emptyings, h_emptyings)),
+        ("Überfüllte Leerungen (≥ 110 % bei Leerung)", de(h_overfull, 0), de(o_overfull, 0),
+         pct(o_overfull, h_overfull)),
+        ("Überlauf-Containertage (≥ 110 %, ungeleert)", de(h_ovd, 0), de(o_ovd, 0), pct(o_ovd, h_ovd)),
+        ("Fahrstrecke (est. km)", de(h_km), de(o_km), pct(o_km, h_km)),
+        ("Fahrzeug-Einsatztage", de(h_veh_days, 0), de(o_veh_days, 0), pct(o_veh_days, h_veh_days)),
+        ("Fahrerstunden", f"{de(h_shift_h)} h", f"{de(o_shift_h)} h", pct(o_shift_h, h_shift_h)),
+    ]
+    table = "\n".join(f"| {a} | **{b}** | **{c}** | {d} |" for a, b, c, d in rows)
+    ledger_rows = "\n".join(
+        f"| {label} | {de(lh[k])} t | {de(lo[k])} t |"
+        for label, k in [
+            ("Produziert (Welt, Σ r_c × aktive Tage)", "produced_t"),
+            ("Gesammelt im Fenster (`tonnage_t`)", "collected_t"),
+            ("Endbestand am 30.09.2026 (steht noch im Container)", "end_stock_t"),
+        ]
+    )
+    total_h = lh["collected_t"] + lh["end_stock_t"]
+    total_o = lo["collected_t"] + lo["end_stock_t"]
 
     return f"""# Kostenmodell & Jahressimulation: Status quo vs. Timer-Modell
 
-Dieses Dokument vergleicht die **historische Sammelleistung** (rekonstruiert aus den 11.701 realen Mess- und Leerungsereignissen) 1:1 mit der **bedarfsorientierten Jahressimulation** des PreZero-Timer-Modells über denselben Zeitraum (**17.10.2025 bis 30.09.2026**, 349 Kalendertage).
+Dieses Dokument vergleicht den **Status quo** (die realen Leerungstage aus den 11.701 Messungen, nachgespielt gegen ein festes Weltmodell) mit der **Walk-Forward-Simulation** des Timer-Modells über denselben Zeitraum (**17.10.2025 bis 30.09.2026**, 349 Kalendertage). Generiert von `scripts/simulate_daily.py`; Rechenmodell: [`docs/MODEL_SPEC.md`](MODEL_SPEC.md).
 
 Die Rohdaten liegen als CSVs vor:
 - [`data/outputs/historical_daily.csv`](../data/outputs/historical_daily.csv) (Status quo, `source=real`)
 - [`data/outputs/optimized_daily.csv`](../data/outputs/optimized_daily.csv) (Timer-Modell, `source=simulated`)
 
-## 1. Jahres-Kennzahlen im 1:1-Vergleich
+## 1. Massenbilanz (eine Welt, zwei Politiken)
 
-| Kennzahl | Status quo (Historisch) | Timer-Modell (Optimiert) | Delta / Effekt |
+| Posten | Status quo | Timer-Modell |
+|---|---:|---:|
+{ledger_rows}
+| **Gesammelt + Endbestand** | **{de(total_h)} t** | **{de(total_o)} t** |
+
+Beide Seiten gehen auf dieselbe produzierte Menge auf (Test: `tests/test_mass_balance.py`). Die im Fenster gesammelte Tonnage unterscheidet sich nur um den Endbestand: Der Status quo lässt am Stichtag mehr Glas im Container stehen. Routing erzeugt kein Glas.
+
+## 2. Jahres-Kennzahlen im Vergleich
+
+| Kennzahl | Status quo | Timer-Modell | Delta |
 |---|---|---|---|
-| **Ø Füllstand bei Leerung** | **{h_avg_fill:.1f} %** | **{o_avg_fill:.1f} %** | **+{fill_diff_pp:.1f} pp** höhere Auslastung |
-| **Gesamtzahl Leerungen** | **{h_emptyings:,}** | **{o_emptyings:,}** | **{emptyings_diff_pct:+.1f} %** Leerungsaufwand |
-| **Überfüllungen bei Leerung (≥ 110 %)** | **{h_overfull:,}** | **{o_overfull:,}** | **-{(h_overfull - o_overfull) / h_overfull * 100.0:.1f} %** Überlauf-Risiko |
-| **Tage mit unbedienten Überläufen** | *(nicht messbar)* | **{o_overflow_days}** | Nahezu 0 Überlauf-Tage |
-| **Gesammelte Tonnage** | **{h_tonnage:.1f} t** | **{o_tonnage:.1f} t** | Massenerhaltung (aktive Pilotphase) |
-| **Fahrstrecke gesamt (est. km)** | **{h_km:,.1f} km** | **{o_km:,.1f} km** | Kapazitäts- und schichtbeschränkt |
-| **Fahrzeug-Einsatztage (vehicle-days)** | **{h_veh_days}** | **{o_veh_days}** | Glättung der Tageseinsätze |
-| **Fahrerstunden gesamt** | **{h_shift_h:,.1f} h** | **{o_shift_h:,.1f} h** | Berechnet nach `prezero_config.json` |
+{table}
 
-## 2. Methodik & Regeln
+Ehrlich gelesen: Das Timer-Modell senkt Überläufe stark, leert aber **nicht voller** als heute. Die Walk-Forward-Schätzung `mean(level/Δt)` liegt im Mittel über der wahren Rate, darum leert die Regel zu früh. Mehr Strecke und Stunden sind der Preis für fast keine Überläufe.
 
-1. **Strikter Walk-Forward ohne Look-Ahead:**
-   Für jeden Tag $d$ lernt das Timer-Modell Container-Füllraten ausschließlich aus Messungen mit $\\text{{Datum}} < d$. Zukünftige Messwerte fließen zu keinem Zeitpunkt in die Entscheidung ein.
-2. **Bedarfsauslösung:**
-   Ein Container wird eingeplant, sobald der geschätzte Füllstand $\\ge 80\\,\\%$ erreicht oder bis zum nächsten regulären Betriebstag (Wochenende/Feiertag) $\\ge 110\\,\\%$ überlaufen würde.
-3. **Betriebsrestriktionen (OperationalConfig):**
+## 3. Methodik & Regeln
+
+1. **Welt (Wahrheit):** Jeder Container hat eine feste Glasrate `r_c = Σ level_i / Σ Δt_i` (Intervalle ab der 2. Messung, Quotient der Summen; unter 2 Messungen: Median des Materials). Sie erzeugt das Glas in **beiden** Szenarien, ab dem Tag nach der ersten Messung, Startbestand 0 %.
+2. **Systemgrenze:** Die erste Messung je Container ist der Start des Fensters (Glas davor, 775,7 t, zählt auf keiner Seite). Darum zählt der Status quo 11.701 − 1.338 = 10.363 Leerungen. Endbestand am letzten Tag wird ausgewiesen, nicht verschwiegen.
+3. **Status quo:** An jedem realen Leerungstag wird der Modell-Füllstand gesammelt und auf exakt 0 % gesetzt. Damit reproduziert der Status quo die gemessene In-Fenster-Masse (Messungen 2…n) exakt.
+4. **Timer-Modell, strikter Walk-Forward ohne Look-Ahead:** Die Regel kennt nur Raten aus Messungen mit $\\text{{Datum}} < d$ und den daraus geschätzten Füllstand seit der letzten Leerung. Eingeplant wird bei Schätzung $\\ge 80\\,\\%$ oder wenn bis zum nächsten Betriebstag $\\ge 110\\,\\%$ drohen. Der LKW nimmt den **wahren** Füllstand mit; Reset auf exakt 0 % (kein Zufallsrest mehr).
+5. **Keine Kappung:** Der Füllstand wird intern nicht bei 110 % gekappt (übergelaufenes Glas steht neben dem Container und wird mitgenommen). 110 % zählt nur als Überlauf-Ereignis. Ø Füllstand bei Leerung ist daher **ungekappt** und kann über 100 % liegen.
+6. **Betriebsrestriktionen (OperationalConfig):**
    Beide Modelle unterliegen exakt denselben Annahmen aus `prezero_config.json`:
    - LKW-Nutzlast: 11.000 kg, Ladevolumen: 26,0 m³, Dichte: 400 kg/m³, Behälter: 2,5 m³
    - Max. Schichtdauer: 8,0 h, Rüstzeit: 2,0 min, Hubzeit: 3,0 min/Behälter, Entladezeit: 20,0 min
    - Umwegfaktor: 1,35 auf Haversine, Geschwindigkeit: 25 km/h
    - Feste Depots: Betriebshof (49.1427, 9.2109), Entladestelle (49.1780, 9.2085)
-4. **Geodaten-Transparenz:**
+7. **Geodaten-Transparenz:**
    Routing auf simulierten Zuordnungen (`source=osm_assigned`, `confidence=simulated_mapping`).
 """
 
@@ -591,6 +779,19 @@ def main() -> None:
     opt_path = args.output_dir / "optimized_daily.csv"
     opt_df.to_csv(opt_path, index=False)
     print(f"Written: {opt_path} ({len(opt_df)} rows)")
+
+    print(f"produced_total: {produced_total(readings, cfg):.2f} t")
+    for name, df in (("historical", hist_df), ("optimized", opt_df)):
+        lg = mass_ledger(df)
+        print(
+            f"{name}: produced={lg['produced_t']:.2f} t collected={lg['collected_t']:.2f} t "
+            f"end_stock={lg['end_stock_t']:.2f} t emptyings={lg['n_emptyings']} "
+            f"avg_fill={lg['avg_fill_at_emptying_pct']:.2f} % "
+            f"overfull_at_visit={int(df['n_containers_overfull_at_visit'].sum())} "
+            f"overflow_container_days={lg['overflow_container_days']} "
+            f"km={df['est_km'].sum():.1f} vehicle_days={int(df['vehicles_needed'].sum())} "
+            f"shift_hours={df['shift_hours'].sum():.1f}"
+        )
 
     md = generate_cost_model_markdown(hist_df, opt_df)
     md_path = args.docs_dir / "KOSTENMODELL.md"

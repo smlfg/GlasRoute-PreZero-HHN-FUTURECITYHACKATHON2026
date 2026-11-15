@@ -47,6 +47,26 @@ Welt für **beide** Seiten; Status quo = Replay der realen Leerungstage gegen di
 (reproduziert die gemessene In-Fenster-Masse per Konstruktion); gleicher Anfangsbestand,
 Endbestand ausgewiesen; Reset auf exakt 0 %; keine Kappung der Masse.
 
+**Gemessen nach dem Fix (W1, `PYTHONPATH=src python3 scripts/simulate_daily.py`, 349 Tage):**
+
+| Kennzahl | Status quo | Timer-Modell |
+|---|---:|---:|
+| Produziert (`produced_total`, Σ r_c × aktive Tage) | 7.613,95 t | 7.613,95 t |
+| Gesammelt im Fenster | 6.943,50 t | 7.157,52 t |
+| Endbestand 30.09.2026 | 670,45 t | 456,43 t |
+| Gesammelt + Endbestand | 7.613,95 t | 7.613,95 t |
+| Leerungen | 10.363 | 10.954 |
+| Ø wahrer Füllstand bei Leerung (ungekappt) | 67,0 % | 65,3 % |
+| Überfüllte Leerungen (≥ 110 %) | 1.196 | 214 |
+| Überlauf-Containertage (≥ 110 %) | 19.047 | 1.484 |
+| km / Fahrzeugtage / Stunden | 19.007,6 / 317 / 1.593,3 | 25.684,6 / 339 / 2.026,2 |
+
+Entscheidungen: erste Messung = Start der Systemgrenze auf beiden Seiten (keine Leerung, keine Masse;
+11.701 − 1.338 Container = 10.363 Leerungen im Status quo). Ø Füllstand ungekappt. Die In-Fenster-Tonnage
+unterscheidet sich um +3,1 %, genau um die Endbestands-Differenz (214 t); der ±2-%-Test vergleicht daher
+für beide Seiten gleich „gesammelt + Endbestand“. Das Timer-Modell leert **nicht voller** als der Status quo,
+weil die Walk-Forward-Schätzung über der wahren Rate liegt und die Regel deshalb zu früh leert.
+
 ## 3. Entscheidungsvariablen
 
 | Symbol | Bedeutung | Einheit |
