@@ -13,7 +13,7 @@ Aus dem Transkript der Wettbewerber-Präsentation und Q&A:
 | Dimension | Wettbewerber („Garbage Collector“) | Unser Projekt („GlasRoute / PreZero Route“) |
 |---|---|---|
 | **Kern-Hook** | „27 % der Zeit Container voll, aber 30 % der Zeit fährt der LKW zu leeren Containern.“ | „30 % aller Fahrten zu früh (< 50 % voll) — gleichzeitig 1.192 Überläufe, 61 % davon Weißglas.“ |
-| **Ersparnis-Metrik** | **42.000 € / Jahr** (Annahme: 500 €/Tag Fahrzeugkosten, 25 % Ersparnis). | **−36,7 % km** (B1 → B4 fair), bis zu **−85,0 % km** bei 25er-Tagestour; 100 % Überlauf-Vermeidung. |
+| **Ersparnis-Metrik** | **42.000 € / Jahr** (Annahme: 500 €/Tag Fahrzeugkosten, 25 % Ersparnis). | **−36,7 % km** (B1 → B4 fair), bis zu **−86,3 % km** bei der 25er-Tagestour (227,2 km gegen B1 mit 1.662,70 km); 100 % Überlauf-Vermeidung. |
 | **Daten-Verständnis** | **Mangelhaft:** Glauben an „single sensor snapshot for all containers“; nennen PreZero „B0“. | **Exzellent:** 11.701 reale Messungen, Fahrer-Schätzung in 10-%-Schritten („Messen und Leeren“), 449 Container, 1.338 Serien. |
 | **Routing & Mathe** | Unstimmigkeit im Team: „deterministisch“ vs. „Google OR-Tools Heuristik“; Streit auf offener Bühne. | **Beides sauber getrennt & benchmarked:** B0 (Liste) → B1 (TSP) → B2 (Fälligkeit) → B4 (Google OR-Tools VRP mit Schicht/Kapazität). |
 | **Glasfarben-Asymmetrie** | Erst in Q&A von Sprecher 2 gestreift (Drei-Kammer-LKW, Weiß- vs. Braunglas), aber ungelöst. | **Kern-Befund:** Braunglas füllt sich in 95 Tagen, wird alle 42 Tage geleert (89 % zu oft!). Weißglas ist der Engpass. |
@@ -74,7 +74,7 @@ Aus dem Transkript der Wettbewerber-Präsentation und Q&A:
 2. **Folie 3 (Der Daten-Coup):** Die Braunglas-Analyse (42 Tage Ist vs. 95 Tage Bedarf). Zeigen, dass die Daten von echten Fahrern stammen, nicht von Phantomsensoren.
 3. **Folie 5/6 (Das Ergebnis & Euro-Zahl):**  
    - B1 → B4: **−36,7 % km**
-   - Tagestour: **−85,0 % km** (25 Stopps, 249,9 km statt 1.662 km)
+   - Tagestour: **−86,3 % km** (25 Stopps, **227,2 km** statt 1.662,70 km — Comparator B1)
    - **~40.000 € Einsparung / Fahrzeug / Jahr**
 4. **Folie 7 (Ehrlichkeit als Vertrauensanker):** Offenlegen, dass OSM-Koordinaten `simulated_mapping` sind, aber der Swap-Pfad für PreZero-Echtdaten in 1 Sekunde greift.
 5. **Live/Demo-Workflow:** Zeigen, dass Disponentin freigibt (`prezero-route approve`).
