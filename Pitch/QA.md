@@ -30,8 +30,8 @@ Der Routing-Effekt ist mit 9,7 % (Spanne 2,3–14,1 %) bewusst der kleinere Hebe
 
 ## 2. Warum „81 %“, wenn die Standorte erfunden sind?
 
-**Die 81 % gibt es nicht mehr.** „24,1 / 70,7 / 81 %“ beruhten auf Dauersensor-Annahme und festem Saisonfaktor und sind ausdrücklich ungültig (`docs/STAKEHOLDER.md:138`); die verwandte Zahl „81“ in `Pitch/demo_facts.txt` meint 81 *fällige Standorte, die das 25-Stopp-Limit offenlässt*, keine Ersparnis.
-Auch die 79,2 % auf der Karte vergleichen nur eine Teil-Tour (25 von 106 Standorten) mit „alles leeren“ und sind laut `Pitch/NOTES.md` keine Pitch-Zahl; belastbar sind die Verhältnisse 29,9 % / 9,7 % / 36,7 %, nicht absolute km.
+**Die 81 % gibt es nicht mehr.** „24,1 / 70,7 / 81 %“ beruhten auf Dauersensor-Annahme und festem Saisonfaktor und sind ausdrücklich ungültig (`docs/STAKEHOLDER.md:138`); die verwandte Zahl „102“ in `Pitch/demo_facts.txt` meint 102 *fällige Standorte, die das 25-Stopp-Limit offenlässt*, keine Ersparnis.
+Auch die 83,4 % auf der Karte vergleichen nur eine Teil-Tour (25 von 127 Standorten) mit „alles leeren“ und sind laut `Pitch/NOTES.md` keine Pitch-Zahl; belastbar sind die Verhältnisse 29,9 % / 9,7 % / 36,7 %, nicht absolute km.
 
 ## 3. Was, wenn der Fahrer falsch schätzt? — **teilweise OPEN**
 
