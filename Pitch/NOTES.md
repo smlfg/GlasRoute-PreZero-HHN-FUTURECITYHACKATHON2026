@@ -288,6 +288,26 @@ throughout the weekend. Feel free to reach out anytime if you have questions or 
 In `src/prezero/routing.py` stehen **11 Betriebsvariablen** — jede mit dem Kommentar
 `# Annahme, von PreZero zu ersetzen`:
 
+### 🎯 Die drei wichtigsten Fragen an PreZero
+
+Wenn nur Zeit für **drei** Fragen ist, sind es diese. Jede deckt eine Gruppe von Annahmen ab
+und ändert das Ergebnis sichtbar:
+
+1. **Dichte und Containergröße** — „Welche Dichte setzen Sie für Glas an (wir rechnen mit
+   400 kg/m³), und wie groß ist ein Glascontainer (wir nehmen 2,5 m³)?“
+   *Warum zuerst:* daraus kommt die Tonnage je Runde. Bei 300 kg/m³ statt 400 sinkt die Flotte
+   von 4 auf 3 Fahrzeuge und die Strecke von 250 auf 214 km.
+2. **Fahrzeuglast** — „Wie voll wird der Lader maximal beladen (wir nehmen 11.000 kg)?“
+   *Warum:* die Kapazitätsgrenze entscheidet, wie viele Runden und Fahrzeuge ein Tag braucht —
+   mit 8 t sind es 4 Fahrzeuge, 21 statt 19 Runden und 271,28 km.
+3. **Betriebshof und Entsorgungsstelle** — „Wo liegt Ihr Betriebshof (wir rechnen mit
+   49.1427 / 9.2109) und wo Ihre Entsorgungsstelle (49.1780 / 9.2085)?“
+   *Warum:* Start- und Endpunkt jedes Rundums. Ohne die echten Punkte stimmen die km nicht.
+
+Die **vollständige Tabelle aller 11 Variablen** mit unseren Annahmen und den dazugehörigen
+Fragen steht darunter — das ist das Live-Material für die Bühne. Die ausführlichere Liste
+(„Konkreten Fragen“ mit Daten, Koordinaten und Fahrzeugzahl) bleibt unten ebenfalls bestehen.
+
 | Variable | Unser Wert | Frage an PreZero |
 |---|---|---|
 | `density_kg_per_m3` | 400 | „Welche Dichte setzen Sie für Glas an?“ |

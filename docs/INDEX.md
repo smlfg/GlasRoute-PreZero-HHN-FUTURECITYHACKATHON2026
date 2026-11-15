@@ -46,6 +46,7 @@ diese Tabelle im selben Commit.** Stand: 14.11.2026, Code `abd9ca2`.
 | [`../Pitch/slides.html`](../Pitch/slides.html) | Interaktive 16:9-Präsentationsfolien mit Speaker-Notes, Timer & PDF-Export | **aktuell** |
 | [`../Pitch/pitch_deck.pdf`](../Pitch/pitch_deck.pdf) | Druckfertige 10-Seiten-PDF-Präsentation im 16:9 Querformat | **aktuell** |
 | [`../Pitch/QA.md`](../Pitch/QA.md) | Jury-Q&A: 12 harte Fragen, ehrliche Antworten, Bühnen-Kurzliste | **aktuell** |
+| [`../Pitch/fallback/`](../Pitch/fallback/) | Offline-Fallback: fertige Demo-Tour als JSON + CSV plus Anleitung für den Pitch ohne laufenden Rechner | **aktuell** |
 | [`../Pitch/VERGLEICHSWERT_WETTBEWERBER.md`](../Pitch/VERGLEICHSWERT_WETTBEWERBER.md) | Wettbewerbsanalyse („Garbage Collector“): Vergleichswerte, Stärken/Schwächen, Pitch-Hebel | **aktuell** |
 | [`../Projek-Management/proof/A3_pitch_zahlen.txt`](../Projek-Management/proof/A3_pitch_zahlen.txt) | Beleg: jede Pitch-Zahl gegen die Pipeline geprüft (`RESULT: ALL MATCH`) | **aktuell** |
 | [`../Projek-Management/proof/`](../Projek-Management/proof/) | A1 Freigabe-Verhalten, A2 Beleg, A4 README-Demo, A5 Tests | **aktuell** |
