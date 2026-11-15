@@ -109,7 +109,7 @@ Stichtag 15.04.2026, Zuordnungs-Seed 42 (Website-Tab „Fairer Vergleich“):
 | Gesamt vs. Papierliste B0 (obere Schranke) | 41,4 % | – |
 
 **Warum der Bedarfs-Effekt am 15.04. klein ist:** Mitte April sind **509 von 1.269 Containern fällig**
-(488 überfällig), verteilt auf 106 von 121 Standorten. Wer fast überall hin muss, spart wenig durchs
+(488 überfällig), verteilt auf 127 von 142 Standorten. Wer fast überall hin muss, spart wenig durchs
 Weglassen. Über die 4 Stichtage liegt der Effekt bei 29–67 %. **Die stärkere Aussage ist der Rhythmus**
 (Kernbotschaft Braunglas oben): Braunglas wird zu oft, Weißglas teils zu selten geleert.
 
@@ -159,7 +159,7 @@ entscheidet heute aus dem Bauchgefühl, weil Füllstandsdaten nicht in Routen ü
 | Kennzahl | Wert |
 |---|---|
 | Fällige Container heute (Timer abgelaufen) | 509 von 1.269 (488 überfällig) |
-| Fällige Standorte (physische Orte) | 106 von 121 |
+| Fällige Standorte (physische Orte) | 127 von 142 |
 | Status quo, ganzes Gebiet (B1) | 1.662,70 km · 98 Runden |
 | Nur fällige (B2 → B4 Solver) | 1.165,90 → **1.053,29 km** · 55 Runden |
 | **Bedarfs-Effekt** | **29,9 %** (über das Jahr 29–67 %) |
@@ -170,11 +170,11 @@ entscheidet heute aus dem Bauchgefühl, weil Füllstandsdaten nicht in Routen ü
 
 ### 4. Wie funktioniert's (40 Sek.)
 Ingest → Features (letzter Füllstand, Füllrate, Overfull-Quote, Saison) → Kritikalitäts-Score →
-Routing (Nearest-Neighbor über Haversine, **je Fahrzeug eine Greedy-Route**, Kapazitäts-/Schicht-/Umschlaggrenzen; am Demo-Tag 4 Fahrzeuge, 19 Runden, 22,7 h) →
+Routing (Nearest-Neighbor über Haversine, **je Fahrzeug eine Greedy-Route**, Kapazitäts-/Schicht-/Umschlaggrenzen; am Demo-Tag 3 Fahrzeuge, 16 Runden, 19,9 h) →
 **Freigabe** → Export.
 
 ### 5. Umsetzung (30 Sek.)
-- Läuft auf den **vorhandenen** Fillinq-Daten; der Routenaufbau läuft **je Fahrzeug** greedy — am Demo-Tag mit 4 Fahrzeugen, 19 Runden und 22,7 h Fahrzeugstunden gesamt.
+- Läuft auf den **vorhandenen** Fillinq-Daten; der Routenaufbau läuft **je Fahrzeug** greedy — am Demo-Tag mit 3 Fahrzeugen, 16 Runden und 19,9 h Fahrzeugstunden gesamt.
 - **Generisch**, wie von ihm gefordert: 11 Betriebsvariablen in einer Config-Datei, nicht im Code —
   dadurch für andere Abfallarten und andere Städte wiederverwendbar.
 - Python-CLI, modular (`ingest` → `features` → `scoring` → `routing` → `viz` → `propose` → `approve`).
@@ -295,11 +295,11 @@ und ändert das Ergebnis sichtbar:
 
 1. **Dichte und Containergröße** — „Welche Dichte setzen Sie für Glas an (wir rechnen mit
    400 kg/m³), und wie groß ist ein Glascontainer (wir nehmen 2,5 m³)?“
-   *Warum zuerst:* daraus kommt die Tonnage je Runde. Bei 300 kg/m³ statt 400 sinkt die Flotte
-   von 4 auf 3 Fahrzeuge und die Strecke von 250 auf 214 km.
+   *Warum zuerst:* daraus kommt die Tonnage je Runde. Mit Dichte 300 kg/m³ (plus Umwegfaktor 1,2)
+   bleibt die Flotte bei 3 Fahrzeugen, die Strecke sinkt von 227 auf 197 km, die Runden von 16 auf 15.
 2. **Fahrzeuglast** — „Wie voll wird der Lader maximal beladen (wir nehmen 11.000 kg)?“
    *Warum:* die Kapazitätsgrenze entscheidet, wie viele Runden und Fahrzeuge ein Tag braucht —
-   mit 8 t sind es 4 Fahrzeuge, 21 statt 19 Runden und 271,28 km.
+   mit 8 t sind es 3 Fahrzeuge, 16 Runden und 253,36 km.
 3. **Betriebshof und Entsorgungsstelle** — „Wo liegt Ihr Betriebshof (wir rechnen mit
    49.1427 / 9.2109) und wo Ihre Entsorgungsstelle (49.1780 / 9.2085)?“
    *Warum:* Start- und Endpunkt jedes Rundums. Ohne die echten Punkte stimmen die km nicht.
@@ -342,11 +342,12 @@ prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.jso
 
 # Nachher — Beispiel: Dichte 300 kg/m³, Umwegfaktor 1,2
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 3 Fahrzeuge, 19 Runden, 21,6 h, 107,1 t, 214 km
+# → 3 Fahrzeuge, 15 Runden, 18,3 h, 87,1 t, 197 km
 ```
 
 **Der Effekt ist sofort sichtbar:** Dichte 400 → 300 kg/m³ und Umwegfaktor 1,35 → 1,2 ergeben
-**3 statt 4 Fahrzeuge und 214 statt 250 km** (h = Fahrzeugstunden gesamt). Das ist der stärkste Beweis im ganzen Pitch: das Tool
+**3 Fahrzeuge in beiden Fällen, aber 197 statt 227 km (−13 % km), 15 statt 16 Runden und 18,3 statt 19,9 h**
+(h = Fahrzeugstunden gesamt). Das ist der stärkste Beweis im ganzen Pitch: das Tool
 ist nicht auf die Daten hineingebaut, sondern nimmt die Betriebsvariablen entgegen.
 
 **Vorbereitung:** Lege vor dem Pitch eine Datei `prezero_config.json` mit den **Default-Werten**
@@ -359,7 +360,7 @@ prezero-route route --date 2026-04-15 --config prezero_config.json
 ```
 
 **Falls die Zeit knapp wird:** Lass nur **eine** Variable live austauschen (z. B. `vehicle_max_weight_kg`
-11.000 → 7.500 → 4 Fahrzeuge, 21 Runden, 271 km). Das genügt als Beweis und dauert 20 Sekunden.
+11.000 → 8.000 → 3 Fahrzeuge, 16 Runden, 253 km). Das genügt als Beweis und dauert 20 Sekunden.
 
 **Konkrete Fragen, wenn er Zeit hat:**
 - „Wo liegt Ihr Betriebshof und Ihre Entsorgungsstelle?“

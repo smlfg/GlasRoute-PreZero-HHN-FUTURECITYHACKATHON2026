@@ -148,12 +148,12 @@ prezero-route route --date 2026-04-15 --max-stops 25
 
 # Nachher (Zahlen von PreZero, z. B. Dichte 300, Umwegfaktor 1,2 in prezero_config.json)
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 3 Fahrzeuge, 19 Runden, 21,6 h, 107,1 t, 214 km
+# → 3 Fahrzeuge, 15 Runden, 18,3 h, 87,1 t, 197 km
 ```
 
 Live ausgetauscht (z. B. Dichte 400 → 300 kg/m³, Umwegfaktor 1,35 → 1,2) ändert sich das Ergebnis
-sichtbar: **3 statt 4 Fahrzeuge, 214 statt 250 km**. Das belegt live, dass das Tool nicht auf die
-Daten hineingebaut wurde, sondern konfigurierbar ist.
+sichtbar: **3 Fahrzeuge, aber 197 statt 227 km (−13 % km), 15 statt 16 Runden und 18,3 statt 19,9 h**.
+Das belegt live, dass das Tool nicht auf die Daten hineingebaut wurde, sondern konfigurierbar ist.
 
 ## Offene Punkte (bewusst offen)
 
