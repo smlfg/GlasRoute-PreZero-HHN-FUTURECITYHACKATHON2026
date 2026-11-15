@@ -241,6 +241,10 @@ class FixedAreas(_Base):
         return ctx.active & today & (ctx.est_rate * (ctx.age + horizon) >= self.target)
 
 
+#: Longest rhythm for policy (h) in weeks (owner decision 15.11.: status quo intervals reach 8 weeks).
+MAX_RHYTHM_WEEKS = 8
+
+
 class AreaWeekRhythm(FixedAreas):
     """(h) Week rhythm per container on the 5 fixed areas of (f) (same k-means, same area days).
 
@@ -248,7 +252,7 @@ class AreaWeekRhythm(FixedAreas):
     time goes to the critical ones, the rhythm adapts after every new measurement.
 
     Rule (buffer = ``buffer_pct``, default 20; also run with 10 / 30):
-      * rhythm k_c ∈ {1, 2, 3, 4} weeks = clamp(floor((100 − buffer) / (r̂_c · 7)), 1, 4),
+      * rhythm k_c ∈ {1, …, 8} weeks = clamp(floor((100 − buffer) / (r̂_c · 7)), 1, 8),
         r̂_c = walk-forward estimate of the day of emptying (ratio of sums, readings with
         date < d only). k_c is recomputed after every emptying of c (``on_emptied``);
         before c's first emptying k_c follows the current r̂_c daily.
@@ -260,7 +264,7 @@ class AreaWeekRhythm(FixedAreas):
     """
 
     id = "h_area_week_rhythm"
-    label = "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–4 Wochen aus r̂, Sicherheit bei 100 − Puffer/2"
+    label = "(h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2"
 
     def __init__(self, *args, id: str | None = None, **kw):
         super().__init__(*args, **kw)
@@ -271,7 +275,7 @@ class AreaWeekRhythm(FixedAreas):
     def rhythm_of(self, est_rate: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore"):
             k = np.floor(self.target / (np.maximum(est_rate, 1e-9) * 7.0))
-        return np.clip(k, 1, 4).astype(np.int64)
+        return np.clip(k, 1, MAX_RHYTHM_WEEKS).astype(np.int64)
 
     def setup(self, static: Static) -> None:
         super().setup(static)
