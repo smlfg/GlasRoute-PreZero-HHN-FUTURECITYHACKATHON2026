@@ -16,8 +16,8 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 - **Leerungsrhythmus Weißglas:** 32,5 Tage ideal vs. 33 Tage tatsächlich (15,8 % zu selten geleert → Überläufe)
 - **Leerungszustand bei Besuch:** 30,1 % unter 50 % voll (Fahrt zu früh), 11,2 % überfüllt (≥ 110 %)
 - **Backtest-Genauigkeit:** MAE **19,9 pp** (unser Modell) vs. **22,3 pp** (Baseline / Mean of past)
-- **Fairer Benchmark (B1 → B4):** **−36,7 % km** (Bedarfs-Effekt: **29,9 %**, Routing-Effekt: **9,7 %**)
-- **Tages-Tour (15.04.2026, Stopp-Limit 25):** **227,2 km** für die 25 dringendsten Standorte (116,18 t, 3 LKW, 16 Runden, max. 7,96 h). Kein Gleich-zu-gleich-Vergleich (Teil-Tour vs. alles leeren), daher **keine Pitch-Zahl**; Hauptzahl bleibt **−36,7 %**.
+- **Ergebnis (Szenario-Simulation, 349 Tage, gleiche Glasmenge 7.613,95 t):** Drei Klassen statt eines Durchschnitts — siehe Tabelle auf Folie 8. Rohdaten-Zeile: 30,1 % / 58,7 % / 11,2 %.
+- **Tages-Tour (15.04.2026, Stopp-Limit 25):** **227,2 km** für die 25 dringendsten Standorte (116,18 t, 3 LKW, 16 Runden, max. 7,96 h). Kein Gleich-zu-gleich-Vergleich (Teil-Tour vs. alles leeren), daher **keine Pitch-Zahl**.
 
 ---
 
@@ -30,9 +30,9 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 | 3 | Data & Backtest | Füllstand ist vorhersagbar (Backtest schlägt Baseline) | Understanding | 25 s |
 | 4 | Solution | Vom Füllraten-Timer zur Freigabe & Closed Loop | Technology | 25 s |
 | 5 | Rechenkern 1/2 | Timer pro Container: Füllrate → Stand heute → fällig (echtes Beispiel 0058ed93) | Technology | 20 s |
-| 6 | Rechenkern 2/2 | Prozent → kg → Tour; Annahmen offen; wie −36,7 % entstehen | Technology | 20 s |
+| 6 | Rechenkern 2/2 | Prozent → kg → Tour; Annahmen offen gelegt | Technology | 20 s |
 | 7 | Live Demo | Tagestour 15.04.: 25 Stopps, 227,2 km, A/B-Replay | Feasibility | 25 s |
-| 8 | Result | −36,7 % km im fairen Benchmark (B1 → B4) | Problem & Benefit | 20 s |
+| 8 | Result | Der Durchschnitt lügt: 79 % statt 48 % im richtigen Fenster | Problem & Benefit | 20 s |
 | 9 | Kostenmodell | Jahressimulation, Kostenformel & Hebelannahmen | Feasibility | 25 s |
 | 10 | Honesty | Echte Messungen, simuliertes OSM-Mapping, 1-Sekunden-Swap | Reliability | 15 s |
 | 11 | Standortplanung | What-If Simulation für neue Standorte & Roadmap | Feasibility | 15 s |
@@ -169,7 +169,7 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
   - **25 Standorte bedient** · **227,2 km Gesamtfahrstrecke**
   - **3 Fahrzeuge im Einsatz** · **16 Entleerungs-Runden**
   - **116,18 t Glas gesammelt** · max. Schichtdauer **7,96 h** (voll im 8-h-Limit)
-  - Gesamt-Ersparnis nur über den fairen Vergleich: **<u>−36,7 % km</u>** (B1 → B4); die 25er-Tagestour ist eine Teil-Tour und wird nicht gegen B1 prozentuiert
+  - Die 83,4 % auf der Karte vergleichen nur diese Teil-Tour mit „alles leeren“ und sind **keine Ergebnis-Zahl**.
 - **Operative Rollen:** **<u>Disponentin (Auswahl → Tour → Freigabe)</u>** · Fahrer (nur freigegebene Stoppliste & Export).
 
 ### Speaker Notes
@@ -180,33 +180,31 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 
 ---
 
-## Slide 6 — Ergebnis: Der faire Benchmark (B0 → B4)
+## Slide 8 — Ergebnis: Der Durchschnitt lügt
 
-- **Folie:** „Ersparnis: −36,7 % km im fairen Vergleich"
+- **Folie:** „Der Durchschnitt lügt"
 - **Jury-Kriterium:** Problem & Benefit
-- **Zeit:** 25 s
+- **Zeit:** 20 s
 
 ### Folien-Text
 
-| Stufe | Modell / Strategie | Standorte | Fahrstrecke (km) | Runden | Ersparnis |
-|---|---|---:|---:|---:|---:|
-| **B0** | Status quo (Papierliste, Gebietsrunde) | 121 | 1.795,91 km | 95 | Baseline |
-| **B1** | Status quo optimiert (gleiche Standorte, TSP) | 121 | 1.662,70 km | 98 | −7,4 % |
-| **B2** | **<u>Bedarfsfilter</u>** (nur fällige ≥ 80 %, Nearest Neighbor) | **112** | **1.165,90 km** | 67 | **−29,9 %** (B1→B2) |
-| **B4** | **<u>Bedarfsfilter + Google OR-Tools VRP</u>** | **112** | **1.053,29 km** | **55** | **<u>−36,7 %</u>** (B1→B4) |
+**Kernsatz:** „Heute kommt jede dritte Leerung zu früh und jede sechste ist übervoll. Mit Takt pro Container landen 79 % statt 48 % im richtigen Fenster – bei gleicher Glasmenge.“
 
-- **Effekt-Zerlegung:**
-  - **Bedarfs-Effekt (Fälligkeitstimer): 29,9 %** der Strecke entfällt, weil halbleere Container nicht angefahren werden.
-  - **Routing-Effekt (OR-Tools): Weitere 9,7 %** Einsparung auf derselben Stopp-Menge.
-  - **Gesamtersparnis gegenüber Papierliste (B0 → B4): −41,4 %**.
-- **Betriebliche Validierung:**
-  > *„Wir können die betrieblichen Auswirkungen simulieren und unsere Annahmen offenlegen. Reale Kostenersparnisse müssen allerdings erst unter den tatsächlichen Betriebsregeln validiert werden.“*
+| | zu früh (< 50 %) | passt (50–100 %) | übervoll (> 100 %) |
+|---|---:|---:|---:|
+| Status quo | 35,9 % | 48,0 % | 16,1 % |
+| Gebiet + Wochentakt (Puffer 10 %) | 35,7 % | 60,8 % | 3,5 % |
+| **Takt pro Container** | **15,5 %** | **79,0 %** | **5,5 %** |
+| gemessen (Rohdaten) | 30,1 % | 58,7 % | 11,2 % |
+
+- Gleiche Glasmenge in jeder Zeile: **7.613,95 t**. Quelle: Szenario-Simulation, 349 Tage; letzte Zeile Rohdaten.
+- **Fußnote:** Standorte aus OpenStreetMap, IDs zufällig zugeordnet; belastbar sind die Verhältnisse. Takt pro Container braucht heute mehr Halte – Bündelung der Farben am Standort ist der nächste Schritt.
 
 ### Speaker Notes
 
-- **0–9 s:** „Wir haben einen wissenschaftlich fairen 4-Stufen-Benchmark gerechnet. Wenn PreZero heute die bestehende Route per TSP optimiert, fahren sie 1.662 km.“
-- **9–18 s:** „Fahren wir nur fällige Container an, sinkt die Strecke um 29,9 %. Optimiert Google OR-Tools die Runde, sinkt sie auf 1.053 km — minus 36,7 % Fahrstrecke.“
-- **18–20 s:** „Wie übersetzt sich das in Jahreskosten? Das haben wir mathematisch modelliert.“
+- **0–8 s:** „Der Durchschnitt lügt. Heute kommt jede dritte Leerung zu früh und jede sechste ist übervoll. Im Schnitt sieht das nach zwei Dritteln Füllung aus, aber dieser Schnitt besteht aus ‚halb leer‘ und ‚läuft über‘.“
+- **8–16 s:** „Mit Takt pro Container landen 79 Prozent statt 48 Prozent im richtigen Fenster – bei gleicher Glasmenge von 7.613,95 Tonnen.“
+- **16–20 s:** „Takt pro Container braucht heute mehr Halte. Nächster Schritt ist die Bündelung der Farben am Standort. Die Standorte stammen aus OpenStreetMap, die IDs sind zufällig zugeordnet; belastbar sind die Verhältnisse.“
 
 ---
 
@@ -221,17 +219,17 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 - **Drei-Komponenten-Kostenformel:**
   $$\text{Gesamtkosten} = (\text{Fahrzeugtage} \times 500\,\text{€}) + (\text{Crew-Stunden} \times 2 \times 32\,\text{€/h}) + (\text{Strecke in km} \times 0{,}65\,\text{€/km})$$
 - **Was die echten Daten zeigen (Status quo, 11.701 Leerungen):**
-  - **Ø Füllstand bei Leerung:** 66,0 %; **1.192** Leerungen „übervoll“.
+  - **Ø Füllstand bei Leerung:** 66,0 % — ein Schnitt, der „zu früh“ und „übervoll“ verdeckt (Folie 8); **1.192** Leerungen „übervoll“.
   - **Braunglas:** 89,1 % der Leerungen zu früh (Median alle 42 statt ~95 Tage, `backtest_summary.json`).
-  - **Massenerhaltung:** In jedem Szenario fällt dieselbe Glasmenge an; gespart wird nur an Halten, nie an Glas.
+  - **Massenerhaltung:** In jedem Szenario fällt dieselbe Glasmenge an (7.613,95 t).
 - **Ehrliche Schlussfolgerung & der Haken:**
   > *„Ein Timer nur pro Container reißt die Glasfarben eines Standorts auseinander — mehr Halte statt weniger. Darum: Takt pro Container, gebündelt pro Standort und in festen Gebieten. Halbvolle Container sehen wir seltener, deshalb kontrollieren wir regelmäßig ein paar Container zufällig.“*
 
 ### Speaker Notes
 
 - **0–8 s:** „Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €).“
-- **8–16 s:** „Der größte Hebel sind die Einsatztage, nicht der Sprit. Und: In jedem Szenario fällt gleich viel Glas an — wir holen nicht mehr, wir holen es mit weniger Halten.“
-- **16–25 s:** „Heute wird bei 66 % geleert, 1.192 Mal war der Container übervoll, Braunglas wird zu 89 % zu früh geleert. Der Hebel ist der Takt pro Container, gebündelt pro Standort.“
+- **8–16 s:** „Der größte Hebel sind die Einsatztage, nicht der Sprit. Und: In jedem Szenario fällt dieselbe Glasmenge an — 7.613,95 Tonnen.“
+- **16–25 s:** „Der Schnitt von 66 Prozent verdeckt, dass heute jede dritte Leerung zu früh kommt und jede sechste übervoll ist. Der Hebel ist der Takt pro Container; die Bündelung der Farben am Standort folgt.“
 
 ---
 
@@ -293,15 +291,15 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 - **11 voll konfigurierbare Betriebsvariablen (`prezero_config.json`):**
   - Nutzlast (11 t), Ladevolumen (26 m³), Schichtzeit (8 h), Glasdichte (400 kg/m³), Hub- & Entladezeiten.
   - Das Tool ist kein starrer Prototyp, sondern passt sich sofort an jeden Fahrzeugtyp an.
-- **Zwei strategische Optionen für PreZero:**
-  - **Option A (Saubere Stadt):** Gleiche Flotte wie heute, frei werdende Halte gehen an kritische Standorte: **weniger Überläufe**.
-  - **Option B (Maximale Effizienz):** **−36,7 % Fahrstrecke**, weniger Fahrzeugverschleiß und deutliche CO₂-Reduktion.
+- **Was die Rechnung zeigt — und der nächste Schritt:**
+  - **Heute: Takt pro Container:** 79 % statt 48 % im richtigen Fenster, bei gleicher Glasmenge. Dafür braucht der Tagestakt heute mehr Halte.
+  - **Nächster Schritt:** Bündelung der Farben am Standort. Wer schon hält, leert, was ohnehin fast voll ist.
 - **Unser Ask:** Drei reale Zahlen von PreZero (Depot-Standort, Fahrzeugflotte, echte Koordinaten) für einen 4-wöchigen Pilotbetrieb.
 
 ### Speaker Notes
 
 - **0–7 s:** „Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar.“
-- **7–14 s:** „PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und die frei werdenden Halte an die kritischen Standorte geben — weniger Überläufe. Oder 36,7 % der Kilometer einsparen.“
+- **7–14 s:** „Mit Takt pro Container landen 79 Prozent statt 48 Prozent im richtigen Fenster, bei gleicher Glasmenge. Der nächste Schritt ist die Bündelung der Farben am Standort.“
 - **14–20 s:** „Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.“
 
 ---

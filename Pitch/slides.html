@@ -540,6 +540,16 @@
     .thumb-title { font-size: 14px; font-weight: 700; color: white; line-height: 1.2; }
     .thumb-time { font-size: 11px; color: var(--text-muted); }
 
+    .slide-footnote {
+      font-size: 0.72vw;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-top: 0.3vw;
+    }
+    @media print {
+      .slide-footnote { font-size: 9.5pt !important; }
+    }
+
     /* Print Styles */
     @media print {
       @page {
@@ -1109,11 +1119,11 @@
     <!-- ==========================================
          SLIDE 6: RECHENKERN 2/2 — VON PROZENT ZUR TOUR
          ========================================== -->
-    <div class="slide" data-slide="6" data-time="20" data-notes="(0-7s): Aus Prozent werden Tonnen: 2,5 Kubikmeter mal 400 Kilo pro Kubikmeter – zehn Kilo je Prozent. Damit packen wir Runden: höchstens 11 Tonnen, 26 Kubikmeter und 8 Stunden Schicht, inklusive Fahren, Rüsten, Heben und Entladen. (7-14s): Die Strecke ist Luftlinie mal 1,35 bei 25 km/h. Das sind benannte Annahmen, die PreZero in einer Config-Datei ersetzt – ohne Codeänderung. (14-20s): Der Vergleich ist fair, weil für alle Varianten dieselben Regeln gelten. Erst nur fällige Container fahren: minus 29,9 Prozent. Dann besser sortieren: minus 9,7 Prozent vom Rest. Zusammen minus 36,7 Prozent gegenüber dem optimierten Status quo.">
+    <div class="slide" data-slide="6" data-time="20" data-notes="(0-7s): Aus Prozent werden Tonnen: 2,5 Kubikmeter mal 400 Kilo pro Kubikmeter – zehn Kilo je Prozent. Damit packen wir Runden: höchstens 11 Tonnen, 26 Kubikmeter und 8 Stunden Schicht, inklusive Fahren, Rüsten, Heben und Entladen. (7-14s): Die Strecke ist Luftlinie mal 1,35 bei 25 km/h. Das sind benannte Annahmen, die PreZero in einer Config-Datei ersetzt – ohne Codeänderung. (14-20s): Aus den Daten kommt nur die Füllrate. Was das für die Leerungen bedeutet, zeigt die nächste Ergebnisfolie: nicht ein Durchschnitt, sondern drei Klassen.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">06 · Rechenkern 2/2</span>
-          <h1 class="slide-title">Von Prozent zu Tonnen zu Tour: so entstehen die −36,7 %</h1>
+          <h1 class="slide-title">Von Prozent zu Tonnen zu Tour: die Annahmen liegen offen</h1>
         </div>
         <div class="prezero-badge">
           <div class="prezero-dot"></div>
@@ -1148,59 +1158,35 @@
             <div class="formula"><span class="f-tag">Strecke</span> s = Haversine-Luftlinie &middot; 1,35 &nbsp;(Umwegfaktor)</div>
             <div style="font-size: 0.68vw; color: var(--text-muted); margin-top: 0.3vw;">Voll oder Schicht knapp: Fahrt zum Recyclinghof, 20 min entladen; passt der nächste Stopp samt Rückweg nicht mehr, startet ein neues Fahrzeug.</div>
           </div>
-
-          <div class="card card-warning" style="margin-top: 0.4vw; padding: 0.6vw;">
-            <div style="font-size: 0.82vw; font-weight: 700; color: var(--warning);">FREI GESETZT &ndash; DURCH PREZERO ERSETZBAR</div>
-            <p style="font-size: 0.74vw; color: #f1f5f9; margin-top: 0.2vw; line-height: 1.4;">
-              Dichte 400 kg/m&sup3; &middot; Behälter 2,5 m&sup3; &middot; 11 t / 26 m&sup3; &middot; Umweg 1,35 &middot; 25 km/h &middot; Schicht 8 h &middot; 2 + 3 + 20 min &middot; Schwelle 80 % &middot; Stopp-Limit 25. Betriebswerte in <span class="sol-hl">prezero_config.json</span>, ohne Codeänderung austauschbar.
-            </p>
-          </div>
         </div>
 
-        <div class="col" style="flex: 1.25;">
-          <div class="card" style="padding: 0.8vw;">
-            <div style="font-size: 0.95vw; font-weight: 700; color: white; margin-bottom: 0.5vw;"><span class="sol-badge">VERGLEICH</span> Gleiche Regeln für alle Varianten, 15.04.2026</div>
-            <div class="bar-row" style="margin: 0.4vw 0;">
-              <div class="bar-label" style="width: 36%; font-size: 0.76vw;">B1 alles leeren, optimiert<br>121 Standorte</div>
-              <div class="bar-track" style="height: 1.5vw;"><div class="bar-fill danger" style="width: 100%;">1.662,70 km</div></div>
-            </div>
-            <div class="bar-row" style="margin: 0.4vw 0;">
-              <div class="bar-label" style="width: 36%; font-size: 0.76vw;">B2 nur fällige (&ge; 80 %)<br>112 Standorte</div>
-              <div class="bar-track" style="height: 1.5vw;"><div class="bar-fill info" style="width: 70.1%;">1.165,90 km</div></div>
-            </div>
-            <div class="bar-row" style="margin: 0.4vw 0;">
-              <div class="bar-label" style="width: 36%; font-size: 0.76vw;">B4 fällige + OR-Tools<br>112 Standorte</div>
-              <div class="bar-track" style="height: 1.5vw;"><div class="bar-fill accent" style="width: 63.4%;">1.053,29 km</div></div>
-            </div>
+        <div class="col" style="flex: 1.05;">
+          <div class="card card-warning" style="padding: 0.8vw;">
+            <div style="font-size: 0.9vw; font-weight: 700; color: var(--warning);">FREI GESETZT &ndash; DURCH PREZERO ERSETZBAR</div>
+            <p style="font-size: 0.8vw; color: #f1f5f9; margin-top: 0.35vw; line-height: 1.45;">
+              Dichte 400 kg/m&sup3; &middot; Behälter 2,5 m&sup3; &middot; 11 t / 26 m&sup3; &middot; Umweg 1,35 &middot; 25 km/h &middot; Schicht 8 h &middot; 2 + 3 + 20 min &middot; Schwelle 80 % &middot; Stopp-Limit 25.
+            </p>
+            <p style="font-size: 0.8vw; color: #f1f5f9; margin-top: 0.4vw; line-height: 1.45;">
+              Betriebswerte in <span class="sol-hl">prezero_config.json</span>, ohne Codeänderung austauschbar.
+            </p>
           </div>
 
-          <div class="card card-highlight" style="margin-top: 0.4vw; padding: 0.8vw;">
-            <div class="formula"><span class="f-tag">Bedarf</span> 1 &minus; 1.165,90 / 1.662,70 = <strong>29,9 %</strong></div>
-            <div class="formula"><span class="f-tag">Routing</span> 1 &minus; 1.053,29 / 1.165,90 = <strong>9,7 %</strong> &nbsp;(vom Rest)</div>
-            <div class="formula"><span class="f-tag">Gesamt</span> 1 &minus; (1 &minus; 0,299)(1 &minus; 0,097) = <strong style="color: var(--accent);">36,7 %</strong></div>
-          </div>
-
-          <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0.4vw;">
-            <div class="stat-card" style="border-color: var(--accent); padding: 0.5vw;">
-              <div class="stat-val accent" style="font-size: 1.5vw;">−36,7 %</div>
-              <div class="stat-label" style="font-size: 0.7vw;">Hauptzahl, vs. B1 fair</div>
-            </div>
-            <div class="stat-card" style="padding: 0.5vw;">
-              <div class="stat-val" style="font-size: 1.5vw;">29–67 %</div>
-              <div class="stat-label" style="font-size: 0.7vw;">Bedarfs-Effekt, 4 Stichtage</div>
-            </div>
-            <div class="stat-card" style="padding: 0.5vw;">
-              <div class="stat-val info" style="font-size: 1.5vw;">12 Fälle</div>
-              <div class="stat-label" style="font-size: 0.7vw;">4 Tage &times; 3 Seeds: 32,9–70,7 %</div>
-            </div>
+          <div class="card card-highlight" style="margin-top: 0.5vw; padding: 0.8vw;">
+            <div style="font-size: 0.9vw; font-weight: 700; color: white; margin-bottom: 0.35vw;">Was die Daten liefern &mdash; und was nicht</div>
+            <p style="font-size: 0.8vw; color: #f1f5f9; line-height: 1.45;">
+              Aus den Messungen kommt nur die Füllrate. Masse, Geschwindigkeit und Schichtzeiten sind benannte Parameter, keine Messergebnisse.
+            </p>
+            <p style="font-size: 0.8vw; color: #f1f5f9; margin-top: 0.35vw; line-height: 1.45;">
+              Die Wirkung auf die Leerungen steht auf der Ergebnisfolie: drei Klassen statt eines Durchschnitts.
+            </p>
           </div>
         </div>
       </div>
 
       <div class="slide-footer">
         <div class="key-takeaway">
-          <span class="badge">FAIR GERECHNET</span>
-          Aus den Daten kommt nur die Füllrate. Jede andere Zahl ist ein benannter, austauschbarer Parameter &ndash; und die −36,7 % sind ihr Produkt.
+          <span class="badge">OFFEN GELEGT</span>
+          Aus den Daten kommt nur die Füllrate. Jede andere Zahl ist ein benannter, austauschbarer Parameter.
         </div>
         <div>Folie 6 / 12 · 20 s</div>
       </div>
@@ -1210,7 +1196,7 @@
     <!-- ==========================================
          SLIDE 7: LIVE DEMO & A/B REPLAY
          ========================================== -->
-    <div class="slide" data-slide="7" data-time="25" data-notes="(0-8s): Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen. (8-17s): Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht. (17-25s): Im Replay sehen Sie live, wie die LKW fahren — und dass nur die wirklich fälligen Container angefahren werden. Die Gesamt-Ersparnis zeigt gleich der faire Vergleich: minus 36,7 Prozent.">
+    <div class="slide" data-slide="7" data-time="25" data-notes="(0-8s): Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen. (8-17s): Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht. (17-25s): Im Replay sehen Sie live, wie die LKW fahren — und dass nur die wirklich fälligen Container angefahren werden. Die 83,4 Prozent auf der Karte vergleichen nur diese Teil-Tour mit „alles leeren“ und sind keine Ergebnis-Zahl.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">07 · Live Demonstration</span>
@@ -1285,7 +1271,7 @@
       <div class="slide-footer">
         <div class="key-takeaway">
           <span class="badge">EINSATZREIF</span>
-          227,2 km für die 25 dringendsten Standorte, alle Schichtzeiten eingehalten. Die belastbare Gesamt-Ersparnis zeigt der faire Vergleich: −36,7 % km.
+          227,2 km, 25 Stopps, Schichtzeiten eingehalten. Die 83,4 % auf der Karte sind keine Ergebnis-Zahl.
         </div>
         <div>Folie 7 / 12 · 25 s</div>
       </div>
@@ -1293,119 +1279,74 @@
 
 
     <!-- ==========================================
-         SLIDE 8: BENCHMARK RESULTS
+         SLIDE 8: DER DURCHSCHNITT LÜGT
          ========================================== -->
-    <div class="slide" data-slide="8" data-time="20" data-notes="(0-9s): Wir haben einen wissenschaftlich fairen 4-Stufen-Benchmark gerechnet. Wenn PreZero heute die bestehende Route per TSP optimiert, fahren sie 1.662 km. (9-18s): Fahren wir nur fällige Container an, sinkt die Strecke um 29,9%. Optimiert Google OR-Tools die Runde, sinkt sie auf 1.053 km — minus 36,7% Fahrstrecke. (18-20s): Wie übersetzt sich das in Jahreskosten? Das haben wir mathematisch modelliert.">
+    <div class="slide" data-slide="8" data-time="20" data-notes="(0-8s): Der Durchschnitt lügt. Heute kommt jede dritte Leerung zu früh und jede sechste ist übervoll. Im Schnitt sieht das nach zwei Dritteln Füllung aus, aber dieser Schnitt besteht aus „halb leer“ und „läuft über“. (8-16s): Mit Takt pro Container landen 79 Prozent statt 48 Prozent im richtigen Fenster – bei gleicher Glasmenge von 7.613,95 Tonnen. (16-20s): Takt pro Container braucht heute mehr Halte. Nächster Schritt ist die Bündelung der Farben am Standort. Die Standorte stammen aus OpenStreetMap, die IDs sind zufällig zugeordnet; belastbar sind die Verhältnisse.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">08 · Problem & Benefit</span>
-          <h1 class="slide-title">Ersparnis: −36,7 % km im fairen 4-Stufen-Benchmark</h1>
+          <span class="slide-tag">08 · Ergebnis</span>
+          <h1 class="slide-title">Der Durchschnitt lügt</h1>
         </div>
         <div class="prezero-badge">
           <div class="prezero-dot"></div>
-          <span>B0 → B4 Ablationsstudie</span>
+          <span>7.613,95 t in jeder Zeile · 349 Tage</span>
         </div>
       </div>
 
-      <div class="slide-body">
-        <div class="col" style="flex: 1.15;">
-          <table class="slide-table card" style="display: table; font-size: 0.8vw; padding: 0.5vw;">
-            <thead>
-              <tr>
-                <th>Stufe</th>
-                <th>Strategie</th>
-                <th>Stopps</th>
-                <th>Strecke</th>
-                <th>Runden</th>
-                <th>Delta vs. B1</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>B0</strong></td>
-                <td>Status quo (Papier)</td>
-                <td>121</td>
-                <td>1.795,91 km</td>
-                <td>95</td>
-                <td>Baseline</td>
-              </tr>
-              <tr>
-                <td><strong>B1</strong></td>
-                <td>Status quo opt. (TSP)</td>
-                <td>121</td>
-                <td>1.662,70 km</td>
-                <td>98</td>
-                <td>Referenz</td>
-              </tr>
-              <tr style="background: rgba(56, 189, 248, 0.08);">
-                <td><strong>B2</strong></td>
-                <td><span class="sol-hl">Bedarf &ge; 80 %</span></td>
-                <td>112</td>
-                <td>1.165,90 km</td>
-                <td>67</td>
-                <td><strong style="color: var(--info);">−29,9 %</strong></td>
-              </tr>
-              <tr class="highlight-row">
-                <td><strong>B4</strong></td>
-                <td><span class="sol-hl">Bedarf + OR-Tools</span></td>
-                <td><strong>112</strong></td>
-                <td><strong>1.053,29 km</strong></td>
-                <td><strong>55</strong></td>
-                <td><strong style="color: var(--accent);">−36,7 %</strong></td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div class="card" style="margin-top: 0.4vw; padding: 0.6vw;">
-            <div style="font-size: 0.82vw; font-weight: 700; color: white; margin-bottom: 0.2vw;"><span class="sol-badge">LÖSUNG</span> Effekt-Zerlegung</div>
-            <div style="display: flex; gap: 0.6vw; font-size: 0.78vw;">
-              <div style="flex: 3; background: #0f172a; padding: 0.5vw; border-radius: 6px; border-left: 3px solid var(--info);">
-                <span class="sol-hl">29,9 % Bedarfs-Effekt:</span> Weglassen halbleerer Container (&lt; 80 %).
-              </div>
-              <div style="flex: 1; background: #0f172a; padding: 0.5vw; border-radius: 6px; border-left: 3px solid var(--accent);">
-                <span class="sol-hl">9,7 % Routing:</span> OR-Tools Optimierung.
-              </div>
-            </div>
-          </div>
-
-          <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0.4vw;">
-            <div class="stat-card" style="border-color: var(--accent); padding: 0.5vw;">
-              <div class="stat-val accent" style="font-size: 1.5vw;">−36,7 %</div>
-              <div class="stat-label" style="font-size: 0.7vw;">vs. B1 fair</div>
-            </div>
-            <div class="stat-card" style="padding: 0.5vw;">
-              <div class="stat-val" style="font-size: 1.5vw;">−41,4 %</div>
-              <div class="stat-label" style="font-size: 0.7vw;">vs. B0 Papier</div>
-            </div>
-            <div class="stat-card" style="border-color: var(--info); padding: 0.5vw;">
-              <div class="stat-val info" style="font-size: 1.5vw;">−609 km</div>
-              <div class="stat-label" style="font-size: 0.7vw;">Streckenersparnis</div>
-            </div>
-          </div>
+      <div class="slide-body" style="flex-direction: column; gap: 1.1vw;">
+        <div class="card card-highlight" style="padding: 0.75vw 1vw;">
+          <p style="font-size: 1.15vw; font-weight: 700; color: #ffffff; line-height: 1.4;">
+            Heute kommt jede dritte Leerung zu früh und jede sechste ist übervoll. Mit Takt pro Container landen 79 % statt 48 % im richtigen Fenster &ndash; bei gleicher Glasmenge.
+          </p>
         </div>
 
-        <div class="col" style="flex: 1.25;">
-          <div class="screenshot-frame">
-            <div class="screenshot-bar">
-              <div class="screenshot-dots">
-                <span class="screenshot-dot red"></span>
-                <span class="screenshot-dot yellow"></span>
-                <span class="screenshot-dot green"></span>
-              </div>
-              <span class="screenshot-label">Live-Cockpit · Tab 7: Fairer 4-Stufen Benchmark (B0 &rarr; B4)</span>
-              <span class="screenshot-badge">Ablationsstudie</span>
-            </div>
-            <div class="screenshot-body">
-              <img class="screenshot-img" src="screenshots/slide_06_benchmark_table.png" alt="Live-Cockpit Tab 7: Benchmark">
-            </div>
-          </div>
+        <table class="slide-table card" style="display: table; width: 100%; font-size: 1.05vw; padding: 0.4vw;">
+          <thead>
+            <tr>
+              <th style="width: 34%;"></th>
+              <th style="color: var(--warning);">zu früh (&lt; 50 %)</th>
+              <th style="color: var(--accent);">passt (50–100 %)</th>
+              <th style="color: var(--danger);">übervoll (&gt; 100 %)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Status quo</td>
+              <td>35,9 %</td>
+              <td>48,0 %</td>
+              <td>16,1 %</td>
+            </tr>
+            <tr>
+              <td>Gebiet + Wochentakt (Puffer 10 %)</td>
+              <td>35,7 %</td>
+              <td>60,8 %</td>
+              <td>3,5 %</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Takt pro Container</strong></td>
+              <td><strong>15,5 %</strong></td>
+              <td><strong style="color: var(--accent); font-size: 1.25vw;">79,0 %</strong></td>
+              <td><strong>5,5 %</strong></td>
+            </tr>
+            <tr>
+              <td>gemessen (Rohdaten)</td>
+              <td>30,1 %</td>
+              <td>58,7 %</td>
+              <td>11,2 %</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="slide-footnote">
+          Quelle: Szenario-Simulation, 349 Tage, gleiche Glasmenge 7.613,95 t in jeder Zeile; letzte Zeile Rohdaten.
+          Standorte aus OpenStreetMap, IDs zufällig zugeordnet; belastbar sind die Verhältnisse. Takt pro Container braucht heute mehr Halte &ndash; Bündelung der Farben am Standort ist der nächste Schritt.
         </div>
       </div>
 
       <div class="slide-footer">
         <div class="key-takeaway">
-          <span class="badge">SAUBER BELEGT</span>
-          Keine Milchmädchenrechnung: Bedarfs- und Routing-Effekte sind mathematisch sauber isoliert.
+          <span class="badge">GLEICHE GLASMENGE</span>
+          79 % statt 48 % im richtigen Fenster. Der Durchschnitt aus „zu früh“ und „übervoll“ verdeckt genau das.
         </div>
         <div>Folie 8 / 12 · 20 s</div>
       </div>
@@ -1415,7 +1356,7 @@
     <!-- ==========================================
          SLIDE 9: COST MODEL & SIMULATION
          ========================================== -->
-    <div class="slide" data-slide="9" data-time="25" data-notes="(0-8s): Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €). (8-16s): Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle treiben die Fahrzeugtage hoch. (16-25s): Wichtig: In jedem Szenario fällt gleich viel Glas an — wir holen nicht mehr, wir holen es mit weniger Halten. Heute wird bei 66 % geleert, 1.192 Mal war der Container übervoll, Braunglas wird zu 89 % zu früh geleert. Der Hebel ist der Takt pro Container, gebündelt pro Standort.">
+    <div class="slide" data-slide="9" data-time="25" data-notes="(0-8s): Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €). (8-16s): Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle treiben die Fahrzeugtage hoch. (16-25s): In jedem Szenario fällt dieselbe Glasmenge an: 7.613,95 Tonnen. Der Schnitt von 66 Prozent verdeckt, dass heute jede dritte Leerung zu früh kommt und jede sechste übervoll ist. Der Hebel ist der Takt pro Container; die Bündelung der Farben am Standort folgt als nächster Schritt.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">09 · Economics & Feasibility</span>
@@ -1454,7 +1395,7 @@
               <tbody>
                 <tr>
                   <td>Ø Füllstand bei Leerung</td>
-                  <td><strong>66,0 %</strong></td>
+                  <td><strong>66,0 %</strong> <span style="color: var(--text-muted); font-weight: 500;">(Schnitt, der zu früh und übervoll verdeckt — Folie 8)</span></td>
                   <td>11.701 Messungen</td>
                 </tr>
                 <tr>
@@ -1469,7 +1410,7 @@
                 </tr>
                 <tr class="highlight-row">
                   <td><span class="sol-badge">REGEL</span> <span class="sol-hl">Massenerhaltung</span></td>
-                  <td colspan="2"><span class="sol-hl">Gleiche Glasmenge in jedem Szenario — gespart wird nur an Halten</span></td>
+                  <td colspan="2"><span class="sol-hl">Gleiche Glasmenge in jedem Szenario: 7.613,95 t</span></td>
                 </tr>
               </tbody>
             </table>
@@ -1479,7 +1420,7 @@
             <div style="font-size: 0.8vw; font-weight: 700; color: var(--warning);">EHRLICHE VALIDIERUNG &amp; DER HAKEN</div>
             <p style="font-size: 0.75vw; color: #f1f5f9; margin-top: 0.2vw; line-height: 1.35; font-style: italic;">
               „Ein Timer nur pro Container reißt die Glasfarben eines Standorts auseinander — mehr Halte statt weniger.<br>
-              <strong>Darum:</strong> Takt pro Container, gebündelt pro Standort und in festen Gebieten.<br>
+              <strong>Darum:</strong> Takt pro Container; Bündelung der Farben am Standort ist der nächste Schritt.<br>
               <strong>Haken:</strong> Halbvolle Container sehen wir seltener — Zufallskontrollen kalibrieren nach.“
             </p>
           </div>
@@ -1506,7 +1447,7 @@
       <div class="slide-footer">
         <div class="key-takeaway">
           <span class="badge">KOSTEN-HEBEL</span>
-          Gleiche Glasmenge, weniger Halte: Takt pro Container, gebündelt pro Standort. Haken ehrlich durch Zufallsstichproben gelöst.
+          Gleiche Glasmenge 7.613,95 t. Der Schnitt verdeckt zu früh und übervoll; der Takt pro Container ist der Hebel, Bündelung folgt.
         </div>
         <div>Folie 9 / 12 · 25 s</div>
       </div>
@@ -1656,7 +1597,7 @@
     <!-- ==========================================
          SLIDE 12: THE ASK & PARTNERSHIP
          ========================================== -->
-    <div class="slide" data-slide="12" data-time="20" data-notes="(0-7s): Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar. (7-14s): PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und die frei werdenden Halte an die kritischen Standorte geben — weniger Überläufe. Oder 36,7% der Kilometer einsparen. (14-20s): Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.">
+    <div class="slide" data-slide="12" data-time="20" data-notes="(0-7s): Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar. (7-14s): Mit Takt pro Container landen 79 Prozent statt 48 Prozent im richtigen Fenster, bei gleicher Glasmenge. Der nächste Schritt ist die Bündelung der Farben am Standort: Wer schon hält, leert, was ohnehin fast voll ist. (14-20s): Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">12 · Next Steps &amp; Value</span>
@@ -1671,18 +1612,18 @@
       <div class="slide-body">
         <div class="col" style="flex: 1.15;">
           <div class="card card-highlight" style="padding: 0.7vw;">
-            <h3 style="font-size: 0.95vw; color: white; margin-bottom: 0.3vw;">Zwei strategische Optionen für PreZero</h3>
+            <h3 style="font-size: 0.95vw; color: white; margin-bottom: 0.3vw;">Was die Rechnung zeigt — und der nächste Schritt</h3>
             <div style="display: flex; flex-direction: column; gap: 0.4vw;">
               <div style="background: #0f172a; padding: 0.5vw; border-radius: 6px; border-left: 3px solid var(--accent);">
-                <div style="font-size: 0.85vw; font-weight: 800; color: var(--accent);">Option A: Saubere Stadt</div>
+                <div style="font-size: 0.85vw; font-weight: 800; color: var(--accent);">Heute: der Takt pro Container</div>
                 <div style="font-size: 0.75vw; color: #f1f5f9; margin-top: 0.1vw;">
-                  Gleiche Flottengröße, frei werdende Halte gehen an <span class="sol-hl">kritische Standorte: weniger Überläufe</span>.
+                  <span class="sol-hl">79 % statt 48 % im richtigen Fenster</span>, bei gleicher Glasmenge. Dafür braucht der Tagestakt heute mehr Halte.
                 </div>
               </div>
               <div style="background: #0f172a; padding: 0.5vw; border-radius: 6px; border-left: 3px solid var(--info);">
-                <div style="font-size: 0.85vw; font-weight: 800; color: var(--info);">Option B: Maximale Effizienz</div>
+                <div style="font-size: 0.85vw; font-weight: 800; color: var(--info);">Nächster Schritt: Bündelung am Standort</div>
                 <div style="font-size: 0.75vw; color: #f1f5f9; margin-top: 0.1vw;">
-                  <span class="sol-hl">−36,7 % Fahrstrecke</span> einsparen, CO₂-Bilanz senken, Verschleiß minimieren.
+                  Wer am Standort steht, leert, was ohnehin fast voll ist. Die drei Farben stehen nebeneinander.
                 </div>
               </div>
             </div>

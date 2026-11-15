@@ -32,7 +32,7 @@ Der Routing-Effekt ist mit 9,7 % (Spanne 2,3–14,1 %) bewusst der kleinere Hebe
 ## 2. Warum „81 %“, wenn die Standorte erfunden sind?
 
 **Die 81 % gibt es nicht mehr.** „24,1 / 70,7 / 81 %“ beruhten auf Dauersensor-Annahme und festem Saisonfaktor und sind ausdrücklich ungültig (`docs/STAKEHOLDER.md:138`); die verwandte Zahl „102“ in `Pitch/demo_facts.txt` meint 102 *fällige Standorte, die das 25-Stopp-Limit offenlässt*, keine Ersparnis.
-Auch die 83,4 % auf der Karte vergleichen nur eine Teil-Tour (25 von 127 Standorten) mit „alles leeren“ und sind laut `Pitch/NOTES.md` keine Pitch-Zahl; belastbar sind die Verhältnisse 29,9 % / 9,7 % / 36,7 %, nicht absolute km.
+Auch die 83,4 % auf der Karte vergleichen nur eine Teil-Tour (25 von 127 Standorten) mit „alles leeren“ und sind keine Pitch-Zahl. Die Ergebnisfolie zeigt die drei Leerungs-Klassen über 349 Tage (gleiche Glasmenge 7.613,95 t), nicht den Stichtags-km-Benchmark.
 
 ## 3. Was, wenn der Fahrer falsch schätzt? — **teilweise OPEN**
 
@@ -62,12 +62,12 @@ Aber nur Altglas ist echt: 11.701 Messungen; Papier, Bio, Gastro und Plastik sin
 ## 8. Warum fährt die Jahressimulation *mehr* Kilometer als der Status quo?
 
 **Weil ein reiner Timer pro Container die Glasfarben eines Standorts auseinanderreißt.** Die alte Jahressimulation hatte einen Rechenfehler (mehr Glas gesammelt als produziert, `docs/MODEL_SPEC.md` §2); korrigiert fällt in jedem Szenario dieselbe Glasmenge an. Bei gleicher Menge fährt der reine 80-%-Timer trotzdem mehr, weil er weiß, grün und braun eines Standorts an verschiedenen Tagen holt: mehr als doppelt so viele Halte bei fast gleich vielen Leerungen.
-Daraus folgt unser Modell: Takt pro Container, aber gebündelt pro Standort und in festen Gebieten. Die km-Ersparnis belegt bisher nur der Stichtags-Benchmark (B1→B4, −36,7 %); der Szenario-Vergleich über das Jahr läuft.
+Daraus folgt unser Modell: Takt pro Container; Bündelung der Farben am Standort ist der nächste Schritt. Die Ergebnisfolie zeigt drei Leerungs-Klassen über 349 Tage bei gleicher Glasmenge, nicht eine km-Hauptzahl.
 
 ## 9. Warum vergleicht ihr gegen B1 (optimierter Status quo) und nicht gegen die Papierliste?
 
 **Weil B1 die härtere, fairere Baseline ist.** B1 leert alle 121 Standorte mit optimierter Reihenfolge und denselben Regeln (11 t, 26 m³, 8 h) wie unsere Varianten (`scripts/benchmark.py:270-274`), die Papierliste B0 wäre mit 41,4 % schmeichelhafter (`docs/BENCHMARK.md`).
-Gegen B1 ergibt sich 29,9 % Bedarfs- plus 9,7 % Routing-Effekt = 36,7 %, über 12 Fälle 32,9–70,7 %; der Status quo „Gebiet für Gebiet“ selbst ist aber nur aus Messreihen rekonstruiert, nicht aus Tourprotokollen (`docs/STAKEHOLDER.md:52-67`).
+Der Stichtags-Benchmark gegen B1 ergibt 29,9 % Bedarfs- plus 9,7 % Routing-Effekt = 36,7 %, über 12 Fälle 32,9–70,7 %; das ist eine Tagesrechnung, nicht die Pitch-Hauptzahl. Der Status quo „Gebiet für Gebiet“ selbst ist nur aus Messreihen rekonstruiert, nicht aus Tourprotokollen (`docs/STAKEHOLDER.md:52-67`).
 
 ## 10. Wie viele Überläufe verpasst euer Timer?
 

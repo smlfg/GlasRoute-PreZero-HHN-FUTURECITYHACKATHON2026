@@ -1,6 +1,6 @@
 # Sprechtext GlasRoute (Ziel: 3:30 min, gesprochen ca. 2:50 bis 3:10)
 
-Stand: nach Probepitch-Feedback. Reihenfolge: Hook, Daten, Lösung, Ergebnis, eine Zeile Ehrlichkeit, Schluss mit der Hauptzahl.
+Stand: 15.11.2026, nach Korrektur der Ergebniszahlen. Reihenfolge: Hook, Daten, Lösung, Ergebnis (drei Klassen), eine Zeile Ehrlichkeit, Schluss.
 
 ## Einstieg (ca. 25 s)
 „Ich wohne direkt an der Straße und höre jedes Mal, wenn der Glascontainer geleert wird. Und ich frage mich: Wie voll war der eigentlich? In Heilbronn war er bei **30 Prozent aller Leerungen nicht mal halb voll**. Gleichzeitig gab es **1.192 Überläufe**. Der Grund: feste Gebietsrunden. Man fährt überall hin, weil man ‚eh vorbeikommt‘.“
@@ -14,21 +14,21 @@ Stand: nach Probepitch-Feedback. Reihenfolge: Hook, Daten, Lösung, Ergebnis, ei
 Weniger Fahrten heißt vollere LKW. Deshalb plant das Routing 11 Tonnen, 26 Kubikmeter, die 8-Stunden-Schicht und die Entladung mit. Die Disponentin gibt die Tour frei, kein LKW fährt autonom.“
 
 ## Ergebnis (ca. 30 s)
-„Im fairen Vergleich, mit denselben Regeln für alle Varianten: **29,9 Prozent weniger Strecke**, weil wir halbleere Container weglassen, und **9,7 Prozent** durch bessere Routen. Zusammen sind das **36,7 Prozent weniger Kilometer**.“
+„Der Durchschnitt lügt. **Heute kommt jede dritte Leerung zu früh und jede sechste ist übervoll.** Im Schnitt sieht das nach zwei Dritteln Füllung aus, aber dieser Schnitt besteht aus ‚halb leer‘ und ‚läuft über‘. **Mit Takt pro Container landen 79 Prozent statt 48 Prozent im richtigen Fenster – bei gleicher Glasmenge.**“
 
 ## Ehrlichkeit (ca. 10 s, einmal, selbstbewusst)
-„Die Füllstände sind echt, die Standorte simuliert. Mit euren echten Standorten läuft es ohne Codeänderung.“
+„Die Füllstände sind echt, die Standorte simuliert. Mit euren echten Standorten läuft es ohne Codeänderung. Takt pro Container braucht heute mehr Halte; nächster Schritt ist die Bündelung der Farben am Standort.“
 
-## Schluss (ca. 3 s)
-„**36,7 Prozent weniger Kilometer. Danke.**“
+## Schluss (ca. 5 s)
+„**79 Prozent statt 48 Prozent im richtigen Fenster. Danke.**“
 
 ---
 
 ## Hinweise
 
-- **Zahlenbasis:** 30,1 % unter 50 % voll, 1.192 Überläufe, 11.701 Messungen, 449 Container, Braunglas 42 vs. 95 Tage, B1 → B4 = 36,7 % (29,9 % Bedarf, 9,7 % Routing). Alles in `Pitch/demo_facts.txt` und `docs/analysen/` belegt.
-- **Nicht im Text, bewusst:** „0 Überläufe“ und „83 statt 66 % voll“ stammen aus der Kostensimulation, deren Quelldateien im Repo fehlen. Nur als „in der Simulation“ nennen, wenn jemand fragt.
-- **Nicht im Text, bewusst:** −86,3 % (Teil-Tour gegen alles leeren, kein fairer Vergleich) und 83,4 % (Karte).
+- **Zahlenbasis Ergebnis:** Szenario-Simulation, 349 Tage, gleiche Glasmenge 7.613,95 t. Status quo 35,9 / 48,0 / 16,1 %; Gebiet + Wochentakt (Puffer 10 %) 35,7 / 60,8 / 3,5 %; Takt pro Container 15,5 / 79,0 / 5,5 %; gemessen (Rohdaten) 30,1 / 58,7 / 11,2 %.
+- **Weitere belegte Zahlen:** 1.192 Überläufe, 11.701 Messungen, 449 Container, Braunglas 42 vs. 95 Tage. Demo-Tour 15.04.: 227,2 km, 25 Stopps, 3 LKW — keine Ergebnis-Zahl.
+- **Nicht im Text, bewusst:** −36,7 % (Stichtags-Benchmark B1→B4, nicht die Pitch-Zahl), −86,3 % (Teil-Tour gegen alles leeren), 83,4 % (Karte, Teil-Tour), „0 Überläufe“ und „83 statt 66 % voll“.
 - **Annahmen** (11 t, 26 m³, 8 h, 400 kg/m³, Umweg 1,35) nur auf Nachfrage und kurz: Folie 6 oder `prezero_config.json`.
-- **Folien:** 1 Problem, 2 Daten, 3 Braunglas/Backtest, 5 Timer, 4 Freigabe, 8 −36,7 %. Folie 6 für 3:30 überspringbar.
-- **Zwei Sätze, die du nicht auslassen solltest:** „Unsere Lösung heißt GlasRoute …“ nach dem Braunglas, und „36,7 Prozent weniger Kilometer. Danke.“ als letzter Satz.
+- **Folien:** 1 Problem, 2 Daten, 3 Braunglas/Backtest, 5 Timer, 4 Freigabe, 8 Der Durchschnitt lügt. Folie 6 für 3:30 überspringbar.
+- **Zwei Sätze, die du nicht auslassen solltest:** „Unsere Lösung heißt GlasRoute …“ nach dem Braunglas, und „79 Prozent statt 48 Prozent im richtigen Fenster. Danke.“ als letzter Satz.
