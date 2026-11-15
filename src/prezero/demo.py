@@ -592,7 +592,7 @@ def build_demo_playback_dataset(
     o_tot_empty = int(opt_df["n_emptyings"].sum())
     period_summary = {
         "hist": {
-            "finish_time": "1749.7 h gesamt",
+            "finish_time": "1.749,7 h gesamt",
             "vehicles_needed": int(hist_df["vehicles_needed"].sum()),
             "rounds": sum(dates_data[d]["hist"]["rounds"] for d in all_dates_str),
             "est_km": round(float(hist_df["est_km"].sum()), 1),
@@ -608,7 +608,7 @@ def build_demo_playback_dataset(
             "shift_hours": round(float(hist_df["shift_hours"].sum()), 1),
         },
         "opt": {
-            "finish_time": "2237.0 h gesamt",
+            "finish_time": "2.237,0 h gesamt",
             "vehicles_needed": int(opt_df["vehicles_needed"].sum()),
             "rounds": sum(dates_data[d]["opt"]["rounds"] for d in all_dates_str),
             "est_km": round(float(opt_df["est_km"].sum()), 1),
@@ -623,7 +623,7 @@ def build_demo_playback_dataset(
             "tonnage_t": round(float(opt_df["tonnage_t"].sum()), 1),
             "shift_hours": round(float(opt_df["shift_hours"].sum()), 1),
         },
-        "summary_sentence": "Gesamt-Replay (349 Tage): Überfüllungen um 100 % eliminiert (0 statt 1.192) · Ø Füllstand um +17,5 pp gesteigert (83,5 % statt 66,0 %) · 380 unnötige Leerungen eingespart.",
+        "summary_sentence": "Gesamt-Replay (349 Tage): 0 statt 1.192 Überläufe und +17,5 pp voller geleert (83,5 % statt 66,0 %) – der bewusste Tausch: +28 % LKW-Stunden und +39 % km, weil keine Überläufe mehr toleriert werden.",
     }
 
     dataset = {
@@ -844,7 +844,7 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <strong style="font-size:14px;">Kennzahlen-Vergleich:</strong>
             <div class="ab-mode-toggles">
-              <button type="button" id="ab-toggle-day" class="ab-toggle-btn active">📅 Gewählter Tag (<span id="ab-strip-date-label">2026-04-15</span>)</button>
+              <button type="button" id="ab-toggle-day" class="ab-toggle-btn active">📅 Stichtag aus Messdaten (<span id="ab-strip-date-label">2026-04-15</span>)</button>
               <button type="button" id="ab-toggle-period" class="ab-toggle-btn">📊 Gesamt-Replay (349 Tage)</button>
             </div>
           </div>
@@ -856,7 +856,7 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
         <div class="ab-metrics-grid">
           <!-- 1. Letzter LKW fertig -->
           <div class="ab-metric-card" id="card-finish">
-            <div class="ab-metric-label">Letzter LKW fertig</div>
+            <div class="ab-metric-label" id="card-finish-label">Letzter LKW fertig</div>
             <div class="ab-metric-row">
               <span class="ab-val-bisher" id="val-hist-finish">13:40</span>
               <span class="ab-vs-sep">vs.</span>
@@ -1397,51 +1397,63 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
         }}
 
         function updateComparisonStrip() {{
+          var cards = ["card-finish", "card-veh", "card-rounds", "card-km", "card-empty", "card-fill", "card-unload", "card-overflow"];
+          cards.forEach(function(cId) {{
+            var el = document.getElementById(cId);
+            if (el) el.classList.remove("winner-card");
+          }});
+
           if (viewMode === "period") {{
             var h = periodSummary.hist || {{}};
             var o = periodSummary.opt || {{}};
+            var finishLabel = document.getElementById("card-finish-label");
+            if (finishLabel) finishLabel.textContent = "Gesamte LKW-Stunden";
             document.getElementById("val-hist-finish").textContent = h.finish_time;
             document.getElementById("val-opt-finish").textContent = o.finish_time;
-            document.getElementById("delta-shift").textContent = "Beide Modelle bis 8,0 h Schichtgrenze";
+            document.getElementById("delta-shift").textContent = "+27,8 % Stunden (Preis für 0 Überläufe)";
 
             document.getElementById("val-hist-veh").textContent = h.vehicles_needed + " LKW-Tage";
             document.getElementById("val-opt-veh").textContent = o.vehicles_needed + " LKW-Tage";
-            document.getElementById("delta-veh").textContent = "Gleichmäßigere Auslastung über 349 Tage";
+            document.getElementById("delta-veh").textContent = "+10,4 % LKW-Tage für lückenlose Leerung";
 
             document.getElementById("val-hist-rounds").textContent = h.rounds;
             document.getElementById("val-opt-rounds").textContent = o.rounds;
-            document.getElementById("delta-rounds").textContent = "Optimiert: stabil planbar";
+            document.getElementById("delta-rounds").textContent = "+172 Runden durch 11 t / 26 m³ Schranken";
 
             document.getElementById("val-hist-km").textContent = fmtNum(h.est_km, 1) + " km";
             document.getElementById("val-opt-km").textContent = fmtNum(o.est_km, 1) + " km";
-            document.getElementById("delta-km").textContent = "Kapazitäts- und schichtbeschränkt";
+            document.getElementById("delta-km").textContent = "Mehr km, weil keine Überläufe mehr toleriert werden (Preis für 0 Überläufe)";
 
             document.getElementById("val-hist-empty").textContent = fmtNum(h.n_emptyings, 0);
             document.getElementById("val-opt-empty").textContent = fmtNum(o.n_emptyings, 0);
-            document.getElementById("delta-stops").textContent = "Optimiert: -380 Leerungen eingespart";
+            document.getElementById("delta-stops").textContent = "Optimiert: 380 unnötige Leerungen vermieden";
 
             document.getElementById("val-hist-fill").textContent = fmtNum(h.avg_fill_at_emptying_pct, 1) + " %";
             document.getElementById("val-opt-fill").textContent = fmtNum(o.avg_fill_at_emptying_pct, 1) + " %";
-            document.getElementById("delta-fill").textContent = "Optimiert: +17,5 pp höhere Auslastung";
+            document.getElementById("delta-fill").textContent = "Optimiert: 83,5 % statt 66,0 % (+17,5 pp)";
 
             document.getElementById("val-hist-unload").textContent = fmtNum(h.share_unloads_ge_90, 0) + " %";
             document.getElementById("val-opt-unload").textContent = fmtNum(o.share_unloads_ge_90, 0) + " %";
-            document.getElementById("delta-unload").textContent = "Optimiert: Fahrzeuge voller am Depot";
+            document.getElementById("delta-unload").textContent = "Optimiert: 80,0 % statt 61,2 % voll entladen";
 
             document.getElementById("val-hist-overflow").textContent = fmtNum(h.overflow_bin_days, 0);
             document.getElementById("val-opt-overflow").textContent = fmtNum(o.overflow_bin_days, 0);
-            document.getElementById("delta-overflow").textContent = "Optimiert: -100 % Überläufe (0 statt 1.192)";
+            document.getElementById("delta-overflow").textContent = "Optimiert: 0 statt 1.192 Überläufe (-100 %)";
 
-            document.getElementById("card-fill").classList.add("winner-card");
+            // Nur echte Gewinner grün umranden:
             document.getElementById("card-empty").classList.add("winner-card");
-            document.getElementById("card-overflow").classList.add("winner-card");
+            document.getElementById("card-fill").classList.add("winner-card");
             document.getElementById("card-unload").classList.add("winner-card");
+            document.getElementById("card-overflow").classList.add("winner-card");
 
             summarySentence.textContent = periodSummary.summary_sentence || "";
             return;
           }}
 
           // Day view
+          var finishLabel = document.getElementById("card-finish-label");
+          if (finishLabel) finishLabel.textContent = "Letzter LKW fertig";
+
           var dayItem = datesData[currentDate] || {{}};
           var h = dayItem.hist || {{}};
           var o = dayItem.opt || {{}};
@@ -1470,12 +1482,6 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
 
           document.getElementById("val-hist-overflow").textContent = (h.overflow_bin_days || 0);
           document.getElementById("val-opt-overflow").textContent = (o.overflow_bin_days || 0);
-
-          var cards = ["card-finish", "card-veh", "card-rounds", "card-km", "card-empty", "card-fill", "card-unload", "card-overflow"];
-          cards.forEach(function(cId) {{
-            var el = document.getElementById(cId);
-            if (el) el.classList.remove("winner-card");
-          }});
 
           var kmDelta = (o.est_km || 0) - (h.est_km || 0);
           document.getElementById("delta-km").textContent = kmDelta <= 0 ?
