@@ -12,10 +12,10 @@ abarbeiten, Überziehung im Bericht nennen.
 | # | Aufgabe | Timebox | Fertig, wenn |
 |---|---|---|---|
 | M1 | **Offline-Probe der Website.** Laptop in den Flugmodus, `ui_2026-04-15.html` öffnen. | 15 min | Alle 9 Tabs öffnen; Karten leer ist okay und wird mündlich erklärt (Kacheln von OSM), Tabellen/Kennzahlen vollständig. |
-| M2 | **Demo-Probelauf 3×** genau in Pitch-Reihenfolge: `run` → `propose` → `approve`, dann Website. | 30 min | 3 Läufe hintereinander ohne Fehler, Ausgabezeile identisch (`25 stops · 249.9 km · 4 vehicles`), Beleg `approval_2026-04-15.json` neu geschrieben. |
+| M2 | **Demo-Probelauf 3×** genau in Pitch-Reihenfolge: `run` → `propose` → `approve`, dann Website. | 30 min | 3 Läufe hintereinander ohne Fehler, Ausgabezeile identisch (`25 stops · 227.23 km · 3 vehicles`), Beleg `approval_2026-04-15.json` neu geschrieben. |
 | M3 | **Falsche Zahlen aus README/PITCH entfernen.** | 20 min | Kein „2 Fahrzeuge / 5 Runden“, kein „ein Fahrzeug“, kein Beleg-Zeitstempel von gestern. Gegenprobe: `grep -n "2 Fahrzeuge\|5 Runden"`. |
 | M4 | **Deck mit Stoppuhr** (`Pitch/deck.md`, 10 Folien, Ziel 3:30). | 25 min | Ein Durchlauf ≤ 4:00, jede Zahl auf der Folie steht so in `A3_pitch_zahlen.txt`. |
-| M5 | **PreZero-Live-Hook üben:** `prezero_config.json` auf Dichte 300 / Umweg 1,2, `route` neu rechnen. | 20 min | Ausgabe „3 statt 4 Fahrzeuge, 214 statt 250 km“ in ≤ 60 s, danach Original-Config zurück. |
+| M5 | **PreZero-Live-Hook üben:** `prezero_config.json` auf Dichte 300 / Umweg 1,2, `route` neu rechnen. | 20 min | Ausgabe „3 Fahrzeuge, 197 statt 227 km“ in ≤ 60 s, danach Original-Config zurück. |
 | M6 | **Fallback bauen:** Screenshot-Serie der 9 Tabs + `route_2026-04-15.json` in einen Ordner `Pitch/fallback/`. | 20 min | Ordner liegt offline auf dem Desktop; Video/Screenshots zeigen die Tour ohne laufenden Rechner. |
 | M7 | **Freeze-Check.** | 10 min | `git status` clean · `pytest -q` grün · `verify_pitch_numbers.py` = ALL MATCH · gepusht. |
 

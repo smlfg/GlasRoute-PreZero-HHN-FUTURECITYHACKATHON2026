@@ -50,7 +50,7 @@ ursprüngliche Rollenaufteilung unten ist Geschichte. Geliefert ist:
 | **Offen** | Folien bauen, Live-Hook üben (`--config`), Dry-Run, **Freeze So 11:00** |
 
 Der Live-Hook: 11 Betriebsvariablen in `prezero_config.json` — mit PreZeros Zahlen gerechnet
-(2 Fahrzeuge/120 km → 1 Fahrzeug/99 km, getestet).
+(3 Fahrzeuge/227 km → 3 Fahrzeuge/197 km, getestet).
 
 ## Challenge-Kernfragen: Status (Sa 17:15)
 
