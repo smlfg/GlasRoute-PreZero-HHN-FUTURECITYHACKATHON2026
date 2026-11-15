@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlasRoute — Szenarien (Jahr)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #1d4ed8;
+      --accent-soft: #eff6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .cadence-frame {
+      width: 800px;
+      margin: 0 auto;
+      padding: 16px 20px 40px;
+    }
+    .section-head h2 { margin: 0 0 4px; font-size: 18px; }
+    .muted { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+    .kpi-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+    .card .label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .card .value { font-size: 20px; font-weight: 700; }
+    .card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .primary-btn {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge.pending { background: #fef3c7; color: #92400e; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .map-wrap { margin-bottom: 18px; }
+
+:root {
+  --cad-red-bg: #fee2e2;
+  --cad-red-fg: #991b1b;
+  --cad-yellow-bg: #fef3c7;
+  --cad-yellow-fg: #92400e;
+  --cad-ok-bg: #dcfce7;
+  --cad-ok-fg: #166534;
+  --cad-border: #cbd5e1;
+  --cad-muted: #475569;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cadence-view .muted,
+.cadence-detail-view .muted,
+.cadence-week-view .muted,
+.cadence-scenarios-view .muted {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.cadence-kpi-grid > .card {
+  flex: 1 1 180px;
+}
+
+.cadence-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 10px;
+}
+
+.cadence-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cadence-filter-btn {
+  border: 1px solid var(--cad-border);
+  background: #ffffff;
+  color: var(--text);
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cadence-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.cadence-filter-btn:focus-visible,
+.cadence-approve-btn:focus-visible,
+.cadence-detail-link:focus-visible,
+#cadence-detail-select:focus-visible,
+.cadence-route-extra summary:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.cadence-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cadence-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 760px;
+}
+
+.cadence-table th,
+.cadence-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.cadence-table thead th {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+
+.cadence-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cadence-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.cadence-row.status-red {
+  box-shadow: inset 4px 0 0 #b91c1c;
+}
+
+.cadence-row.status-yellow {
+  box-shadow: inset 4px 0 0 #b45309;
+}
+
+.cadence-site {
+  min-width: 190px;
+}
+
+.cadence-detail-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.cadence-id {
+  display: block;
+  font-size: 12px;
+  color: var(--cad-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.cadence-note {
+  display: block;
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-pill.status-red {
+  background: var(--cad-red-bg);
+  color: var(--cad-red-fg);
+}
+
+.status-pill.status-yellow {
+  background: var(--cad-yellow-bg);
+  color: var(--cad-yellow-fg);
+}
+
+.status-pill.status-ok {
+  background: var(--cad-ok-bg);
+  color: var(--cad-ok-fg);
+}
+
+.cadence-approve-btn {
+  border: 1px solid #1d4ed8;
+  background: #ffffff;
+  color: #1d4ed8;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cadence-approve-btn:hover {
+  background: var(--accent-soft);
+}
+
+.cadence-approve-btn.approved {
+  border-color: #15803d;
+  color: #15803d;
+  background: var(--cad-ok-bg);
+}
+
+.cadence-detail-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.cadence-detail-toolbar label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#cadence-detail-select {
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--cad-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text);
+  max-width: 100%;
+}
+
+.cadence-detail-body {
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.cadence-detail-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.cadence-detail-title h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.cadence-explain {
+  margin: 12px 0 16px;
+  padding: 11px 14px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.saw-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 100%;
+}
+
+.saw-path {
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.saw-dot {
+  fill: #b91c1c;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+}
+
+.saw-grid {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.saw-axis {
+  font-size: 12px;
+  fill: #475569;
+}
+
+.empty-note {
+  font-size: 13px;
+  color: var(--cad-muted);
+  padding: 18px;
+}
+
+.week-group {
+  margin-bottom: 18px;
+}
+
+.week-group h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.week-table {
+  min-width: 620px;
+}
+
+.cadence-route-extra {
+  margin-top: 18px;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px 16px;
+}
+
+.cadence-route-extra summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cadence-route-extra[open] summary {
+  margin-bottom: 12px;
+}
+
+.scenario-block {
+  margin-bottom: 20px;
+}
+
+.scenario-block h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.scenario-table {
+  min-width: 720px;
+}
+
+.scenario-table tr.scenario-best td {
+  background: var(--cad-ok-bg);
+}
+
+@media (max-width: 800px) {
+  .cadence-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cadence-table {
+    font-size: 13px;
+  }
+}
+
+  </style>
+</head>
+<body class="">
+  <div class="cadence-frame">
+
+    <section id="view-cadence-scenarios" class="view-panel cadence-scenarios-view">
+      <div class="section-head">
+        <h2>Szenarien über das ganze Jahr</h2>
+        <p class="muted">
+          Auswertung über das volle Replay-Jahr (349 Tage,
+          17.10.2025 bis 30.09.2026).
+          Erzeugtes Glas: 7.719,2 t — in jedem Szenario
+          gleich, die Szenarien unterscheiden sich nur in der Entscheidungsregel.
+        </p>
+      </div>
+      
+            <div class="scenario-block">
+              <h3>Real (7/15 min + 5 min/Stopp + Depot)</h3>
+              <div class="table-scroll">
+                <table class="cadence-table scenario-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Szenario</th>
+                      <th scope="col">Ø Füllstand</th>
+                      <th scope="col">Überläufe</th>
+                      <th scope="col">Eingesparte Leerungen</th>
+                      <th scope="col">km</th>
+                      <th scope="col">Fahrzeugtage</th>
+                      <th scope="col">Kosten</th>
+                    </tr>
+                  </thead>
+                  <tbody><tr class="scenario-best"><td>Null Überlauf (früh leeren) · wenigste Überläufe</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.640 km</td><td class="num">326</td><td class="num">291.218 €</td></tr><tr class=""><td>Minimum km (spät leeren)</td><td class="num">97,6 %</td><td class="num">9</td><td class="num">2.011</td><td class="num">23.078 km</td><td class="num">306</td><td class="num">268.633 €</td></tr><tr class=""><td>Maximum Füllgrad</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.640 km</td><td class="num">326</td><td class="num">291.218 €</td></tr><tr class=""><td>Status quo (reale Leerungstage)</td><td class="num">77,8 %</td><td class="num">1.858</td><td class="num">0</td><td class="num">19.396 km</td><td class="num">294</td><td class="num">254.925 €</td></tr><tr class=""><td>Mentor-Politik (14-Tage-Rhythmus)</td><td class="num">34,2 %</td><td class="num">4</td><td class="num">-12.679</td><td class="num">28.482 km</td><td class="num">444</td><td class="num">406.155 €</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="scenario-block">
+              <h3>5 min je Hop</h3>
+              <div class="table-scroll">
+                <table class="cadence-table scenario-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Szenario</th>
+                      <th scope="col">Ø Füllstand</th>
+                      <th scope="col">Überläufe</th>
+                      <th scope="col">Eingesparte Leerungen</th>
+                      <th scope="col">km</th>
+                      <th scope="col">Fahrzeugtage</th>
+                      <th scope="col">Kosten</th>
+                    </tr>
+                  </thead>
+                  <tbody><tr class=""><td>Null Überlauf (früh leeren)</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.732 km</td><td class="num">285</td><td class="num">242.679 €</td></tr><tr class=""><td>Minimum km (spät leeren)</td><td class="num">97,6 %</td><td class="num">9</td><td class="num">2.011</td><td class="num">23.042 km</td><td class="num">273</td><td class="num">225.433 €</td></tr><tr class=""><td>Maximum Füllgrad</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.732 km</td><td class="num">285</td><td class="num">242.679 €</td></tr><tr class="scenario-best"><td>Status quo (reale Leerungstage) · günstigste</td><td class="num">77,8 %</td><td class="num">1.858</td><td class="num">0</td><td class="num">19.397 km</td><td class="num">230</td><td class="num">200.867 €</td></tr><tr class=""><td>Mentor-Politik (14-Tage-Rhythmus)</td><td class="num">34,2 %</td><td class="num">4</td><td class="num">-12.679</td><td class="num">28.927 km</td><td class="num">392</td><td class="num">348.846 €</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="scenario-block">
+              <h3>10 min je Hop</h3>
+              <div class="table-scroll">
+                <table class="cadence-table scenario-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Szenario</th>
+                      <th scope="col">Ø Füllstand</th>
+                      <th scope="col">Überläufe</th>
+                      <th scope="col">Eingesparte Leerungen</th>
+                      <th scope="col">km</th>
+                      <th scope="col">Fahrzeugtage</th>
+                      <th scope="col">Kosten</th>
+                    </tr>
+                  </thead>
+                  <tbody><tr class=""><td>Null Überlauf (früh leeren)</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.540 km</td><td class="num">316</td><td class="num">281.131 €</td></tr><tr class=""><td>Minimum km (spät leeren)</td><td class="num">97,6 %</td><td class="num">9</td><td class="num">2.011</td><td class="num">22.933 km</td><td class="num">297</td><td class="num">259.334 €</td></tr><tr class=""><td>Maximum Füllgrad</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.540 km</td><td class="num">316</td><td class="num">281.131 €</td></tr><tr class=""><td>Status quo (reale Leerungstage)</td><td class="num">77,8 %</td><td class="num">1.858</td><td class="num">0</td><td class="num">19.330 km</td><td class="num">289</td><td class="num">248.448 €</td></tr><tr class=""><td>Mentor-Politik (14-Tage-Rhythmus)</td><td class="num">34,2 %</td><td class="num">4</td><td class="num">-12.679</td><td class="num">28.684 km</td><td class="num">438</td><td class="num">398.356 €</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+            
+    </section>
+    
+  </div>
+  <script>
+
+(function () {
+  "use strict";
+
+  function readPayload(id) {
+    var node = document.getElementById(id);
+    if (!node) { return null; }
+    try {
+      return JSON.parse(node.textContent);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  var detailPayload = readPayload("cadence-detail-payload") || [];
+
+  function de(value, digits) {
+    if (value === null || value === undefined || value === "") { return "-"; }
+    var number = Number(value);
+    if (!isFinite(number)) { return String(value); }
+    return number.toLocaleString("de-DE", {
+      minimumFractionDigits: digits === undefined ? 1 : digits,
+      maximumFractionDigits: digits === undefined ? 1 : digits
+    });
+  }
+
+  function esc(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function dateDe(value) {
+    if (!value) { return "–"; }
+    var parts = String(value).split("-");
+    if (parts.length !== 3) { return String(value); }
+    return parts[2] + "." + parts[1] + "." + parts[0];
+  }
+
+  // --- filter the container list ---------------------------------------------------------
+
+  var filterButtons = document.querySelectorAll(".cadence-filter-btn");
+  var tableBody = document.getElementById("cadence-table-body");
+
+  function applyFilter(filter) {
+    if (!tableBody) { return; }
+    var rows = tableBody.querySelectorAll("tr.cadence-row");
+    var shown = 0;
+    rows.forEach(function (row) {
+      var status = row.getAttribute("data-status");
+      var visible = filter === "all" || status === filter;
+      row.style.display = visible ? "" : "none";
+      if (visible) { shown += 1; }
+    });
+    var countNode = document.getElementById("cadence-filter-count");
+    if (countNode) { countNode.textContent = shown + " von " + rows.length + " Containern"; }
+  }
+
+  filterButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      filterButtons.forEach(function (other) { other.classList.remove("active"); });
+      btn.classList.add("active");
+      applyFilter(btn.getAttribute("data-filter"));
+    });
+  });
+
+  // --- approvals (Disponentin) ----------------------------------------------------------
+
+  var statusNode = document.getElementById("cadence-approval-status");
+  var approved = {};
+
+  function setStatus(text, done) {
+    if (!statusNode) { return; }
+    statusNode.textContent = text;
+    statusNode.classList.toggle("pending", !done);
+    statusNode.classList.toggle("ok", !!done);
+  }
+
+  function markApproved(btn) {
+    btn.classList.add("approved");
+    btn.textContent = "Freigegeben";
+    btn.disabled = true;
+  }
+
+  document.addEventListener("click", function (evt) {
+    var btn = evt.target && evt.target.closest ? evt.target.closest(".cadence-approve-btn") : null;
+    if (!btn) { return; }
+    var key = btn.getAttribute("data-location") + "|" + btn.getAttribute("data-material");
+    approved[key] = true;
+    markApproved(btn);
+    setStatus("Status: " + Object.keys(approved).length + " Taktänderung(en) freigegeben", true);
+  });
+
+  var approveAll = document.getElementById("cadence-approve-all-btn");
+  if (approveAll) {
+    approveAll.addEventListener("click", function () {
+      var rows = document.querySelectorAll("tr.cadence-row");
+      var count = 0;
+      rows.forEach(function (row) {
+        if (row.style.display === "none") { return; }
+        var btn = row.querySelector(".cadence-approve-btn");
+        if (btn && !btn.disabled) {
+          btn.classList.add("approved");
+          btn.textContent = "Freigegeben";
+          btn.disabled = true;
+          approved[btn.getAttribute("data-location") + "|" + btn.getAttribute("data-material")] = true;
+          count += 1;
+        }
+      });
+      setStatus("Status: " + count + " Taktänderung(en) freigegeben", true);
+    });
+  }
+
+  // --- container detail ------------------------------------------------------------------
+
+  var select = document.getElementById("cadence-detail-select");
+  var body = document.getElementById("cadence-detail-body");
+
+  function findRow(location, material) {
+    for (var i = 0; i < detailPayload.length; i += 1) {
+      if (detailPayload[i].location_id === location &&
+          detailPayload[i].material === material) {
+        return detailPayload[i];
+      }
+    }
+    return null;
+  }
+
+  function sawtoothSvg(row) {
+    var history = row.history || [];
+    if (!history.length) {
+      return '<div class="empty-note">Keine Messungen für diesen Container.</div>';
+    }
+    var width = 900, height = 260;
+    var padLeft = 46, padRight = 16, padTop = 16, padBottom = 34;
+    var plotW = width - padLeft - padRight;
+    var plotH = height - padTop - padBottom;
+    var first = new Date(history[0][0] + "T00:00:00");
+    var last = new Date(history[history.length - 1][0] + "T00:00:00");
+    var spanDays = Math.max(1, Math.round((last - first) / 86400000));
+
+    function xOf(ts) {
+      var t = new Date(ts + "T00:00:00");
+      return padLeft + ((t - first) / 86400000) / spanDays * plotW;
+    }
+    function yOf(level) {
+      var clamped = Math.max(0, Math.min(110, Number(level) || 0));
+      return padTop + (1 - clamped / 110) * plotH;
+    }
+
+    var parts = [];
+    var dots = [];
+    var grid = [];
+    [0, 50, 80, 110].forEach(function (level) {
+      var y = yOf(level);
+      grid.push('<line x1="' + padLeft + '" y1="' + y.toFixed(1) + '" x2="' +
+        (width - padRight) + '" y2="' + y.toFixed(1) + '" class="saw-grid"/>');
+      grid.push('<text x="' + (padLeft - 6) + '" y="' + (y + 4).toFixed(1) +
+        '" class="saw-axis" text-anchor="end">' + de(level, 0) + " %</text>");
+    });
+
+    for (var i = 0; i < history.length; i += 1) {
+      var ts = history[i][0];
+      var level = history[i][1];
+      var x = xOf(ts);
+      var y = yOf(level);
+      if (i === 0) {
+        parts.push("M " + x.toFixed(1) + " " + y.toFixed(1));
+        parts.push("L " + x.toFixed(1) + " " + (padTop + plotH).toFixed(1));
+      } else {
+        var px = xOf(history[i - 1][0]);
+        var py = yOf(history[i - 1][1]);
+        parts.push("M " + px.toFixed(1) + " " + (padTop + plotH).toFixed(1));
+        parts.push("L " + px.toFixed(1) + " " + py.toFixed(1));
+        parts.push("L " + x.toFixed(1) + " " + y.toFixed(1));
+      }
+      dots.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+        '" r="3" class="saw-dot"/>');
+    }
+
+    function axisDate(ts) {
+      var p = String(ts).split("-");
+      return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : String(ts);
+    }
+
+    return '<svg class="saw-chart" viewBox="0 0 ' + width + " " + height +
+      '" role="img" aria-label="Füllstandverlauf: Anstieg zwischen den Leerungen, Sprung auf 0 % bei jeder Leerung">' +
+      grid.join("") +
+      '<path class="saw-path" d="' + parts.join(" ") + '"/>' + dots.join("") +
+      '<text x="' + padLeft + '" y="' + (height - 10) + '" class="saw-axis">' +
+      esc(axisDate(history[0][0])) + "</text>" +
+      '<text x="' + (width - padRight) + '" y="' + (height - 10) +
+      '" class="saw-axis" text-anchor="end">' +
+      esc(axisDate(history[history.length - 1][0])) + "</text>" +
+      "</svg>";
+  }
+
+  function renderDetail(row) {
+    if (!row) {
+      body.innerHTML = '<p class="muted">Container wählen, um den Verlauf zu sehen.</p>';
+      return;
+    }
+    var current = row.current_cadence_days;
+    var proposed = row.proposed_cadence_days;
+    var currentTxt = current === null || current === undefined ? "–" : de(current, 0) + " Tage";
+    var proposedTxt = de(proposed, 0) + " Tage";
+
+    body.innerHTML =
+      '<div class="cadence-detail-title">' +
+        "<h3>" + esc(row.site_title) + "</h3>" +
+        '<span class="status-pill status-' + esc(row.status) + '">' +
+        esc(row.status_label) + "</span>" +
+      "</div>" +
+      '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
+        " · " + de(row.visits, 0) + " Messungen" +
+        " · Füllrate " + de(row.rate_pct_per_day, 1) + " %/Tag" +
+        " · letzte Leerung " + dateDe(row.last_visit_date) + "</p>" +
+      '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
+      '<div class="kpi-grid">' +
+        '<div class="card"><div class="label">Takt heute</div><div class="value">' +
+          currentTxt + '</div></div>' +
+        '<div class="card"><div class="label">Takt neu</div><div class="value">' +
+          proposedTxt + '</div></div>' +
+        '<div class="card"><div class="label">Ø Füllstand bei Leerung</div><div class="value">' +
+          de(row.avg_fill_at_emptying_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Nächste Leerung</div><div class="value">' +
+          dateDe(row.next_due_date) + "</div></div>" +
+      "</div>" +
+      sawtoothSvg(row);
+  }
+
+  function populateSelect() {
+    if (!select) { return; }
+    var options = [];
+    detailPayload.forEach(function (row, index) {
+      options.push('<option value="' + index + '">' + esc(row.site_title) +
+        " · " + esc(row.status_label) + "</option>");
+    });
+    select.innerHTML = options.join("");
+  }
+
+  if (select) {
+    populateSelect();
+    select.addEventListener("change", function () {
+      var row = detailPayload[Number(select.value)];
+      renderDetail(row);
+    });
+    if (detailPayload.length) {
+      renderDetail(detailPayload[0]);
+    }
+  }
+
+  // --- link from the list to the detail --------------------------------------------------
+
+  document.addEventListener("click", function (evt) {
+    var link = evt.target && evt.target.closest ? evt.target.closest(".cadence-detail-link") : null;
+    if (!link) { return; }
+    evt.preventDefault();
+    var location = link.getAttribute("data-location");
+    var material = link.getAttribute("data-material");
+    var row = findRow(location, material);
+    if (!row || !select) { return; }
+    for (var i = 0; i < detailPayload.length; i += 1) {
+      if (detailPayload[i].location_id === location &&
+          detailPayload[i].material === material) {
+        select.value = String(i);
+        break;
+      }
+    }
+    renderDetail(row);
+    if (window.activateTab) { window.activateTab("view-cadence-detail"); }
+    var target = document.getElementById("view-cadence-detail");
+    if (target && target.scrollIntoView) { target.scrollIntoView({ block: "start" }); }
+  });
+})();
+
+  </script>
+</body>
+</html>

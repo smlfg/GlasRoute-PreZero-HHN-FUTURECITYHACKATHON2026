@@ -16,7 +16,9 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from prezero import approval, copilot, demo, features, forecast, hero, location_planning, routing, scoring, tour
+from prezero import approval, copilot, demo, features, forecast, hero, location_planning, routing, scoring, tour, ui_cadence
+from prezero.ui_cadence_assets import CSS as CADENCE_CSS
+from prezero.ui_cadence_js import JS as CADENCE_JS
 
 
 def _safe_json_for_html(payload: Any) -> str:
@@ -3265,8 +3267,11 @@ def _build_top3_urgent_html(
     """
 
 
-def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
+def _build_role_start_html(
+    snapshot: dict[str, Any], date: str, cadence_sections_html: Mapping[str, str] | None = None
+) -> str:
     """Build the Today-First operational views (Disponentin, Fahrer) plus role switcher."""
+    cadence_sections_html = cadence_sections_html or {"list": "", "detail": "", "week": "", "scenarios": ""}
     stand_de = snapshot["stand_de"]
     short_de = snapshot["short_de"]
     m = snapshot["metrics"]
@@ -3403,10 +3408,25 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         <p>Einstieg ist immer das gewählte Stichtagsdatum. Disponentin plant heute + nächste 3 Wochen, Fahrer fährt nur die heute freigegebene Tour, Analyse enthält die gesamte Jahres-Zeitachse.</p>
       </div>
       <div class="role-cards">
+        <button type="button" class="role-card" data-role="cadence"><strong>Container &amp; Takt</strong><span>Jeder Container als Erzeuger-Verbraucher: Füllrate, Takt heute, Takt neu, Freigabe</span></button>
         <button type="button" class="role-card" data-role="dispatcher"><strong>Disponentin</strong><span>Heute voll (+0), diese Woche (+7), nächste 3 Wochen &amp; Tourenfreigabe</span></button>
         <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Nur heutige freigegebene Tour, nächste Stopps &amp; Export</span></button>
         <button type="button" class="role-card" data-role="analysis"><strong>Analyse</strong><span>Gesamte Zeitachse: Heatmap, Saisonalität, Fairer Vergleich, Backtest</span></button>
       </div>
+    </section>
+
+    <section id="role-cadence" class="role-panel cadence-panel active">
+      <nav class="tabs cadence-tabs" role="tablist" aria-label="Ansichten der Taktsteuerung">
+        <button type="button" class="tab-btn active" data-target="view-cadence">1. Container &amp; Takt</button>
+        <button type="button" class="tab-btn" data-target="view-cadence-detail">2. Container im Detail</button>
+        <button type="button" class="tab-btn" data-target="view-cadence-week">3. Diese Woche</button>
+        <button type="button" class="tab-btn" data-target="view-cadence-scenarios">4. Szenarien (Jahr)</button>
+      </nav>
+
+      {cadence_sections_html["list"]}
+      {cadence_sections_html["detail"]}
+      {cadence_sections_html["week"]}
+      {cadence_sections_html["scenarios"]}
     </section>
 
     <section id="role-dispatcher" class="role-panel active">
@@ -4190,6 +4210,8 @@ def build_ui(
     )
     stand_de = _fmt_stand_de(date)
     analysen_section_html = _build_analysen_section_html()
+    cadence_css = CADENCE_CSS
+    cadence_js = CADENCE_JS
     datacheck_section_html = _build_datacheck_section_html(
         data_check, trends_uri, date=date, stand_de=stand_de
     )
@@ -4209,6 +4231,15 @@ def build_ui(
     backtest_section_html = _build_backtest_section_html(backtest_summary)
     data_section_html = _build_data_section_html(
         measurement_analysis, date=date, stand_de=stand_de
+    )
+
+    # --- cadence views (container first, map second) -------------------------------------
+    # The UI reads the scenario output of the model lane; it computes nothing.
+    cadence_sections_html = ui_cadence.build_cadence_sections(
+        readings_df,
+        date,
+        route_html=route_map_html,
+        route_metrics=route_bundle["metrics"],
     )
 
     raw_assumptions = route_bundle["metrics"].get("assumptions") or {}
@@ -4246,7 +4277,7 @@ def build_ui(
         f"</option>"
         for d in demo_dates
     )
-    role_start_html = _build_role_start_html(date_snapshots[date], date)
+    role_start_html = _build_role_start_html(date_snapshots[date], date, cadence_sections_html)
     dispatcher_hero_html = hero.build_hero_html(
         date_snapshots[date], status_quo_km=date_snapshots[date].get("status_quo_km")
     )
@@ -4316,6 +4347,16 @@ def build_ui(
     body.role-dispatcher nav.tabs,
     body.role-driver nav.tabs {{
       display: none !important;
+    }}
+    /* The cadence role brings its own tab bar; the analysis tabs stay hidden. */
+    body.role-cadence nav.tabs.analysis-workspace {{
+      display: none !important;
+    }}
+    nav.tabs.cadence-tabs {{
+      display: none;
+    }}
+    body.role-cadence nav.tabs.cadence-tabs {{
+      display: flex;
     }}
     nav.tabs button {{
       border: 1px solid var(--border);
@@ -4861,6 +4902,7 @@ def build_ui(
     .role-hero p {{ max-width: 720px; margin: 0; color: #cbd5e1; }}
     .eyebrow {{ color: #93c5fd !important; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
     body.role-driver .dispatcher-hero-shell,
+    body.role-cadence .dispatcher-hero-shell,
     body.role-analysis .dispatcher-hero-shell {{
       display: none;
     }}
@@ -5069,9 +5111,10 @@ def build_ui(
       body.print-route-stops #view-route > *:not(.stop-list-header):not(.table-wrap) {{ display: none !important; }}
       .driver-actions, #export-status {{ display: none !important; }}
     }}
+    {cadence_css}
   </style>
 </head>
-<body class="role-dispatcher">
+<body class="role-cadence">
   <header class="topbar">
     <div>
       <h1>GlasRoute &ndash; PreZero Demo UI (<span id="header-date-iso">{html.escape(date)}</span>)</h1>
@@ -5088,7 +5131,8 @@ def build_ui(
         </select>
       </div>
       <nav class="role-switcher" aria-label="Arbeitsbereich wählen">
-        <button type="button" class="role-nav-btn active" data-role="dispatcher">Disponentin (Heute)</button>
+        <button type="button" class="role-nav-btn active" data-role="cadence">Container &amp; Takt</button>
+        <button type="button" class="role-nav-btn" data-role="dispatcher">Disponentin (Heute)</button>
         <button type="button" class="role-nav-btn" data-role="driver">Fahrer (Schicht)</button>
         <button type="button" class="role-nav-btn" data-role="analysis" style="opacity:0.55;font-size:12px;">Analyse / Management</button>
       </nav>
@@ -5287,11 +5331,12 @@ def build_ui(
           }}
         }});
       }}
+      // The cadence views call activateTab from their own script.
+      window.activateTab = activateTab;
 
       buttons.forEach(function(btn) {{
         btn.addEventListener("click", function() {{
-          activateTab(btn.getAttribute("data-target"));
-        }});
+          activateTab(btn.getAttribute("data-target"));        }});
       }});
 
       var insights = JSON.parse(document.getElementById("insights-payload").textContent);
@@ -5301,6 +5346,7 @@ def build_ui(
       var currentMapsLegs = {{}};
       var startScreen = document.getElementById("start-screen");
       var rolePanels = {{
+        cadence: document.getElementById("role-cadence"),
         driver: document.getElementById("role-driver"),
         dispatcher: document.getElementById("role-dispatcher")
       }};
@@ -5390,7 +5436,7 @@ def build_ui(
       }}
       function showRole(role) {{
         if (startScreen) startScreen.style.display = "none";
-        document.body.classList.remove("role-dispatcher", "role-driver", "role-analysis");
+        document.body.classList.remove("role-cadence", "role-dispatcher", "role-driver", "role-analysis");
         document.body.classList.add("role-" + role);
         Object.keys(rolePanels).forEach(function(key) {{
           if (rolePanels[key]) rolePanels[key].classList.toggle("active", key === role);
@@ -6487,6 +6533,9 @@ def build_ui(
         }});
       }}
     }})();
+  </script>
+  <script>
+{cadence_js}
   </script>
 </body>
 </html>
