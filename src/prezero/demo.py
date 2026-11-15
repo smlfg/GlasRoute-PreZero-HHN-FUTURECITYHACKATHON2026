@@ -10,7 +10,6 @@ from __future__ import annotations
 import html
 import json
 import sys
-from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -20,8 +19,6 @@ import pandas as pd
 from prezero.locations import load_locations
 from prezero.routing import (
     OperationalConfig,
-    _simulate_constrained_routes,
-    density_for,
     drive_time_min,
     load_config,
     road_distance_km,
@@ -267,239 +264,61 @@ def build_demo_playback_dataset(
         except Exception:
             pass
 
-    # Ensure daily ledgers exist
-    hist_ledger_path = ROOT / "data/outputs/historical_daily.csv"
-    opt_ledger_path = ROOT / "data/outputs/optimized_daily.csv"
-    if not hist_ledger_path.exists() or not opt_ledger_path.exists():
-        from scripts.simulate_daily import build_historical_daily, simulate_optimized_daily
+    # Both sides come from the SAME world model and the same code as the daily ledgers
+    # (scripts/simulate_daily.py, docs/MODEL_SPEC.md). The ledger CSVs are therefore
+    # regenerated here together with the per-day routes ("trace") so that strip numbers
+    # and drawn routes can never diverge from the ledger.
+    from scripts.simulate_daily import build_historical_daily, simulate_optimized_daily
 
-        hist_df = build_historical_daily(readings_df, locations_df, config)
-        opt_df = simulate_optimized_daily(readings_df, locations_df, config)
-        hist_ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        hist_df.to_csv(hist_ledger_path, index=False)
-        opt_df.to_csv(opt_ledger_path, index=False)
-    else:
-        hist_df = pd.read_csv(hist_ledger_path)
-        opt_df = pd.read_csv(opt_ledger_path)
+    hist_trace: dict[str, dict[str, Any]] = {}
+    opt_trace: dict[str, dict[str, Any]] = {}
+    hist_df = build_historical_daily(readings_df, locations_df, config, trace=hist_trace)
+    opt_df = simulate_optimized_daily(readings_df, locations_df, config, trace=opt_trace)
 
-    # 1. Historical Replay Extraction
-    work = readings_df.copy()
-    work["date"] = pd.to_datetime(work["date"])
-    work["date_only"] = work["date"].dt.date
-    work["Location_id"] = work["Location_id"].astype(str)
-    work["material_type"] = work["material_type"].astype(str).str.lower()
-    work["fill_level_numeric"] = pd.to_numeric(work["fill_level_numeric"])
     locs = locations_df.copy()
     locs["Location_id"] = locs["Location_id"].astype(str)
     locs["lat"] = pd.to_numeric(locs["lat"])
     locs["lon"] = pd.to_numeric(locs["lon"])
-    work["mass_kg"] = (
-        (work["fill_level_numeric"] / 100.0)
-        * float(config.container_volume_m3)
-        * work["material_type"].map(lambda m: density_for(config, m))
-    )
-    work["volume_m3"] = (work["fill_level_numeric"] / 100.0) * float(config.container_volume_m3)
+    loc_xy = locs.drop_duplicates("Location_id").set_index("Location_id")[["lat", "lon"]]
+
+    def _tour(tr: Mapping[str, Any]) -> dict[str, Any]:
+        stops = tr.get("stops", [])
+        vehicles = tr.get("vehicles", [])
+        veh_events = _format_vehicle_events(stops, vehicles, config, street_lookup)
+        return {
+            "vehicles": veh_events,
+            "finish_time": max((v["finish_time"] for v in veh_events), default="06:00"),
+            "rounds": sum(int(v.get("rounds", 1)) for v in vehicles),
+            "share_unloads_ge_90": _calc_share_unloads_ge_90(tr.get("unloads", []), config),
+        }
 
     hist_days: dict[str, dict[str, Any]] = {}
     hist_raw_stops: dict[str, list[dict[str, Any]]] = {}
+    for d_str, tr in hist_trace.items():
+        hist_days[d_str] = _tour(tr)
+        hist_raw_stops[d_str] = tr.get("stops", [])
 
-    for d, g in work.groupby("date_only"):
-        merged = g.merge(locs[["Location_id", "lat", "lon"]], on="Location_id", how="inner")
-        if merged.empty:
-            continue
-        sites = (
-            merged.groupby(["lat", "lon"], as_index=False)
-            .agg(
-                Location_id=("Location_id", "min"),
-                critical_bins=("Location_id", "size"),
-                mass_kg=("mass_kg", "sum"),
-                volume_m3=("volume_m3", "sum"),
-                score=("fill_level_numeric", lambda s: float(s.max() / 100.0)),
-                critical=("fill_level_numeric", lambda s: bool((s >= 80.0).any())),
-                primary_material=("material_type", "first"),
-                last_fill_level=("fill_level_numeric", "max"),
-                est_fill_level=("fill_level_numeric", "max"),
-                source=("Location_id", lambda _: "osm_assigned"),
-                confidence=("Location_id", lambda _: "simulated_mapping"),
-            )
-        )
-        stops, unloads, vehicles, planned_km, mass = _simulate_constrained_routes(sites, config)
-        veh_events = _format_vehicle_events(stops, vehicles, config, street_lookup)
-        last_fin = max((v["finish_time"] for v in veh_events), default="06:00")
-        share_90 = _calc_share_unloads_ge_90(unloads, config)
-        total_rounds = sum(int(v.get("rounds", 1)) for v in vehicles)
-
-        d_str = str(d)
-        hist_days[d_str] = {
-            "vehicles": veh_events,
-            "finish_time": last_fin,
-            "rounds": total_rounds,
-            "share_unloads_ge_90": share_90,
-        }
-        hist_raw_stops[d_str] = stops
-
-    # 2. Optimized Walk-forward Simulation Extraction
-    import scripts.simulate_daily as sd
-
-    containers = (
-        work[["Location_id", "material_type"]]
-        .drop_duplicates()
-        .merge(locs[["Location_id", "lat", "lon"]], on="Location_id", how="inner")
-        .sort_values(["Location_id", "material_type"])
-        .reset_index(drop=True)
-    )
-
-    first_dates = {
-        (str(row.Location_id), str(row.material_type)): row.min_date
-        for row in work.groupby(["Location_id", "material_type"])["date_only"]
-        .min()
-        .reset_index(name="min_date")
-        .itertuples(index=False)
-    }
-
-    start_date = work["date_only"].min()
-    end_date = work["date_only"].max()
-    all_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
-
-    readings_by_c: dict[tuple[str, str], list[tuple[date, float]]] = {}
-    for (loc_id, mat_t), g in work.groupby(["Location_id", "material_type"]):
-        readings_by_c[(str(loc_id), str(mat_t))] = list(zip(g["date_only"], g["fill_level_numeric"]))
-
-    rng = np.random.default_rng(42)
-    active_containers: set[tuple[str, str]] = set()
-    current_fill: dict[tuple[str, str], float] = {}
     opt_days: dict[str, dict[str, Any]] = {}
     opt_raw_stops: dict[str, list[dict[str, Any]]] = {}
-
-    for d in all_dates:
-        for c_key, first_d in first_dates.items():
-            if first_d == d:
-                active_containers.add(c_key)
-                current_fill[c_key] = 0.0
-
-        c_rates: dict[tuple[str, str], float] = {}
-        mat_rates: dict[str, list[float]] = {"white": [], "green": [], "brown": []}
-        for (loc_id, mat_t), visits in readings_by_c.items():
-            past = [(t, l) for t, l in visits if t < d]
-            if len(past) >= 2:
-                r_list = [
-                    past[i][1] / (past[i][0] - past[i - 1][0]).days
-                    for i in range(1, len(past))
-                    if (past[i][0] - past[i - 1][0]).days > 0
-                ]
-                if r_list:
-                    m_r = float(np.mean(r_list))
-                    c_rates[(loc_id, mat_t)] = m_r
-                    if mat_t in mat_rates:
-                        mat_rates[mat_t].append(m_r)
-
-        mat_medians = {
-            m: float(np.median(vals)) if vals else sd.DEFAULT_RATES.get(m, 1.5)
-            for m, vals in mat_rates.items()
-        }
-        for (loc_id, mat_t) in readings_by_c:
-            if (loc_id, mat_t) not in c_rates:
-                c_rates[(loc_id, mat_t)] = mat_medians.get(mat_t, sd.DEFAULT_RATES.get(mat_t, 1.5))
-
-        for c_key in active_containers:
-            current_fill[c_key] = min(sd.MAX_FILL_PCT, current_fill[c_key] + c_rates[c_key])
-
-        op = sd.is_operating_day(d)
-        next_op = sd.get_next_operating_day(d)
-        days_to_next = max(1, (next_op - d).days)
-
-        due_containers: list[tuple[Any, float]] = []
-        if op:
-            for c_row in containers.itertuples(index=False):
-                c_key = (str(c_row.Location_id), str(c_row.material_type))
-                if c_key not in active_containers:
-                    continue
-                f_now = current_fill[c_key]
-                r = c_rates[c_key]
-                if f_now >= sd.DUE_FILL_PCT or (f_now + days_to_next * r) >= sd.MAX_FILL_PCT:
-                    due_containers.append((c_row, f_now))
-
-        if not due_containers or not op:
-            continue
-
-        site_dict: dict[tuple[float, float], dict[str, Any]] = {}
-        for c_row, f_val in due_containers:
-            pt = (round(float(c_row.lat), 6), round(float(c_row.lon), 6))
-            mat = str(c_row.material_type)
-            m_kg = (f_val / 100.0) * float(config.container_volume_m3) * density_for(config, mat)
-            v_m3 = (f_val / 100.0) * float(config.container_volume_m3)
-            if pt not in site_dict:
-                site_dict[pt] = {
-                    "lat": pt[0],
-                    "lon": pt[1],
-                    "Location_id": str(c_row.Location_id),
-                    "critical_bins": 0,
-                    "mass_kg": 0.0,
-                    "volume_m3": 0.0,
-                    "score": f_val / 100.0,
-                    "critical": True,
-                    "primary_material": mat,
-                    "last_fill_level": f_val,
-                    "est_fill_level": f_val,
-                    "source": "osm_assigned",
-                    "confidence": "simulated_mapping",
-                    "container_keys": [],
-                }
-            site_dict[pt]["critical_bins"] += 1
-            site_dict[pt]["mass_kg"] += m_kg
-            site_dict[pt]["volume_m3"] += v_m3
-            site_dict[pt]["score"] = max(site_dict[pt]["score"], f_val / 100.0)
-            site_dict[pt]["container_keys"].append((str(c_row.Location_id), mat, f_val, m_kg))
-
-        sites_df = (
-            pd.DataFrame(list(site_dict.values()))
-            .sort_values("score", ascending=False)
-            .reset_index(drop=True)
-        )
-
-        stops, unloads, vehicles, planned_km, mass = _simulate_constrained_routes(sites_df, config)
-        veh_events = _format_vehicle_events(stops, vehicles, config, street_lookup)
-        last_fin = max((v["finish_time"] for v in veh_events), default="06:00")
-        share_90 = _calc_share_unloads_ge_90(unloads, config)
-        total_rounds = sum(int(v.get("rounds", 1)) for v in vehicles)
-
-        served_pts = {
-            (round(float(s["lat"]), 6), round(float(s["lon"]), 6))
-            for s in stops
-            if s.get("stop_type") == "collection"
-        }
-
-        # Find unvisited overflows (>= 110%)
+    for d_str, tr in opt_trace.items():
+        day = _tour(tr)
         unvisited_ov: list[dict[str, Any]] = []
-        for c_row in containers.itertuples(index=False):
-            c_key = (str(c_row.Location_id), str(c_row.material_type))
-            if c_key in active_containers and current_fill[c_key] >= sd.MAX_FILL_PCT:
-                c_pt = (round(float(c_row.lat), 6), round(float(c_row.lon), 6))
-                if c_pt not in served_pts:
-                    unvisited_ov.append(
-                        {
-                            "lat": round(float(c_row.lat), 5),
-                            "lon": round(float(c_row.lon), 5),
-                            "site_title": _resolve_street(c_row.lat, c_row.lon, street_lookup),
-                            "mat_label": MAT_NAMES.get(str(c_row.material_type).lower(), "Glas"),
-                            "fill_pct": round(float(current_fill[c_key]), 1),
-                        }
-                    )
-
-        d_str = str(d)
-        opt_days[d_str] = {
-            "vehicles": veh_events,
-            "finish_time": last_fin,
-            "rounds": total_rounds,
-            "share_unloads_ge_90": share_90,
-            "unvisited_overflows": unvisited_ov,
-        }
-        opt_raw_stops[d_str] = stops
-
-        for pt in served_pts:
-            s_data = site_dict[pt]
-            for (c_loc, c_mat, c_fill, c_mkg) in s_data["container_keys"]:
-                current_fill[(c_loc, c_mat)] = float(rng.uniform(0.0, 5.0))
+        for loc_id, mat, fill_v in tr.get("unserved_overflows", []):
+            if loc_id not in loc_xy.index:
+                continue
+            lat, lon = float(loc_xy.at[loc_id, "lat"]), float(loc_xy.at[loc_id, "lon"])
+            unvisited_ov.append(
+                {
+                    "lat": round(lat, 5),
+                    "lon": round(lon, 5),
+                    "site_title": _resolve_street(lat, lon, street_lookup),
+                    "mat_label": MAT_NAMES.get(str(mat).lower(), "Glas"),
+                    "fill_pct": round(float(fill_v), 1),
+                }
+            )
+        day["unvisited_overflows"] = unvisited_ov
+        opt_days[d_str] = day
+        opt_raw_stops[d_str] = tr.get("stops", [])
 
     # 3. Assemble Daily Ledger & Combine with Day Tour Objects
     hist_ledger_dict = {str(r["date"]): dict(r) for r in hist_df.to_dict(orient="records")}
@@ -537,12 +356,13 @@ def build_demo_playback_dataset(
             o_v = int(o_led.get("vehicles_needed", 0))
             o_share = o_tour["share_unloads_ge_90"]
             summary_sentence = (
-                f"Optimiert: früher fertig ({o_fin} statt {h_fin}) · "
-                f"seltener gefahren ({o_v} statt {h_v} LKW) · "
-                f"voller am Depot ({o_share:.0f} % voll entladen)."
+                f"Fertig um {o_fin} (optimiert) statt {h_fin} (bisher) · "
+                f"{o_v} statt {h_v} LKW · "
+                f"{o_emptyings} statt {h_emptyings} Leerungen · "
+                f"{o_share:.0f} % der Entladungen voll (bisher {h_tour['share_unloads_ge_90']:.0f} %)."
             )
         elif o_emptyings == 0 and h_emptyings > 0:
-            summary_sentence = "Optimiert: Ruhetag – keine unnötigen Leerungen nötig (alle Container im sicheren Bereich)."
+            summary_sentence = "Optimiert: an diesem Tag keine Leerung geplant (kein Container fällig)."
         elif o_emptyings > 0 and h_emptyings == 0:
             summary_sentence = "Optimiert: Gezielte präventive Leerung vor Feiertag / Wochenende."
         else:
@@ -571,7 +391,8 @@ def build_demo_playback_dataset(
                 "n_emptyings": o_emptyings,
                 "avg_fill_at_emptying_pct": round(float(o_led.get("avg_fill_at_emptying_pct", 0.0)), 1),
                 "share_unloads_ge_90": o_tour["share_unloads_ge_90"],
-                "overflow_bin_days": int(o_led.get("n_containers_overfull_at_visit", 0)) + int(o_led.get("n_overflows_simulated", 0)),
+                "overflow_bin_days": int(o_led.get("n_containers_overfull_at_visit", 0)),
+                "overflow_unserved_days": int(o_led.get("n_overflows_simulated", 0)),
                 "tonnage_t": round(float(o_led.get("tonnage_t", 0.0)), 1),
                 "shift_hours": round(float(o_led.get("shift_hours", 0.0)), 1),
                 "vehicles": o_tour["vehicles"],
@@ -590,6 +411,41 @@ def build_demo_playback_dataset(
     # 4. Period View Cumulative Summary (349 days)
     h_tot_empty = int(hist_df["n_emptyings"].sum())
     o_tot_empty = int(opt_df["n_emptyings"].sum())
+    def _pct(o_v: float, h_v: float) -> str:
+        return "n/a" if not h_v else f"{(o_v - h_v) / h_v * 100.0:+.1f} %".replace(".", ",")
+
+    def _de(x: float, nd: int = 0) -> str:
+        return f"{x:,.{nd}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    h_fill = float((hist_df["avg_fill_at_emptying_pct"] * hist_df["n_emptyings"]).sum() / max(1, h_tot_empty))
+    o_fill = float((opt_df["avg_fill_at_emptying_pct"] * opt_df["n_emptyings"]).sum() / max(1, o_tot_empty))
+    h_ov = int(hist_df["n_containers_overfull_at_visit"].sum())
+    o_ov = int(opt_df["n_containers_overfull_at_visit"].sum())
+    o_unserved = int(opt_df["n_overflows_simulated"].sum())
+    h_sh = float(hist_df["shift_hours"].sum())
+    o_sh = float(opt_df["shift_hours"].sum())
+    h_km = float(hist_df["est_km"].sum())
+    o_km = float(opt_df["est_km"].sum())
+    h_vd = int(hist_df["vehicles_needed"].sum())
+    o_vd = int(opt_df["vehicles_needed"].sum())
+    period_deltas = {
+        "shift": f"{_pct(o_sh, h_sh)} LKW-Stunden ({_de(o_sh, 1)} h statt {_de(h_sh, 1)} h)",
+        "veh": f"{_pct(o_vd, h_vd)} LKW-Tage ({o_vd} statt {h_vd})",
+        "km": f"{_pct(o_km, h_km)} km ({_de(o_km, 0)} statt {_de(h_km, 0)})",
+        "stops": f"{o_tot_empty - h_tot_empty:+d} Leerungen ({o_tot_empty} statt {h_tot_empty})",
+        "fill": f"Ø {_de(o_fill, 1)} % statt {_de(h_fill, 1)} % ({_de(o_fill - h_fill, 1)} pp)",
+        "overflow": (
+            f"Beim Leeren überfüllt: {o_ov} statt {h_ov}; "
+            f"zusätzlich {o_unserved} Container-Tage ≥ 110 % ungeleert (Zeitplan-Variante)"
+        ),
+    }
+    period_sentence = (
+        f"Gesamt-Replay ({len(all_dates_str)} Tage): "
+        f"{_pct(o_sh, h_sh)} LKW-Stunden, {_pct(o_km, h_km)} km, "
+        f"Ø Füllstand beim Leeren {_de(o_fill, 1)} % statt {_de(h_fill, 1)} %; "
+        f"Überfüllung beim Leeren {o_ov} statt {h_ov}, ungeleerte Überlauf-Container-Tage (Optimiert): {o_unserved}."
+    )
+
     period_summary = {
         "hist": {
             "finish_time": "1.749,7 h gesamt",
@@ -619,11 +475,13 @@ def build_demo_playback_dataset(
             "share_unloads_ge_90": round(
                 float(np.mean([dates_data[d]["opt"]["share_unloads_ge_90"] for d in all_dates_str if dates_data[d]["opt"]["n_emptyings"] > 0] or [95.0])), 1
             ),
-            "overflow_bin_days": int(opt_df["n_containers_overfull_at_visit"].sum() + opt_df["n_overflows_simulated"].sum()),
+            "overflow_bin_days": int(opt_df["n_containers_overfull_at_visit"].sum()),
+            "overflow_unserved_days": int(opt_df["n_overflows_simulated"].sum()),
             "tonnage_t": round(float(opt_df["tonnage_t"].sum()), 1),
             "shift_hours": round(float(opt_df["shift_hours"].sum()), 1),
         },
-        "summary_sentence": "Gesamt-Replay (349 Tage): 0 statt 1.192 Überläufe und +17,5 pp voller geleert (83,5 % statt 66,0 %) – der bewusste Tausch: +28 % LKW-Stunden und +39 % km, weil keine Überläufe mehr toleriert werden.",
+        "summary_sentence": period_sentence,
+        "deltas": period_deltas,
     }
 
     dataset = {
@@ -939,13 +797,13 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
               <span class="ab-vs-sep">vs.</span>
               <span class="ab-val-opt" id="val-opt-overflow">0</span>
             </div>
-            <div class="ab-metric-delta" id="delta-overflow">Optimiert: 0 Überläufe</div>
+            <div class="ab-metric-delta" id="delta-overflow">Überfüllung beim Leeren</div>
           </div>
         </div>
 
         <!-- 5. Dynamic One-Sentence Summary Banner -->
         <div class="ab-summary-sentence-box" id="demo-hero-summary">
-          Optimiert: früher fertig (12:23 statt 13:40) · seltener gefahren (1 statt 2 LKW) · voller am Depot (100 % voll entladen).
+          Tag wählen – Zahlen stammen aus dem Tagesledger.
         </div>
       </div>
     </div>
@@ -1410,41 +1268,41 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
             if (finishLabel) finishLabel.textContent = "Gesamte LKW-Stunden";
             document.getElementById("val-hist-finish").textContent = h.finish_time;
             document.getElementById("val-opt-finish").textContent = o.finish_time;
-            document.getElementById("delta-shift").textContent = "+27,8 % Stunden (Preis für 0 Überläufe)";
+            document.getElementById("delta-shift").textContent = (periodSummary.deltas || {{}}).shift || "";
 
             document.getElementById("val-hist-veh").textContent = h.vehicles_needed + " LKW-Tage";
             document.getElementById("val-opt-veh").textContent = o.vehicles_needed + " LKW-Tage";
-            document.getElementById("delta-veh").textContent = "+10,4 % LKW-Tage für lückenlose Leerung";
+            document.getElementById("delta-veh").textContent = (periodSummary.deltas || {{}}).veh || "";
 
             document.getElementById("val-hist-rounds").textContent = h.rounds;
             document.getElementById("val-opt-rounds").textContent = o.rounds;
-            document.getElementById("delta-rounds").textContent = "+172 Runden durch 11 t / 26 m³ Schranken";
+            document.getElementById("delta-rounds").textContent = "11 t / 26 m³ Schranken";
 
             document.getElementById("val-hist-km").textContent = fmtNum(h.est_km, 1) + " km";
             document.getElementById("val-opt-km").textContent = fmtNum(o.est_km, 1) + " km";
-            document.getElementById("delta-km").textContent = "Mehr km, weil keine Überläufe mehr toleriert werden (Preis für 0 Überläufe)";
+            document.getElementById("delta-km").textContent = (periodSummary.deltas || {{}}).km || "";
 
             document.getElementById("val-hist-empty").textContent = fmtNum(h.n_emptyings, 0);
             document.getElementById("val-opt-empty").textContent = fmtNum(o.n_emptyings, 0);
-            document.getElementById("delta-stops").textContent = "Optimiert: 380 unnötige Leerungen vermieden";
+            document.getElementById("delta-stops").textContent = (periodSummary.deltas || {{}}).stops || "";
 
             document.getElementById("val-hist-fill").textContent = fmtNum(h.avg_fill_at_emptying_pct, 1) + " %";
             document.getElementById("val-opt-fill").textContent = fmtNum(o.avg_fill_at_emptying_pct, 1) + " %";
-            document.getElementById("delta-fill").textContent = "Optimiert: 83,5 % statt 66,0 % (+17,5 pp)";
+            document.getElementById("delta-fill").textContent = (periodSummary.deltas || {{}}).fill || "";
 
             document.getElementById("val-hist-unload").textContent = fmtNum(h.share_unloads_ge_90, 0) + " %";
             document.getElementById("val-opt-unload").textContent = fmtNum(o.share_unloads_ge_90, 0) + " %";
-            document.getElementById("delta-unload").textContent = "Optimiert: 80,0 % statt 61,2 % voll entladen";
+            document.getElementById("delta-unload").textContent = "Anteil voll entladener Touren: Ø " + fmtNum(o.share_unloads_ge_90, 0) + " % statt " + fmtNum(h.share_unloads_ge_90, 0) + " %";
 
             document.getElementById("val-hist-overflow").textContent = fmtNum(h.overflow_bin_days, 0);
             document.getElementById("val-opt-overflow").textContent = fmtNum(o.overflow_bin_days, 0);
-            document.getElementById("delta-overflow").textContent = "Optimiert: 0 statt 1.192 Überläufe (-100 %)";
+            document.getElementById("delta-overflow").textContent = (periodSummary.deltas || {{}}).overflow || "";
 
             // Nur echte Gewinner grün umranden:
-            document.getElementById("card-empty").classList.add("winner-card");
-            document.getElementById("card-fill").classList.add("winner-card");
-            document.getElementById("card-unload").classList.add("winner-card");
-            document.getElementById("card-overflow").classList.add("winner-card");
+            if ((o.n_emptyings || 0) < (h.n_emptyings || 0)) document.getElementById("card-empty").classList.add("winner-card");
+            if ((o.avg_fill_at_emptying_pct || 0) > (h.avg_fill_at_emptying_pct || 0)) document.getElementById("card-fill").classList.add("winner-card");
+            if ((o.share_unloads_ge_90 || 0) > (h.share_unloads_ge_90 || 0)) document.getElementById("card-unload").classList.add("winner-card");
+            if ((o.overflow_bin_days || 0) < (h.overflow_bin_days || 0)) document.getElementById("card-overflow").classList.add("winner-card");
 
             summarySentence.textContent = periodSummary.summary_sentence || "";
             return;
@@ -1504,9 +1362,9 @@ def build_demo_section_html(demo_data: Mapping[str, Any]) -> str:
 
           if ((o.overflow_bin_days || 0) < (h.overflow_bin_days || 0)) {{
             document.getElementById("card-overflow").classList.add("winner-card");
-            document.getElementById("delta-overflow").textContent = "Optimiert: Überläufe verhindert";
+            document.getElementById("delta-overflow").textContent = "Überfüllung beim Leeren: " + (o.overflow_bin_days || 0) + " statt " + (h.overflow_bin_days || 0) + (o.overflow_unserved_days ? " · " + o.overflow_unserved_days + " Container ≥ 110 % ungeleert" : "");
           }} else {{
-            document.getElementById("delta-overflow").textContent = "Keine Überläufe";
+            document.getElementById("delta-overflow").textContent = "Überfüllung beim Leeren: " + (o.overflow_bin_days || 0) + " statt " + (h.overflow_bin_days || 0) + (o.overflow_unserved_days ? " · " + o.overflow_unserved_days + " Container ≥ 110 % ungeleert" : "");
           }}
 
           if ((o.share_unloads_ge_90 || 0) >= (h.share_unloads_ge_90 || 0)) {{

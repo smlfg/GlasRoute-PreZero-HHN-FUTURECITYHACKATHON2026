@@ -312,6 +312,7 @@ def build_historical_daily(
     readings: pd.DataFrame,
     locations: pd.DataFrame,
     cfg: OperationalConfig | None = None,
+    trace: dict[str, dict[str, Any]] | None = None,
 ) -> pd.DataFrame:
     """Status quo: replay the REAL visit dates of every container against the world model.
 
@@ -328,6 +329,10 @@ def build_historical_daily(
       fill ≥ 110 % at a visit counts as overfull; glass left after the last visit is end stock.
     ``n_overflows_simulated`` stays 0 (column reserved for the simulation); the world's
     overflow container-days of the status quo are in ``mass_ledger(df)``.
+
+    ``trace`` (optional, additive): if a dict is passed it is filled with
+    ``{date_str: {"stops","unloads","vehicles","km"}}`` for every routed day, so that
+    consumers (demo replay) show exactly the routes behind the ledger row. No numeric effect.
     """
     config = cfg or OperationalConfig()
     work, locs, all_dates = _prepare_inputs(readings, locations)
@@ -411,6 +416,13 @@ def build_historical_daily(
             _stops, _unloads, vehicles, planned_km, _mass = _simulate_constrained_routes(
                 sites, config
             )
+            if trace is not None:
+                trace[str(d)] = {
+                    "stops": _stops,
+                    "unloads": _unloads,
+                    "vehicles": vehicles,
+                    "km": planned_km,
+                }
 
         rows.append(
             {
@@ -443,6 +455,7 @@ def simulate_optimized_daily(
     locations: pd.DataFrame,
     cfg: OperationalConfig | None = None,
     seed: int = 42,
+    trace: dict[str, dict[str, Any]] | None = None,
 ) -> pd.DataFrame:
     """Walk-forward timer policy over the identical date range, against the same world.
 
@@ -456,6 +469,12 @@ def simulate_optimized_daily(
       (uncapped) and reset to exactly 0. Fill ≥ 110 % counts as an overflow event
       (per container-day, ``n_overflows_simulated``), it is never capped.
     ``seed`` is kept for API compatibility; the simulation is deterministic.
+
+    ``trace`` (optional, additive): if a dict is passed it is filled per day with
+    ``{date_str: {"stops","unloads","vehicles","km","unserved_overflows"}}`` where
+    ``unserved_overflows`` lists ``(Location_id, material, true_fill)`` of containers still
+    >= 110 % after the day's collections (the ledger's ``n_overflows_simulated``). Days
+    without a due container carry only ``unserved_overflows``. No numeric effect.
     """
     del seed  # deterministic: no random reset any more (was +283 t phantom mass)
     config = cfg or OperationalConfig()
@@ -539,6 +558,12 @@ def simulate_optimized_daily(
         if not due:
             overflows = sum(1 for v in true_fill.values() if v >= MAX_FILL_PCT)
             overflow_days += overflows
+            if trace is not None and overflows:
+                trace[str(d)] = {
+                    "unserved_overflows": [
+                        (k[0], k[1], v) for k, v in true_fill.items() if v >= MAX_FILL_PCT
+                    ]
+                }
             rows.append({"date": str(d), **_empty_row("simulated", overflows)})
             continue
 
@@ -603,6 +628,16 @@ def simulate_optimized_daily(
 
         overflows = sum(1 for v in true_fill.values() if v >= MAX_FILL_PCT)
         overflow_days += overflows
+        if trace is not None:
+            trace[str(d)] = {
+                "stops": stops,
+                "unloads": _unloads,
+                "vehicles": vehicles,
+                "km": planned_km,
+                "unserved_overflows": [
+                    (k[0], k[1], v) for k, v in true_fill.items() if v >= MAX_FILL_PCT
+                ],
+            }
         rows.append(
             {
                 "date": str(d),
