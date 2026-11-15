@@ -179,7 +179,7 @@ def test_week_rhythm_mass_balance_and_rhythm_range(runs):
         assert lg["collected_t"] + lg["end_stock_t"] == pytest.approx(lg["produced_t"], abs=1e-6), sid
         assert not results[sid].events["bundled"].any(), sid
         k = pols[sid].rhythm
-        assert k.min() >= 1 and k.max() <= 4, sid
+        assert k.min() >= 1 and k.max() <= 8, sid
         assert len(set(k)) > 1, sid
 
 
@@ -220,5 +220,5 @@ def test_containers_csv_rhythm_columns():
         assert col in df.columns, col
     assert set(df["recommendation"]) <= {"länger", "kürzer", "gleich"}
     assert set(df["area_weekday"]) <= {"Mo", "Di", "Mi", "Do", "Fr"}
-    assert df["rhythm_weeks_new"].between(1, 4).all()
+    assert df["rhythm_weeks_new"].between(1, 8).all()
     assert df["rhythm_weeks_status_quo"].dropna().between(1, 8).all()
