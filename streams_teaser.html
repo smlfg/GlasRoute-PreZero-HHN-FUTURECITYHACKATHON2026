@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlasRoute — Übertragbarkeit auf weitere Abfallströme</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --real-bg: #ecfdf5;
+      --real-border: #10b981;
+      --real-text: #065f46;
+      --synth-bg: #fffbeb;
+      --synth-border: #f59e0b;
+      --synth-text: #92400e;
+      --vol-bg: #eff6ff;
+      --vol-text: #1e40af;
+      --wt-bg: #fef2f2;
+      --wt-text: #991b1b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 36px 24px 48px;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 18px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .lead {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 78ch;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card.real {
+      border: 2px solid var(--real-border);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.08);
+    }
+
+    .data-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .badge-real {
+      background: var(--real-bg);
+      color: var(--real-text);
+      border: 1px solid var(--real-border);
+    }
+
+    .badge-synth {
+      background: var(--synth-bg);
+      color: var(--synth-text);
+      border: 1px solid var(--synth-border);
+    }
+
+    .stream-title {
+      font-size: 21px;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .stream-cmd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .metrics {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .metrics li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .m-label {
+      color: var(--muted);
+    }
+
+    .m-val {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .constraint {
+      margin-top: auto;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .c-weight {
+      background: var(--wt-bg);
+      color: var(--wt-text);
+    }
+
+    .c-volume {
+      background: var(--vol-bg);
+      color: var(--vol-text);
+    }
+
+    footer {
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #e2e8f0;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="eyebrow">GlasRoute &middot; PreZero Challenge &middot; Demo-Stichtag 15.04.2026</div>
+      <h1>Gleiche Pipeline, 5 Abfallstr&ouml;me &mdash; nur Parameter wechseln</h1>
+      <p class="lead">
+        Dieselbe Auswahl-, Kapazit&auml;ts- und Tourenlogik (<code>11 t</code> &amp; <code>26 m&sup3;</code>, <code>8 h</code> Schicht)
+        l&auml;uft ohne Code&auml;nderung per <code>--stream</code> auf Papier, Bio, Gastro und Plastik.
+        Die Software erkennt automatisch, ob <strong>Gewicht</strong> oder <strong>Volumen</strong> zuerst begrenzt.
+      </p>
+    </header>
+
+    <section class="grid" aria-label="Vergleich der Abfallströme">
+      <article class="card real">
+        <span class="data-badge badge-real">echte PreZero-Daten</span>
+        <div class="stream-title">Glas <span class="stream-cmd">--stream glass</span></div>
+        <ul class="metrics">
+          <li><span class="m-label">F&auml;llig heute</span><span class="m-val">509 Container (25 Stopps)</span></li>
+          <li><span class="m-label">Strecke</span><span class="m-val">227,2 km</span></li>
+          <li><span class="m-label">Fahrzeuge</span><span class="m-val">3 LKW (16 Runden)</span></li>
+          <li><span class="m-label">Saison-Peak</span><span class="m-val">M&auml;rz (37,6 % &uuml;bervoll)</span></li>
+        </ul>
+        <div class="constraint c-weight">Engpass: Gewicht (11 t) &middot; 116,2 t</div>
+      </article>
+
+      <article class="card">
+        <span class="data-badge badge-synth">synthetische Daten</span>
+        <div class="stream-title">Papier <span class="stream-cmd">--stream paper</span></div>
+        <ul class="metrics">
+          <li><span class="m-label">F&auml;llig heute</span><span class="m-val">6 Container (6 Stopps)</span></li>
+          <li><span class="m-label">Strecke</span><span class="m-val">30,1 km</span></li>
+          <li><span class="m-label">Fahrzeuge</span><span class="m-val">1 LKW (1 Runde)</span></li>
+          <li><span class="m-label">Saison-Peak</span><span class="m-val">Dezember (&Oslash; 61,8 %)</span></li>
+        </ul>
+        <div class="constraint c-volume">Engpass: Volumen (26 m&sup3;) &middot; 13,1 m&sup3;</div>
+      </article>
+
+      <article class="card">
+        <span class="data-badge badge-synth">synthetische Daten</span>
+        <div class="stream-title">Bio <span class="stream-cmd">--stream bio</span></div>
+        <ul class="metrics">
+          <li><span class="m-label">F&auml;llig heute</span><span class="m-val">0 f&auml;llig (25 Top-Stopps)</span></li>
+          <li><span class="m-label">Strecke</span><span class="m-val">75,7 km</span></li>
+          <li><span class="m-label">Fahrzeuge</span><span class="m-val">1 LKW (1 Runde)</span></li>
+          <li><span class="m-label">Saison-Peak</span><span class="m-val">Oktober (&Oslash; 55,9 %)</span></li>
+        </ul>
+        <div class="constraint c-weight">Engpass: Gewicht (11 t) &middot; 10,4 t</div>
+      </article>
+
+      <article class="card">
+        <span class="data-badge badge-synth">synthetische Daten</span>
+        <div class="stream-title">Gastro <span class="stream-cmd">--stream gastro</span></div>
+        <ul class="metrics">
+          <li><span class="m-label">F&auml;llig heute</span><span class="m-val">0 f&auml;llig (25 Top-Stopps)</span></li>
+          <li><span class="m-label">Strecke</span><span class="m-val">66,8 km</span></li>
+          <li><span class="m-label">Fahrzeuge</span><span class="m-val">1 LKW (1 Runde)</span></li>
+          <li><span class="m-label">Saison-Peak</span><span class="m-val">September (1,2 % &uuml;bervoll)</span></li>
+        </ul>
+        <div class="constraint c-volume">Engpass: Volumen (26 m&sup3;) &middot; 24,2 m&sup3;</div>
+      </article>
+
+      <article class="card">
+        <span class="data-badge badge-synth">synthetische Daten</span>
+        <div class="stream-title">Plastik <span class="stream-cmd">--stream plastik</span></div>
+        <ul class="metrics">
+          <li><span class="m-label">F&auml;llig heute</span><span class="m-val">0 f&auml;llig (25 Top-Stopps)</span></li>
+          <li><span class="m-label">Strecke</span><span class="m-val">65,0 km</span></li>
+          <li><span class="m-label">Fahrzeuge</span><span class="m-val">1 LKW (1 Runde)</span></li>
+          <li><span class="m-label">Saison-Peak</span><span class="m-val">November (&Oslash; 45,9 %)</span></li>
+        </ul>
+        <div class="constraint c-volume">Engpass: Volumen (26 m&sup3;) &middot; 22,7 m&sup3;</div>
+      </article>
+    </section>
+
+    <footer>
+      <span>Aufruf: <code>prezero-route run --date 2026-04-15 --stream paper|bio|gastro|plastik</code></span>
+      <span>Alle L&auml;ufe mit identischen Regeln: 11 t Nutzlast &middot; 26 m&sup3; Volumen &middot; max. 8 h Schicht</span>
+    </footer>
+  </div>
+</body>
+</html>
