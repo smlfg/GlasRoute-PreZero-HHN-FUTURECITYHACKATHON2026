@@ -934,6 +934,7 @@ def precompute_what_if_presets(
                 "label": label,
                 "description": description,
                 "overrides": overrides,
+                "sim_route": sim,
                 **comparison,
             }
         )

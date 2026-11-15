@@ -2136,10 +2136,37 @@ def _build_single_date_snapshot(
                 "shift_hours": metrics.get("shift_hours", 0.0),
                 "t_collected": metrics.get("t_collected", 0.0),
             },
+            "proposal": route_bundle["proposal"],
+            "driver_stops": driver_stops,
+            "dispatcher_stops": dispatcher_stops,
+            "maps_url": maps_url,
+            "maps_legs": maps_legs,
+            "gpx_xml": gpx_xml,
+            "vehicles_needed": int(metrics.get("vehicles_needed", 0)),
+            "stops": metrics.get("stops", []),
         }
     ]
     for p in presets:
         sim = p.get("simulation") or {}
+        sim_route = p.get("sim_route")
+        if sim_route and isinstance(sim_route, Mapping) and "stops" in sim_route:
+            (
+                v_driver_stops,
+                v_dispatcher_stops,
+                v_maps_url,
+                v_maps_legs,
+                v_gpx_xml,
+            ) = _build_driver_and_dispatcher_stops(sim_route, locations_df, street_lookup, date_str)
+            v_proposal = approval.propose_route(sim_route)
+            v_stops = sim_route.get("stops", [])
+            v_veh = int(sim_route.get("vehicles_needed", sim.get("vehicles_needed", 0)))
+        else:
+            v_driver_stops, v_dispatcher_stops = driver_stops, dispatcher_stops
+            v_maps_url, v_maps_legs, v_gpx_xml = maps_url, maps_legs, gpx_xml
+            v_proposal = route_bundle["proposal"]
+            v_stops = metrics.get("stops", [])
+            v_veh = int(sim.get("vehicles_needed", 0))
+
         variant_options.append(
             {
                 "id": str(p.get("id", "")),
@@ -2153,6 +2180,14 @@ def _build_single_date_snapshot(
                     "shift_hours": sim.get("shift_hours", 0.0),
                     "t_collected": sim.get("t_collected", 0.0),
                 },
+                "proposal": v_proposal,
+                "driver_stops": v_driver_stops,
+                "dispatcher_stops": v_dispatcher_stops,
+                "maps_url": v_maps_url,
+                "maps_legs": v_maps_legs,
+                "gpx_xml": v_gpx_xml,
+                "vehicles_needed": v_veh,
+                "stops": v_stops,
             }
         )
 
