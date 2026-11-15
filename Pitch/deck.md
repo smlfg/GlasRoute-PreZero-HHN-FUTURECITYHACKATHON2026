@@ -17,7 +17,7 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 - **Leerungszustand bei Besuch:** 30,1 % unter 50 % voll (Fahrt zu früh), 11,2 % überfüllt (≥ 110 %)
 - **Backtest-Genauigkeit:** MAE **19,9 pp** (unser Modell) vs. **22,3 pp** (Baseline / Mean of past)
 - **Fairer Benchmark (B1 → B4):** **−36,7 % km** (Bedarfs-Effekt: **29,9 %**, Routing-Effekt: **9,7 %**)
-- **Tages-Tour (15.04.2026, Stopp-Limit 25):** **227,2 km** vs. **1.662,70 km** (B1) → **−86,3 %** (116,18 t, 3 LKW, 16 Runden, max. 7,96 h)
+- **Tages-Tour (15.04.2026, Stopp-Limit 25):** **227,2 km** für die 25 dringendsten Standorte (116,18 t, 3 LKW, 16 Runden, max. 7,96 h). Kein Gleich-zu-gleich-Vergleich (Teil-Tour vs. alles leeren), daher **keine Pitch-Zahl**; Hauptzahl bleibt **−36,7 %**.
 
 ---
 
@@ -29,13 +29,15 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 | 2 | Status quo | Der reale Prozess: Fahrer schätzt beim Leeren | Understanding | 20 s |
 | 3 | Data & Backtest | Füllstand ist vorhersagbar (Backtest schlägt Baseline) | Understanding | 25 s |
 | 4 | Solution | Vom Füllraten-Timer zur Freigabe & Closed Loop | Technology | 25 s |
-| 5 | Live Demo | Tagestour 15.04.: 25 Stopps, 227,2 km, A/B-Replay | Feasibility | 25 s |
-| 6 | Result | −36,7 % km im fairen Benchmark (B1 → B4) | Problem & Benefit | 20 s |
-| 7 | Kostenmodell | Jahressimulation, Kostenformel & Hebelannahmen | Feasibility | 25 s |
-| 8 | Honesty | Echte Messungen, simuliertes OSM-Mapping, 1-Sekunden-Swap | Reliability | 15 s |
-| 9 | Standortplanung | What-If Simulation für neue Standorte & Roadmap | Feasibility | 15 s |
-| 10 | Ask | Zwei Optionen für PreZero & Austausch der Betriebsregeln | Feasibility | 20 s |
-| | **Summe** | | | **~210 s ≈ 3:30 min** |
+| 5 | Rechenkern 1/2 | Timer pro Container: Füllrate → Stand heute → fällig (echtes Beispiel 0058ed93) | Technology | 20 s |
+| 6 | Rechenkern 2/2 | Prozent → kg → Tour; Annahmen offen; wie −36,7 % entstehen | Technology | 20 s |
+| 7 | Live Demo | Tagestour 15.04.: 25 Stopps, 227,2 km, A/B-Replay | Feasibility | 25 s |
+| 8 | Result | −36,7 % km im fairen Benchmark (B1 → B4) | Problem & Benefit | 20 s |
+| 9 | Kostenmodell | Jahressimulation, Kostenformel & Hebelannahmen | Feasibility | 25 s |
+| 10 | Honesty | Echte Messungen, simuliertes OSM-Mapping, 1-Sekunden-Swap | Reliability | 15 s |
+| 11 | Standortplanung | What-If Simulation für neue Standorte & Roadmap | Feasibility | 15 s |
+| 12 | Ask | Zwei Optionen für PreZero & Austausch der Betriebsregeln | Feasibility | 20 s |
+| | **Summe** | | | **~250 s ≈ 4:10 min** (Folie 5 und 6 überspringbar → 3:30) |
 
 ---
 
@@ -167,7 +169,7 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
   - **25 Standorte bedient** · **227,2 km Gesamtfahrstrecke**
   - **3 Fahrzeuge im Einsatz** · **16 Entleerungs-Runden**
   - **116,18 t Glas gesammelt** · max. Schichtdauer **7,96 h** (voll im 8-h-Limit)
-  - **<u>−86,3 % km gespart</u>** (1.435,5 km weniger) gegenüber ungefilterter Gebietsbefahrung (1.662,70 km)
+  - Gesamt-Ersparnis nur über den fairen Vergleich: **<u>−36,7 % km</u>** (B1 → B4); die 25er-Tagestour ist eine Teil-Tour und wird nicht gegen B1 prozentuiert
 - **Operative Rollen:** **<u>Disponentin (Auswahl → Tour → Freigabe)</u>** · Fahrer (nur freigegebene Stoppliste & Export).
 
 ### Speaker Notes

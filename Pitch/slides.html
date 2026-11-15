@@ -261,6 +261,29 @@
     .bar-fill.danger { background: var(--danger); }
     .bar-fill.info { background: var(--info); }
 
+    /* Formelzeilen (Rechenkern-Folien) */
+    .formula {
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.82vw;
+      color: #f1f5f9;
+      background: #0f172a;
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.4vw 0.7vw;
+      margin: 0.25vw 0;
+      line-height: 1.35;
+    }
+    .formula .f-tag {
+      display: inline-block;
+      min-width: 5.2vw;
+      font-family: var(--font);
+      font-size: 0.68vw;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+    }
+
     /* Pipeline Flow */
     .flow-steps {
       display: flex;
@@ -697,7 +720,7 @@
           <span class="badge">KERNBEFUND &rarr; LÖSUNG</span>
           Feste Gebietslisten verbrennen Diesel an halbleeren Behältern. <span class="sol-hl">Lösung: Welche Container müssen heute raus — und passt das in Lkw &amp; Schicht?</span>
         </div>
-        <div>Folie 1 / 10 · 20 s</div>
+        <div>Folie 1 / 12 · 20 s</div>
       </div>
     </div>
 
@@ -777,7 +800,7 @@
           <span class="badge">DATEN-REALITÄT</span>
           Wir optimieren auf den echten Prozess von PreZero — ohne teure Sensoren nachrüsten zu müssen.
         </div>
-        <div>Folie 2 / 10 · 20 s</div>
+        <div>Folie 2 / 12 · 20 s</div>
       </div>
     </div>
 
@@ -875,7 +898,7 @@
           <span class="badge">FARBEN-DYNAMIK</span>
           Weißglas läuft über, Braunglas wird doppelt so oft geleert wie nötig. <span class="sol-hl">Lösung: Ein eigener Füllraten-Timer pro Container entkoppelt die Farben.</span>
         </div>
-        <div>Folie 3 / 10 · 25 s</div>
+        <div>Folie 3 / 12 · 25 s</div>
       </div>
     </div>
 
@@ -964,18 +987,233 @@
           <span class="badge">PRAXIS-TAUGLICH</span>
           Mathematische Optimierung trifft betriebliche Realität: Kein Dispatch ohne Disponenten-Freigabe.
         </div>
-        <div>Folie 4 / 10 · 25 s</div>
+        <div>Folie 4 / 12 · 25 s</div>
       </div>
     </div>
 
 
     <!-- ==========================================
-         SLIDE 5: LIVE DEMO & A/B REPLAY
+         SLIDE 5: RECHENKERN 1/2 — TIMER PRO CONTAINER
          ========================================== -->
-    <div class="slide" data-slide="5" data-time="25" data-notes="(0-8s): Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen. (8-17s): Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht. (17-25s): Im Replay sehen Sie live, wie die LKW fahren — und wie 86% der Leerfahrten an diesem Tag wegfallen, während kein einziger Container überläuft.">
+    <div class="slide" data-slide="5" data-time="20" data-notes="(0-7s): Das Herzstück ist ein Timer pro Container, gerechnet nur aus dem, was der Fahrer ohnehin schätzt. Jede Leerung setzt den Container auf null – also ist Füllstand geteilt durch Tage seit der letzten Leerung seine Füllrate. (7-14s): Echtes Beispiel aus den Daten: Dieser Braunglas-Container füllt sich im Mittel mit 1,19 Prozent pro Tag. 67 Tage nach der letzten Leerung schätzen wir 79,7 Prozent – fällig morgen. (14-20s): Frei gesetzt sind nur die 80-Prozent-Schwelle und die Kappung bei 110. Einen Saisonfaktor haben wir bewusst gestrichen: Er lag im Backtest 17 Prozentpunkte daneben.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">05 · Live Demonstration</span>
+          <span class="slide-tag">05 · Rechenkern 1/2</span>
+          <h1 class="slide-title">Jeder Container bekommt seinen eigenen Timer</h1>
+        </div>
+        <div class="prezero-badge">
+          <div class="prezero-dot"></div>
+          <span>Füllrate &rarr; Stand heute &rarr; fällig</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="col" style="flex: 1.15;">
+          <div class="card" style="padding: 0.8vw;">
+            <div style="font-size: 0.9vw; font-weight: 700; color: white;"><span class="sol-badge">RECHNUNG</span> Aus einer Fahrerschätzung wird ein Fälligkeitstag</div>
+            <div class="flow-steps" style="margin-top: 0.5vw;">
+              <div class="flow-step active" style="padding: 0.5vw 0.4vw;">
+                <div class="flow-num" style="width: 1.2vw; height: 1.2vw; font-size: 0.72vw;">1</div>
+                <div class="flow-title" style="font-size: 0.78vw;">Messen &amp; leeren</div>
+                <div class="flow-desc" style="font-size: 0.65vw;">Fahrer schätzt y, danach 0 %</div>
+              </div>
+              <div class="flow-step active" style="padding: 0.5vw 0.4vw;">
+                <div class="flow-num" style="width: 1.2vw; height: 1.2vw; font-size: 0.72vw;">2</div>
+                <div class="flow-title" style="font-size: 0.78vw;">Füllrate</div>
+                <div class="flow-desc" style="font-size: 0.65vw;">y &divide; Tage seit Leerung</div>
+              </div>
+              <div class="flow-step active" style="padding: 0.5vw 0.4vw;">
+                <div class="flow-num" style="width: 1.2vw; height: 1.2vw; font-size: 0.72vw;">3</div>
+                <div class="flow-title" style="font-size: 0.78vw;">Stand heute</div>
+                <div class="flow-desc" style="font-size: 0.65vw;">Rate &times; Tage, max. 110 %</div>
+              </div>
+              <div class="flow-step active" style="padding: 0.5vw 0.4vw;">
+                <div class="flow-num" style="width: 1.2vw; height: 1.2vw; font-size: 0.72vw;">4</div>
+                <div class="flow-title" style="font-size: 0.78vw;">Timer</div>
+                <div class="flow-desc" style="font-size: 0.65vw;">fällig bei 80 %</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-highlight" style="margin-top: 0.4vw; padding: 0.8vw;">
+            <div class="formula"><span class="f-tag">Füllrate</span> r&#772; = (1/n)&nbsp;&middot;&nbsp;&Sigma;&nbsp;y<sub>i</sub> / (t<sub>i</sub> &minus; t<sub>i&minus;1</sub>) &nbsp;&nbsp;[% pro Tag]</div>
+            <div class="formula"><span class="f-tag">Stand heute</span> fill(t) = min( 110 %,&nbsp; r&#772; &middot; (t &minus; t<sub>letzte Leerung</sub>) )</div>
+            <div class="formula"><span class="f-tag">Fälligkeit</span> t<sub>fällig</sub> = t<sub>letzte Leerung</sub> + &lceil; 80 % / r&#772; &rceil; Tage</div>
+            <div class="formula"><span class="f-tag">Kritisch</span> fill(t) &ge; 80 %&nbsp; &rArr;&nbsp; Container kommt auf die Tourenliste</div>
+            <div style="font-size: 0.68vw; color: var(--text-muted); margin-top: 0.3vw;">n = Zahl der Intervalle zwischen zwei Besuchen des Containers (im Beispiel n = 5).</div>
+          </div>
+
+          <div class="card card-warning" style="margin-top: 0.4vw; padding: 0.6vw;">
+            <div style="font-size: 0.82vw; font-weight: 700; color: var(--warning);">DATEN vs. ANNAHME</div>
+            <p style="font-size: 0.78vw; color: #f1f5f9; margin-top: 0.2vw; line-height: 1.4;">
+              <strong>Aus den Daten:</strong> die Füllrate jedes einzelnen Containers (449 Stück).<br>
+              <strong>Frei gesetzt:</strong> 80-%-Schwelle, 110-%-Kappung (overfull). <strong>Bewusst gestrichen:</strong> fester Saisonfaktor (Backtest: &minus;17 pp Verzerrung).
+            </p>
+          </div>
+        </div>
+
+        <div class="col" style="flex: 1.25;">
+          <div class="card" style="padding: 0.8vw;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5vw;">
+              <span style="font-size: 0.95vw; font-weight: 700; color: white;">Echtes Beispiel: Braunglas-Container <span style="font-family: monospace; color: var(--info);">0058ed93</span></span>
+              <span style="background: var(--info); color: black; font-weight: 800; font-size: 0.7vw; padding: 0.15vw 0.5vw; border-radius: 4px;">Stichtag 15.04.2026</span>
+            </div>
+            <table class="slide-table" style="display: table; width: 100%; font-size: 0.78vw;">
+              <thead>
+                <tr><th>Besuch</th><th>Fahrer fand</th><th>Tage seit Leerung</th><th>Rate</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>08.12.2025</td><td>10 %</td><td>45</td><td>0,22 %/Tag</td></tr>
+                <tr><td>19.12.2025</td><td>20 %</td><td>11</td><td>1,82 %/Tag</td></tr>
+                <tr><td>03.01.2026</td><td>20 %</td><td>15</td><td>1,33 %/Tag</td></tr>
+                <tr><td>26.01.2026</td><td>40 %</td><td>23</td><td>1,74 %/Tag</td></tr>
+                <tr><td>07.02.2026</td><td>10 %</td><td>12</td><td>0,83 %/Tag</td></tr>
+                <tr class="highlight-row"><td colspan="3"><strong>Mittelwert r&#772;</strong></td><td><strong>1,19 %/Tag</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0.4vw;">
+            <div class="stat-card" style="padding: 0.5vw;">
+              <div class="stat-val" style="font-size: 1.5vw;">67 Tage</div>
+              <div class="stat-label" style="font-size: 0.7vw;">seit Leerung am 07.02.</div>
+            </div>
+            <div class="stat-card" style="border-color: var(--warning); padding: 0.5vw;">
+              <div class="stat-val warning" style="font-size: 1.5vw;">79,7 %</div>
+              <div class="stat-label" style="font-size: 0.7vw;">1,19 &times; 67 = Stand heute</div>
+            </div>
+            <div class="stat-card" style="border-color: var(--accent); padding: 0.5vw;">
+              <div class="stat-val accent" style="font-size: 1.5vw;">16.04.</div>
+              <div class="stat-label" style="font-size: 0.7vw;">&lceil;80 / 1,19&rceil; = 68 Tage &rArr; fällig morgen</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 0.4vw; padding: 0.6vw;">
+            <div style="font-size: 0.78vw; color: #f1f5f9; line-height: 1.4;">
+              <span class="sol-hl">Ehrlich:</span> Fahrerschätzungen in 10-%-Stufen streuen (hier 0,2 bis 1,8 %/Tag). Backtest: Fehler &Oslash; <strong>19,9 pp</strong> gegen 22,3 pp für &bdquo;Durchschnitt bisher&ldquo; &ndash; besser als Raten, nicht exakt. Deshalb Stichprobenkontrolle im Betrieb.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="key-takeaway">
+          <span class="badge">NACHVOLLZIEHBAR</span>
+          Kein Black-Box-Modell: Ein Messwert, eine Division, eine Schwelle &ndash; jeder Fälligkeitstag lässt sich von Hand nachrechnen.
+        </div>
+        <div>Folie 5 / 12 · 20 s</div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         SLIDE 6: RECHENKERN 2/2 — VON PROZENT ZUR TOUR
+         ========================================== -->
+    <div class="slide" data-slide="6" data-time="20" data-notes="(0-7s): Aus Prozent werden Tonnen: 2,5 Kubikmeter mal 400 Kilo pro Kubikmeter – zehn Kilo je Prozent. Damit packen wir Runden: höchstens 11 Tonnen, 26 Kubikmeter und 8 Stunden Schicht, inklusive Fahren, Rüsten, Heben und Entladen. (7-14s): Die Strecke ist Luftlinie mal 1,35 bei 25 km/h. Das sind benannte Annahmen, die PreZero in einer Config-Datei ersetzt – ohne Codeänderung. (14-20s): Der Vergleich ist fair, weil für alle Varianten dieselben Regeln gelten. Erst nur fällige Container fahren: minus 29,9 Prozent. Dann besser sortieren: minus 9,7 Prozent vom Rest. Zusammen minus 36,7 Prozent gegenüber dem optimierten Status quo.">
+      <div class="slide-header">
+        <div>
+          <span class="slide-tag">06 · Rechenkern 2/2</span>
+          <h1 class="slide-title">Von Prozent zu Tonnen zu Tour: so entstehen die −36,7 %</h1>
+        </div>
+        <div class="prezero-badge">
+          <div class="prezero-dot"></div>
+          <span>Annahmen offen gelegt</span>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="col" style="flex: 1.15;">
+          <div class="card card-highlight" style="padding: 0.8vw;">
+            <div style="font-size: 0.9vw; font-weight: 700; color: white; margin-bottom: 0.4vw;"><span class="sol-badge">MASSE</span> Prozent &rarr; Kilogramm</div>
+            <div class="formula"><span class="f-tag">Behälter</span> m = fill/100 &middot; 2,5 m&sup3; &middot; 400 kg/m&sup3; = <strong>10 kg pro %</strong> &nbsp;&rArr; 79,7 % &asymp; 797 kg</div>
+          </div>
+
+          <div class="card" style="margin-top: 0.4vw; padding: 0.8vw;">
+            <div style="font-size: 0.9vw; font-weight: 700; color: white; margin-bottom: 0.4vw;"><span class="sol-badge">REGELN</span> Jede Runde muss passen</div>
+            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); gap: 0.5vw;">
+              <div class="stat-card" style="padding: 0.5vw;">
+                <div class="stat-val" style="font-size: 1.3vw;">&Sigma;m &le; 11 t</div>
+                <div class="stat-label" style="font-size: 0.68vw;">Nutzlast je Runde</div>
+              </div>
+              <div class="stat-card" style="padding: 0.5vw;">
+                <div class="stat-val" style="font-size: 1.3vw;">&Sigma;V &le; 26 m&sup3;</div>
+                <div class="stat-label" style="font-size: 0.68vw;">Ladevolumen je Runde</div>
+              </div>
+              <div class="stat-card" style="padding: 0.5vw;">
+                <div class="stat-val" style="font-size: 1.3vw;">T &le; 8 h</div>
+                <div class="stat-label" style="font-size: 0.68vw;">Schicht je Fahrzeug</div>
+              </div>
+            </div>
+            <div class="formula" style="margin-top: 0.5vw;"><span class="f-tag">Schicht</span> T = s / 25 km/h + 2 min &middot; Stopps + 3 min &middot; Behälter + 20 min &middot; Entladungen</div>
+            <div class="formula"><span class="f-tag">Strecke</span> s = Haversine-Luftlinie &middot; 1,35 &nbsp;(Umwegfaktor)</div>
+            <div style="font-size: 0.68vw; color: var(--text-muted); margin-top: 0.3vw;">Voll oder Schicht knapp: Fahrt zum Recyclinghof, 20 min entladen; passt der nächste Stopp samt Rückweg nicht mehr, startet ein neues Fahrzeug.</div>
+          </div>
+
+          <div class="card card-warning" style="margin-top: 0.4vw; padding: 0.6vw;">
+            <div style="font-size: 0.82vw; font-weight: 700; color: var(--warning);">FREI GESETZT &ndash; DURCH PREZERO ERSETZBAR</div>
+            <p style="font-size: 0.74vw; color: #f1f5f9; margin-top: 0.2vw; line-height: 1.4;">
+              Dichte 400 kg/m&sup3; &middot; Behälter 2,5 m&sup3; &middot; 11 t / 26 m&sup3; &middot; Umweg 1,35 &middot; 25 km/h &middot; Schicht 8 h &middot; 2 + 3 + 20 min &middot; Schwelle 80 % &middot; Stopp-Limit 25. Betriebswerte in <span class="sol-hl">prezero_config.json</span>, ohne Codeänderung austauschbar.
+            </p>
+          </div>
+        </div>
+
+        <div class="col" style="flex: 1.25;">
+          <div class="card" style="padding: 0.8vw;">
+            <div style="font-size: 0.95vw; font-weight: 700; color: white; margin-bottom: 0.5vw;"><span class="sol-badge">VERGLEICH</span> Gleiche Regeln für alle Varianten, 15.04.2026</div>
+            <div class="bar-row" style="margin: 0.4vw 0;">
+              <div class="bar-label" style="width: 36%; font-size: 0.76vw;">B1 alles leeren, optimiert<br>121 Standorte</div>
+              <div class="bar-track" style="height: 1.5vw;"><div class="bar-fill danger" style="width: 100%;">1.662,70 km</div></div>
+            </div>
+            <div class="bar-row" style="margin: 0.4vw 0;">
+              <div class="bar-label" style="width: 36%; font-size: 0.76vw;">B2 nur fällige (&ge; 80 %)<br>112 Standorte</div>
+              <div class="bar-track" style="height: 1.5vw;"><div class="bar-fill info" style="width: 70.1%;">1.165,90 km</div></div>
+            </div>
+            <div class="bar-row" style="margin: 0.4vw 0;">
+              <div class="bar-label" style="width: 36%; font-size: 0.76vw;">B4 fällige + OR-Tools<br>112 Standorte</div>
+              <div class="bar-track" style="height: 1.5vw;"><div class="bar-fill accent" style="width: 63.4%;">1.053,29 km</div></div>
+            </div>
+          </div>
+
+          <div class="card card-highlight" style="margin-top: 0.4vw; padding: 0.8vw;">
+            <div class="formula"><span class="f-tag">Bedarf</span> 1 &minus; 1.165,90 / 1.662,70 = <strong>29,9 %</strong></div>
+            <div class="formula"><span class="f-tag">Routing</span> 1 &minus; 1.053,29 / 1.165,90 = <strong>9,7 %</strong> &nbsp;(vom Rest)</div>
+            <div class="formula"><span class="f-tag">Gesamt</span> 1 &minus; (1 &minus; 0,299)(1 &minus; 0,097) = <strong style="color: var(--accent);">36,7 %</strong></div>
+          </div>
+
+          <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0.4vw;">
+            <div class="stat-card" style="border-color: var(--accent); padding: 0.5vw;">
+              <div class="stat-val accent" style="font-size: 1.5vw;">−36,7 %</div>
+              <div class="stat-label" style="font-size: 0.7vw;">Hauptzahl, vs. B1 fair</div>
+            </div>
+            <div class="stat-card" style="padding: 0.5vw;">
+              <div class="stat-val" style="font-size: 1.5vw;">29–67 %</div>
+              <div class="stat-label" style="font-size: 0.7vw;">Bedarfs-Effekt, 4 Stichtage</div>
+            </div>
+            <div class="stat-card" style="padding: 0.5vw;">
+              <div class="stat-val info" style="font-size: 1.5vw;">12 Fälle</div>
+              <div class="stat-label" style="font-size: 0.7vw;">4 Tage &times; 3 Seeds: 32,9–70,7 %</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="key-takeaway">
+          <span class="badge">FAIR GERECHNET</span>
+          Aus den Daten kommt nur die Füllrate. Jede andere Zahl ist ein benannter, austauschbarer Parameter &ndash; und die −36,7 % sind ihr Produkt.
+        </div>
+        <div>Folie 6 / 12 · 20 s</div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         SLIDE 7: LIVE DEMO & A/B REPLAY
+         ========================================== -->
+    <div class="slide" data-slide="7" data-time="25" data-notes="(0-8s): Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen. (8-17s): Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht. (17-25s): Im Replay sehen Sie live, wie die LKW fahren — und wie nur die wirklich fälligen Container angefahren werden, während kein einziger Container überläuft. Die Gesamt-Ersparnis zeigt gleich der faire Vergleich: minus 36,7 Prozent.">
+      <div class="slide-header">
+        <div>
+          <span class="slide-tag">07 · Live Demonstration</span>
           <h1 class="slide-title">Einsatzbereit: Tagestour Heilbronn &amp; A/B-Replay</h1>
         </div>
         <div class="prezero-badge">
@@ -989,13 +1227,13 @@
           <div class="card card-highlight" style="padding: 0.8vw;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5vw;">
               <span style="font-size: 0.95vw; font-weight: 700; color: white;">Ergebnis Tageslauf 15.04.2026</span>
-              <span style="background: var(--accent); color: black; font-weight: 800; font-size: 0.72vw; padding: 0.15vw 0.5vw; border-radius: 4px;">−86,3 % KM</span>
+              <span style="background: var(--accent); color: black; font-weight: 800; font-size: 0.72vw; padding: 0.15vw 0.5vw; border-radius: 4px;">25 von 127 fälligen</span>
             </div>
 
             <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr); gap: 0.5vw;">
               <div class="stat-card" style="padding: 0.5vw;">
                 <div class="stat-val accent" style="font-size: 1.6vw;">227,2 km</div>
-                <div class="stat-label" style="font-size: 0.7vw;">Geplante Tour (statt 1.662 km)</div>
+                <div class="stat-label" style="font-size: 0.7vw;">Geplante Tour (25 Stopps)</div>
               </div>
               <div class="stat-card" style="padding: 0.5vw;">
                 <div class="stat-val" style="font-size: 1.6vw;">25 Stopps</div>
@@ -1047,20 +1285,20 @@
       <div class="slide-footer">
         <div class="key-takeaway">
           <span class="badge">EINSATZREIF</span>
-          227,2 km statt 1.662 km: 1.435,5 km gespart an einem einzigen Tag, bei voller Einhaltung aller Schichtzeiten.
+          227,2 km für die 25 dringendsten Standorte, alle Schichtzeiten eingehalten. Die belastbare Gesamt-Ersparnis zeigt der faire Vergleich: −36,7 % km.
         </div>
-        <div>Folie 5 / 10 · 25 s</div>
+        <div>Folie 7 / 12 · 25 s</div>
       </div>
     </div>
 
 
     <!-- ==========================================
-         SLIDE 6: BENCHMARK RESULTS
+         SLIDE 8: BENCHMARK RESULTS
          ========================================== -->
-    <div class="slide" data-slide="6" data-time="20" data-notes="(0-9s): Wir haben einen wissenschaftlich fairen 4-Stufen-Benchmark gerechnet. Wenn PreZero heute die bestehende Route per TSP optimiert, fahren sie 1.662 km. (9-18s): Fahren wir nur fällige Container an, sinkt die Strecke um 29,9%. Optimiert Google OR-Tools die Runde, sinkt sie auf 1.053 km — minus 36,7% Fahrstrecke. (18-20s): Wie übersetzt sich das in Jahreskosten? Das haben wir mathematisch modelliert.">
+    <div class="slide" data-slide="8" data-time="20" data-notes="(0-9s): Wir haben einen wissenschaftlich fairen 4-Stufen-Benchmark gerechnet. Wenn PreZero heute die bestehende Route per TSP optimiert, fahren sie 1.662 km. (9-18s): Fahren wir nur fällige Container an, sinkt die Strecke um 29,9%. Optimiert Google OR-Tools die Runde, sinkt sie auf 1.053 km — minus 36,7% Fahrstrecke. (18-20s): Wie übersetzt sich das in Jahreskosten? Das haben wir mathematisch modelliert.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">06 · Problem & Benefit</span>
+          <span class="slide-tag">08 · Problem & Benefit</span>
           <h1 class="slide-title">Ersparnis: −36,7 % km im fairen 4-Stufen-Benchmark</h1>
         </div>
         <div class="prezero-badge">
@@ -1169,18 +1407,18 @@
           <span class="badge">SAUBER BELEGT</span>
           Keine Milchmädchenrechnung: Bedarfs- und Routing-Effekte sind mathematisch sauber isoliert.
         </div>
-        <div>Folie 6 / 10 · 20 s</div>
+        <div>Folie 8 / 12 · 20 s</div>
       </div>
     </div>
 
 
     <!-- ==========================================
-         SLIDE 7: COST MODEL & SIMULATION
+         SLIDE 9: COST MODEL & SIMULATION
          ========================================== -->
-    <div class="slide" data-slide="7" data-time="25" data-notes="(0-8s): Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €). (8-16s): Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle treiben die Fahrzeugtage hoch. (16-25s): Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll. Die Streuung sinkt von 31 auf 4 pp, 0 Überläufe. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.">
+    <div class="slide" data-slide="9" data-time="25" data-notes="(0-8s): Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €). (8-16s): Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle treiben die Fahrzeugtage hoch. (16-25s): Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll. Die Streuung sinkt von 31 auf 4 pp, 0 Überläufe. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">07 · Economics & Feasibility</span>
+          <span class="slide-tag">09 · Economics & Feasibility</span>
           <h1 class="slide-title">Kostenmodell &amp; Simulation: Warum Hebelannahmen entscheiden</h1>
         </div>
         <div class="prezero-badge">
@@ -1270,18 +1508,18 @@
           <span class="badge">KOSTEN-HEBEL</span>
           Gleichmäßige Leerung (~83 %, Streuung 4 statt 31 pp, 0 Überläufe). Beobachtungs-Haken ehrlich durch Zufallsstichproben gelöst.
         </div>
-        <div>Folie 7 / 10 · 25 s</div>
+        <div>Folie 9 / 12 · 25 s</div>
       </div>
     </div>
 
 
     <!-- ==========================================
-         SLIDE 8: HONESTY & DATA TRUTH
+         SLIDE 10: HONESTY & DATA TRUTH
          ========================================== -->
-    <div class="slide" data-slide="8" data-time="15" data-notes="(0-6s): Wir stehen für absolute Datenwahrheit: Die 11.701 Füllstandsmessungen sind real. (6-11s): Die Standorte sind echte Heilbronner Container aus OpenStreetMap, aber die Zuordnung zu den anonymisierten IDs ist simuliert. (11-15s): Der Austauschpfad steht: PreZero spielt die echte Tabelle ein, und das System rechnet ohne Codeänderung sofort auf den echten Koordinaten.">
+    <div class="slide" data-slide="10" data-time="15" data-notes="(0-6s): Wir stehen für absolute Datenwahrheit: Die 11.701 Füllstandsmessungen sind real. (6-11s): Die Standorte sind echte Heilbronner Container aus OpenStreetMap, aber die Zuordnung zu den anonymisierten IDs ist simuliert. (11-15s): Der Austauschpfad steht: PreZero spielt die echte Tabelle ein, und das System rechnet ohne Codeänderung sofort auf den echten Koordinaten.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">08 · Reliability & Governance</span>
+          <span class="slide-tag">10 · Reliability & Governance</span>
           <h1 class="slide-title">Ehrlichkeit als Prinzip: Was die Daten sind und was nicht</h1>
         </div>
         <div class="prezero-badge">
@@ -1337,18 +1575,18 @@
           <span class="badge">VERTRAUEN</span>
           Wir behaupten keine Fake-Genauigkeit. Der Austauschpfad für echte PreZero-Geodaten steht bereit.
         </div>
-        <div>Folie 8 / 10 · 15 s</div>
+        <div>Folie 10 / 12 · 15 s</div>
       </div>
     </div>
 
 
     <!-- ==========================================
-         SLIDE 9: LOCATION PLANNING & ROADMAP
+         SLIDE 11: LOCATION PLANNING & ROADMAP
          ========================================== -->
-    <div class="slide" data-slide="9" data-time="15" data-notes="(0-8s): Wir können nicht nur leeren, sondern auch planen: Unser What-If-Modul zeigt auf einer Heatmap, wo ein zusätzlicher Container überquellende Nachbarn entlastet. (8-15s): Die nächsten Schritte sind klar: Echte Koordinaten einspielen, die Weihnachtsspitze parametrisieren und das Disponenten-Portal scharfstellen.">
+    <div class="slide" data-slide="11" data-time="15" data-notes="(0-8s): Wir können nicht nur leeren, sondern auch planen: Unser What-If-Modul zeigt auf einer Heatmap, wo ein zusätzlicher Container überquellende Nachbarn entlastet. (8-15s): Die nächsten Schritte sind klar: Echte Koordinaten einspielen, die Weihnachtsspitze parametrisieren und das Disponenten-Portal scharfstellen.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">09 · Feasibility & Expansion</span>
+          <span class="slide-tag">11 · Feasibility & Expansion</span>
           <h1 class="slide-title">What-If Standortplanung &amp; Nächste Schritte</h1>
         </div>
         <div class="prezero-badge">
@@ -1410,18 +1648,18 @@
           <span class="badge">MEHRWERT</span>
           Nicht nur reaktives Leeren: Das System berät die Stadt, wo Container strategisch hinzugefügt werden müssen.
         </div>
-        <div>Folie 9 / 10 · 15 s</div>
+        <div>Folie 11 / 12 · 15 s</div>
       </div>
     </div>
 
 
     <!-- ==========================================
-         SLIDE 10: THE ASK & PARTNERSHIP
+         SLIDE 12: THE ASK & PARTNERSHIP
          ========================================== -->
-    <div class="slide" data-slide="10" data-time="20" data-notes="(0-7s): Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar. (7-14s): PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und 0 Überläufe in Heilbronn garantieren. Oder 36,7% der Kilometer einsparen. (14-20s): Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.">
+    <div class="slide" data-slide="12" data-time="20" data-notes="(0-7s): Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar. (7-14s): PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und 0 Überläufe in Heilbronn garantieren. Oder 36,7% der Kilometer einsparen. (14-20s): Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.">
       <div class="slide-header">
         <div>
-          <span class="slide-tag">10 · Next Steps &amp; Value</span>
+          <span class="slide-tag">12 · Next Steps &amp; Value</span>
           <h1 class="slide-title">Was wir von PreZero brauchen — und was PreZero gewinnt</h1>
         </div>
         <div class="prezero-badge">
@@ -1485,7 +1723,7 @@
           <span class="badge">GEMEINSAME ZUKUNFT</span>
           Vom Hackathon-Prototyp zum operativen Piloten: Die Software steht, der Swap-Pfad ist bereit.
         </div>
-        <div>Folie 10 / 10 · 20 s</div>
+        <div>Folie 12 / 12 · 20 s</div>
       </div>
     </div>
 
@@ -1539,7 +1777,7 @@
 
 <script>
   let currentSlide = 1;
-  const totalSlides = 10;
+  const totalSlides = 12;
   const slides = document.querySelectorAll('.slide');
   const slideIndicator = document.getElementById('slide-indicator');
   const timerDisplay = document.getElementById('timer-display');

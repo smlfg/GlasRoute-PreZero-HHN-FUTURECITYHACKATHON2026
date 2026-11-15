@@ -24,7 +24,8 @@ Numbers from `Pitch/demo_facts.txt` / `route_2026-04-15.json`:
 | Stops in tour | 25 |
 | Planned tour | 227.23 km |
 | Full round, same rules, all 142 sites | 1,368.78 km |
-| Saved vs. full round | 1,141.55 km (83.4 %) |
+| **Headline: fair benchmark B1 → B4** (same rules, 4 dates × 3 seeds: 32.9–70.7 %) | **−36.7 % km** (1,662.70 → 1,053.29 km) |
+| Saved vs. full round (25-stop partial tour vs. all 142 sites; not a headline figure) | 1,141.55 km (83.4 %) |
 | Vehicles / rounds | 3 / 16 |
 | Vehicle hours / longest shift | 19.85 h / 7.96 h (limit 8.0 h) |
 | Collected | 116.18 t |

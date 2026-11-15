@@ -182,7 +182,7 @@ else:
             failures.append(f"NOTES.md missing {pattern}")
 
     for key, pattern in [
-        ("km_optimized_vs_b1", "227,2 km** vs. **1.662,70 km"),
+        ("km_day_tour_partial", "227,2 km** für die 25 dringendsten Standorte"),
         ("stops", "25 Standorte bedient"),
         ("vehicles", "3 Fahrzeuge im Einsatz"),
         ("hours", "7,96 h"),
