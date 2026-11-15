@@ -106,7 +106,7 @@ oder `--reject` erzeugt einen Beleg mit Zeitstempel, Route und den entscheidende
 
 ## 5. Wie setzt man es um?
 
-- Läuft auf den **vorhandenen** Fillinq-Daten; ein Fahrzeug genügt als Start.
+- Läuft auf den **vorhandenen** Fillinq-Daten; der Routenaufbau ist **je Fahrzeug** greedy — am Demo-Tag mit 4 Fahrzeugen und 19 Runden.
 - Python-CLI, modular (`ingest` → `features` → `scoring` → `routing` → `viz` → `approve`).
 - **Austauschbar:** echte Koordinaten kommen als `Location_id,lat,lon` in
   `data/external/locations_real.csv` — ohne Codeänderung (`scripts/refresh_locations.py --real`).

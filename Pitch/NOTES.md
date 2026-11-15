@@ -170,11 +170,11 @@ entscheidet heute aus dem Bauchgefühl, weil Füllstandsdaten nicht in Routen ü
 
 ### 4. Wie funktioniert's (40 Sek.)
 Ingest → Features (letzter Füllstand, Füllrate, Overfull-Quote, Saison) → Kritikalitäts-Score →
-Routing (Nearest-Neighbor, Haversine, ein Fahrzeug, Kapazitäts-/Schicht-/Umschlaggrenzen) →
+Routing (Nearest-Neighbor über Haversine, **je Fahrzeug eine Greedy-Route**, Kapazitäts-/Schicht-/Umschlaggrenzen; am Demo-Tag 4 Fahrzeuge, 19 Runden, 22,7 h) →
 **Freigabe** → Export.
 
 ### 5. Umsetzung (30 Sek.)
-- Läuft auf den **vorhandenen** Fillinq-Daten, ein Fahrzeug genügt als Start.
+- Läuft auf den **vorhandenen** Fillinq-Daten; der Routenaufbau läuft **je Fahrzeug** greedy — am Demo-Tag mit 4 Fahrzeugen, 19 Runden und 22,7 h Fahrzeugstunden gesamt.
 - **Generisch**, wie von ihm gefordert: 11 Betriebsvariablen in einer Config-Datei, nicht im Code —
   dadurch für andere Abfallarten und andere Städte wiederverwendbar.
 - Python-CLI, modular (`ingest` → `features` → `scoring` → `routing` → `viz` → `propose` → `approve`).
