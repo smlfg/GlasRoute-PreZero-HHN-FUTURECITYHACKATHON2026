@@ -1,161 +1,60 @@
-# PreZero Route – Dynamic Glass Collection Routing for Heilbronn
+# PreZero Route — Dynamic Glass Collection Routing for Heilbronn
 
-Prototype for the **PreZero Challenge** at Future City Hackathon 2026 (HHN TechCampus Heilbronn).
-
-Turns fill-level data from glass recycling containers into a prioritized, human-approved collection route.
+Prototype for the PreZero Challenge at Future City Hackathon 2026.
 
 ## Problem
 
-Glass containers in Heilbronn are emptied on a fixed schedule, regardless of how full they actually are. Trucks drive to half-empty containers while others overflow. That wastes fuel, time, and CO₂.
+PreZero empties glass containers in Heilbronn on fixed routes. Trucks visit half-empty bins while others overflow. For the demo day (2026-04-15) the data shows **106 critical physical sites** with **509 critical containers**, **488 of them estimated ≥ 110 % full**.
 
-## Solution
+## Solution in 4 steps
 
-A CLI tool that:
+1. **Daten** — Ingest the real PreZero fill-level CSV (**11,701 measurements, 449 containers**).
+2. **Auswahl** — Score containers by fill rate, overfull frequency and seasonality; pick the 25 most critical stops for the day.
+3. **Tour** — OR-Tools builds a capacity-constrained route for the selected stops.
+4. **Entscheidung** — The dispatcher approves or rejects the proposal; nothing is dispatched without approval.
 
-1. Ingests fill-level CSV data.
-2. Analyzes patterns (material, season, overfull frequency).
-3. Scores container criticality for a target day.
-4. Builds a capacity-constrained route plan (Haversine; the 2026-04-15 demo tour needs 4 vehicles in 19 rounds).
-5. Extends it with a weekly fill forecast.
-6. Presents the route for dispatcher approval (Human-Agent Interface).
+## Demo result (2026-04-15)
 
-## Quick start
+Numbers from `Pitch/demo_facts.txt` / `route_2026-04-15.json`:
 
-```bash
-# Install (editable, puts `prezero-route` on PATH)
-pip install -e .
+| | |
+|---|---|
+| Critical physical sites (containers) | 106 (509) |
+| Containers estimated ≥ 110 % full | 488 |
+| Stops in tour | 25 |
+| Planned tour | 249.9 km |
+| Full round, same rules, all 121 sites | 1,202.24 km |
+| Saved vs. full round | 952.34 km (79.2 %) |
+| Vehicles / rounds | 4 / 19 |
+| Vehicle hours / longest shift | 22.68 h / 7.58 h (limit 8.0 h) |
+| Collected | 142.82 t |
 
-# Without installing: PYTHONPATH=src python3 -m prezero.cli <command>
-```
+## What is real vs. simulated
 
-## Demo-Ablauf (das, was am Sonntag läuft)
+- **Real:** 11,701 fill-level measurements from PreZero.
+- **Simulated:** The mapping from anonymised PreZero IDs to coordinates. All locations are real OpenStreetMap glass-container points in Heilbronn, but the ID-to-point assignment is a deterministic simulation (`seed = 2026`, `source = osm_assigned`, `confidence = simulated_mapping`). Replace it by putting real `Location_id, lat, lon` data into `data/external/locations_real.csv` and running `scripts/refresh_locations.py --real ...` — no code changes required.
 
-Drei Befehle, ein Datum:
+## Run it
 
 ```bash
 prezero-route run --date 2026-04-15
 ```
 
-Erzeugt `route_2026-04-15.json`, `map_2026-04-15.html`, `trends.png` und
-`data/processed/scored_2026-04-15.csv`. Erwartete Ausgabe:
+Creates `route_2026-04-15.json`, `map_2026-04-15.html` and `trends.png`.
 
-```
-Pipeline complete for 2026-04-15: 106 critical physical sites (276 critical IDs, 509 containers).
-249.9 km planned (25 stops) vs. 1202.24 km full round (121 stops, same capacity rules)
-```
+## Tech choices
 
-Dann der Human-Agent-Schritt — erst der Vorschlag, dann die Entscheidung:
+- **OR-Tools** — Solves the capacitated vehicle-routing problem with vehicle, shift and transfer limits.
+- **Measure+empty model** — Estimates the next due date from the last measured fill level and days since empty; uses existing data only, no ML forecast.
+- **Python CLI** — Reproducible pipeline: ingest → features → score → route → visualise.
+- **Haversine distance** — Placeholder until real street distances are available.
+- **Folium + Matplotlib** — Static maps and trend charts; no dashboard overhead.
 
-```bash
-prezero-route propose                      # Vorschlag anzeigen + speichern
-prezero-route approve --by "Disponentin"   # freigeben -> Beleg mit Zahlen
-```
+## Limits & next steps
 
-Erwartete Ausgabe:
+- Coordinates use a simulated ID-to-OSM mapping; the swap path to real PreZero coordinates is ready.
+- Distances are straight-line with a detour factor, not street routing.
+- Operational variables (vehicle capacity, glass density, shift length) are assumptions in `prezero_config.json`.
+- No multi-day fleet optimisation yet.
 
-```
-Route proposal for 2026-04-15
-  stops:          25
-  planned:        249.9 km
-  saved:          952.34 km (79.2 %)
-  vehicles:       4
-  vehicle hours:  22.68 (sum over all vehicles)
-  longest shift:  7.58 h
-  collected:      142.82 t
-```
-
-`approve` schreibt `data/processed/approval_2026-04-15.json` (Zeitstempel, Freigebende, Route,
-entscheidende Kennzahlen). Mit `--reject "<Grund>"` wird stattdessen eine Ablehnung mit Begründung
-protokolliert. **Ohne Freigabe wird nichts dispatcht.**
-
-## Alle Befehle
-
-| Befehl | Zweck |
-|---|---|
-| `ingest` | Roh-CSV einlesen und bereinigen (`overfull` → 110 %) |
-| `score --date` | Features + Kritikalitäts-Score bis zum Stichtag |
-| `route --date` | Routenplan (Haversine, Kapazität, Schicht, Umschlag); `--config` tauscht die Betriebsvariablen |
-| `visualize --date` | `trends.png` + `map_<date>.html` |
-| `forecast --date` | Wöchentliche Füllstandsprognose (KW 16–19) → `forecast_16.html` |
-| `ui --date` | Lokale 4-View-Weboberfläche aus Pipeline-Daten → `ui_<date>.html` |
-| `run --date` | Alles in einem Durchlauf |
-| `propose` | Route in einen freigabepflichtigen Vorschlag überführen |
-| `approve` | Vorschlag freigeben oder ablehnen, Beleg schreiben |
-
-## Ortsdaten
-
-**Aktueller Stand:** alle 449 Standorte liegen auf echten OSM-Glascontainer-Punkten in Heilbronn
-(`source=osm_assigned`, `confidence=simulated_mapping`). Weil die PreZero-IDs anonymisiert sind,
-ist die **Zuordnung simuliert** (Punkte werden wiederverwendet) — das System sagt das offen dazu.
-Sobald PreZero die echte Zuordnungstabelle liefert, wird sie ohne Codeänderung übernommen.
-
-```bash
-python scripts/fetch_locations.py    # OSM-Glascontainer holen (Area-Query, BBox-Fallback)
-python scripts/refresh_locations.py  # Standorte neu auflösen
-```
-
-Zwischenprodukte: `locations_real_attempt.csv` (rohe Overpass-Kandidaten) und
-`locations_matched.csv` (Auflösung vor dem Override) bleiben erhalten, das kanonische
-Pipeline-Input ist `data/external/locations.csv` (exakt 449 Zeilen).
-
-## Data
-
-- `data/raw/glass_fill_levels_anonymized_f.csv` – provided by PreZero (11.701 readings, 449 containers).
-- `data/external/locations_real_attempt.csv` – real candidate glass containers fetched from open data (Overpass/OSM) with `osm_id/provider_id`, coordinates, material tags, source and address where available.
-- `data/external/locations_matched.csv` – per-`Location_id` resolution before final override: heuristic OSM assignments (`confidence=low`, explicitly unverified without a PreZero key) or deterministic synthetic placeholders.
-- `data/external/locations.csv` – **canonical** pipeline input with exactly 449 rows (`Location_id, lat, lon, source, confidence, match_reason`).
-- `data/external/location_sanity_check.html` – sanity map colored by source.
-- `data/external/locations_synthetic.csv` – legacy placeholder file; prefer `locations.csv` / `refresh_locations.py`.
-
-## Geo coordinates / PreZero swap
-
-The location resolver is source-agnostic and labels every coordinate. The OSM points are real
-places; because the anonymized IDs carry no mapping key, the assignment is **simulated** and
-labeled as such (`osm_assigned` / `simulated_mapping`).
-
-To replace simulated coordinates with PreZero's real mapping:
-
-1. Place real coordinates in `data/external/locations_real.csv` (minimum columns: `Location_id, lat, lon`).
-2. Run `python scripts/refresh_locations.py --real data/external/locations_real.csv`.
-3. The pipeline automatically uses the real data (`locations_real.csv` is preferred and written into `locations.csv`; no code changes required).
-
-Programmatic use:
-
-```python
-from prezero.locations import load_locations, resolve_locations
-
-df = load_locations()  # reads data/external/locations.csv by default
-# or resolve from raw readings with an explicit provider file:
-# df = resolve_locations(raw_df, real_path="data/external/locations_real.csv")
-```
-
-`fetch_locations.py` fails gracefully: if Overpass is unavailable it records the error, writes an empty candidate file and still produces complete, labeled synthetic coordinates and the sanity map.
-
-## Docs
-
-Start here: **`docs/STATUS.md`** (one page: what works, pitch numbers, what is simulated, what is open).
-
-- `docs/INDEX.md` – one line per document, current or archived
-- `docs/STATUS.md` – current state, pitch numbers, simulated parts, open items
-- `docs/TODO.md` – open tasks until feature freeze / submission, with timeboxes
-- `docs/STAKEHOLDER.md` – the six fixed PreZero rules and where each is implemented
-- `docs/ANFORDERUNGEN.md` – challenge requirements
-- `docs/ARCHITEKTUR.md` – technical architecture and geo swap path
-- `docs/PITCH.md` – Sunday pitch structure with verified figures
-- `docs/UI_PLAN.md` – plan for the local web UI
-- `docs/analysen/INDEX.md` – index of the 36 data analyses
-- `Pitch/NOTES.md` – stage notes, live-demo script and the questions for PreZero
-- `PLAN.md` – hackathon plan with checkpoints
-- `AGENTS.md` – scope, data-truth rules, one-writer rule and agent contract
-- `docs/archiv/` – outdated documents with the commit that superseded them
-
-## Tests
-
-```bash
-PYTHONPATH=src python3 -m pytest tests/ -q
-```
-
-75 Tests: Ingestion, Geo-Auflösung (inkl. 449-ID-Vertrag, Timeout-Fallback, Prioritätslogik),
-Features, Scoring, Routing, Visualisierung inkl. Prognose- und Heatmap-Karten, lokale
-Weboberfläche und Disponent-Freigabe.
-
+Next: real PreZero coordinates, real operational variables, street-routing integration.
