@@ -1,14 +1,14 @@
-"""Tests for the cadence UI — pure presentation of the model lane's output.
+"""Tests for the cadence UI - pure rendering of the scenario engine output.
 
-The UI must read the scenario output (``summary.json``, ``containers.csv``) and
-show no substitute numbers when it is missing. The tests use a small fixture
-in exactly the agreed format.
+Fixture: ``tests/fixtures/ui_cadence/`` in exactly the engine's format. One test
+renders against the real committed outputs in ``data/outputs/scenarios/``.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -16,88 +16,11 @@ import pytest
 
 from prezero import ui_cadence
 
-# --- fixtures in the agreed format --------------------------------------------------------
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE_DIR = ROOT / "tests" / "fixtures" / "ui_cadence"
+REAL_DIR = ROOT / "data" / "outputs" / "scenarios"
 
-FIXTURE_SUMMARY = {
-    "generated_at": "2026-11-15T14:00:00+01:00",
-    "period": {"start": "2025-10-17", "end": "2026-09-30", "days": 349},
-    "produced_t": 7613.95,
-    "scenarios": [
-        {
-            "id": "d_status_quo",
-            "label": "Status quo (reale Leerungstage)",
-            "time_model": "real",
-            "collected_t": 7613.95,
-            "end_stock_t": 0.0,
-            "produced_t": 7613.95,
-            "mass_balance_ok": True,
-            "avg_fill_at_emptying_pct": 66.0,
-            "overflow_events": 1858,
-            "emptyings": 9918,
-            "emptyings_saved_vs_status_quo": 0,
-            "stops": 7499,
-            "vehicle_days": 326,
-            "hours": 1753.15,
-            "km": 24640.27,
-            "cost_eur": 291217.78,
-            "cost_breakdown": {
-                "vehicle_days_eur": 163000.0,
-                "crew_eur": 112201.6,
-                "km_eur": 16016.18,
-            },
-            "flags": {"cheapest": False, "fewest_overflows": False},
-            "source": "scripts/run_scenarios.py",
-        },
-        {
-            "id": "b_min_km",
-            "label": "Minimum km (spät leeren)",
-            "time_model": "real",
-            "collected_t": 7613.95,
-            "end_stock_t": 0.0,
-            "produced_t": 7613.95,
-            "mass_balance_ok": True,
-            "avg_fill_at_emptying_pct": 97.6,
-            "overflow_events": 9,
-            "emptyings": 7907,
-            "emptyings_saved_vs_status_quo": 2011,
-            "stops": 6200,
-            "vehicle_days": 306,
-            "hours": 1572.4,
-            "km": 23078.0,
-            "cost_eur": 268633.0,
-            "cost_breakdown": {
-                "vehicle_days_eur": 153000.0,
-                "crew_eur": 100634.0,
-                "km_eur": 14999.0,
-            },
-            "flags": {"cheapest": True, "fewest_overflows": False},
-            "truck_mode": "standard",
-            "extra_emptyings_co": 0,
-            "source": "scripts/run_scenarios.py",
-        },
-    ],
-}
-
-FIXTURE_CONTAINERS = pd.DataFrame(
-    {
-        "location_id": ["L1", "L2", "L3"],
-        "material": ["white", "brown", "green"],
-        "lat": [49.1427, 49.1936, 49.15],
-        "lon": [9.2109, 9.2111, 9.22],
-        "area": ["urban", "rural", "urban"],
-        "rate_pct_per_day": [5.0, 0.67, 2.5],
-        "rate_kg_per_day": [50.0, 6.7, 25.0],
-        "cadence_days_T": [4.0, 14.0, 8.0],
-        "emptyings_status_quo": [9.0, 7.0, 12.0],
-        "emptyings_mentor": [12.0, 23.0, 15.0],
-        "avg_fill_status_quo_pct": [80.0, 21.8, 55.0],
-        "avg_fill_mentor_pct": [45.0, 34.8, 40.0],
-        "overflow_events_status_quo": [0.0, 3.0, 1.0],
-        "skip_14d": [0.0, 12.0, 2.0],
-    }
-)
-
-FIXTURE_READINGS = pd.DataFrame(
+READINGS = pd.DataFrame(
     {
         "Location_id": ["L1", "L1", "L1", "L2", "L2"],
         "material_type": ["white", "white", "white", "brown", "brown"],
@@ -107,228 +30,146 @@ FIXTURE_READINGS = pd.DataFrame(
 )
 
 
-@pytest.fixture()
-def scenario_dir(tmp_path: Path) -> Path:
-    """A small scenario directory in exactly the agreed format."""
-    directory = tmp_path / "scenarios"
-    directory.mkdir()
-    (directory / "summary.json").write_text(
-        json.dumps(FIXTURE_SUMMARY, ensure_ascii=False), encoding="utf-8"
-    )
-    FIXTURE_CONTAINERS.to_csv(directory / "containers.csv", index=False)
-    for scenario in FIXTURE_SUMMARY["scenarios"]:
-        daily = pd.DataFrame(
-            {
-                "date": ["2025-10-17", "2025-10-18"],
-                "n_emptyings": [23, 0],
-                "n_overflow_events": [2, 0],
-                "avg_fill_at_emptying_pct": [66.0, 0.0],
-                "tonnage_t": [15.5, 0.0],
-                "stops": [5, 0],
-                "vehicles_needed": [1, 0],
-                "shift_hours": [3.82, 0.0],
-                "km": [51.63, 0.0],
-                "cost_eur": [1200.0, 0.0],
-            }
-        )
-        daily.to_csv(
-            directory / f"{scenario['id']}__{scenario['time_model']}_daily.csv", index=False
-        )
-    return directory
+def _sections(directory: Path = FIXTURE_DIR, readings=READINGS, **kw) -> dict[str, str]:
+    return ui_cadence.build_cadence_sections(readings, "2026-04-15", scenario_dir=directory, **kw)
+
+
+def _payload(html: str) -> list[dict]:
+    m = re.search(r'<script id="cadence-detail-payload" type="application/json">(.*?)</script>', html, re.S)
+    assert m
+    return json.loads(m.group(1))
 
 
 # --- reading ------------------------------------------------------------------------------
 
 
-def test_load_scenario_data_reads_the_contract_files(scenario_dir: Path):
-    data = ui_cadence.load_scenario_data(scenario_dir)
-    assert data.available
-    assert data.missing == []
-    assert data.produced_t == 7613.95
+def test_load_reads_the_engine_files():
+    data = ui_cadence.load_scenario_data(FIXTURE_DIR)
+    assert data.available and data.missing == []
+    assert data.produced_t == 100.0
     assert data.period["days"] == 349
-    assert len(data.scenarios) == 2
-    assert data.scenario("b_min_km", "real")["emptyings_saved_vs_status_quo"] == 2011
-    assert ("d_status_quo", "real") in data.daily
+    assert ("e_mentor", "real") in data.daily
+    assert data.km_decomposition is not None
 
 
-def test_missing_files_are_reported(scenario_dir: Path):
-    (scenario_dir / "containers.csv").unlink()
-    data = ui_cadence.load_scenario_data(scenario_dir)
-    assert not data.available
-    assert "containers.csv" in data.missing
+def test_missing_files_are_reported(tmp_path: Path):
+    shutil.copytree(FIXTURE_DIR, tmp_path / "s")
+    (tmp_path / "s" / "containers.csv").unlink()
+    data = ui_cadence.load_scenario_data(tmp_path / "s")
+    assert not data.available and "containers.csv" in data.missing
+    assert not ui_cadence.load_scenario_data(tmp_path / "nope").available
 
 
-def test_missing_directory_is_reported(tmp_path: Path):
-    data = ui_cadence.load_scenario_data(tmp_path / "nope")
-    assert not data.available
-    assert "summary.json" in data.missing
+def test_prepare_status_rules():
+    data = ui_cadence.load_scenario_data(FIXTURE_DIR)
+    work = ui_cadence._prepare_containers(data.containers, 349)
+    status = dict(zip(work["location_id"] + work["material"], work["status"]))
+    assert status["L1white"] == "ok"
+    assert status["L1brown"] == "yellow"  # skip_14d = 1
+    assert status["L2brown"] == "red"  # overflow > 0
+    # Takt heute = period / emptyings, Takt neu = cadence_days_T
+    assert work.loc[0, "current_cadence_days"] == pytest.approx(349 / 9)
+    assert work.loc[0, "proposed_cadence_days"] == 5.0
 
 
-# --- View 1: container list ---------------------------------------------------------------
+# --- tab 1 ----------------------------------------------------------------------------------
 
 
-def test_container_list_shows_the_values_of_the_containers_file(scenario_dir: Path):
-    sections = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )
-    html = sections["list"]
-    # The fill rate and the cadence come from containers.csv.
-    assert "5,0 %/Tag" in html
-    assert "14 Tage" in html
-    assert "8 Tage" in html
-    assert "Land (Flein, Lauffen)" in html
+def test_list_has_kpis_short_lists_histogram_and_collapsed_full_list():
+    html = _sections()["list"]
+    assert "100,0 t" in html  # produced_t
+    assert "Läuft über – Takt zu lang" in html and "Zu oft geleert – Takt zu kurz" in html
+    assert "<svg" in html and "cadence-histogram" in html
+    assert re.search(r"<details class=\"cadence-all\">\s*<summary>Alle 4 Container anzeigen", html)
+    assert "cadence-search" in html
+    assert "%/Tag" in html and "5,0 %/Tag" in html
 
 
-def test_container_list_has_the_required_columns(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["list"]
-    for header in ("Füllrate", "Takt heute", "Takt neu", "Status"):
-        assert header in html
+def test_list_kpi_counts_and_best_scenario():
+    data = ui_cadence.load_scenario_data(FIXTURE_DIR)
+    work = ui_cadence._prepare_containers(data.containers, 349)
+    kpis = ui_cadence.compute_header_kpis(work, data.summary)
+    assert kpis["containers_with_overflow"] == 2
+    assert kpis["too_often_emptied"] == 2  # L1 brown (skipped) and L3 green (45 %)
+    html = _sections()["list"]
+    assert "Mentor-Takt" in html  # cheapest scenario (real) named
+    assert ">-30<" in html or "-30" in html
 
 
-def test_container_list_kpis_come_from_the_files(scenario_dir: Path):
-    data = ui_cadence.load_scenario_data(scenario_dir)
-    kpis = ui_cadence.compute_header_kpis(data.containers, data.summary)
-    # Weighted by the emptyings of the status quo:
-    # (80*9 + 21.8*7 + 55*12) / (9+7+12) = 1478.6 / 28 = 52.8
-    assert kpis["avg_fill_at_emptying_pct"] == pytest.approx(52.8, abs=0.1)
-    assert kpis["overflow_events"] == 4  # 0 + 3 + 1
-    assert kpis["emptyings_saved"] == 2011
-    assert kpis["emptyings_saved_source"] == "Minimum km (spät leeren)"
-    assert kpis["containers"] == 3
-
-
-def test_container_list_has_approval_button_per_row_and_bulk_button(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["list"]
-    assert html.count("cadence-approve-btn") == 3
-    assert "cadence-approve-all-btn" in html
-    assert "Alle Taktänderungen übernehmen" in html
-
-
-def test_container_list_uses_german_number_format(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["list"]
-    assert "5,0 %/Tag" in html
-    assert "5.0 %/Tag" not in html
-
-
-def test_container_list_labels_assumptions(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["list"]
-    assert "Annahme" in html
-
-
-def test_container_list_without_data_shows_the_hint_and_no_numbers(tmp_path: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=tmp_path / "nope"
-    )["list"]
-    assert "Szenariodaten fehlen" in html
-    assert "summary.json" in html
-    # No substitute numbers.
+def test_list_without_data_shows_hint_and_no_numbers(tmp_path: Path):
+    html = _sections(tmp_path / "nope")["list"]
+    assert "Szenariodaten fehlen (scripts/run_scenarios.py ausführen)" in html
     assert "%/Tag" not in html
 
 
-# --- View 2: container detail ------------------------------------------------------------
+# --- tab 2 ----------------------------------------------------------------------------------
 
 
-def test_container_detail_has_sawtooth_and_explanation(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["detail"]
-    assert "saw-chart" in html
-    assert "cadence-explain" in html
-    payload = re.search(
-        r'<script id="cadence-detail-payload" type="application/json">(.*?)</script>', html, re.S
-    )
-    assert payload is not None
-    rows = json.loads(payload.group(1))
-    assert len(rows) == 3
-    assert rows[0]["explanation"]
-    # The sawtooth comes from the measurements.
-    assert rows[0]["history"]
+def test_detail_sawtooth_from_readings_and_explanation():
+    html = _sections()["detail"]
+    assert "saw-chart" in html and "cadence-explain" in html
+    rows = _payload(html)
+    assert len(rows) == 4
+    by = {(r["location_id"], r["material"]): r for r in rows}
+    assert by[("L1", "white")]["history"]
+    assert "übersprungen" in by[("L1", "brown")]["explanation"]
+    assert "Überlauf" in by[("L2", "brown")]["explanation"]
 
 
-def test_container_detail_explanation_is_plain_german_with_takt(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["detail"]
-    payload = re.search(
-        r'<script id="cadence-detail-payload" type="application/json">(.*?)</script>', html, re.S
-    )
-    rows = json.loads(payload.group(1))
-    yellow = [r for r in rows if r["status"] == "yellow"]
-    assert yellow, "L2 should be yellow (skipped often in the mentor cadence)"
-    assert "übersprungen" in yellow[0]["explanation"]
-    assert "Takt" in yellow[0]["explanation"]
+def test_detail_without_data_shows_hint(tmp_path: Path):
+    assert "Szenariodaten fehlen" in _sections(tmp_path / "nope")["detail"]
 
 
-def test_container_detail_without_data_shows_the_hint(tmp_path: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=tmp_path / "nope"
-    )["detail"]
-    assert "Szenariodaten fehlen" in html
+# --- tab 3 ----------------------------------------------------------------------------------
 
 
-# --- View 3: diese Woche -----------------------------------------------------------------
-
-
-def test_week_view_groups_by_area(scenario_dir: Path):
-    html = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )["week"]
-    assert "Diese Woche" in html
-    assert "Stadt (Heilbronn)" in html or "Land (Flein, Lauffen)" in html
-
-
-def test_week_view_hides_map_in_a_collapsible(scenario_dir: Path):
-    html = ui_cadence.build_week_view_html(
-        ui_cadence._prepare_containers(FIXTURE_CONTAINERS),
-        "2026-04-15",
-        route_html="<div>MAP</div>",
-        route_metrics={"num_stops": 3},
-    )
-    assert "<details" in html
-    assert "<summary>Karte und Route (zusätzlich)</summary>" in html
-    assert "MAP" in html
-
-
-def test_week_view_without_route_has_no_details_element(scenario_dir: Path):
-    html = ui_cadence.build_week_view_html(
-        ui_cadence._prepare_containers(FIXTURE_CONTAINERS), "2026-04-15"
-    )
+def test_week_view_has_daily_sums_and_areas():
+    html = _sections()["week"]
+    assert "Diese Woche" in html and "Gebiet 1" in html and "Gebiet 2" in html
+    assert "70" in html  # 7 days x 10 emptyings
     assert "<details" not in html
 
 
-# --- scenario grid ------------------------------------------------------------------------
+def test_week_view_route_is_collapsible():
+    html = _sections(route_html="<div>MAP</div>", route_metrics={"num_stops": 3})["week"]
+    assert "<summary>Karte und Route (zusätzlich)</summary>" in html and "MAP" in html
 
 
-def test_scenario_grid_renders_the_summary(scenario_dir: Path):
-    html = ui_cadence.build_scenario_grid_html(FIXTURE_SUMMARY)
-    assert "Status quo" in html
-    assert "66,0 %" in html
-    assert "1.858" in html
-    assert "349" in html
-    assert "7.613,95 t" in html
+# --- tab 4 ----------------------------------------------------------------------------------
 
 
-def test_scenario_grid_missing_is_a_visible_hint():
-    html = ui_cadence.build_scenario_grid_html(None)
+def test_scenarios_one_table_per_time_model_real_first_with_caveats():
+    html = _sections()["scenarios"]
+    assert html.index('data-time-model="real"') < html.index('data-time-model="km"')
+    assert "Gleiche Glasmenge: 100,00 t in jedem Szenario" in html
+    assert "Standorte simuliert: 3 IDs auf 3 OSM-Punkten" in html
+    assert "Mehrkammer vs. ein LKW je Farbe unbekannt" in html
+    assert "Farbtrennung" in html and "Woher kommen die Mehr-km" in html
+    assert "günstigste" in html and "wenigste Überläufe" in html
+
+
+def test_scenarios_missing_is_visible_hint(tmp_path: Path):
+    html = _sections(tmp_path / "nope")["scenarios"]
     assert "Szenariodaten fehlen" in html
 
 
-# --- integration ---------------------------------------------------------------------------
+def test_no_use_of_the_deleted_cadence_module():
+    assert not (ROOT / "src" / "prezero" / "cadence.py").exists()
+    for name in ("ui.py", "ui_cadence.py", "ui_cadence_assets.py", "ui_cadence_js.py"):
+        text = (ROOT / "src" / "prezero" / name).read_text(encoding="utf-8")
+        assert not re.search(r"prezero\.cadence|import cadence|from prezero import .*\bcadence\b", text)
 
 
-def test_build_cadence_sections_returns_the_three_views(scenario_dir: Path):
-    sections = ui_cadence.build_cadence_sections(
-        FIXTURE_READINGS, "2026-04-15", scenario_dir=scenario_dir
-    )
-    assert set(sections) == {"list", "detail", "week", "scenarios"}
-    assert "view-cadence" in sections["list"]
-    assert "view-cadence-detail" in sections["detail"]
-    assert "view-cadence-week" in sections["week"]
+# --- real committed outputs ---------------------------------------------------------------
+
+
+@pytest.mark.skipif(not (REAL_DIR / "summary.json").is_file(), reason="no committed outputs")
+def test_renders_against_real_outputs():
+    summary = json.loads((REAL_DIR / "summary.json").read_text(encoding="utf-8"))
+    sections = ui_cadence.build_cadence_sections(None, "2026-04-15", scenario_dir=REAL_DIR)
+    assert "Szenariodaten fehlen" not in "".join(sections.values())
+    produced = ui_cadence._de(summary["produced_t"], 2)
+    assert produced in sections["scenarios"]
+    for scenario in summary["scenarios"]:
+        assert f'data-scenario="{scenario["id"]}"' in sections["scenarios"]
+    assert ui_cadence._de(summary["produced_t"], 1) in sections["list"]

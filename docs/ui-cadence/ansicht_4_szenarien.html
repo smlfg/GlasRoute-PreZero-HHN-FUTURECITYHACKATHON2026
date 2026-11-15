@@ -98,6 +98,11 @@
   flex: 1 1 180px;
 }
 
+.cadence-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.cadence-all > summary { cursor: pointer; font-weight: 600; margin: 12px 0; }
+.cadence-caveats { margin: 8px 0 0 18px; }
+.cadence-histogram { margin: 16px 0; }
+#cadence-search { min-width: 220px; padding: 6px 8px; }
 .cadence-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -424,75 +429,141 @@
 
     <section id="view-cadence-scenarios" class="view-panel cadence-scenarios-view">
       <div class="section-head">
-        <h2>Szenarien über das ganze Jahr</h2>
+        <h2>Szenarien über den ganzen Zeitraum</h2>
         <p class="muted">
-          Auswertung über das volle Replay-Jahr (349 Tage,
-          17.10.2025 bis 30.09.2026).
-          Erzeugtes Glas: 7.719,2 t — in jedem Szenario
-          gleich, die Szenarien unterscheiden sich nur in der Entscheidungsregel.
+          Zeitraum 17.10.2025 bis 30.09.2026
+          (349 Tage).
+          <strong>Gleiche Glasmenge: 7.613,95 t in jedem Szenario</strong>
+          - die Szenarien unterscheiden sich nur in der Entscheidungsregel.
+          Quelle: <code>summary.json</code> der Szenario-Engine.
         </p>
+        <ul class="cadence-caveats">
+          <li><strong>Standorte simuliert: 449 IDs auf 121 OSM-Punkten</strong> (zufällig zugeordnet); Bündelung am Halt ist in der
+            Simulation leichter als in der Realität, absolute km und Halte sind illustrativ.</li>
+          <li><strong>Mehrkammer vs. ein LKW je Farbe unbekannt</strong> - beide Varianten stehen in den Tabellen.</li>
+        </ul>
       </div>
       
-            <div class="scenario-block">
-              <h3>Real (7/15 min + 5 min/Stopp + Depot)</h3>
-              <div class="table-scroll">
-                <table class="cadence-table scenario-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Szenario</th>
-                      <th scope="col">Ø Füllstand</th>
-                      <th scope="col">Überläufe</th>
-                      <th scope="col">Eingesparte Leerungen</th>
-                      <th scope="col">km</th>
-                      <th scope="col">Fahrzeugtage</th>
-                      <th scope="col">Kosten</th>
-                    </tr>
-                  </thead>
-                  <tbody><tr class="scenario-best"><td>Null Überlauf (früh leeren) · wenigste Überläufe</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.640 km</td><td class="num">326</td><td class="num">291.218 €</td></tr><tr class=""><td>Minimum km (spät leeren)</td><td class="num">97,6 %</td><td class="num">9</td><td class="num">2.011</td><td class="num">23.078 km</td><td class="num">306</td><td class="num">268.633 €</td></tr><tr class=""><td>Maximum Füllgrad</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.640 km</td><td class="num">326</td><td class="num">291.218 €</td></tr><tr class=""><td>Status quo (reale Leerungstage)</td><td class="num">77,8 %</td><td class="num">1.858</td><td class="num">0</td><td class="num">19.396 km</td><td class="num">294</td><td class="num">254.925 €</td></tr><tr class=""><td>Mentor-Politik (14-Tage-Rhythmus)</td><td class="num">34,2 %</td><td class="num">4</td><td class="num">-12.679</td><td class="num">28.482 km</td><td class="num">444</td><td class="num">406.155 €</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div class="scenario-block">
-              <h3>5 min je Hop</h3>
-              <div class="table-scroll">
-                <table class="cadence-table scenario-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Szenario</th>
-                      <th scope="col">Ø Füllstand</th>
-                      <th scope="col">Überläufe</th>
-                      <th scope="col">Eingesparte Leerungen</th>
-                      <th scope="col">km</th>
-                      <th scope="col">Fahrzeugtage</th>
-                      <th scope="col">Kosten</th>
-                    </tr>
-                  </thead>
-                  <tbody><tr class=""><td>Null Überlauf (früh leeren)</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.732 km</td><td class="num">285</td><td class="num">242.679 €</td></tr><tr class=""><td>Minimum km (spät leeren)</td><td class="num">97,6 %</td><td class="num">9</td><td class="num">2.011</td><td class="num">23.042 km</td><td class="num">273</td><td class="num">225.433 €</td></tr><tr class=""><td>Maximum Füllgrad</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.732 km</td><td class="num">285</td><td class="num">242.679 €</td></tr><tr class="scenario-best"><td>Status quo (reale Leerungstage) · günstigste</td><td class="num">77,8 %</td><td class="num">1.858</td><td class="num">0</td><td class="num">19.397 km</td><td class="num">230</td><td class="num">200.867 €</td></tr><tr class=""><td>Mentor-Politik (14-Tage-Rhythmus)</td><td class="num">34,2 %</td><td class="num">4</td><td class="num">-12.679</td><td class="num">28.927 km</td><td class="num">392</td><td class="num">348.846 €</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div class="scenario-block">
-              <h3>10 min je Hop</h3>
-              <div class="table-scroll">
-                <table class="cadence-table scenario-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Szenario</th>
-                      <th scope="col">Ø Füllstand</th>
-                      <th scope="col">Überläufe</th>
-                      <th scope="col">Eingesparte Leerungen</th>
-                      <th scope="col">km</th>
-                      <th scope="col">Fahrzeugtage</th>
-                      <th scope="col">Kosten</th>
-                    </tr>
-                  </thead>
-                  <tbody><tr class=""><td>Null Überlauf (früh leeren)</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.540 km</td><td class="num">316</td><td class="num">281.131 €</td></tr><tr class=""><td>Minimum km (spät leeren)</td><td class="num">97,6 %</td><td class="num">9</td><td class="num">2.011</td><td class="num">22.933 km</td><td class="num">297</td><td class="num">259.334 €</td></tr><tr class=""><td>Maximum Füllgrad</td><td class="num">78,0 %</td><td class="num">4</td><td class="num">19</td><td class="num">24.540 km</td><td class="num">316</td><td class="num">281.131 €</td></tr><tr class=""><td>Status quo (reale Leerungstage)</td><td class="num">77,8 %</td><td class="num">1.858</td><td class="num">0</td><td class="num">19.330 km</td><td class="num">289</td><td class="num">248.448 €</td></tr><tr class=""><td>Mentor-Politik (14-Tage-Rhythmus)</td><td class="num">34,2 %</td><td class="num">4</td><td class="num">-12.679</td><td class="num">28.684 km</td><td class="num">438</td><td class="num">398.356 €</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-            
+        <div class="scenario-block" data-time-model="real">
+          <h3>Zeitmodell: Real (7/15 min Fahrt, 5 min je Halt, Depot)</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">391</td><td class="num">2.256,4</td><td class="num">25.266</td><td class="num">356.333 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">339</td><td class="num">1.930,8</td><td class="num">22.959</td><td class="num">307.994 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">379</td><td class="num">2.202,2</td><td class="num">24.673</td><td class="num">346.478 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">271</td><td class="num">1.335,0</td><td class="num">19.008</td><td class="num">233.295 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">404</td><td class="num">2.130,6</td><td class="num">25.185</td><td class="num">354.729 €</td><td></td></tr><tr class="" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">317</td><td class="num">1.539,9</td><td class="num">14.898</td><td class="num">266.738 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">286</td><td class="num">1.208,8</td><td class="num">17.482</td><td class="num">231.726 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">275</td><td class="num">1.055,3</td><td class="num">15.398</td><td class="num">215.048 €</td><td>günstigste, wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">331</td><td class="num">1.779,9</td><td class="num">22.238</td><td class="num">293.869 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">766</td><td class="num">2.626,8</td><td class="num">38.029</td><td class="num">575.834 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">672</td><td class="num">2.677,8</td><td class="num">39.292</td><td class="num">532.919 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">698</td><td class="num">1.694,9</td><td class="num">27.844</td><td class="num">475.572 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        <div class="scenario-block" data-time-model="km">
+          <h3>Zeitmodell: km-Modell (km / Geschwindigkeit, Rüst- und Hubzeit aus Config)</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">344</td><td class="num">1.968,5</td><td class="num">25.266</td><td class="num">314.407 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">301</td><td class="num">1.721,3</td><td class="num">22.959</td><td class="num">275.586 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">328</td><td class="num">1.915,9</td><td class="num">24.673</td><td class="num">302.655 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">317</td><td class="num">1.593,3</td><td class="num">19.008</td><td class="num">272.826 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">404</td><td class="num">2.104,8</td><td class="num">25.185</td><td class="num">353.078 €</td><td></td></tr><tr class="scenario-best" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">315</td><td class="num">1.534,3</td><td class="num">14.898</td><td class="num">265.379 €</td><td>günstigste</td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">315</td><td class="num">1.633,4</td><td class="num">17.482</td><td class="num">273.401 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">341</td><td class="num">1.700,3</td><td class="num">15.398</td><td class="num">289.328 €</td><td>wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">329</td><td class="num">1.799,1</td><td class="num">22.238</td><td class="num">294.097 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">738</td><td class="num">2.471,2</td><td class="num">38.029</td><td class="num">551.876 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">658</td><td class="num">2.541,3</td><td class="num">39.292</td><td class="num">517.183 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">710</td><td class="num">2.012,8</td><td class="num">27.844</td><td class="num">501.918 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        <div class="scenario-block" data-time-model="hop5">
+          <h3>Zeitmodell: Normierte Distanz: jeder Sprung 5 min</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">290</td><td class="num">1.551,6</td><td class="num">25.266</td><td class="num">260.725 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">282</td><td class="num">1.326,8</td><td class="num">22.959</td><td class="num">240.838 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">286</td><td class="num">1.515,3</td><td class="num">24.673</td><td class="num">256.017 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">233</td><td class="num">893,0</td><td class="num">19.008</td><td class="num">186.007 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">295</td><td class="num">1.474,2</td><td class="num">25.185</td><td class="num">258.219 €</td><td></td></tr><tr class="" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">236</td><td class="num">1.051,8</td><td class="num">14.898</td><td class="num">194.999 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">248</td><td class="num">799,8</td><td class="num">17.482</td><td class="num">186.550 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">248</td><td class="num">679,5</td><td class="num">15.398</td><td class="num">177.496 €</td><td>günstigste, wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">280</td><td class="num">1.216,9</td><td class="num">22.238</td><td class="num">232.337 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">695</td><td class="num">1.781,5</td><td class="num">38.029</td><td class="num">486.235 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">645</td><td class="num">1.823,3</td><td class="num">39.292</td><td class="num">464.731 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">672</td><td class="num">1.129,0</td><td class="num">27.844</td><td class="num">426.354 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        <div class="scenario-block" data-time-model="hop10">
+          <h3>Zeitmodell: Normierte Distanz: jeder Sprung 10 min</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">390</td><td class="num">2.263,9</td><td class="num">25.266</td><td class="num">356.313 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">332</td><td class="num">1.925,5</td><td class="num">22.959</td><td class="num">304.155 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">381</td><td class="num">2.211,9</td><td class="num">24.673</td><td class="num">348.099 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">249</td><td class="num">1.271,6</td><td class="num">19.008</td><td class="num">218.237 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">400</td><td class="num">2.135,6</td><td class="num">25.185</td><td class="num">353.049 €</td><td></td></tr><tr class="" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">321</td><td class="num">1.501,7</td><td class="num">14.898</td><td class="num">266.293 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">279</td><td class="num">1.125,2</td><td class="num">17.482</td><td class="num">222.876 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">268</td><td class="num">939,2</td><td class="num">15.398</td><td class="num">204.117 €</td><td>günstigste, wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">323</td><td class="num">1.763,2</td><td class="num">22.238</td><td class="num">288.800 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">767</td><td class="num">2.650,7</td><td class="num">38.029</td><td class="num">577.864 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">671</td><td class="num">2.711,7</td><td class="num">39.292</td><td class="num">534.588 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">697</td><td class="num">1.670,9</td><td class="num">27.844</td><td class="num">473.536 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+      
+      <div class="scenario-block km-decomposition">
+        <h3>Woher kommen die Mehr-km? (Zerlegung gegen den Status quo)</h3>
+        <div class="table-scroll">
+          <table class="cadence-table km-table">
+            <thead><tr>
+              <th scope="col">Szenario</th>
+              <th scope="col">km Status quo</th>
+              <th scope="col">km Szenario</th>
+              <th scope="col">Δ km</th>
+              <th scope="col">Mehr Leerungen (km)</th><th scope="col">Gestreute Fälligkeiten (km)</th><th scope="col">Mehr Fahrzeuge (Depot) (km)</th><th scope="col">Mehr Entladefahrten (km)</th><th scope="col">Farbtrennung (km)</th>
+              <th scope="col">Container je Halt</th>
+            </tr></thead>
+            <tbody><tr><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag</td><td class="num">19.008</td><td class="num">25.266</td><td class="num">6.259</td><td class="num">70</td><td class="num">-5.440</td><td class="num">285</td><td class="num">-1.103</td><td class="num">12.447</td><td class="num">1,34</td></tr><tr><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu</td><td class="num">19.008</td><td class="num">25.185</td><td class="num">6.178</td><td class="num">3.598</td><td class="num">-4.135</td><td class="num">873</td><td class="num">-1.362</td><td class="num">7.203</td><td class="num">1,88</td></tr><tr><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag</td><td class="num">19.008</td><td class="num">14.898</td><td class="num">-4.109</td><td class="num">1.624</td><td class="num">-7.142</td><td class="num">19</td><td class="num">91</td><td class="num">1.299</td><td class="num">2,54</td></tr><tr><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %)</td><td class="num">19.008</td><td class="num">17.482</td><td class="num">-1.526</td><td class="num">2.555</td><td class="num">491</td><td class="num">-509</td><td class="num">563</td><td class="num">-4.626</td><td class="num">4,10</td></tr></tbody>
+          </table>
+        </div>
+        <p class="muted">Die Aufteilung ist eine Methode, keine eindeutige Zuordnung
+        (Quelle: <code>km_decomposition.json</code>).</p>
+      </div>
+    
     </section>
     
   </div>
@@ -541,18 +612,29 @@
   var filterButtons = document.querySelectorAll(".cadence-filter-btn");
   var tableBody = document.getElementById("cadence-table-body");
 
+  var activeFilter = "all";
+  var searchBox = document.getElementById("cadence-search");
+
   function applyFilter(filter) {
     if (!tableBody) { return; }
+    activeFilter = filter;
+    var needle = searchBox ? searchBox.value.trim().toLowerCase() : "";
     var rows = tableBody.querySelectorAll("tr.cadence-row");
     var shown = 0;
     rows.forEach(function (row) {
       var status = row.getAttribute("data-status");
-      var visible = filter === "all" || status === filter;
+      var visible = (filter === "all" || status === filter) &&
+        (!needle || row.textContent.toLowerCase().indexOf(needle) !== -1 ||
+         (row.getAttribute("data-location") || "").toLowerCase().indexOf(needle) !== -1);
       row.style.display = visible ? "" : "none";
       if (visible) { shown += 1; }
     });
     var countNode = document.getElementById("cadence-filter-count");
     if (countNode) { countNode.textContent = shown + " von " + rows.length + " Containern"; }
+  }
+
+  if (searchBox) {
+    searchBox.addEventListener("input", function () { applyFilter(activeFilter); });
   }
 
   filterButtons.forEach(function (btn) {
@@ -711,19 +793,19 @@
         esc(row.status_label) + "</span>" +
       "</div>" +
       '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
-        " · " + de(row.visits, 0) + " Messungen" +
         " · Füllrate " + de(row.rate_pct_per_day, 1) + " %/Tag" +
-        " · letzte Leerung " + dateDe(row.last_visit_date) + "</p>" +
+        " · " + de(row.emptyings_status_quo, 0) + " Leerungen im Status quo" +
+        " · " + (row.skip_14d > 0 ? "im Mentor-Takt übersprungen" : "im Mentor-Takt nicht übersprungen") + "</p>" +
       '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
       '<div class="kpi-grid">' +
         '<div class="card"><div class="label">Takt heute</div><div class="value">' +
           currentTxt + '</div></div>' +
         '<div class="card"><div class="label">Takt neu</div><div class="value">' +
           proposedTxt + '</div></div>' +
-        '<div class="card"><div class="label">Ø Füllstand bei Leerung</div><div class="value">' +
-          de(row.avg_fill_at_emptying_pct, 1) + " %</div></div>" +
-        '<div class="card"><div class="label">Nächste Leerung</div><div class="value">' +
-          dateDe(row.next_due_date) + "</div></div>" +
+        '<div class="card"><div class="label">Ø Füllstand (Status quo)</div><div class="value">' +
+          de(row.avg_fill_status_quo_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Ø Füllstand (Mentor)</div><div class="value">' +
+          de(row.avg_fill_mentor_pct, 1) + " %</div></div>" +
       "</div>" +
       sawtoothSvg(row);
   }

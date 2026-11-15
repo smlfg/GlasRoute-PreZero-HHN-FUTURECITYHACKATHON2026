@@ -1,0 +1,5 @@
+location_id,material,lat,lon,area,rate_pct_per_day,rate_kg_per_day,cadence_days_T,emptyings_status_quo,emptyings_mentor,avg_fill_status_quo_pct,avg_fill_mentor_pct,overflow_events_status_quo,skip_14d
+L1,white,49.14,9.21,0,5.0,50.0,5.0,9,12,80.0,45.0,0,0
+L1,brown,49.14,9.21,0,0.67,6.7,40.0,7,23,21.8,34.8,0,1
+L2,brown,49.19,9.22,1,2.5,25.0,12.0,12,15,55.0,40.0,3,0
+L3,green,49.15,9.23,1,1.2,12.0,20.0,10,11,45.0,30.0,1,0

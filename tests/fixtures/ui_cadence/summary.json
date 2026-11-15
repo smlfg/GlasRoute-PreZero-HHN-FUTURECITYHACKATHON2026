@@ -1,0 +1,129 @@
+{
+ "generated_at": "2026-11-15T12:00:00+00:00",
+ "period": {
+  "start": "2025-10-17",
+  "end": "2026-09-30",
+  "days": 349
+ },
+ "produced_t": 100.0,
+ "units": "fill %; t; h; km",
+ "model_spec": "docs/MODEL_SPEC.md",
+ "scenarios": [
+  {
+   "id": "d_status_quo",
+   "policy_id": "d_status_quo",
+   "label": "Status quo (reale Leerungstage)",
+   "time_model": "real",
+   "truck_mode": "multi_chamber",
+   "co_empty_threshold_pct": null,
+   "collected_t": 90.0,
+   "end_stock_t": 10.0,
+   "mass_balance_ok": true,
+   "avg_fill_at_emptying_pct": 67.0,
+   "overflow_events": 40,
+   "overfull_at_emptying": 3,
+   "emptyings": 100,
+   "emptyings_saved_vs_status_quo": 0,
+   "extra_emptyings_co": 0,
+   "stops": 60,
+   "vehicle_days": 30,
+   "hours": 150.5,
+   "km": 1000.0,
+   "cost_eur": 20000.0,
+   "cost_breakdown": {
+    "total_eur": 20000.0
+   },
+   "flags": {
+    "cheapest": false,
+    "fewest_overflows": false
+   }
+  },
+  {
+   "id": "e_mentor",
+   "policy_id": "e_mentor",
+   "label": "Mentor-Takt",
+   "time_model": "real",
+   "truck_mode": "multi_chamber",
+   "co_empty_threshold_pct": null,
+   "collected_t": 95.0,
+   "end_stock_t": 5.0,
+   "mass_balance_ok": true,
+   "avg_fill_at_emptying_pct": 52.5,
+   "overflow_events": 10,
+   "overfull_at_emptying": 3,
+   "emptyings": 130,
+   "emptyings_saved_vs_status_quo": -30,
+   "extra_emptyings_co": 0,
+   "stops": 80,
+   "vehicle_days": 35,
+   "hours": 170.25,
+   "km": 1200.0,
+   "cost_eur": 22000.0,
+   "cost_breakdown": {
+    "total_eur": 22000.0
+   },
+   "flags": {
+    "cheapest": true,
+    "fewest_overflows": true
+   }
+  },
+  {
+   "id": "d_status_quo",
+   "policy_id": "d_status_quo",
+   "label": "Status quo (reale Leerungstage)",
+   "time_model": "km",
+   "truck_mode": "multi_chamber",
+   "co_empty_threshold_pct": null,
+   "collected_t": 90.0,
+   "end_stock_t": 10.0,
+   "mass_balance_ok": true,
+   "avg_fill_at_emptying_pct": 67.0,
+   "overflow_events": 40,
+   "overfull_at_emptying": 3,
+   "emptyings": 100,
+   "emptyings_saved_vs_status_quo": 0,
+   "extra_emptyings_co": 0,
+   "stops": 60,
+   "vehicle_days": 30,
+   "hours": 150.5,
+   "km": 1000.0,
+   "cost_eur": 22000.0,
+   "cost_breakdown": {
+    "total_eur": 22000.0
+   },
+   "flags": {
+    "cheapest": false,
+    "fewest_overflows": false
+   }
+  },
+  {
+   "id": "e_mentor",
+   "policy_id": "e_mentor",
+   "label": "Mentor-Takt",
+   "time_model": "km",
+   "truck_mode": "multi_chamber",
+   "co_empty_threshold_pct": null,
+   "collected_t": 95.0,
+   "end_stock_t": 5.0,
+   "mass_balance_ok": true,
+   "avg_fill_at_emptying_pct": 52.5,
+   "overflow_events": 10,
+   "overfull_at_emptying": 3,
+   "emptyings": 130,
+   "emptyings_saved_vs_status_quo": -30,
+   "extra_emptyings_co": 0,
+   "stops": 80,
+   "vehicle_days": 35,
+   "hours": 170.25,
+   "km": 1200.0,
+   "cost_eur": 24200.000000000004,
+   "cost_breakdown": {
+    "total_eur": 24200.000000000004
+   },
+   "flags": {
+    "cheapest": false,
+    "fewest_overflows": true
+   }
+  }
+ ]
+}

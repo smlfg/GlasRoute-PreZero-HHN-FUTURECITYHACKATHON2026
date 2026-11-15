@@ -50,18 +50,29 @@ JS = r"""
   var filterButtons = document.querySelectorAll(".cadence-filter-btn");
   var tableBody = document.getElementById("cadence-table-body");
 
+  var activeFilter = "all";
+  var searchBox = document.getElementById("cadence-search");
+
   function applyFilter(filter) {
     if (!tableBody) { return; }
+    activeFilter = filter;
+    var needle = searchBox ? searchBox.value.trim().toLowerCase() : "";
     var rows = tableBody.querySelectorAll("tr.cadence-row");
     var shown = 0;
     rows.forEach(function (row) {
       var status = row.getAttribute("data-status");
-      var visible = filter === "all" || status === filter;
+      var visible = (filter === "all" || status === filter) &&
+        (!needle || row.textContent.toLowerCase().indexOf(needle) !== -1 ||
+         (row.getAttribute("data-location") || "").toLowerCase().indexOf(needle) !== -1);
       row.style.display = visible ? "" : "none";
       if (visible) { shown += 1; }
     });
     var countNode = document.getElementById("cadence-filter-count");
     if (countNode) { countNode.textContent = shown + " von " + rows.length + " Containern"; }
+  }
+
+  if (searchBox) {
+    searchBox.addEventListener("input", function () { applyFilter(activeFilter); });
   }
 
   filterButtons.forEach(function (btn) {
@@ -220,19 +231,19 @@ JS = r"""
         esc(row.status_label) + "</span>" +
       "</div>" +
       '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
-        " · " + de(row.visits, 0) + " Messungen" +
         " · Füllrate " + de(row.rate_pct_per_day, 1) + " %/Tag" +
-        " · letzte Leerung " + dateDe(row.last_visit_date) + "</p>" +
+        " · " + de(row.emptyings_status_quo, 0) + " Leerungen im Status quo" +
+        " · " + (row.skip_14d > 0 ? "im Mentor-Takt übersprungen" : "im Mentor-Takt nicht übersprungen") + "</p>" +
       '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
       '<div class="kpi-grid">' +
         '<div class="card"><div class="label">Takt heute</div><div class="value">' +
           currentTxt + '</div></div>' +
         '<div class="card"><div class="label">Takt neu</div><div class="value">' +
           proposedTxt + '</div></div>' +
-        '<div class="card"><div class="label">Ø Füllstand bei Leerung</div><div class="value">' +
-          de(row.avg_fill_at_emptying_pct, 1) + " %</div></div>" +
-        '<div class="card"><div class="label">Nächste Leerung</div><div class="value">' +
-          dateDe(row.next_due_date) + "</div></div>" +
+        '<div class="card"><div class="label">Ø Füllstand (Status quo)</div><div class="value">' +
+          de(row.avg_fill_status_quo_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Ø Füllstand (Mentor)</div><div class="value">' +
+          de(row.avg_fill_mentor_pct, 1) + " %</div></div>" +
       "</div>" +
       sawtoothSvg(row);
   }

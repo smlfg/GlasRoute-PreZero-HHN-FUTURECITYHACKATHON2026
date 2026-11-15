@@ -98,6 +98,11 @@
   flex: 1 1 180px;
 }
 
+.cadence-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.cadence-all > summary { cursor: pointer; font-weight: 600; margin: 12px 0; }
+.cadence-caveats { margin: 8px 0 0 18px; }
+.cadence-histogram { margin: 16px 0; }
+#cadence-search { min-width: 220px; padding: 6px 8px; }
 .cadence-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -426,12 +431,45 @@
       <div class="section-head">
         <h2>Diese Woche</h2>
         <p class="muted">
-          Container, die zwischen 15.04.2026 und
-          22.04.2026 fällig sind — nach Gebiet gruppiert.
-          Die Woche ist die Planungsansicht; das Jahr zeigt, wie sich der Takt einpendelt.
+          Wochenausschnitt aus dem Szenario-Verlauf (Tageswerte der Engine) und die
+          Container je Gebiet. Die Woche ist die Planungsansicht; das Jahr zeigt, wie sich
+          der Takt einpendelt. Stand 15.04.2026.
         </p>
       </div>
-      <p class="muted">In dieser Woche ist kein Container fällig.</p>
+      
+      <h3>Letzte Woche des Zeitraums (24.09.2026 bis 30.09.2026)</h3>
+      <div class="table-scroll">
+        <table class="cadence-table week-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Überläufe</th>
+            <th scope="col">Gesammelt</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeuge (max.)</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+          </tr></thead>
+          <tbody><tr><td>(a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag</td><td class="num">213</td><td class="num">0</td><td class="num">163,4 t</td><td class="num">151</td><td class="num">3</td><td class="num">45,0 h</td><td class="num">516 km</td></tr><tr><td>(b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag</td><td class="num">164</td><td class="num">16</td><td class="num">159,7 t</td><td class="num">138</td><td class="num">3</td><td class="num">43,5 h</td><td class="num">521 km</td></tr><tr><td>(c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T</td><td class="num">205</td><td class="num">0</td><td class="num">164,3 t</td><td class="num">151</td><td class="num">3</td><td class="num">45,2 h</td><td class="num">515 km</td></tr><tr><td>(d) Status quo: reale Leerungstage</td><td class="num">171</td><td class="num">564</td><td class="num">130,2 t</td><td class="num">60</td><td class="num">2</td><td class="num">23,9 h</td><td class="num">352 km</td></tr><tr><td>(e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu</td><td class="num">281</td><td class="num">0</td><td class="num">178,1 t</td><td class="num">168</td><td class="num">2</td><td class="num">48,6 h</td><td class="num">589 km</td></tr><tr><td>(f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag</td><td class="num">239</td><td class="num">0</td><td class="num">165,6 t</td><td class="num">97</td><td class="num">2</td><td class="num">32,2 h</td><td class="num">327 km</td></tr><tr><td>(g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %)</td><td class="num">274</td><td class="num">0</td><td class="num">173,3 t</td><td class="num">62</td><td class="num">2</td><td class="num">26,1 h</td><td class="num">369 km</td></tr><tr><td>(g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %)</td><td class="num">260</td><td class="num">0</td><td class="num">130,9 t</td><td class="num">37</td><td class="num">2</td><td class="num">17,6 h</td><td class="num">279 km</td></tr><tr><td>(g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %)</td><td class="num">226</td><td class="num">0</td><td class="num">169,0 t</td><td class="num">111</td><td class="num">3</td><td class="num">36,4 h</td><td class="num">442 km</td></tr><tr><td>(a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag</td><td class="num">213</td><td class="num">0</td><td class="num">163,4 t</td><td class="num">190</td><td class="num">5</td><td class="num">53,0 h</td><td class="num">783 km</td></tr><tr><td>(d) Status quo: reale Leerungstage</td><td class="num">171</td><td class="num">564</td><td class="num">130,2 t</td><td class="num">159</td><td class="num">3</td><td class="num">45,6 h</td><td class="num">584 km</td></tr><tr><td>(g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %)</td><td class="num">240</td><td class="num">0</td><td class="num">162,8 t</td><td class="num">97</td><td class="num">4</td><td class="num">34,6 h</td><td class="num">566 km</td></tr></tbody>
+        </table>
+      </div>
+    
+      
+      <h3>Container je Gebiet</h3>
+      <div class="table-scroll">
+        <table class="cadence-table week-table">
+          <thead><tr>
+            <th scope="col">Gebiet</th>
+            <th scope="col">Container</th>
+            <th scope="col">Ø Füllrate</th>
+            <th scope="col">Takt neu (Median)</th>
+            <th scope="col">Kritisch</th>
+            <th scope="col">Übersprungen</th>
+          </tr></thead>
+          <tbody><tr><td>Gebiet 1</td><td class="num">280</td><td class="num">1,8 %/Tag</td><td class="num">54 Tage</td><td class="num">148</td><td class="num">80</td></tr><tr><td>Gebiet 2</td><td class="num">382</td><td class="num">1,8 %/Tag</td><td class="num">53 Tage</td><td class="num">186</td><td class="num">135</td></tr><tr><td>Gebiet 3</td><td class="num">222</td><td class="num">1,9 %/Tag</td><td class="num">54 Tage</td><td class="num">110</td><td class="num">77</td></tr><tr><td>Gebiet 4</td><td class="num">386</td><td class="num">1,7 %/Tag</td><td class="num">56 Tage</td><td class="num">202</td><td class="num">112</td></tr><tr><td>Gebiet 5</td><td class="num">68</td><td class="num">1,7 %/Tag</td><td class="num">56 Tage</td><td class="num">36</td><td class="num">21</td></tr></tbody>
+        </table>
+      </div>
+    
       
     </section>
     
@@ -481,18 +519,29 @@
   var filterButtons = document.querySelectorAll(".cadence-filter-btn");
   var tableBody = document.getElementById("cadence-table-body");
 
+  var activeFilter = "all";
+  var searchBox = document.getElementById("cadence-search");
+
   function applyFilter(filter) {
     if (!tableBody) { return; }
+    activeFilter = filter;
+    var needle = searchBox ? searchBox.value.trim().toLowerCase() : "";
     var rows = tableBody.querySelectorAll("tr.cadence-row");
     var shown = 0;
     rows.forEach(function (row) {
       var status = row.getAttribute("data-status");
-      var visible = filter === "all" || status === filter;
+      var visible = (filter === "all" || status === filter) &&
+        (!needle || row.textContent.toLowerCase().indexOf(needle) !== -1 ||
+         (row.getAttribute("data-location") || "").toLowerCase().indexOf(needle) !== -1);
       row.style.display = visible ? "" : "none";
       if (visible) { shown += 1; }
     });
     var countNode = document.getElementById("cadence-filter-count");
     if (countNode) { countNode.textContent = shown + " von " + rows.length + " Containern"; }
+  }
+
+  if (searchBox) {
+    searchBox.addEventListener("input", function () { applyFilter(activeFilter); });
   }
 
   filterButtons.forEach(function (btn) {
@@ -651,19 +700,19 @@
         esc(row.status_label) + "</span>" +
       "</div>" +
       '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
-        " · " + de(row.visits, 0) + " Messungen" +
         " · Füllrate " + de(row.rate_pct_per_day, 1) + " %/Tag" +
-        " · letzte Leerung " + dateDe(row.last_visit_date) + "</p>" +
+        " · " + de(row.emptyings_status_quo, 0) + " Leerungen im Status quo" +
+        " · " + (row.skip_14d > 0 ? "im Mentor-Takt übersprungen" : "im Mentor-Takt nicht übersprungen") + "</p>" +
       '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
       '<div class="kpi-grid">' +
         '<div class="card"><div class="label">Takt heute</div><div class="value">' +
           currentTxt + '</div></div>' +
         '<div class="card"><div class="label">Takt neu</div><div class="value">' +
           proposedTxt + '</div></div>' +
-        '<div class="card"><div class="label">Ø Füllstand bei Leerung</div><div class="value">' +
-          de(row.avg_fill_at_emptying_pct, 1) + " %</div></div>" +
-        '<div class="card"><div class="label">Nächste Leerung</div><div class="value">' +
-          dateDe(row.next_due_date) + "</div></div>" +
+        '<div class="card"><div class="label">Ø Füllstand (Status quo)</div><div class="value">' +
+          de(row.avg_fill_status_quo_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Ø Füllstand (Mentor)</div><div class="value">' +
+          de(row.avg_fill_mentor_pct, 1) + " %</div></div>" +
       "</div>" +
       sawtoothSvg(row);
   }

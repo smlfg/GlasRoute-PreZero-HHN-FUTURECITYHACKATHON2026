@@ -42,6 +42,11 @@ CSS = r"""
   flex: 1 1 180px;
 }
 
+.cadence-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.cadence-all > summary { cursor: pointer; font-weight: 600; margin: 12px 0; }
+.cadence-caveats { margin: 8px 0 0 18px; }
+.cadence-histogram { margin: 16px 0; }
+#cadence-search { min-width: 220px; padding: 6px 8px; }
 .cadence-toolbar {
   display: flex;
   flex-wrap: wrap;
