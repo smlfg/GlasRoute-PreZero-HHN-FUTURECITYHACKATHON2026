@@ -2832,8 +2832,8 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         </div>
         <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
       </div>
-      <div id="driver-locked" class="coverage-hint">Diese Tour (<span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>) ist noch nicht freigegeben.</div>
-      <div id="driver-tour" hidden>
+      <div id="driver-locked" class="coverage-hint pending-approval">Diese Tour (<span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>) ist noch nicht freigegeben.</div>
+      <div id="driver-tour">
         <div class="driver-actions">
           {maps_link}
           {maps_legs_html}
@@ -4250,6 +4250,37 @@ def build_ui(
       var roleNavBtns = document.querySelectorAll(".role-nav-btn");
       var analysisWorkspace = document.querySelectorAll(".analysis-workspace");
       var approvalKey = "glasroute-approved-" + currentDate;
+      var currentVariantId = "baseline";
+
+      function getApprovedPlan(date) {{
+        var key = "glasroute-approved-" + date;
+        var raw = localStorage.getItem(key);
+        if (!raw) return null;
+        if (raw === "true") {{
+          var snap = dateSnapshots[date];
+          if (!snap) return null;
+          return {{
+            status: "approved",
+            approved: true,
+            approved_by: "Disponent/in",
+            variant_id: "baseline",
+            vehicles_needed: Number(snap.metrics.vehicles_needed || 0),
+            stops: snap.stops || (snap.proposal && snap.proposal.stops) || [],
+            driver_stops: snap.driver_stops || [],
+            maps_legs: snap.maps_legs || {{}},
+            maps_url: snap.maps_url || "",
+            gpx_xml: snap.gpx_xml || "",
+            metrics: snap.metrics
+          }};
+        }}
+        try {{
+          var obj = JSON.parse(raw);
+          if (obj && typeof obj === "object" && obj.approved) {{
+            return obj;
+          }}
+        }} catch(e) {{}}
+        return null;
+      }}
       function intDe(v) {{
         if (v === null || v === undefined || isNaN(Number(v))) return "-";
         return Math.round(Number(v)).toLocaleString("de-DE");
@@ -4319,11 +4350,7 @@ def build_ui(
         }}
       }}
       function updateDriverAccess() {{
-        var approved = localStorage.getItem(approvalKey) === "true";
-        var locked = document.getElementById("driver-locked");
-        var tour = document.getElementById("driver-tour");
-        if (locked) locked.hidden = approved;
-        if (tour) tour.hidden = !approved;
+        renderDriverView();
       }}
       roleNavBtns.forEach(function(btn) {{
         btn.addEventListener("click", function() {{ showRole(btn.getAttribute("data-role")); }});
@@ -4431,6 +4458,93 @@ def build_ui(
           }}
         }}
       }}
+      function renderDriverView() {{
+        var snap = dateSnapshots[currentDate];
+        if (!snap) return;
+        var approvedPlan = getApprovedPlan(currentDate);
+        var isApproved = !!approvedPlan;
+        var activePlan = approvedPlan || {{
+          status: "proposed",
+          approved: false,
+          approved_by: null,
+          variant_id: "baseline",
+          vehicles_needed: Number((snap.metrics && snap.metrics.vehicles_needed) || 0),
+          stops: snap.stops || (snap.proposal && snap.proposal.stops) || [],
+          driver_stops: snap.driver_stops || [],
+          maps_legs: snap.maps_legs || {{}},
+          maps_url: snap.maps_url || "",
+          gpx_xml: snap.gpx_xml || "",
+          metrics: snap.metrics
+        }};
+
+        currentGpxXml = activePlan.gpx_xml || "";
+        currentMapsLegs = activePlan.maps_legs || {{}};
+        renderDriverExports();
+
+        var drvBody = document.getElementById("driver-stops-tbody");
+        if (drvBody && activePlan.driver_stops) {{
+          drvBody.innerHTML = renderDriverStopsHtml(activePlan.driver_stops);
+        }}
+
+        var mapsEl = document.getElementById("driver-maps-link");
+        if (mapsEl) {{
+          if (activePlan.maps_url) {{
+            mapsEl.setAttribute("href", activePlan.maps_url);
+            mapsEl.hidden = false;
+          }} else {{
+            mapsEl.removeAttribute("href");
+            mapsEl.hidden = true;
+          }}
+        }}
+
+        var m = activePlan.metrics || {{}};
+        var drvStopsEl = document.getElementById("drv-kpi-stops");
+        var stopCount = m.num_stops || (activePlan.stops ? activePlan.stops.length : 0);
+        if (drvStopsEl) drvStopsEl.textContent = stopCount + " Stopps · " + fmtDe(m.planned_km, 1) + " km";
+        var drvMetaEl = document.getElementById("drv-kpi-meta");
+        if (drvMetaEl) {{
+          drvMetaEl.innerHTML = esc(activePlan.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(m.rounds || "-") + ' Runden &middot; ' +
+            fmtDe(m.t_collected, 1) + ' t &middot; <span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+        }}
+
+        var lockedEl = document.getElementById("driver-locked");
+        var tourEl = document.getElementById("driver-tour");
+        if (tourEl) tourEl.hidden = false;
+
+        if (lockedEl) {{
+          if (isApproved) {{
+            lockedEl.className = "coverage-hint approved";
+            lockedEl.innerHTML = 'Tour freigegeben durch <strong>' + esc(activePlan.approved_by || "Disponent/in") + '</strong> &middot; Freigegebener Plan: <strong>' + esc(activePlan.vehicles_needed) + ' Fahrzeug(e)</strong> (' + esc(stopCount) + ' Stopps).';
+          }} else {{
+            lockedEl.className = "coverage-hint pending-approval";
+            lockedEl.innerHTML = 'Diese Tour (<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>) ist <strong>noch nicht freigegeben</strong> (Standardvorschlag: ' + esc(activePlan.vehicles_needed) + ' Fahrzeuge).';
+          }}
+        }}
+
+        var driverVehicles = Object.keys(currentMapsLegs || {{}}).length;
+        var approvedVehicles = Number(activePlan.vehicles_needed || 0);
+        var roleDriver = document.getElementById("role-driver");
+        if (roleDriver) {{
+          roleDriver.setAttribute("data-driver-vehicles", String(driverVehicles));
+          roleDriver.setAttribute("data-approved-vehicles", String(approvedVehicles));
+          roleDriver.setAttribute("data-is-approved", isApproved ? "true" : "false");
+        }}
+        if (isApproved && driverVehicles !== approvedVehicles) {{
+          console.warn("Fahrer vehicle count (" + driverVehicles + ") != approved vehicles (" + approvedVehicles + ")");
+        }}
+      }}
+      window.getDriverVehicleCount = function() {{
+        return Object.keys(currentMapsLegs || {{}}).length;
+      }};
+      window.getApprovedVehicleCount = function() {{
+        var ap = getApprovedPlan(currentDate);
+        return ap ? Number(ap.vehicles_needed) : Number((dateSnapshots[currentDate] || {{}}).metrics.vehicles_needed);
+      }};
+      window.checkDriverVehicleConsistency = function() {{
+        var ap = getApprovedPlan(currentDate);
+        if (!ap) return true;
+        return window.getDriverVehicleCount() === window.getApprovedVehicleCount();
+      }};
       function updateVariantSummary(snap, variantId) {{
         var vars = snap.variants || [];
         var chosen = vars[0];
@@ -4584,10 +4698,11 @@ def build_ui(
         }});
       }}
       function syncApprovalBadges() {{
-        var approved = localStorage.getItem(approvalKey) === "true";
+        var ap = getApprovedPlan(currentDate);
+        var approved = !!ap;
         var roleBadge = document.getElementById("role-approval-status");
         var mainBadge = document.getElementById("approval-status-badge");
-        var txt = approved ? "Freigegeben" : "Status: Vorgeschlagen";
+        var txt = approved ? ("Freigegeben durch " + (ap.approved_by || "Disponent/in")) : "Status: Vorgeschlagen";
         [roleBadge, mainBadge].forEach(function(b) {{
           if (!b) return;
           b.textContent = txt;
@@ -4651,44 +4766,21 @@ def build_ui(
           varSel.innerHTML = (snap.variants || []).map(function(v) {{
             return '<option value="' + esc(v.id) + '">' + esc(v.label) + '</option>';
           }}).join("");
+          varSel.value = "baseline";
+          currentVariantId = "baseline";
           updateVariantSummary(snap, "baseline");
         }} else {{
+          currentVariantId = "baseline";
           updateVariantSummary(snap, "baseline");
         }}
         var dispStopsBody = document.getElementById("dispatcher-stops-tbody");
         if (dispStopsBody) dispStopsBody.innerHTML = renderDispatcherStopsHtml(snap.dispatcher_stops);
-        var drvStopsEl = document.getElementById("drv-kpi-stops");
-        if (drvStopsEl) drvStopsEl.textContent = m.num_stops + " Stopps · " + fmtDe(m.planned_km, 1) + " km";
-        var drvMetaEl = document.getElementById("drv-kpi-meta");
-        if (drvMetaEl) {{
-          drvMetaEl.innerHTML = esc(m.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(m.rounds) + ' Runden &middot; ' +
-            fmtDe(m.t_collected, 1) + ' t &middot; <span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
-        }}
-        var drvBody = document.getElementById("driver-stops-tbody");
-        if (drvBody) drvBody.innerHTML = renderDriverStopsHtml(snap.driver_stops);
-        var mapsEl = document.getElementById("driver-maps-link");
-        if (mapsEl) {{
-          if (snap.maps_url) {{
-            mapsEl.setAttribute("href", snap.maps_url);
-            mapsEl.hidden = false;
-          }} else {{
-            mapsEl.removeAttribute("href");
-            mapsEl.hidden = true;
-          }}
-        }}
-        currentGpxXml = snap.gpx_xml || "";
-        currentMapsLegs = snap.maps_legs || {{}};
-        renderDriverExports();
-        var lockedEl = document.getElementById("driver-locked");
-        if (lockedEl) {{
-          lockedEl.innerHTML = 'Diese Tour (<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>) ist noch nicht freigegeben.';
-        }}
         if (snap.csv_rows) insights.csv_rows = snap.csv_rows;
         if (snap.proposal && snap.proposal.stops) insights.stops = snap.proposal.stops;
         var previewEl = document.getElementById("approval-record-preview");
         if (previewEl) previewEl.style.display = "none";
         syncApprovalBadges();
-        updateDriverAccess();
+        renderDriverView();
       }}
       var globalDatePicker = document.getElementById("global-date-picker");
       if (globalDatePicker) {{
@@ -4699,6 +4791,7 @@ def build_ui(
       var dispVariantSelect = document.getElementById("dispatcher-tour-variant-select");
       if (dispVariantSelect) {{
         dispVariantSelect.addEventListener("change", function() {{
+          currentVariantId = dispVariantSelect.value;
           var snap = dateSnapshots[currentDate];
           if (snap) updateVariantSummary(snap, dispVariantSelect.value);
         }});
@@ -4709,6 +4802,15 @@ def build_ui(
         btn.addEventListener("click", function() {{
           document.querySelectorAll(".whatif-btn").forEach(function(b) {{ b.classList.toggle("active", b === btn); }});
           var p = insights.presets[Number(btn.getAttribute("data-preset"))];
+          if (p) {{
+            currentVariantId = p.id;
+            var vs = document.getElementById("dispatcher-tour-variant-select");
+            if (vs) {{
+              vs.value = p.id;
+              var snap = dateSnapshots[currentDate];
+              if (snap) updateVariantSummary(snap, p.id);
+            }}
+          }}
           var rows = insights.rows.map(function(r) {{
             var key = r[0], b = p.baseline[key], s = p.simulation[key];
             var d = Math.round((Number(s) - Number(b)) * 100) / 100;
@@ -4984,20 +5086,47 @@ def build_ui(
       var proposalRaw = document.getElementById("proposal-payload").textContent;
 
       function approveTour(approver) {{
-        var snapProposal = dateSnapshots[currentDate] && dateSnapshots[currentDate].proposal;
-        var record = snapProposal ? JSON.parse(JSON.stringify(snapProposal)) : JSON.parse(proposalRaw);
+        var snap = dateSnapshots[currentDate];
+        var varSel = document.getElementById("dispatcher-tour-variant-select");
+        var variantId = (varSel && varSel.value) ? varSel.value : currentVariantId;
+        var chosen = null;
+        if (snap && snap.variants) {{
+          for (var i = 0; i < snap.variants.length; i++) {{
+            if (String(snap.variants[i].id) === String(variantId)) {{
+              chosen = snap.variants[i];
+              break;
+            }}
+          }}
+        }}
+        if (!chosen && snap && snap.variants && snap.variants.length > 0) {{
+          chosen = snap.variants[0];
+        }}
+
+        var baseProposal = (chosen && chosen.proposal) || (snap && snap.proposal) || JSON.parse(proposalRaw);
+        var record = JSON.parse(JSON.stringify(baseProposal));
         record.status = "approved";
         record.approved = true;
         record.approved_by = approver;
         record.approved_at = new Date().toISOString().replace(/\\.\\d{{3}}Z$/, "+00:00");
-        localStorage.setItem(approvalKey, "true");
-        [badge, document.getElementById("role-approval-status")].forEach(function(b) {{
-          if (!b) return;
-          b.textContent = "Freigegeben durch " + approver;
-          b.classList.remove("pending");
-          b.classList.add("approved");
-        }});
-        updateDriverAccess();
+        record.variant_id = chosen ? chosen.id : "baseline";
+        record.vehicles_needed = chosen ? Number(chosen.vehicles_needed || (chosen.metrics && chosen.metrics.vehicles_needed) || snap.metrics.vehicles_needed) : Number(snap.metrics.vehicles_needed);
+        record.stops = (chosen && chosen.stops) || record.stops || [];
+        record.driver_stops = (chosen && chosen.driver_stops) || (snap && snap.driver_stops) || [];
+        record.dispatcher_stops = (chosen && chosen.dispatcher_stops) || (snap && snap.dispatcher_stops) || [];
+        record.maps_legs = (chosen && chosen.maps_legs) || (snap && snap.maps_legs) || {{}};
+        record.maps_url = (chosen && chosen.maps_url) || (snap && snap.maps_url) || "";
+        record.gpx_xml = (chosen && chosen.gpx_xml) || (snap && snap.gpx_xml) || "";
+        record.metrics = (chosen && chosen.metrics) || snap.metrics;
+
+        localStorage.setItem(approvalKey, JSON.stringify(record));
+        syncApprovalBadges();
+        renderDriverView();
+
+        var preview = document.getElementById("approval-record-preview");
+        if (preview) {{
+          preview.textContent = JSON.stringify(record, null, 2);
+          preview.style.display = "block";
+        }}
         return record;
       }}
 
@@ -5071,7 +5200,8 @@ def build_ui(
       }});
 
       function downloadStopsCsv() {{
-        var stops = insights.csv_rows || insights.stops || [];
+        var ap = getApprovedPlan(currentDate);
+        var stops = (ap && (ap.csv_rows || ap.stops)) || insights.csv_rows || insights.stops || [];
         var matLabels = {{ white: "Weißglas", green: "Grünglas", brown: "Braunglas", unload: "Entladung" }};
         var actLabels = {{ collection: "Leerung", unload: "Entladung", depot: "Betriebshof", depot_start: "Start Betriebshof", depot_end: "Ende Betriebshof" }};
         var header = [
@@ -5173,8 +5303,8 @@ def build_ui(
         currentGpxXml = dateSnapshots[currentDate].gpx_xml || "";
         currentMapsLegs = dateSnapshots[currentDate].maps_legs || {{}};
       }}
-      renderDriverExports();
-      updateDriverAccess();
+      renderDriverView();
+      syncApprovalBadges();
 
       var gpxBtn = document.getElementById("driver-download-gpx-btn");
       if (gpxBtn) {{

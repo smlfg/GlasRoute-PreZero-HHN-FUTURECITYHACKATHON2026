@@ -1014,3 +1014,49 @@ def test_dispatcher_slideshow_renders_three_operational_slides(tmp_path: Path) -
     assert "today_by_material" in snapshots["2026-04-15"]
 
 
+def test_driver_view_vehicle_count_matches_approved_plan(tmp_path: Path) -> None:
+    import json as _json
+    from bs4 import BeautifulSoup
+
+    out = build_ui(
+        date="2026-04-15",
+        readings_df=_sample_readings(),
+        scored_df=_sample_scored(),
+        locations_df=_sample_locations(),
+        route_data=_sample_route(),
+        output_path=tmp_path / "ui_driver_vehicles.html",
+    )
+    html = out.read_text(encoding="utf-8")
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Unapproved initial state has the label 'noch nicht freigegeben' and driver tour is visible
+    locked = soup.find(id="driver-locked")
+    assert locked is not None
+    assert "noch nicht freigegeben" in locked.get_text()
+    tour = soup.find(id="driver-tour")
+    assert tour is not None
+    assert not tour.has_attr("hidden")
+
+    # JS consistency helpers are present in inline scripts
+    assert "window.checkDriverVehicleConsistency" in html
+    assert "getApprovedPlan" in html
+    assert "data-approved-vehicles" in html
+
+    # Variants in date snapshots carry their own maps_legs and vehicles_needed
+    snapshots_el = soup.find(id="date-snapshots-payload")
+    assert snapshots_el is not None
+    snapshots = _json.loads(snapshots_el.string)
+    snap = snapshots["2026-04-15"]
+    assert "variants" in snap
+    assert len(snap["variants"]) >= 2
+
+    for var in snap["variants"]:
+        veh_needed = var["vehicles_needed"]
+        maps_legs = var.get("maps_legs", {})
+        assert len(maps_legs) == veh_needed, f"Variant {var['id']} maps_legs count {len(maps_legs)} != vehicles_needed {veh_needed}"
+        assert "driver_stops" in var
+        assert "gpx_xml" in var
+        assert "proposal" in var
+
+
+
