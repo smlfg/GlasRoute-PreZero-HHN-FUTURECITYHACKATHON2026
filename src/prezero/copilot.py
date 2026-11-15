@@ -1281,6 +1281,15 @@ def precompute_ui_copilot_bundle(
     }
 
 
+def _de(value: Any, decimals: int = 1) -> str:
+    """Format a number German-style (1.234,5)."""
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return f"{num:,.{decimals}f}".replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+
+
 def _fmt_date_de(date_str: str) -> str:
     try:
         parts = str(date_str).strip().split("-")
@@ -1310,7 +1319,13 @@ def get_today_hero(
     today_overfull = int(len(scored_df[scored_df["est_fill_level"] >= 110.0])) if not scored_df.empty else 0
     stops = route_data.get("stops", [])
     coll_stops = [s for s in stops if s.get("stop_type", "collection") == "collection"]
-    in_tour_overfull = sum(1 for s in coll_stops if float(s.get("last_fill_level", 0.0)) >= 110.0)
+    # Count containers (Location_id x material), same unit as today_overfull and the UI hero.
+    tour_locs = {str(s.get("Location_id", "")).strip() for s in coll_stops}
+    if not scored_df.empty and "Location_id" in scored_df.columns:
+        overfull_df = scored_df[scored_df["est_fill_level"] >= 110.0]
+        in_tour_overfull = int(overfull_df["Location_id"].astype(str).str.strip().isin(tour_locs).sum())
+    else:
+        in_tour_overfull = 0
     unserved_overfull = max(0, today_overfull - in_tour_overfull)
 
     snapshot = {
@@ -1554,7 +1569,7 @@ def get_location_planning_info(
         "adoption_weeks": adoption_weeks,
         "week12_adoption_pct": week12.get("adoption_pct", 100.0),
         "week12_overflow_reduction": (week12.get("overflow_count_before", 0) - week12.get("overflow_count_after", 0)),
-        "status": "simulierte Standortplanung (12-Wochen-Adoptionskurve, Mengenerhaltung)",
+        "status": f"simulierte Standortplanung (Adoption über {float(adoption_weeks):g} Wochen, 12-Wochen-Horizont, Mengenerhaltung)",
         "sources": _dedupe_sources(sources),
     }
 
@@ -1670,7 +1685,10 @@ def get_cost_model(
             "unserved_overfull_tons_optimized": 0.0,
         },
         "hebel_insight": "Der dominierende Kostenhebel sind die Fahrzeug-Einsatztage (500 €/Tag), nicht der Diesel (0,65 €/km).",
-        "status": "Kostensätze und Hebel sind betriebliche Annahmen (simuliert)",
+        "status": (
+            "Annahme: Kostensätze und Q3-Werte sind fest hinterlegt (Quartalssimulation aus Mathe/), "
+            "nicht aus dem aktuellen Lauf berechnet"
+        ),
         "sources": _dedupe_sources(sources),
     }
 
@@ -1810,9 +1828,9 @@ def build_copilot_card(result: Mapping[str, Any]) -> dict[str, Any]:
             "Adoptionsdauer": f"{result.get('adoption_weeks', 12)} Wochen",
         }
         lines = [
-            "Simulation eines neuen Standorts mit 12-wöchiger logistischer Adoptionskurve.",
+            f"Simulation eines neuen Standorts: Adoption über {float(result.get('adoption_weeks', 0)):g} Wochen, betrachtet über 12 Wochen.",
             "Strikte Mengenerhaltung: Neuer Standort erzeugt keinen Neumüll, sondern entlastet Nachbarn.",
-            f"Nach 12 Wochen werden {result.get('week12_overflow_reduction', 69)} Überläufe an Nachbarcontainern verhindert.",
+            f"Nach 12 Wochen werden {result.get('week12_overflow_reduction', 0)} Überläufe an Nachbarcontainern verhindert.",
         ]
         badge = "Netzoptimierung"
 
@@ -1822,36 +1840,41 @@ def build_copilot_card(result: Mapping[str, Any]) -> dict[str, Any]:
         o = result.get("optimized", {})
         d = result.get("delta", {})
         kpis = {
-            "Ø Füllstand": f"{h.get('avg_fill_pct', 66.0):.1f} % → {o.get('avg_fill_pct', 83.5):.1f} % (+{d.get('fill_pct_diff_pp', 17.5)} pp)",
-            "Leerungen": f"{h.get('emptyings', 11701)} → {o.get('emptyings', 11321)} ({d.get('emptyings_diff', -380)})",
-            "Überfüllungen": f"{h.get('overflows', 1192)} → {o.get('overflows', 0)} (-100 %)",
-            "Fahrzeugtage": f"{h.get('vehicle_days', 345)} → {o.get('vehicle_days', 381)} (geglättet)",
+            "Ø Füllstand": f"{_de(h.get('avg_fill_pct', 0.0))} % → {_de(o.get('avg_fill_pct', 0.0))} % (+{_de(d.get('fill_pct_diff_pp', 0.0))} pp)",
+            "Leerungen": f"{_de(h.get('emptyings', 0), 0)} → {_de(o.get('emptyings', 0), 0)} ({_de(d.get('emptyings_diff', 0), 0)})",
+            "Überfüllungen": f"{_de(h.get('overflows', 0), 0)} → {_de(o.get('overflows', 0), 0)} (-{_de(d.get('overflows_eliminated_pct', 0.0), 0)} %)",
+            "Fahrzeugtage": f"{h.get('vehicle_days', 0)} → {o.get('vehicle_days', 0)} (geglättet)",
         }
         lines = [
-            "Replay über 349 Kalendertage (17.10.2025 bis 30.09.2026).",
-            "Historischer Status quo: 11.701 Leerungen, 1.192 Überläufe bei Leerung.",
-            "Optimiertes Timer-Modell: 11.321 Leerungen (-380), 0 Überläufe, Auslastung auf 83,5 % gesteigert.",
-            "Massenerhaltung gewahrt: 7.719 t vs. 9.451 t abgefahren.",
+            f"Replay über {result.get('days', 0)} Kalendertage ({result.get('period', '-')}).",
+            f"Historischer Status quo: {_de(h.get('emptyings', 0), 0)} Leerungen, {_de(h.get('overflows', 0), 0)} Überläufe bei Leerung.",
+            f"Optimiertes Timer-Modell: {_de(o.get('emptyings', 0), 0)} Leerungen ({_de(d.get('emptyings_diff', 0), 0)}), "
+            f"{_de(o.get('overflows', 0), 0)} Überläufe, Ø Füllstand bei Leerung {_de(o.get('avg_fill_pct', 0.0))} %.",
+            f"Abgefahrene Menge: {_de(h.get('tonnage_t', 0.0), 0)} t (historisch) vs. {_de(o.get('tonnage_t', 0.0), 0)} t (optimiert).",
         ]
         badge = "Jahressimulation"
 
     elif tool == "get_cost_model":
-        title = "Kostenmodell & Wirtschaftlichkeit"
+        title = "Kostenmodell & Wirtschaftlichkeit (Annahme)"
         rates = result.get("rates", {})
         q3 = result.get("quarter_audit_q3", {})
+        st = result.get("stress_test_plus_20_pct", {})
         kpis = {
-            "Fahrzeugbereitstellung": f"{rates.get('vehicle_day_rate_eur', 500.0):.0f} €/Tag",
-            "2-Personen-Crew": f"{rates.get('crew_hourly_rate_eur', 64.0):.0f} €/h",
-            "Kilometersatz": f"{rates.get('distance_km_rate_eur', 0.65):.2f} €/km",
-            "Ersparnis Q3": f"{q3.get('savings_eur', 4132.3):,.2f} € (-{q3.get('savings_pct', 5.0):.1f} %)",
+            "Fahrzeugbereitstellung": f"{_de(rates.get('vehicle_day_rate_eur', 0.0), 0)} €/Tag (Annahme)",
+            "2-Personen-Crew": f"{_de(rates.get('crew_hourly_rate_eur', 0.0), 0)} €/h (Annahme)",
+            "Kilometersatz": f"{_de(rates.get('distance_km_rate_eur', 0.0), 2)} €/km (Annahme)",
+            "Ersparnis Q3 (Annahme)": f"{_de(q3.get('savings_eur', 0.0), 0)} € (-{_de(q3.get('savings_pct', 0.0))} %)",
         }
         lines = [
+            "Annahme: fest hinterlegte Kostensätze und Q3-Quartalssimulation, nicht aus dem aktuellen Lauf berechnet.",
             "3-Komponenten-Formel: Gesamtkosten = (Fahrzeugtage × 500 €) + (Crew-Stunden × 64 €/h) + (km × 0,65 €/km).",
             "Hebelanalyse: Fahrzeugtage dominieren 55–60 % der Gesamtkosten. Spritkosten machen nur 8–10 % aus.",
-            f"Q3-Basisfall: 82.389 € (Plan A) vs. 78.257 € (Plan C) = {q3.get('savings_eur', 4132.3):,.2f} € Ersparnis (-5 Fahrzeugtage).",
-            "Im +20-%-Stresstest sinken die Kosten pro Tonne von 37,83 €/t auf 34,89 €/t (-7,8 % Kosten/t Vorteil).",
+            f"Q3-Basisfall: {_de(q3.get('baseline_plan_a_eur', 0.0), 0)} € (Plan A) vs. {_de(q3.get('optimized_plan_c_eur', 0.0), 0)} € (Plan C) "
+            f"= {_de(q3.get('savings_eur', 0.0), 0)} € Ersparnis (-{q3.get('vehicle_days_saved', 0)} Fahrzeugtage).",
+            f"Im +20-%-Stresstest sinken die Kosten pro Tonne von {_de(st.get('cost_per_ton_baseline_eur', 0.0), 2)} €/t "
+            f"auf {_de(st.get('cost_per_ton_optimized_eur', 0.0), 2)} €/t (-{_de(st.get('cost_per_ton_advantage_pct', 0.0))} %).",
         ]
-        badge = "Wirtschaftlichkeitsprüfung"
+        badge = "Annahme"
 
     elif tool == "get_waste_streams_info":
         title = "Abfallströme: Glas & Synthetische Fraktionen"
@@ -1874,7 +1897,7 @@ def build_copilot_card(result: Mapping[str, Any]) -> dict[str, Any]:
             "Stopps geplant": f"{result.get('num_stops', 0)}",
             "Kritische Standorte": f"{result.get('total_critical_locations', 0)}",
             "Geplante Strecke": f"{result.get('planned_km', 0.0):.1f} km",
-            "Ersparnis": f"{result.get('saved_km', 0.0):.1f} km ({result.get('saved_pct', 0.0):.1f} %)",
+            "Differenz zur vollen Runde": f"{result.get('saved_km', 0.0):.1f} km (Teil-Tour, kein fairer Vergleich)",
             "Fahrzeuge": f"{result.get('vehicles_needed', 0)}",
             "Fahrzeugstunden": f"{result.get('shift_hours', 0.0):.2f} h",
         }
@@ -2123,7 +2146,7 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             f"=== GlasRoute Copilot: Touren-Überblick (Stand {_fmt_date_de(result['date'])}) ===",
             f"Stopps geplant:        {result['num_stops']} (von {result['total_critical_locations']} kritischen Standorten / {result['total_critical_pairs']} kritischen Containern)",
             f"Unbedient kritisch:    {result['unserved_critical_locations']}",
-            f"Strecke geplant:       {result['planned_km']} km vs. volle Runde {result['full_round_km']} km (Ersparnis: {result['saved_km']} km / {result['saved_pct']} %)",
+            f"Strecke geplant:       {result['planned_km']} km vs. volle Runde {result['full_round_km']} km (Differenz: {result['saved_km']} km / {result['saved_pct']} %; Teil-Tour, kein fairer Vergleich, Hauptzahl −36,7 % B1 → B4)",
             f"Fahrzeuge / Runden:    {result['vehicles_needed']} Fahrzeug(e), {result['rounds']} Runde(n)",
             f"Fahrzeugstunden/Menge: {result['shift_hours']} h gesamt{max_shift_info}, {result['t_collected']} t",
             f"Freigabe-Status:       {result['approval_status']}",
@@ -2307,12 +2330,12 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
         q = result['quarter_audit_q3']
         s = result['stress_test_plus_20_pct']
         lines = [
-            f"=== GlasRoute Copilot: Kostenmodell & Wirtschaftlichkeit ({result['stand']}) ===",
+            f"=== GlasRoute Copilot: Kostenmodell & Wirtschaftlichkeit, Annahme ({result['stand']}) ===",
             f"Formel:               {result['formula']}",
-            f"Kostensätze:          Bereitstellung {r['vehicle_day_rate_eur']:.0f} €/Tag | Crew {r['crew_hourly_rate_eur']:.0f} €/h | Strecke {r['distance_km_rate_eur']:.2f} €/km",
-            f"Q3-Basisfall:         {q['baseline_plan_a_eur']:,.2f} € (Plan A) vs. {q['optimized_plan_c_eur']:,.2f} € (Plan C) -> Ersparnis {q['savings_eur']:,.2f} € (-{q['savings_pct']:.1f} %)",
-            f"Kosten je Tonne (Q3): {q['cost_per_ton_baseline_eur']:.2f} €/t -> {q['cost_per_ton_optimized_eur']:.2f} €/t (-{q['cost_per_ton_savings_pct']:.1f} %)",
-            f"+20 % Stresstest:     Plan C spart {s['cost_per_ton_advantage_pct']:.1f} % je Tonne ({s['cost_per_ton_optimized_eur']:.2f} vs. {s['cost_per_ton_baseline_eur']:.2f} €/t) bei 0 t Liegenbleibern (Plan A: {s['unserved_overfull_tons_baseline']:.1f} t)",
+            f"Kostensätze (Annahme): Bereitstellung {_de(r['vehicle_day_rate_eur'], 0)} €/Tag | Crew {_de(r['crew_hourly_rate_eur'], 0)} €/h | Strecke {_de(r['distance_km_rate_eur'], 2)} €/km",
+            f"Q3-Basisfall (Annahme): {_de(q['baseline_plan_a_eur'], 2)} € (Plan A) vs. {_de(q['optimized_plan_c_eur'], 2)} € (Plan C) -> Ersparnis {_de(q['savings_eur'], 2)} € (-{_de(q['savings_pct'])} %)",
+            f"Kosten je Tonne (Q3): {_de(q['cost_per_ton_baseline_eur'], 2)} €/t -> {_de(q['cost_per_ton_optimized_eur'], 2)} €/t (-{_de(q['cost_per_ton_savings_pct'])} %)",
+            f"+20 % Stresstest:     Plan C spart {_de(s['cost_per_ton_advantage_pct'])} % je Tonne ({_de(s['cost_per_ton_optimized_eur'], 2)} vs. {_de(s['cost_per_ton_baseline_eur'], 2)} €/t) bei 0 t Liegenbleibern (Plan A: {_de(s['unserved_overfull_tons_baseline'])} t)",
             f"Hebel-Befund:         {result['hebel_insight']}",
             f"Status:               {result.get('status', 'simulierte betriebliche Annahmen')}",
             f"Freigabe:             {approval_hint}",
