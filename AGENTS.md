@@ -140,6 +140,16 @@ Wenn `hai-mcp` verfügbar ist, ist es der verpflichtende Control-Plane-Pfad:
 Fehlt MCP oder Health/Status: sichtbar `DEGRADED` — nur lesen und parken, keine Schreibarbeit.
 Ein stiller Bypass ist verboten.
 
+<!-- HAI-WAIVER-2026-11-15 -->
+> **Freigabe für den 15.11.2026 (10:00–13:00), angeordnet vom Owner:** In dieser Laufzeit ist
+> `hai-mcp` nicht als MCP-Server registriert (`~/.minimax/mcp.json` ohne Server), die Control-Plane
+> kann also nicht ausgeübt werden. Für die Sessions am 15.11.2026 bis 13:00 ist die Schreibarbeit
+> vom Owner ausdrücklich angeordnet — inklusive Lane-Arbeit in getrennten Worktrees. Zustand bleibt
+> **sichtbar `DEGRADED`** und wird in `03_HAI/LOGBUCH.md` protokolliert; das ist kein stiller
+> Bypass. Alle übrigen Regeln dieser Datei (ein Schreiber, Rollen, Commit-Regeln, Freeze) gelten
+> unverändert weiter. Nach 13:00 gilt wieder `DEGRADED` → nur lesen und parken.
+<!-- HAI-WAIVER-END -->
+
 ## Aufschreiben
 
 - `03_HAI/LOGBUCH.md` — Entscheidungen, Fails, Lernregeln (append-only)
