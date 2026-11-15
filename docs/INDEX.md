@@ -1,7 +1,7 @@
 # Dokumenten-Index
 
 Eine Zeile pro Dokument. **Wer ein Dokument anlegt, verschiebt oder für veraltet erklärt, ändert
-diese Tabelle im selben Commit.** Stand: 15.11.2026, Code `611178b`, verifiziert auf `fb980e8`.
+diese Tabelle im selben Commit.** Stand: 15.11.2026, Code `611178b`, verifiziert auf `1647d23`.
 
 ## Einstieg (in dieser Reihenfolge lesen)
 

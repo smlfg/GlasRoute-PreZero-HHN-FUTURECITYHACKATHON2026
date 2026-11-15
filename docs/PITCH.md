@@ -68,12 +68,12 @@ Keine Score-Faktoren, kein fester Saisonfaktor (der Backtest hat ihn widerlegt).
 
 | Tages-Tour (Stopp-Limit 25) | Wert | Herkunft |
 |---|---|---|
-| Fällige Standorte | 106 physische Orte (509 Container) | `route_2026-04-15.json` |
-| In dieser Tour | 25 von 106 (81 offen) | `route_2026-04-15.json` |
-| Strecke | 249,9 km | `route_2026-04-15.json` |
-| Fahrzeuge / Runden | 4 / 19 | `route_2026-04-15.json` |
-| Fahrzeugstunden gesamt / längste Schicht | 22,68 h / 7,58 h (Limit 8 h) | `route_2026-04-15.json` |
-| Sammelmenge | 142,8 t | `route_2026-04-15.json` |
+| Fällige Standorte | 127 physische Orte (509 Container) | `route_2026-04-15.json` |
+| In dieser Tour | 25 von 127 (102 offen) | `route_2026-04-15.json` |
+| Strecke | 227,2 km | `route_2026-04-15.json` |
+| Fahrzeuge / Runden | 3 / 16 | `route_2026-04-15.json` |
+| Fahrzeugstunden gesamt / längste Schicht | 19,85 h / 7,96 h (Limit 8 h) | `route_2026-04-15.json` |
+| Sammelmenge | 116,2 t | `route_2026-04-15.json` |
 
 Formulierung im Pitch: „Mitte April ist fast jeder Standort fällig, da spart Weglassen ein Drittel
 (über das Jahr 30–67 %). Der eigentliche Hebel ist der Rhythmus: Braunglas fahren wir doppelt so
@@ -106,7 +106,7 @@ oder `--reject` erzeugt einen Beleg mit Zeitstempel, Route und den entscheidende
 
 ## 5. Wie setzt man es um?
 
-- Läuft auf den **vorhandenen** Fillinq-Daten; der Routenaufbau ist **je Fahrzeug** greedy — am Demo-Tag mit 4 Fahrzeugen und 19 Runden.
+- Läuft auf den **vorhandenen** Fillinq-Daten; der Routenaufbau ist **je Fahrzeug** greedy — am Demo-Tag mit 3 Fahrzeugen und 16 Runden.
 - Python-CLI, modular (`ingest` → `features` → `scoring` → `routing` → `viz` → `approve`).
 - **Austauschbar:** echte Koordinaten kommen als `Location_id,lat,lon` in
   `data/external/locations_real.csv` — ohne Codeänderung (`scripts/refresh_locations.py --real`).
@@ -132,8 +132,8 @@ prezero-route approve --by "Disponentin"  # Freigabe + Beleg
 
 Erwartete Ausgabe:
 
-> Route proposal for 2026-04-15 — 25 stops · planned 249.9 km · vehicles 4 ·
-> vehicle hours 22.68 (longest shift 7.58 h) · collected 142.82 t
+> Route proposal for 2026-04-15 — 25 stops · planned 227.23 km · vehicles 3 ·
+> vehicle hours 19.85 (longest shift 7.96 h) · collected 116.18 t
 
 ## Live-Nachfrage an PreZero: die Betriebsvariablen
 
@@ -144,7 +144,7 @@ ersetzen"** markiert — das ist exakt seine Anforderung „incorporate configur
 ```bash
 # Vorher (Annahmen)
 prezero-route route --date 2026-04-15 --max-stops 25
-# → 4 Fahrzeuge, 19 Runden, 22,7 h, 142,8 t, 250 km
+# → 3 Fahrzeuge, 16 Runden, 19,9 h, 116,2 t, 227 km
 
 # Nachher (Zahlen von PreZero, z. B. Dichte 300, Umwegfaktor 1,2 in prezero_config.json)
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
@@ -160,5 +160,5 @@ Daten hineingebaut wurde, sondern konfigurierbar ist.
 - Echte PreZero-Koordinaten fehlen → die Zuordnung der anonymisierten IDs bleibt simuliert
   (`osm_assigned` / `simulated_mapping`); Austauschpfad ist vorbereitet.
 - Die Route ist eine Luftlinien-Näherung (Umwegfaktor 1,35), kein Straßenrouting.
-- Kein Flottenoptimum: gezeigt wird eine Tages-Tour mit 4 Fahrzeugen und 19 Runden, nicht das Optimum über die Woche.
+- Kein Flottenoptimum: gezeigt wird eine Tages-Tour mit 3 Fahrzeugen und 16 Runden, nicht das Optimum über die Woche.
 - Die Betriebsvariablen sind Annahmen, bis PreZero Zahlen liefert — das ist der Live-Hook, kein Mangel.

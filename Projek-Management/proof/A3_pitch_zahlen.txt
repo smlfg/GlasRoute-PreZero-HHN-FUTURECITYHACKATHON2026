@@ -1,22 +1,15 @@
-# Pitch-Zahlen (NEU, Stand 14.11.2026, 19:40) geprüft gegen die Pipeline-Ausgaben
-# Modell: Fahrer misst und leert -> Füllrate -> Timer je Container; fällig = geschätzt >= 80 %.
-# Keine Score-Faktoren, kein fester Saisonfaktor (Backtest). Benchmark deterministisch.
-# Erzeugt mit: python scripts/backtest.py && python scripts/benchmark.py && prezero-route run --date 2026-04-15
-
-$ PYTHONPATH=src python Projek-Management/proof/verify_pitch_numbers.py
-
 # route_2026-04-15.json (prezero-route run --date 2026-04-15, max_stops 25)
 OK       num_stops: got=25 expected=25
-OK       total_critical_locations: got=106 expected=106
-OK       total_active_locations: got=121 expected=121
-OK       planned_km: got=249.9 expected=249.9
-OK       vehicles_needed: got=4 expected=4
-OK       rounds: got=19 expected=19
-OK       shift_hours: got=22.68 expected=22.68
-OK       max_vehicle_shift_hours: got=7.58 expected=7.58
-OK       t_collected: got=142.82 expected=142.82
-OK       full_round_km: got=1202.24 expected=1202.24
-OK       full_round_vehicles: got=20 expected=20
+OK       total_critical_locations: got=127 expected=127
+OK       total_active_locations: got=142 expected=142
+OK       planned_km: got=227.23 expected=227.23
+OK       vehicles_needed: got=3 expected=3
+OK       rounds: got=16 expected=16
+OK       shift_hours: got=19.85 expected=19.85
+OK       max_vehicle_shift_hours: got=7.96 expected=7.96
+OK       t_collected: got=116.18 expected=116.18
+OK       full_round_km: got=1368.78 expected=1368.78
+OK       full_round_vehicles: got=21 expected=21
 
 # benchmark_results.csv (scripts/benchmark.py), 2026-04-15 / seed 42
 OK       B0 km: got=1795.91 expected=1795.91
@@ -34,17 +27,17 @@ OK       routing_pct span over 12 cases: got=(2.3, 14.1) expected=(2.3, 14.1)
 OK       overall_vs_b1_pct span over 12 cases: got=(32.9, 70.7) expected=(32.9, 70.7)
 
 # What-if presets embedded in ui_2026-04-15.html
-OK       shift_6h.vehicles_needed: got=5 expected=5
-OK       shift_6h.max_vehicle_shift_hours: got=5.42 expected=5.42
-OK       shift_6h.planned_km: got=233.56 expected=233.56
-OK       truck_8t.vehicles_needed: got=4 expected=4
-OK       truck_8t.rounds: got=21 expected=21
-OK       truck_8t.planned_km: got=271.28 expected=271.28
+OK       shift_6h.vehicles_needed: got=4 expected=4
+OK       shift_6h.max_vehicle_shift_hours: got=5.55 expected=5.55
+OK       shift_6h.planned_km: got=222.51 expected=222.51
+OK       truck_8t.vehicles_needed: got=3 expected=3
+OK       truck_8t.rounds: got=16 expected=16
+OK       truck_8t.planned_km: got=253.36 expected=253.36
 OK       plus_vehicle.num_stops: got=43 expected=43
-OK       plus_vehicle.planned_km: got=417.03 expected=417.03
-OK       plus_vehicle.unserved_critical_locations: got=63 expected=63
-OK       all_critical.num_stops: got=106 expected=106
-OK       all_critical.planned_km: got=900.29 expected=900.29
+OK       plus_vehicle.planned_km: got=343.12 expected=343.12
+OK       plus_vehicle.unserved_critical_locations: got=84 expected=84
+OK       all_critical.num_stops: got=127 expected=127
+OK       all_critical.planned_km: got=923.22 expected=923.22
 OK       all_critical.vehicles_needed: got=12 expected=12
 
 # backtest_summary.json (scripts/backtest.py): Leerungsrhythmus
@@ -64,19 +57,44 @@ OK       raw rows: got=11701 expected=11701
 OK       raw ids: got=449 expected=449
 OK       raw overfull: got=1192 expected=1192
 
-RESULT: ALL MATCH
+# Projek-Management/proof/demo_day_numbers.json
+OK       demo_day containers_due: got=509 expected=509
+OK       demo_day in_tour_stops: got=25 expected=25
+OK       demo_day km_optimized: got=227.23 expected=227.23
+OK       demo_day km_status_quo_b1: got=1662.7 expected=1662.7
+OK       demo_day vehicles: got=3 expected=3
+OK       demo_day hours: got=7.96 expected=7.96
+OK       demo_day tonnes: got=116.18 expected=116.18
 
-# Monatsprofil aus data/raw (unverändert, vorgefundene Stände beim Besuch)
-month  n     mean   overfull  overfull%
-2025-10    741   55.6         3       0.4%
-2025-11    656   59.5        14       2.1%
-2025-12   1357   62.9        14       1.0%
-2026-01    783   76.1        91      11.6%
-2026-02    657   76.5        85      12.9%
-2026-03    776   85.2       292      37.6%
-2026-04    896   82.3       209      23.3%
-2026-05    951   74.4       216      22.7%
-2026-06   1501   53.7        78       5.2%
-2026-07   1310   61.4        65       5.0%
-2026-08   1215   57.5        34       2.8%
-2026-09    858   64.1        91      10.6%
+# UI cross-check against demo_day_numbers.json
+OK       ui planned_km: got=227.23 expected=227.23
+OK       ui num_stops: got=25 expected=25
+OK       ui vehicles: got=3 expected=3
+OK       ui longest_shift: got=7.96 expected=7.96
+OK       ui tonnes: got=116.18 expected=116.18
+OK       ui critical_containers: got=509 expected=509
+
+# Docs (docs/STATUS.md) cross-check against demo_day_numbers.json
+OK       docs/STATUS.md contains '2026-04-15' (demo_date)
+OK       docs/STATUS.md contains '509' (containers_due)
+OK       docs/STATUS.md contains '25 von 127' (in_tour_stops)
+OK       docs/STATUS.md contains '227,2' (km_optimized)
+OK       docs/STATUS.md contains '3 Fahrzeuge' (vehicles)
+OK       docs/STATUS.md contains '7,96' (hours)
+OK       docs/STATUS.md contains '116,2' (tonnes)
+
+# Pitch (Pitch/NOTES.md + Pitch/deck.md) cross-check against demo_day_numbers.json
+OK       Pitch/NOTES.md contains '509' (containers_due)
+OK       Pitch/NOTES.md contains '25 von 127' (in_tour_stops)
+OK       Pitch/NOTES.md contains '227,2' (km_optimized)
+OK       Pitch/NOTES.md contains '1.662,70' (km_status_quo_b1)
+OK       Pitch/NOTES.md contains '3 Fahrzeuge' (vehicles)
+OK       Pitch/NOTES.md contains '7,96' (hours)
+OK       Pitch/NOTES.md contains '116,2' (tonnes)
+OK       Pitch/deck.md contains '227,2 km** vs. **1.662,70 km' (km_optimized_vs_b1)
+OK       Pitch/deck.md contains '25 Standorte bedient' (stops)
+OK       Pitch/deck.md contains '3 Fahrzeuge im Einsatz' (vehicles)
+OK       Pitch/deck.md contains '7,96 h' (hours)
+OK       Pitch/deck.md contains '116,18 t' (tonnes)
+
+RESULT: ALL MATCH

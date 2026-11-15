@@ -19,15 +19,15 @@ Numbers from `Pitch/demo_facts.txt` / `route_2026-04-15.json`:
 
 | | |
 |---|---|
-| Critical physical sites (containers) | 106 (509) |
+| Critical physical sites (containers) | 127 (509) |
 | Containers estimated ≥ 110 % full | 488 |
 | Stops in tour | 25 |
-| Planned tour | 249.9 km |
-| Full round, same rules, all 121 sites | 1,202.24 km |
-| Saved vs. full round | 952.34 km (79.2 %) |
-| Vehicles / rounds | 4 / 19 |
-| Vehicle hours / longest shift | 22.68 h / 7.58 h (limit 8.0 h) |
-| Collected | 142.82 t |
+| Planned tour | 227.23 km |
+| Full round, same rules, all 142 sites | 1,368.78 km |
+| Saved vs. full round | 1,141.55 km (83.4 %) |
+| Vehicles / rounds | 3 / 16 |
+| Vehicle hours / longest shift | 19.85 h / 7.96 h (limit 8.0 h) |
+| Collected | 116.18 t |
 
 ## What is real vs. simulated
 

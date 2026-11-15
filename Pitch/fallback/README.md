@@ -13,9 +13,9 @@ Beleg: `Projek-Management/proof/demo_day_numbers.json` und `Projek-Management/pr
 | `route_2026-04-15.json` | Die Tour vollständig maschinenlesbar: alle Stops in Reihenfolge, je Fahrzeug und Runde, Entladungen, km, Lasten, Schichten und **alle 11 Annahmen** unter `assumptions` |
 | `stops_2026-04-15.csv` | Dieselbe Tour als Tabelle: 40 Zeilen — 25 Sammelstopps (`collection`) + 15 Entladungen (`unload`). Zum Öffnen in Excel, Numbers, LibreOffice oder einem Texteditor |
 
-**Kernzahlen des Standbilds:** 25 Stopps · **249,9 km** · **4 Fahrzeuge** · 19 Runden ·
-22,7 h Fahrzeugstunden gesamt · längste Schicht **7,58 h** (Limit 8 h) · **142,8 t** —
-von 106 fälligen Standorten, 81 bleiben offen (Stopp-Limit 25).
+**Kernzahlen des Standbilds:** 25 Stopps · **227,2 km** · **3 Fahrzeuge** · 16 Runden ·
+19,9 h Fahrzeugstunden gesamt · längste Schicht **7,96 h** (Limit 8 h) · **116,2 t** —
+von 127 fälligen Standorten, 102 bleiben offen (Stopp-Limit 25).
 
 ## So zeigen wir die Tour offline
 

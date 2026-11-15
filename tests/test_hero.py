@@ -18,12 +18,12 @@ DEMO_DATE = "2026-04-15"
 # Pitch/NOTES.md (verify_pitch_numbers.py EXPECTED_ROUTE + hero narrative).
 PITCH_HERO = {
     "today_overfull": 328,
-    "in_tour_overfull": 20,
-    "planned_km": 249.9,
-    "status_quo_km": 1202.24,
-    "vehicles": 4,
-    "shift_hours": 7.58,
-    "tons": 142.82,
+    "in_tour_overfull": 12,
+    "planned_km": 227.23,
+    "status_quo_km": 1368.78,
+    "vehicles": 3,
+    "shift_hours": 7.96,
+    "tons": 116.18,
 }
 
 

@@ -269,3 +269,37 @@ def test_export_stops_csv_preserves_driving_order(tmp_path: Path) -> None:
     assert df["stop_type"].tolist() == ["collection", "unload", "collection"]
     assert df["Location_id"].tolist() == [s["Location_id"] for s in route["stops"]]
     assert [s["order"] for s in route["stops"]] == [1, 2, 3]
+
+
+def test_oversized_site_is_split_and_never_exceeds_vehicle_capacity() -> None:
+    """Regression test: empty vehicle must not accept an oversized site (>11 t / >26 m3)."""
+    from prezero.routing import OperationalConfig, build_route
+
+    # A site with 15 bins at 100% white glass = 15 * 2.5 * 400 = 15,000 kg > 11,000 kg capacity
+    scored = pd.DataFrame(
+        {
+            "Location_id": [f"L_big_{i}" for i in range(15)],
+            "material_type": ["white"] * 15,
+            "last_fill_level": [100.0] * 15,
+            "score": [0.9] * 15,
+            "critical": [True] * 15,
+        }
+    )
+    locations = pd.DataFrame(
+        {
+            "Location_id": [f"L_big_{i}" for i in range(15)],
+            "lat": [49.1450] * 15,
+            "lon": [9.2120] * 15,
+            "source": ["osm_heuristic"] * 15,
+            "confidence": ["low"] * 15,
+        }
+    )
+    cfg = OperationalConfig(vehicle_max_weight_kg=11000.0)
+    route = build_route(scored, locations, config=cfg)
+    # The oversized site must be split into multiple collection stops, each <= 11 t
+    assert route["num_stops"] == 2
+    for stop in route["stops"]:
+        assert stop["mass_kg"] <= 11000.0
+    # 15 t cannot be emptied in one vehicle round of 11 t capacity; requires 2 rounds
+    assert route["rounds"] == 2
+

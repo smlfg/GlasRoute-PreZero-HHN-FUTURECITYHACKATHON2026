@@ -5,26 +5,26 @@
 # Letzte Verifizierung: siehe Projek-Management/proof/verify_demo_day.py
 
 Demo-Tag: 2026-04-15
-Kritische physische Standorte: 106
+Kritische physische Standorte: 127
 Kritische Container (ID × Glasfarbe): 509
 Davon überfällig (geschätzt ≥ 110 %): 488
 
 Stopps in Tour (max_stops=25): 25
-Kritische Standorte nicht in Tour: 81
+Kritische Standorte nicht in Tour: 102
 
-Geplante Tour: 249.9 km
-Volle Runde (Status quo, alle 121 Standorte, gleiche Regeln): 1202.24 km
+Geplante Tour: 227.23 km
+Volle Runde (Status quo, alle 142 Standorte, gleiche Regeln): 1368.78 km
 Status quo optimiert (B1): 1662.70 km
-Eingespart (Tour vs. volle Runde): 952.34 km (79.2 %)
+Eingespart (Tour vs. volle Runde): 1141.55 km (83.4 %)
 Eingespart (B1 → B4 Solver): 36.7 %
 
-Fahrzeuge: 4
-Runden: 19
-Fahrzeugstunden gesamt: 22.68
-Längste Einzelschicht: 7.58 h
+Fahrzeuge: 3
+Runden: 16
+Fahrzeugstunden gesamt: 19.85
+Längste Einzelschicht: 7.96 h
 Schichtlimit: 8.0 h
 
-Sammelmenge: 142.82 t
+Sammelmenge: 116.18 t
 LKW-Maximalgewicht: 11 t
 LKW-Maximalvolumen: 26 m³
 Container-Volumen: 2.5 m³

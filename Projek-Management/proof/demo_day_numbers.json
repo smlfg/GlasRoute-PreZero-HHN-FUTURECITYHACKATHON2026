@@ -1,17 +1,17 @@
 {
   "demo_date": "2026-04-15",
   "containers_due": 509,
-  "locations_due": 106,
+  "locations_due": 127,
   "in_tour_stops": 25,
-  "in_tour_containers": 137,
-  "km_optimized": 249.9,
+  "in_tour_containers": 112,
+  "km_optimized": 227.23,
   "km_status_quo_b1": 1662.7,
-  "km_full_round": 1202.24,
-  "saved_km_vs_b1": 1412.8,
-  "saved_pct_vs_b1": 85.0,
-  "vehicles": 4,
-  "rounds": 19,
-  "hours": 7.58,
-  "shift_hours_total": 22.68,
-  "tonnes": 142.82
+  "km_full_round": 1368.78,
+  "saved_km_vs_b1": 1435.47,
+  "saved_pct_vs_b1": 86.3,
+  "vehicles": 3,
+  "rounds": 16,
+  "hours": 7.96,
+  "shift_hours_total": 19.85,
+  "tonnes": 116.18
 }

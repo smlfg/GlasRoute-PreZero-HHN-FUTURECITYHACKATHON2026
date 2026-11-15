@@ -17,7 +17,7 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 - **Leerungszustand bei Besuch:** 30,1 % unter 50 % voll (Fahrt zu früh), 11,2 % überfüllt (≥ 110 %)
 - **Backtest-Genauigkeit:** MAE **19,9 pp** (unser Modell) vs. **22,3 pp** (Baseline / Mean of past)
 - **Fairer Benchmark (B1 → B4):** **−36,7 % km** (Bedarfs-Effekt: **29,9 %**, Routing-Effekt: **9,7 %**)
-- **Tages-Tour (15.04.2026, Stopp-Limit 25):** **249,9 km** vs. **1.662,70 km** (B1) → **−85,0 %** (142,82 t, 4 LKW, 19 Runden, max. 7,58 h)
+- **Tages-Tour (15.04.2026, Stopp-Limit 25):** **227,2 km** vs. **1.662,70 km** (B1) → **−86,3 %** (116,18 t, 3 LKW, 16 Runden, max. 7,96 h)
 
 ---
 
@@ -29,7 +29,7 @@ Alle genannten Kennzahlen sind durch `Projek-Management/proof/verify_pitch_numbe
 | 2 | Status quo | Der reale Prozess: Fahrer schätzt beim Leeren | Understanding | 20 s |
 | 3 | Data & Backtest | Füllstand ist vorhersagbar (Backtest schlägt Baseline) | Understanding | 25 s |
 | 4 | Solution | Vom Füllraten-Timer zur Freigabe & Closed Loop | Technology | 25 s |
-| 5 | Live Demo | Tagestour 15.04.: 25 Stopps, 249,9 km, A/B-Replay | Feasibility | 25 s |
+| 5 | Live Demo | Tagestour 15.04.: 25 Stopps, 227,2 km, A/B-Replay | Feasibility | 25 s |
 | 6 | Result | −36,7 % km im fairen Benchmark (B1 → B4) | Problem & Benefit | 20 s |
 | 7 | Kostenmodell | Jahressimulation, Kostenformel & Hebelannahmen | Feasibility | 25 s |
 | 8 | Honesty | Echte Messungen, simuliertes OSM-Mapping, 1-Sekunden-Swap | Reliability | 15 s |
@@ -162,17 +162,17 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 - **Live-Simulation (Tab 11: „Bisher vs. Optimiert“):** Synchronisierter Split-Screen auf echter OpenStreetMap-Karte von Heilbronn (Status quo vs. bedarfsgesteuerte Tour).
 - **Befehl & Freigabe:** `prezero-route run --date 2026-04-15` & `prezero-route approve --by "Disponentin"`
 - **Ergebnis der Tagestour (Stopp-Limit 25 fälligste Standorte):**
-  - **25 Standorte bedient** · **249,9 km Gesamtfahrstrecke**
-  - **4 Fahrzeuge im Einsatz** · **19 Entleerungs-Runden**
-  - **142,82 t Glas gesammelt** · max. Schichtdauer **7,58 h** (voll im 8-h-Limit)
-  - **−85,0 % km gespart** (1.412,8 km weniger) gegenüber ungefilterter Gebietsbefahrung (1.662,70 km)
+  - **25 Standorte bedient** · **227,2 km Gesamtfahrstrecke**
+  - **3 Fahrzeuge im Einsatz** · **16 Entleerungs-Runden**
+  - **116,18 t Glas gesammelt** · max. Schichtdauer **7,96 h** (voll im 8-h-Limit)
+  - **−86,3 % km gespart** (1.435,5 km weniger) gegenüber ungefilterter Gebietsbefahrung (1.662,70 km)
 - **UI mit Rollen & Replay:** Fahrer (mobile Tourliste) · Disponentin (Freigabe-Cockpit) · Leitung (What-If & Analysen) · **A/B-Replay auf echten Straßen**.
 
 ### Speaker Notes
 
 - **0–8 s:** „Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen.“
-- **8–17 s:** „Das System wählt die 25 kritischsten Standorte: 249,9 km Fahrstrecke mit 4 Fahrzeugen, 142 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht.“
-- **17–25 s:** „Im Replay sehen Sie live, wie die LKW fahren — und wie 85 % der Leerfahrten an diesem Tag wegfallen, während kein einziger Container überläuft.“
+- **8–17 s:** „Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht.“
+- **17–25 s:** „Im Replay sehen Sie live, wie die LKW fahren — und wie 86 % der Leerfahrten an diesem Tag wegfallen, während kein einziger Container überläuft.“
 
 ---
 

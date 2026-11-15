@@ -124,8 +124,8 @@ Weglassen. Über die 4 Stichtage liegt der Effekt bei 29–67 %. **Die stärkere
 - Wenn 2-opt oder Solver schlechter als Nearest Neighbor sind, wird NN behalten (`nn_kept`): B4 in 2,
   B3 in 4 von 12 Fällen.
 
-**Die Tages-Tour im Tab „Route & Freigabe“:** Stopp-Limit 25, also **25 von 106 fälligen Standorten**
-(81 offen): 249,9 km, 4 Fahrzeuge, 19 Runden, 142,8 t, längste Schicht 7,58 h. Die 79,2 % auf der Karte
+**Die Tages-Tour im Tab „Route & Freigabe“:** Stopp-Limit 25, also **25 von 127 fälligen Standorten**
+(102 offen): 227,2 km, 3 Fahrzeuge, 16 Runden, 116,2 t, längste Schicht 7,96 h. Die 83,4 % auf der Karte
 vergleichen diese Teil-Tour mit „alles leeren“ und sind **keine Pitch-Zahl**.
 
 ### 3. Zwei Agenten haben gleichzeitig committet
@@ -199,40 +199,40 @@ prezero-route approve --by "Disponentin (Heilbronn)"
 Erwartete Ausgabe:
 
 ```
-Pipeline complete for 2026-04-15: 106 critical physical sites (276 critical IDs, 509 containers).
-249.9 km planned (25 stops) vs. 1202.24 km full round (121 stops, same capacity rules)
+Pipeline complete for 2026-04-15: 127 critical physical sites (276 critical IDs, 509 containers).
+227.23 km planned (25 stops) vs. 1368.78 km full round (142 stops, same capacity rules)
 ```
 
 ```
 Route proposal for 2026-04-15
   stops:          25
-  planned:        249.9 km
-  saved:          952.34 km (79.2 %)
-  vehicles:       4
-  vehicle hours:  22.68 (sum over all vehicles)
-  longest shift:  7.58 h
-  collected:      142.82 t
+  planned:        227.23 km
+  saved:          1141.55 km (83.4 %)
+  vehicles:       3
+  vehicle hours:  19.85 (sum over all vehicles)
+  longest shift:  7.96 h
+  collected:      116.18 t
 Nothing is dispatched until a dispatcher approves it.
 ```
 
-Die 79,2 % hier sind die Teil-Tour (25 von 106) gegen „alles leeren“. Im Pitch die Benchmark-Zahlen nennen.
+Die 83,4 % hier sind die Teil-Tour (25 von 127) gegen „alles leeren“. Im Pitch die Benchmark-Zahlen nennen.
 
 **Website `ui_2026-04-15.html`** (liegt neben `heatmap.html`, beide im selben Ordner lassen):
 
 | Tab | Zeigen |
 |---|---|
 | 3. Heatmap | Klick auf ein Kästchen springt zur Karte im Tab „Route & Freigabe“ |
-| 4. Route & Freigabe | „25 von 106 kritischen“, Timer-Spalte, What-if-Knöpfe, Klick auf Stopp = Begründung, Freigeben |
+| 4. Route & Freigabe | „25 von 127 kritischen“, Timer-Spalte, What-if-Knöpfe, Klick auf Stopp = Begründung, Freigeben |
 | 5. Fairer Vergleich | Bedarfs- vs. Routing-Effekt (die Pitch-Zahlen) |
 
-**What-if-Knöpfe (vorberechnet, Baseline 249,9 km / 4 Fahrzeuge / 19 Runden):**
+**What-if-Knöpfe (vorberechnet, Baseline 227,2 km / 3 Fahrzeuge / 16 Runden):**
 
 | Knopf | Ergebnis |
 |---|---|
-| Schicht 6 h | 5 Fahrzeuge, längste Schicht 5,42 h, 233,56 km |
-| LKW 8 t | 4 Fahrzeuge, 21 statt 19 Runden, 271,28 km |
-| +1 Fahrzeug | 43 statt 25 Standorte, 417,03 km, 63 fällige offen |
-| Alle fälligen | 106 Standorte, 12 Fahrzeuge, 900,29 km |
+| Schicht 6 h | 4 Fahrzeuge, längste Schicht 5,55 h, 222,51 km |
+| LKW 8 t | 3 Fahrzeuge, 16 Runden, 253,36 km |
+| +1 Fahrzeug | 43 statt 25 Standorte, 343,12 km, 84 fällige offen |
+| Alle fälligen | 127 Standorte, 12 Fahrzeuge, 923,22 km |
 
 Der alte Explainer-Fall „6 h → 8,83 h“ war die **Summe** der Fahrzeugstunden, als Schicht beschriftet.
 Jetzt stehen Fahrzeugstunden gesamt und längste Einzelschicht getrennt da.
@@ -276,7 +276,7 @@ Die Prognose steht in der Website im Tab „2. Forecast-Timeline“ (+0/+7/+14/+
 | Echte PreZero-Koordinaten | fehlen → alle 449 auf OSM-Punkten, Zuordnung `simulated_mapping` |
 | Route ist Luftlinien-Näherung | Umwegfaktor 1,35, kein Straßenrouting |
 | 29,9 % / 9,7 % | Bedarfs- vs. Routing-Effekt am 15.04. (über das Jahr 29–67 % / 2–14 %), gleiche Regeln |
-| Flottenoptimum | Tages-Tour: 4 Fahrzeuge, längste Schicht 7,58 h (Limit 8 h); alle 106 fälligen bräuchten 12 Fahrzeuge |
+| Flottenoptimum | Tages-Tour: 3 Fahrzeuge, längste Schicht 7,96 h (Limit 8 h); alle 127 fälligen bräuchten 12 Fahrzeuge |
 
 ---
 
@@ -338,7 +338,7 @@ routing model"* — live demonstriert statt behauptet.
 ```bash
 # Vorher — mit unseren Annahmen (prezero_config.json = Defaults)
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json
-# → 4 Fahrzeuge, 19 Runden, 22,7 h, 142,8 t, 250 km
+# → 3 Fahrzeuge, 16 Runden, 19,9 h, 116,2 t, 227 km
 
 # Nachher — Beispiel: Dichte 300 kg/m³, Umwegfaktor 1,2
 prezero-route route --date 2026-04-15 --max-stops 25 --config prezero_config.json

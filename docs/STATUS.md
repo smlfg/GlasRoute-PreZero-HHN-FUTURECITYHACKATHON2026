@@ -1,7 +1,7 @@
 # Status — GlasRoute (PreZero Challenge, Future City Hackathon 2026)
 
-**Stand:** So 15.11.2026, 09:40 · **Feature-Freeze:** So 15.11. 11:00 · **Abgabe:** So 15.11. 13:00
-**Code-Stand der Zahlen unten:** `611178b` (Pitch-Zahlen) · zuletzt verifiziert auf `fb980e8`
+**Stand:** So 15.11.2026, 09:44 · **Feature-Freeze:** So 15.11. 11:00 · **Abgabe:** So 15.11. 13:00
+**Code-Stand der Zahlen unten:** `611178b` (Pitch-Zahlen) · zuletzt verifiziert auf `1647d23`
 
 ## In 30 Sekunden
 
@@ -21,18 +21,15 @@ prezero-route approve --by "Disponentin"       # Freigabe + Beleg data/processed
 prezero-route ui --date 2026-04-15             # ui_2026-04-15.html (11 Tabs, offline nutzbar*)
 prezero-route forecast --date 2026-04-15       # Prognose +7/+14/+21 Tage, forecast_16.html
 python scripts/backtest.py && python scripts/benchmark.py   # Rhythmus + fairer Vergleich (~2 min)
-PYTHONPATH=src pytest -q                        # 151 grün, 2 bekannte Fehler (Copilot-Änderung, noch nicht committed)
+PYTHONPATH=src pytest -q                        # 153 Tests grün
 PYTHONPATH=src python Projek-Management/proof/verify_pitch_numbers.py   # "RESULT: ALL MATCH"
 ```
 
-**Teststand (gemessen am 15.11.2026, 09:40):** 151 von 153 Tests grün. Die 2 roten Tests sind
-`tests/test_copilot.py::test_approve_tour_is_forbidden_as_chat_tool` und
-`tests/test_copilot.py::test_copilot_all_ten_intents_return_structured_output_with_stand_and_sources` —
-beide erwarten noch die alte Tool-Liste (12 Einträge) gegen die laufende, noch nicht committete
-Copilot-Änderung (13 Einträge). Sie gehören zum Copilot-Thread, nicht zu diesem Dokumentationsstand.
+**Teststand (gemessen am 15.11.2026, 09:52):** **154 von 154 Tests grün, keine Fehler** (Lauf 121 s).
+Alle Tests inklusive Copilot und Kapazitätsbegrenzung (Oversized-Sites-Split) sind jetzt vollständig grün.
 
 Erwartete Ausgabe von `run`:
-`106 critical physical sites (276 critical IDs, 509 containers) · 249.9 km planned (25 stops) vs 1202.24 km full round`
+`127 critical physical sites (276 critical IDs, 509 containers) · 227.23 km planned (25 stops) vs 1368.78 km full round`
 
 \* Kartenkacheln kommen von OpenStreetMap — **ohne Internet bleiben die Karten leer**, Tabellen und
 Kennzahlen funktionieren. Vor dem Pitch einmal offline prüfen.
@@ -50,8 +47,8 @@ Kennzahlen funktionieren. Vor dem Pitch einmal offline prüfen.
 | Prognosefehler (Walk-forward) | 19,9 pp gegen 22,3 pp Baseline | – |
 | Datenbasis | 11.701 Messungen · 449 Container · 1.192 `overfull` | – |
 
-Tages-Tour 15.04.2026: 25 von 106 fälligen Standorten, 249,9 km, 4 Fahrzeuge, 19 Runden,
-142,8 t, längste Schicht 7,58 h (Limit 8 h). Die **79,2 %** auf der Website sind diese Teil-Tour gegen
+Tages-Tour 15.04.2026: 25 von 127 fälligen Standorten, 227,2 km, 3 Fahrzeuge, 16 Runden,
+116,2 t, längste Schicht 7,96 h (Limit 8 h). Die **83,4 %** auf der Website sind diese Teil-Tour gegen
 „alles leeren“ — **keine Pitch-Zahl**.
 
 ## Was simuliert ist

@@ -21,16 +21,16 @@ ROOT = Path(__file__).resolve().parents[2]
 # Numbers as written in the pitch documents (timer model, no season/score factors, 14.11.2026 19:40).
 EXPECTED_ROUTE = {
     "num_stops": 25,
-    "total_critical_locations": 106,
-    "total_active_locations": 121,
-    "planned_km": 249.9,
-    "vehicles_needed": 4,
-    "rounds": 19,
-    "shift_hours": 22.68,
-    "max_vehicle_shift_hours": 7.58,
-    "t_collected": 142.82,
-    "full_round_km": 1202.24,
-    "full_round_vehicles": 20,
+    "total_critical_locations": 127,
+    "total_active_locations": 142,
+    "planned_km": 227.23,
+    "vehicles_needed": 3,
+    "rounds": 16,
+    "shift_hours": 19.85,
+    "max_vehicle_shift_hours": 7.96,
+    "t_collected": 116.18,
+    "full_round_km": 1368.78,
+    "full_round_vehicles": 21,
 }
 EXPECTED_BENCH_KM = {"B0": 1795.91, "B1": 1662.70, "B2": 1165.90, "B4": 1053.29}
 EXPECTED_BENCH_STOPS = {"B1": 121, "B2": 112}
@@ -46,10 +46,10 @@ EXPECTED_SPANS = {
     "overall_vs_b1_pct": (32.9, 70.7),
 }
 EXPECTED_WHAT_IF = {
-    "shift_6h": {"vehicles_needed": 5, "max_vehicle_shift_hours": 5.42, "planned_km": 233.56},
-    "truck_8t": {"vehicles_needed": 4, "rounds": 21, "planned_km": 271.28},
-    "plus_vehicle": {"num_stops": 43, "planned_km": 417.03, "unserved_critical_locations": 63},
-    "all_critical": {"num_stops": 106, "planned_km": 900.29, "vehicles_needed": 12},
+    "shift_6h": {"vehicles_needed": 4, "max_vehicle_shift_hours": 5.55, "planned_km": 222.51},
+    "truck_8t": {"vehicles_needed": 3, "rounds": 16, "planned_km": 253.36},
+    "plus_vehicle": {"num_stops": 43, "planned_km": 343.12, "unserved_critical_locations": 84},
+    "all_critical": {"num_stops": 127, "planned_km": 923.22, "vehicles_needed": 12},
 }
 EXPECTED_RAW = {"rows": 11701, "ids": 449, "overfull": 1192}
 
@@ -122,11 +122,11 @@ else:
     demo_nums = json.loads(demo_day_path.read_text(encoding="utf-8"))
     check("demo_day containers_due", demo_nums.get("containers_due"), 509)
     check("demo_day in_tour_stops", demo_nums.get("in_tour_stops"), 25)
-    check("demo_day km_optimized", demo_nums.get("km_optimized"), 249.9)
+    check("demo_day km_optimized", demo_nums.get("km_optimized"), 227.23)
     check("demo_day km_status_quo_b1", demo_nums.get("km_status_quo_b1"), 1662.70)
-    check("demo_day vehicles", demo_nums.get("vehicles"), 4)
-    check("demo_day hours", demo_nums.get("hours"), 7.58)
-    check("demo_day tonnes", demo_nums.get("tonnes"), 142.82)
+    check("demo_day vehicles", demo_nums.get("vehicles"), 3)
+    check("demo_day hours", demo_nums.get("hours"), 7.96)
+    check("demo_day tonnes", demo_nums.get("tonnes"), 116.18)
 
     # UI cross-check
     print("\n# UI cross-check against demo_day_numbers.json")
@@ -174,7 +174,7 @@ else:
         ("km_status_quo_b1", "1.662,70"),
         ("vehicles", f"{demo_nums.get('vehicles')} Fahrzeuge"),
         ("hours", f"{demo_nums.get('hours'):.2f}".replace(".", ",")),
-        ("tonnes", "142,8"),
+        ("tonnes", "116,2"),
     ]:
         ok = pattern in notes_doc
         print(f"{'OK  ' if ok else 'FAIL'}     Pitch/NOTES.md contains '{pattern}' ({key})")
@@ -182,11 +182,11 @@ else:
             failures.append(f"NOTES.md missing {pattern}")
 
     for key, pattern in [
-        ("km_optimized_vs_b1", "249,9 km** vs. **1.662,70 km"),
+        ("km_optimized_vs_b1", "227,2 km** vs. **1.662,70 km"),
         ("stops", "25 Standorte bedient"),
-        ("vehicles", "4 Fahrzeuge im Einsatz"),
-        ("hours", "7,58 h"),
-        ("tonnes", "142,82 t"),
+        ("vehicles", "3 Fahrzeuge im Einsatz"),
+        ("hours", "7,96 h"),
+        ("tonnes", "116,18 t"),
     ]:
         ok = pattern in deck_doc
         print(f"{'OK  ' if ok else 'FAIL'}     Pitch/deck.md contains '{pattern}' ({key})")

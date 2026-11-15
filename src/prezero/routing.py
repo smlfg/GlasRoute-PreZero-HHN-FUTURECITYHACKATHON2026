@@ -196,6 +196,71 @@ def drive_time_min(distance_km: float, config: OperationalConfig) -> float:
     return (float(distance_km) / float(config.avg_speed_kmh)) * 60.0
 
 
+def _split_oversized_rows(
+    per_loc: pd.DataFrame,
+    cfg: OperationalConfig,
+) -> pd.DataFrame:
+    """Split any site whose critical or total load exceeds vehicle capacity.
+
+    A site with more bins than fit into one vehicle round is turned into multiple
+    stops at the same coordinate. This keeps the nearest-neighbour routing honest:
+    every collection stop respects the 11 t / 26 m³ limits, even when it is the
+    first stop of a vehicle.
+    """
+    if per_loc.empty:
+        return per_loc
+
+    max_w = float(cfg.vehicle_max_weight_kg)
+    max_v = float(cfg.vehicle_max_volume_m3)
+    rows: list[dict[str, Any]] = []
+
+    for record in per_loc.to_dict("records"):
+        crit_bins = max(1, int(record.get("critical_bins") or 1))
+        total_bins = max(1, int(record.get("bins") or crit_bins))
+        crit_mass = float(record.get("mass_kg") or 0.0)
+        crit_vol = float(record.get("volume_m3") or 0.0)
+        total_mass = float(record.get("total_mass_kg") or crit_mass)
+        total_vol = float(record.get("total_volume_m3") or crit_vol)
+
+        n_crit = max(
+            1,
+            math.ceil(crit_mass / max_w) if crit_mass > 0 else 1,
+            math.ceil(crit_vol / max_v) if crit_vol > 0 else 1,
+        )
+        n_total = max(
+            1,
+            math.ceil(total_mass / max_w) if total_mass > 0 else 1,
+            math.ceil(total_vol / max_v) if total_vol > 0 else 1,
+        )
+        n = max(n_crit, n_total)
+
+        if n <= 1:
+            rows.append(record)
+            continue
+
+        # Distribute total bins as evenly as possible.
+        base, extra = divmod(total_bins, n)
+        split_total_bins = [base + (1 if i < extra else 0) for i in range(n)]
+
+        # Distribute critical bins as evenly as possible.
+        base_c, extra_c = divmod(crit_bins, n)
+        split_crit_bins = [base_c + (1 if i < extra_c else 0) for i in range(n)]
+
+        for i in range(n):
+            tb = int(split_total_bins[i])
+            cb = int(split_crit_bins[i])
+            new = dict(record)
+            new["bins"] = tb
+            new["critical_bins"] = cb
+            new["mass_kg"] = round(crit_mass * cb / crit_bins, 2) if crit_bins else 0.0
+            new["volume_m3"] = round(crit_vol * cb / crit_bins, 2) if crit_bins else 0.0
+            new["total_mass_kg"] = round(total_mass * tb / total_bins, 2) if total_bins else 0.0
+            new["total_volume_m3"] = round(total_vol * tb / total_bins, 2) if total_bins else 0.0
+            rows.append(new)
+
+    return pd.DataFrame(rows)
+
+
 def _aggregate_locations(
     scored: pd.DataFrame,
     locations: pd.DataFrame,
@@ -268,6 +333,7 @@ def _aggregate_locations(
 
     per_loc["lat"] = per_loc["_lat_key"]
     per_loc["lon"] = per_loc["_lon_key"]
+    per_loc = _split_oversized_rows(per_loc, cfg)
     return per_loc.sort_values(["score", "Location_id"], ascending=[False, True]).reset_index(
         drop=True
     )
