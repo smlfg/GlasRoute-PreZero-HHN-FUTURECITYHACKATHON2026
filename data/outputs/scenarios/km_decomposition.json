@@ -1,0 +1,122 @@
+{
+  "method": "Decompose the km difference between the status quo (d) and other policies (a, e, f, g).\n\n    PYTHONPATH=src python3 scripts/km_decomposition.py\n\nEvery scenario runs against the same world (docs/MODEL_SPEC.md §1); km come from the km day\nevaluator (routing._simulate_constrained_routes). Each day's route is split into leg types:\n\n* depot      yard -> first stop and last stop -> yard, per vehicle          (component 3)\n* unload     stop -> disposal and disposal -> next stop                      (component 4)\n* inter-stop all remaining stop -> stop legs                                 (components 1, 2, 5)\n\nThe inter-stop delta is split sequentially (method, not a unique attribution):\n  hop-count effect  = (hops_x - hops_d) * avg_hop_d\n  hop-length effect = hops_x * (avg_hop_x - avg_hop_d)                       (2) scattered due-sets\nand the hop-count effect is shared between\n  (1) extra emptyings  : stops the policy would need with the status quo's containers-per-stop\n  (5) colour splitting : the rest (fewer containers emptied per stop)\nin proportion to those stop counts.",
+  "raw": {
+    "d_status_quo": {
+      "depot_km": 3401.513000000004,
+      "unload_km": 6982.412000000018,
+      "inter_km": 8623.694999999983,
+      "hops": 2824.0,
+      "vehicles": 317.0,
+      "unloads": 573.0,
+      "stops": 3714.0,
+      "km": 19007.609289497734,
+      "emptyings": 10363.0
+    },
+    "a_zero_overflow": {
+      "depot_km": 3686.2860000000032,
+      "unload_km": 5879.703000000011,
+      "inter_km": 15700.341000000026,
+      "hops": 6923.0,
+      "vehicles": 344.0,
+      "unloads": 530.0,
+      "stops": 7797.0,
+      "km": 25266.25151074596,
+      "emptyings": 10427.0
+    },
+    "e_mentor": {
+      "depot_km": 4274.881000000002,
+      "unload_km": 5620.95800000002,
+      "inter_km": 15289.401000000005,
+      "hops": 6361.0,
+      "vehicles": 404.0,
+      "unloads": 513.0,
+      "stops": 7278.0,
+      "km": 25185.253906219405,
+      "emptyings": 13676.0
+    },
+    "f_fixed_areas": {
+      "depot_km": 3420.9050000000075,
+      "unload_km": 7073.82700000001,
+      "inter_km": 4403.707999999999,
+      "hops": 3781.0,
+      "vehicles": 315.0,
+      "unloads": 572.0,
+      "stops": 4668.0,
+      "km": 14898.416909449472,
+      "emptyings": 11842.0
+    },
+    "g_co_empty": {
+      "depot_km": 2892.1699999999996,
+      "unload_km": 7545.439000000018,
+      "inter_km": 7043.96099999999,
+      "hops": 2146.0,
+      "vehicles": 315.0,
+      "unloads": 608.0,
+      "stops": 3069.0,
+      "km": 17481.59857321435,
+      "emptyings": 12584.0
+    }
+  },
+  "decomposition": {
+    "a_zero_overflow": {
+      "km_status_quo": 19007.6,
+      "km_policy": 25266.3,
+      "delta_km": 6258.6,
+      "1_extra_emptyings_km": 70.3,
+      "2_scattered_due_sets_km": -5440.5,
+      "3_extra_vehicles_depot_km": 284.8,
+      "4_extra_unload_trips_km": -1102.7,
+      "5_colour_splitting_km": 12446.9,
+      "containers_per_stop": 1.34,
+      "containers_per_stop_status_quo": 2.79,
+      "avg_hop_km": 2.268,
+      "avg_hop_km_status_quo": 3.054,
+      "check_sum_parts_km": 6258.8
+    },
+    "e_mentor": {
+      "km_status_quo": 19007.6,
+      "km_policy": 25185.3,
+      "delta_km": 6177.6,
+      "1_extra_emptyings_km": 3598.4,
+      "2_scattered_due_sets_km": -4135.3,
+      "3_extra_vehicles_depot_km": 873.4,
+      "4_extra_unload_trips_km": -1361.5,
+      "5_colour_splitting_km": 7202.6,
+      "containers_per_stop": 1.88,
+      "containers_per_stop_status_quo": 2.79,
+      "avg_hop_km": 2.404,
+      "avg_hop_km_status_quo": 3.054,
+      "check_sum_parts_km": 6177.6
+    },
+    "f_fixed_areas": {
+      "km_status_quo": 19007.6,
+      "km_policy": 14898.4,
+      "delta_km": -4109.2,
+      "1_extra_emptyings_km": 1623.7,
+      "2_scattered_due_sets_km": -7142.4,
+      "3_extra_vehicles_depot_km": 19.4,
+      "4_extra_unload_trips_km": 91.4,
+      "5_colour_splitting_km": 1298.7,
+      "containers_per_stop": 2.54,
+      "containers_per_stop_status_quo": 2.79,
+      "avg_hop_km": 1.165,
+      "avg_hop_km_status_quo": 3.054,
+      "check_sum_parts_km": -4109.2
+    },
+    "g_co_empty": {
+      "km_status_quo": 19007.6,
+      "km_policy": 17481.6,
+      "delta_km": -1526.0,
+      "1_extra_emptyings_km": 2555.1,
+      "2_scattered_due_sets_km": 490.7,
+      "3_extra_vehicles_depot_km": -509.3,
+      "4_extra_unload_trips_km": 563.0,
+      "5_colour_splitting_km": -4625.5,
+      "containers_per_stop": 4.1,
+      "containers_per_stop_status_quo": 2.79,
+      "avg_hop_km": 3.282,
+      "avg_hop_km_status_quo": 3.054,
+      "check_sum_parts_km": -1526.0
+    }
+  }
+}

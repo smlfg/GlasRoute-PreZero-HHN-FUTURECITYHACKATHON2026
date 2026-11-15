@@ -1,0 +1,17 @@
+{
+ "method": "fixture",
+ "raw": {},
+ "decomposition": {
+  "e_mentor": {
+   "km_status_quo": 1000.0,
+   "km_policy": 1200.0,
+   "delta_km": 200.0,
+   "1_extra_emptyings_km": 50.0,
+   "2_scattered_due_sets_km": -20.0,
+   "3_extra_vehicles_depot_km": 30.0,
+   "4_extra_unload_trips_km": -10.0,
+   "5_colour_splitting_km": 150.0,
+   "containers_per_stop": 1.5
+  }
+ }
+}

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlasRoute — Ausblick: Routing & Szenarien</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #1d4ed8;
+      --accent-soft: #eff6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .cadence-frame {
+      width: 800px;
+      margin: 0 auto;
+      padding: 16px 20px 40px;
+    }
+    .section-head h2 { margin: 0 0 4px; font-size: 18px; }
+    .muted { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+    .kpi-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+    .card .label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .card .value { font-size: 20px; font-weight: 700; }
+    .card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .primary-btn {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge.pending { background: #fef3c7; color: #92400e; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .map-wrap { margin-bottom: 18px; }
+
+:root {
+  --cad-red-bg: #fee2e2;
+  --cad-red-fg: #991b1b;
+  --cad-yellow-bg: #fef3c7;
+  --cad-yellow-fg: #92400e;
+  --cad-ok-bg: #dcfce7;
+  --cad-ok-fg: #166534;
+  --cad-border: #cbd5e1;
+  --cad-muted: #475569;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cadence-view .muted,
+.cadence-detail-view .muted,
+.cadence-week-view .muted,
+.cadence-scenarios-view .muted {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.cadence-kpi-grid > .card {
+  flex: 1 1 180px;
+}
+
+.cadence-area-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.cadence-key-sentence { font-size: 1.1rem; margin: 8px 0; }
+.cadence-recs { padding-left: 18px; }
+.impact-big .value { font-size: 2rem; }
+.impact-good { color: #1a7f37; } .impact-bad { color: #c62828; }
+.impact-arrow { font-weight: 700; }
+.cadence-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.cadence-all > summary { cursor: pointer; font-weight: 600; margin: 12px 0; }
+.cadence-caveats { margin: 8px 0 0 18px; }
+.cadence-histogram { margin: 16px 0; }
+#cadence-search { min-width: 220px; padding: 6px 8px; }
+.cadence-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 10px;
+}
+
+.cadence-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cadence-filter-btn {
+  border: 1px solid var(--cad-border);
+  background: #ffffff;
+  color: var(--text);
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cadence-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.cadence-filter-btn:focus-visible,
+.cadence-approve-btn:focus-visible,
+.cadence-detail-link:focus-visible,
+#cadence-detail-select:focus-visible,
+.cadence-route-extra summary:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.cadence-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cadence-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 760px;
+}
+
+.cadence-table th,
+.cadence-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.cadence-table thead th {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+
+.cadence-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cadence-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.cadence-row.status-red {
+  box-shadow: inset 4px 0 0 #b91c1c;
+}
+
+.cadence-row.status-yellow {
+  box-shadow: inset 4px 0 0 #b45309;
+}
+
+.cadence-site {
+  min-width: 190px;
+}
+
+.cadence-detail-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.cadence-id {
+  display: block;
+  font-size: 12px;
+  color: var(--cad-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.cadence-note {
+  display: block;
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-pill.status-red {
+  background: var(--cad-red-bg);
+  color: var(--cad-red-fg);
+}
+
+.status-pill.status-yellow {
+  background: var(--cad-yellow-bg);
+  color: var(--cad-yellow-fg);
+}
+
+.status-pill.status-ok {
+  background: var(--cad-ok-bg);
+  color: var(--cad-ok-fg);
+}
+
+.cadence-approve-btn {
+  border: 1px solid #1d4ed8;
+  background: #ffffff;
+  color: #1d4ed8;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cadence-approve-btn:hover {
+  background: var(--accent-soft);
+}
+
+.cadence-approve-btn.approved {
+  border-color: #15803d;
+  color: #15803d;
+  background: var(--cad-ok-bg);
+}
+
+.cadence-detail-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.cadence-detail-toolbar label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#cadence-detail-select {
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--cad-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text);
+  max-width: 100%;
+}
+
+.cadence-detail-body {
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.cadence-detail-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.cadence-detail-title h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.cadence-explain {
+  margin: 12px 0 16px;
+  padding: 11px 14px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.saw-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 100%;
+}
+
+.saw-path {
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.saw-dot {
+  fill: #b91c1c;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+}
+
+.saw-grid {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.saw-axis {
+  font-size: 12px;
+  fill: #475569;
+}
+
+.empty-note {
+  font-size: 13px;
+  color: var(--cad-muted);
+  padding: 18px;
+}
+
+.week-group {
+  margin-bottom: 18px;
+}
+
+.week-group h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.week-table {
+  min-width: 620px;
+}
+
+.cadence-route-extra {
+  margin-top: 18px;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px 16px;
+}
+
+.cadence-route-extra summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cadence-route-extra[open] summary {
+  margin-bottom: 12px;
+}
+
+.scenario-block {
+  margin-bottom: 20px;
+}
+
+.scenario-block h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.scenario-table {
+  min-width: 720px;
+}
+
+.scenario-table tr.scenario-best td {
+  background: var(--cad-ok-bg);
+}
+
+@media (max-width: 800px) {
+  .cadence-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cadence-table {
+    font-size: 13px;
+  }
+}
+
+  </style>
+</head>
+<body class="">
+  <div class="cadence-frame">
+
+    <section id="view-cadence-scenarios" class="view-panel cadence-scenarios-view">
+      <div class="section-head">
+        <h2>Ausblick: Routing &amp; Szenarien</h2>
+        <p class="muted">Die Route ist nur der Ausblick: Sie bündelt, was der Takt fällig macht.</p>
+        <p class="muted">
+          Zeitraum 17.10.2025 bis 30.09.2026
+          (349 Tage).
+          <strong>Gleiche Glasmenge: 7.613,95 t in jedem Szenario</strong>
+          - die Szenarien unterscheiden sich nur in der Entscheidungsregel.
+          Quelle: <code>summary.json</code> der Szenario-Engine.
+        </p>
+        <ul class="cadence-caveats">
+          <li><strong>Standorte simuliert: 449 IDs auf 121 OSM-Punkten</strong> (zufällig zugeordnet); Bündelung am Halt ist in der
+            Simulation leichter als in der Realität, absolute km und Halte sind illustrativ.</li>
+          <li><strong>Mehrkammer vs. ein LKW je Farbe unbekannt</strong> - beide Varianten stehen in den Tabellen.</li>
+        </ul>
+      </div>
+      <details class="cadence-all">
+        <summary>Szenario-Tabellen und km-Zerlegung anzeigen</summary>
+        
+        <div class="scenario-block" data-time-model="real">
+          <h3>Zeitmodell: Real (7/15 min Fahrt, 5 min je Halt, Depot)</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">391</td><td class="num">2.256,4</td><td class="num">25.266</td><td class="num">356.333 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">339</td><td class="num">1.930,8</td><td class="num">22.959</td><td class="num">307.994 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">379</td><td class="num">2.202,2</td><td class="num">24.673</td><td class="num">346.478 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">271</td><td class="num">1.335,0</td><td class="num">19.008</td><td class="num">233.295 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">404</td><td class="num">2.130,6</td><td class="num">25.185</td><td class="num">354.729 €</td><td></td></tr><tr class="" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">317</td><td class="num">1.539,9</td><td class="num">14.898</td><td class="num">266.738 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm"><td><code>h_area_week_rhythm</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %) (Mehrkammer)</td><td class="num">7.249,9</td><td class="num">364,1</td><td class="num">475</td><td class="num">53,7 %</td><td class="num">13.492</td><td class="num">4.943</td><td class="num">320</td><td class="num">1.619,5</td><td class="num">15.330</td><td class="num">273.612 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b10"><td><code>h_area_week_rhythm_b10</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %) (Mehrkammer)</td><td class="num">7.219,5</td><td class="num">394,4</td><td class="num">819</td><td class="num">59,0 %</td><td class="num">12.234</td><td class="num">4.785</td><td class="num">320</td><td class="num">1.581,2</td><td class="num">15.185</td><td class="num">271.067 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b30"><td><code>h_area_week_rhythm_b30</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %) (Mehrkammer)</td><td class="num">7.284,8</td><td class="num">329,2</td><td class="num">256</td><td class="num">47,5 %</td><td class="num">15.321</td><td class="num">5.038</td><td class="num">318</td><td class="num">1.631,6</td><td class="num">15.366</td><td class="num">273.410 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">286</td><td class="num">1.208,8</td><td class="num">17.482</td><td class="num">231.726 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">275</td><td class="num">1.055,3</td><td class="num">15.398</td><td class="num">215.048 €</td><td>günstigste, wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">331</td><td class="num">1.779,9</td><td class="num">22.238</td><td class="num">293.869 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">766</td><td class="num">2.626,8</td><td class="num">38.029</td><td class="num">575.834 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">672</td><td class="num">2.677,8</td><td class="num">39.292</td><td class="num">532.919 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">698</td><td class="num">1.694,9</td><td class="num">27.844</td><td class="num">475.572 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        <div class="scenario-block" data-time-model="km">
+          <h3>Zeitmodell: km-Modell (km / Geschwindigkeit, Rüst- und Hubzeit aus Config)</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">344</td><td class="num">1.968,5</td><td class="num">25.266</td><td class="num">314.407 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">301</td><td class="num">1.721,3</td><td class="num">22.959</td><td class="num">275.586 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">328</td><td class="num">1.915,9</td><td class="num">24.673</td><td class="num">302.655 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">317</td><td class="num">1.593,3</td><td class="num">19.008</td><td class="num">272.826 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">404</td><td class="num">2.104,8</td><td class="num">25.185</td><td class="num">353.078 €</td><td></td></tr><tr class="scenario-best" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">315</td><td class="num">1.534,3</td><td class="num">14.898</td><td class="num">265.379 €</td><td>günstigste</td></tr><tr class="" data-scenario="h_area_week_rhythm"><td><code>h_area_week_rhythm</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %) (Mehrkammer)</td><td class="num">7.249,9</td><td class="num">364,1</td><td class="num">475</td><td class="num">53,7 %</td><td class="num">13.492</td><td class="num">4.943</td><td class="num">326</td><td class="num">1.645,5</td><td class="num">15.330</td><td class="num">278.276 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b10"><td><code>h_area_week_rhythm_b10</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %) (Mehrkammer)</td><td class="num">7.219,5</td><td class="num">394,4</td><td class="num">819</td><td class="num">59,0 %</td><td class="num">12.234</td><td class="num">4.785</td><td class="num">317</td><td class="num">1.570,7</td><td class="num">15.185</td><td class="num">268.895 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b30"><td><code>h_area_week_rhythm_b30</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %) (Mehrkammer)</td><td class="num">7.284,8</td><td class="num">329,2</td><td class="num">256</td><td class="num">47,5 %</td><td class="num">15.321</td><td class="num">5.038</td><td class="num">333</td><td class="num">1.739,4</td><td class="num">15.366</td><td class="num">287.810 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">315</td><td class="num">1.633,4</td><td class="num">17.482</td><td class="num">273.401 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">341</td><td class="num">1.700,3</td><td class="num">15.398</td><td class="num">289.328 €</td><td>wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">329</td><td class="num">1.799,1</td><td class="num">22.238</td><td class="num">294.097 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">738</td><td class="num">2.471,2</td><td class="num">38.029</td><td class="num">551.876 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">658</td><td class="num">2.541,3</td><td class="num">39.292</td><td class="num">517.183 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">710</td><td class="num">2.012,8</td><td class="num">27.844</td><td class="num">501.918 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        <div class="scenario-block" data-time-model="hop5">
+          <h3>Zeitmodell: Normierte Distanz: jeder Sprung 5 min</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">290</td><td class="num">1.551,6</td><td class="num">25.266</td><td class="num">260.725 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">282</td><td class="num">1.326,8</td><td class="num">22.959</td><td class="num">240.838 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">286</td><td class="num">1.515,3</td><td class="num">24.673</td><td class="num">256.017 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">233</td><td class="num">893,0</td><td class="num">19.008</td><td class="num">186.007 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">295</td><td class="num">1.474,2</td><td class="num">25.185</td><td class="num">258.219 €</td><td></td></tr><tr class="" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">236</td><td class="num">1.051,8</td><td class="num">14.898</td><td class="num">194.999 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm"><td><code>h_area_week_rhythm</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %) (Mehrkammer)</td><td class="num">7.249,9</td><td class="num">364,1</td><td class="num">475</td><td class="num">53,7 %</td><td class="num">13.492</td><td class="num">4.943</td><td class="num">243</td><td class="num">1.104,9</td><td class="num">15.330</td><td class="num">202.178 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b10"><td><code>h_area_week_rhythm_b10</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %) (Mehrkammer)</td><td class="num">7.219,5</td><td class="num">394,4</td><td class="num">819</td><td class="num">59,0 %</td><td class="num">12.234</td><td class="num">4.785</td><td class="num">240</td><td class="num">1.075,8</td><td class="num">15.185</td><td class="num">198.722 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b30"><td><code>h_area_week_rhythm_b30</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %) (Mehrkammer)</td><td class="num">7.284,8</td><td class="num">329,2</td><td class="num">256</td><td class="num">47,5 %</td><td class="num">15.321</td><td class="num">5.038</td><td class="num">248</td><td class="num">1.118,8</td><td class="num">15.366</td><td class="num">205.591 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">248</td><td class="num">799,8</td><td class="num">17.482</td><td class="num">186.550 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">248</td><td class="num">679,5</td><td class="num">15.398</td><td class="num">177.496 €</td><td>günstigste, wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">280</td><td class="num">1.216,9</td><td class="num">22.238</td><td class="num">232.337 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">695</td><td class="num">1.781,5</td><td class="num">38.029</td><td class="num">486.235 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">645</td><td class="num">1.823,3</td><td class="num">39.292</td><td class="num">464.731 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">672</td><td class="num">1.129,0</td><td class="num">27.844</td><td class="num">426.354 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        <div class="scenario-block" data-time-model="hop10">
+          <h3>Zeitmodell: Normierte Distanz: jeder Sprung 10 min</h3>
+          
+      <div class="table-scroll">
+        <table class="cadence-table scenario-table">
+          <thead><tr>
+            <th scope="col">Szenario</th>
+            <th scope="col">Gesammelt (t)</th>
+            <th scope="col">Endbestand (t)</th>
+            <th scope="col">Überlauf-Ereignisse</th>
+            <th scope="col">Ø Füllstand bei Leerung</th>
+            <th scope="col">Leerungen</th>
+            <th scope="col">Halte</th>
+            <th scope="col">Fahrzeugtage</th>
+            <th scope="col">Stunden</th>
+            <th scope="col">km</th>
+            <th scope="col">Kosten</th>
+            <th scope="col">Hinweis</th>
+          </tr></thead>
+          <tbody><tr class="" data-scenario="a_zero_overflow"><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (Mehrkammer)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">7.797</td><td class="num">390</td><td class="num">2.263,9</td><td class="num">25.266</td><td class="num">356.313 €</td><td></td></tr><tr class="" data-scenario="b_min_km"><td><code>b_min_km</code> (b) min km: so spät wie möglich, leert vor 100 % am nächsten Betriebstag (Mehrkammer)</td><td class="num">6.963,9</td><td class="num">650,1</td><td class="num">7.079</td><td class="num">86,0 %</td><td class="num">8.094</td><td class="num">6.425</td><td class="num">332</td><td class="num">1.925,5</td><td class="num">22.959</td><td class="num">304.155 €</td><td></td></tr><tr class="" data-scenario="c_max_fill"><td><code>c_max_fill</code> (c) max Füllung: Takt T = floor((100 − Puffer)/r̂), leert wenn Alter ≥ T (Mehrkammer)</td><td class="num">7.099,8</td><td class="num">514,2</td><td class="num">2.502</td><td class="num">71,6 %</td><td class="num">9.912</td><td class="num">7.569</td><td class="num">381</td><td class="num">2.211,9</td><td class="num">24.673</td><td class="num">348.099 €</td><td></td></tr><tr class="" data-scenario="d_status_quo"><td><code>d_status_quo</code> (d) Status quo: reale Leerungstage (Mehrkammer)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">3.714</td><td class="num">249</td><td class="num">1.271,6</td><td class="num">19.008</td><td class="num">218.237 €</td><td></td></tr><tr class="" data-scenario="e_mentor"><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu (Mehrkammer)</td><td class="num">7.206,1</td><td class="num">407,8</td><td class="num">485</td><td class="num">52,7 %</td><td class="num">13.676</td><td class="num">7.278</td><td class="num">400</td><td class="num">2.135,6</td><td class="num">25.185</td><td class="num">353.049 €</td><td></td></tr><tr class="" data-scenario="f_fixed_areas"><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag (Mehrkammer)</td><td class="num">7.143,1</td><td class="num">470,8</td><td class="num">1.958</td><td class="num">60,3 %</td><td class="num">11.842</td><td class="num">4.668</td><td class="num">321</td><td class="num">1.501,7</td><td class="num">14.898</td><td class="num">266.293 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm"><td><code>h_area_week_rhythm</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 20 %) (Mehrkammer)</td><td class="num">7.249,9</td><td class="num">364,1</td><td class="num">475</td><td class="num">53,7 %</td><td class="num">13.492</td><td class="num">4.943</td><td class="num">325</td><td class="num">1.574,1</td><td class="num">15.330</td><td class="num">273.207 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b10"><td><code>h_area_week_rhythm_b10</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 10 %) (Mehrkammer)</td><td class="num">7.219,5</td><td class="num">394,4</td><td class="num">819</td><td class="num">59,0 %</td><td class="num">12.234</td><td class="num">4.785</td><td class="num">316</td><td class="num">1.532,2</td><td class="num">15.185</td><td class="num">265.931 €</td><td></td></tr><tr class="" data-scenario="h_area_week_rhythm_b30"><td><code>h_area_week_rhythm_b30</code> (h) Wochenrhythmus: feste Gebiete, Takt k = 1–8 Wochen aus r̂, Sicherheit bei 100 − Puffer/2 (Puffer 30 %) (Mehrkammer)</td><td class="num">7.284,8</td><td class="num">329,2</td><td class="num">256</td><td class="num">47,5 %</td><td class="num">15.321</td><td class="num">5.038</td><td class="num">327</td><td class="num">1.600,2</td><td class="num">15.366</td><td class="num">275.901 €</td><td></td></tr><tr class="" data-scenario="g_co_empty"><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (Mehrkammer)</td><td class="num">7.196,6</td><td class="num">417,3</td><td class="num">581</td><td class="num">57,2 %</td><td class="num">12.584</td><td class="num">3.069</td><td class="num">279</td><td class="num">1.125,2</td><td class="num">17.482</td><td class="num">222.876 €</td><td></td></tr><tr class="scenario-best" data-scenario="g_co_empty_x30"><td><code>g_co_empty_x30</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 30 %) (Mehrkammer)</td><td class="num">7.290,2</td><td class="num">323,7</td><td class="num">159</td><td class="num">45,6 %</td><td class="num">15.976</td><td class="num">2.228</td><td class="num">268</td><td class="num">939,2</td><td class="num">15.398</td><td class="num">204.117 €</td><td>günstigste, wenigste Überläufe</td></tr><tr class="" data-scenario="g_co_empty_x70"><td><code>g_co_empty_x70</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 70 %) (Mehrkammer)</td><td class="num">7.121,0</td><td class="num">492,9</td><td class="num">1.636</td><td class="num">66,6 %</td><td class="num">10.695</td><td class="num">5.736</td><td class="num">323</td><td class="num">1.763,2</td><td class="num">22.238</td><td class="num">288.800 €</td><td></td></tr><tr class="" data-scenario="a_zero_overflow_per_colour"><td><code>a_zero_overflow_per_colour</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag (ein LKW je Farbe)</td><td class="num">7.095,3</td><td class="num">518,7</td><td class="num">2.237</td><td class="num">68,0 %</td><td class="num">10.427</td><td class="num">9.454</td><td class="num">767</td><td class="num">2.650,7</td><td class="num">38.029</td><td class="num">577.864 €</td><td></td></tr><tr class="" data-scenario="d_status_quo_per_colour"><td><code>d_status_quo_per_colour</code> (d) Status quo: reale Leerungstage (ein LKW je Farbe)</td><td class="num">6.943,5</td><td class="num">670,5</td><td class="num">19.047</td><td class="num">67,0 %</td><td class="num">10.363</td><td class="num">9.640</td><td class="num">671</td><td class="num">2.711,7</td><td class="num">39.292</td><td class="num">534.588 €</td><td></td></tr><tr class="" data-scenario="g_co_empty_per_colour"><td><code>g_co_empty_per_colour</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %) (ein LKW je Farbe)</td><td class="num">7.173,5</td><td class="num">440,4</td><td class="num">1.034</td><td class="num">60,8 %</td><td class="num">11.800</td><td class="num">5.461</td><td class="num">697</td><td class="num">1.670,9</td><td class="num">27.844</td><td class="num">473.536 €</td><td></td></tr></tbody>
+        </table>
+      </div>
+    
+        </div>
+        
+        
+      <div class="scenario-block km-decomposition">
+        <h3>Woher kommen die Mehr-km? (Zerlegung gegen den Status quo)</h3>
+        <div class="table-scroll">
+          <table class="cadence-table km-table">
+            <thead><tr>
+              <th scope="col">Szenario</th>
+              <th scope="col">km Status quo</th>
+              <th scope="col">km Szenario</th>
+              <th scope="col">Δ km</th>
+              <th scope="col">Mehr Leerungen (km)</th><th scope="col">Gestreute Fälligkeiten (km)</th><th scope="col">Mehr Fahrzeuge (Depot) (km)</th><th scope="col">Mehr Entladefahrten (km)</th><th scope="col">Farbtrennung (km)</th>
+              <th scope="col">Container je Halt</th>
+            </tr></thead>
+            <tbody><tr><td><code>a_zero_overflow</code> (a) 0 % Überlauf: Timer mit Puffer, leert vor dem Ziel am nächsten Betriebstag</td><td class="num">19.008</td><td class="num">25.266</td><td class="num">6.259</td><td class="num">70</td><td class="num">-5.440</td><td class="num">285</td><td class="num">-1.103</td><td class="num">12.447</td><td class="num">1,34</td></tr><tr><td><code>e_mentor</code> (e) Mentor: Status quo, ≤ 20 % überspringen → 14-Tage-Rhythmus, kritische dazu</td><td class="num">19.008</td><td class="num">25.185</td><td class="num">6.178</td><td class="num">3.598</td><td class="num">-4.135</td><td class="num">873</td><td class="num">-1.362</td><td class="num">7.203</td><td class="num">1,88</td></tr><tr><td><code>f_fixed_areas</code> (f) feste Gebiete: 5 Gebiete = Mo–Fr, leert am Gebietstag vor dem Ziel am nächsten Gebietstag</td><td class="num">19.008</td><td class="num">14.898</td><td class="num">-4.109</td><td class="num">1.624</td><td class="num">-7.142</td><td class="num">19</td><td class="num">91</td><td class="num">1.299</td><td class="num">2,54</td></tr><tr><td><code>g_co_empty</code> (g) co-empty: (a) + am angefahrenen Halt alle Container mit Schätzung ≥ X mitleeren (X = 50 %)</td><td class="num">19.008</td><td class="num">17.482</td><td class="num">-1.526</td><td class="num">2.555</td><td class="num">491</td><td class="num">-509</td><td class="num">563</td><td class="num">-4.626</td><td class="num">4,10</td></tr></tbody>
+          </table>
+        </div>
+        <p class="muted">Die Aufteilung ist eine Methode, keine eindeutige Zuordnung
+        (Quelle: <code>km_decomposition.json</code>).</p>
+      </div>
+    
+      </details>
+      
+    </section>
+    
+  </div>
+  <script>
+
+(function () {
+  "use strict";
+
+  function readPayload(id) {
+    var node = document.getElementById(id);
+    if (!node) { return null; }
+    try {
+      return JSON.parse(node.textContent);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  var detailPayload = readPayload("cadence-detail-payload") || [];
+
+  function de(value, digits) {
+    if (value === null || value === undefined || value === "") { return "-"; }
+    var number = Number(value);
+    if (!isFinite(number)) { return String(value); }
+    return number.toLocaleString("de-DE", {
+      minimumFractionDigits: digits === undefined ? 1 : digits,
+      maximumFractionDigits: digits === undefined ? 1 : digits
+    });
+  }
+
+  function esc(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function dateDe(value) {
+    if (!value) { return "–"; }
+    var parts = String(value).split("-");
+    if (parts.length !== 3) { return String(value); }
+    return parts[2] + "." + parts[1] + "." + parts[0];
+  }
+
+  // --- filter the container list ---------------------------------------------------------
+
+  var filterButtons = document.querySelectorAll(".cadence-filter-btn");
+  var tableBody = document.getElementById("cadence-table-body");
+
+  var activeFilter = "all";
+  var searchBox = document.getElementById("cadence-search");
+
+  function applyFilter(filter) {
+    if (!tableBody) { return; }
+    activeFilter = filter;
+    var needle = searchBox ? searchBox.value.trim().toLowerCase() : "";
+    var rows = tableBody.querySelectorAll("tr.cadence-row");
+    var shown = 0;
+    rows.forEach(function (row) {
+      var status = row.getAttribute("data-status");
+      var visible = (filter === "all" || status === filter) &&
+        (!needle || row.textContent.toLowerCase().indexOf(needle) !== -1 ||
+         (row.getAttribute("data-location") || "").toLowerCase().indexOf(needle) !== -1);
+      row.style.display = visible ? "" : "none";
+      if (visible) { shown += 1; }
+    });
+    var countNode = document.getElementById("cadence-filter-count");
+    if (countNode) { countNode.textContent = shown + " von " + rows.length + " Containern"; }
+  }
+
+  if (searchBox) {
+    searchBox.addEventListener("input", function () { applyFilter(activeFilter); });
+  }
+
+  filterButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      filterButtons.forEach(function (other) { other.classList.remove("active"); });
+      btn.classList.add("active");
+      applyFilter(btn.getAttribute("data-filter"));
+    });
+  });
+
+  // --- approvals (Disponentin) ----------------------------------------------------------
+
+  var statusNode = document.getElementById("cadence-approval-status");
+  var approved = {};
+
+  function setStatus(text, done) {
+    if (!statusNode) { return; }
+    statusNode.textContent = text;
+    statusNode.classList.toggle("pending", !done);
+    statusNode.classList.toggle("ok", !!done);
+  }
+
+  function markApproved(btn) {
+    btn.classList.add("approved");
+    btn.textContent = "Freigegeben";
+    btn.disabled = true;
+  }
+
+  document.addEventListener("click", function (evt) {
+    var btn = evt.target && evt.target.closest ? evt.target.closest(".cadence-approve-btn") : null;
+    if (!btn) { return; }
+    var key = btn.getAttribute("data-location") + "|" + btn.getAttribute("data-material");
+    approved[key] = true;
+    markApproved(btn);
+    setStatus("Status: " + Object.keys(approved).length + " Taktänderung(en) freigegeben", true);
+  });
+
+  var approveAll = document.getElementById("cadence-approve-all-btn");
+  if (approveAll) {
+    approveAll.addEventListener("click", function () {
+      var rows = document.querySelectorAll("tr.cadence-row");
+      var count = 0;
+      rows.forEach(function (row) {
+        if (row.style.display === "none") { return; }
+        var btn = row.querySelector(".cadence-approve-btn");
+        if (btn && !btn.disabled) {
+          btn.classList.add("approved");
+          btn.textContent = "Freigegeben";
+          btn.disabled = true;
+          approved[btn.getAttribute("data-location") + "|" + btn.getAttribute("data-material")] = true;
+          count += 1;
+        }
+      });
+      setStatus("Status: " + count + " Taktänderung(en) freigegeben", true);
+    });
+  }
+
+  // --- container detail ------------------------------------------------------------------
+
+  var select = document.getElementById("cadence-detail-select");
+  var body = document.getElementById("cadence-detail-body");
+
+  function findRow(location, material) {
+    for (var i = 0; i < detailPayload.length; i += 1) {
+      if (detailPayload[i].location_id === location &&
+          detailPayload[i].material === material) {
+        return detailPayload[i];
+      }
+    }
+    return null;
+  }
+
+  function sawtoothSvg(row) {
+    var history = row.history || [];
+    if (!history.length) {
+      return '<div class="empty-note">Keine Messungen für diesen Container.</div>';
+    }
+    var width = 900, height = 260;
+    var padLeft = 46, padRight = 16, padTop = 16, padBottom = 34;
+    var plotW = width - padLeft - padRight;
+    var plotH = height - padTop - padBottom;
+    var first = new Date(history[0][0] + "T00:00:00");
+    var last = new Date(history[history.length - 1][0] + "T00:00:00");
+    var spanDays = Math.max(1, Math.round((last - first) / 86400000));
+
+    function xOf(ts) {
+      var t = new Date(ts + "T00:00:00");
+      return padLeft + ((t - first) / 86400000) / spanDays * plotW;
+    }
+    function yOf(level) {
+      var clamped = Math.max(0, Math.min(110, Number(level) || 0));
+      return padTop + (1 - clamped / 110) * plotH;
+    }
+
+    var parts = [];
+    var dots = [];
+    var grid = [];
+    [0, 50, 80, 110].forEach(function (level) {
+      var y = yOf(level);
+      grid.push('<line x1="' + padLeft + '" y1="' + y.toFixed(1) + '" x2="' +
+        (width - padRight) + '" y2="' + y.toFixed(1) + '" class="saw-grid"/>');
+      grid.push('<text x="' + (padLeft - 6) + '" y="' + (y + 4).toFixed(1) +
+        '" class="saw-axis" text-anchor="end">' + de(level, 0) + " %</text>");
+    });
+
+    for (var i = 0; i < history.length; i += 1) {
+      var ts = history[i][0];
+      var level = history[i][1];
+      var x = xOf(ts);
+      var y = yOf(level);
+      if (i === 0) {
+        parts.push("M " + x.toFixed(1) + " " + y.toFixed(1));
+        parts.push("L " + x.toFixed(1) + " " + (padTop + plotH).toFixed(1));
+      } else {
+        var px = xOf(history[i - 1][0]);
+        var py = yOf(history[i - 1][1]);
+        parts.push("M " + px.toFixed(1) + " " + (padTop + plotH).toFixed(1));
+        parts.push("L " + px.toFixed(1) + " " + py.toFixed(1));
+        parts.push("L " + x.toFixed(1) + " " + y.toFixed(1));
+      }
+      dots.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+        '" r="3" class="saw-dot"/>');
+    }
+
+    function axisDate(ts) {
+      var p = String(ts).split("-");
+      return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : String(ts);
+    }
+
+    return '<svg class="saw-chart" viewBox="0 0 ' + width + " " + height +
+      '" role="img" aria-label="Füllstandverlauf: Anstieg zwischen den Leerungen, Sprung auf 0 % bei jeder Leerung">' +
+      grid.join("") +
+      '<path class="saw-path" d="' + parts.join(" ") + '"/>' + dots.join("") +
+      '<text x="' + padLeft + '" y="' + (height - 10) + '" class="saw-axis">' +
+      esc(axisDate(history[0][0])) + "</text>" +
+      '<text x="' + (width - padRight) + '" y="' + (height - 10) +
+      '" class="saw-axis" text-anchor="end">' +
+      esc(axisDate(history[history.length - 1][0])) + "</text>" +
+      "</svg>";
+  }
+
+  function renderDetail(row) {
+    if (!row) {
+      body.innerHTML = '<p class="muted">Container wählen, um den Verlauf zu sehen.</p>';
+      return;
+    }
+
+    body.innerHTML =
+      '<div class="cadence-detail-title">' +
+        "<h3>" + esc(row.site_title) + "</h3>" +
+        '<span class="status-pill">' + esc(row.recommendation_label) + "</span>" +
+      "</div>" +
+      '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
+        " · füllt sich täglich um etwa " + de(row.rate_pct_per_day, 1) + " %" +
+        " · " + de(row.emptyings_status_quo, 0) + " Leerungen im Status quo" +
+        " · " + (row.skip_14d > 0 ? "im Mentor-Takt übersprungen" : "im Mentor-Takt nicht übersprungen") + "</p>" +
+      '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
+      '<div class="kpi-grid">' +
+        '<div class="card"><div class="label">Ø Füllgrad heute</div><div class="value">' +
+          de(row.avg_fill_status_quo_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Ø Füllgrad neu</div><div class="value">' +
+          de(row.avg_fill_mentor_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Überläufe heute</div><div class="value">' +
+          de(row.overflow_events_status_quo, 0) + "</div></div>" +
+      "</div>" +
+      sawtoothSvg(row);
+  }
+
+  function populateSelect() {
+    if (!select) { return; }
+    var options = [];
+    detailPayload.forEach(function (row, index) {
+      options.push('<option value="' + index + '">' + esc(row.site_title) +
+        " · " + esc(row.recommendation_label) + "</option>");
+    });
+    select.innerHTML = options.join("");
+  }
+
+  if (select) {
+    populateSelect();
+    select.addEventListener("change", function () {
+      var row = detailPayload[Number(select.value)];
+      renderDetail(row);
+    });
+    if (detailPayload.length) {
+      renderDetail(detailPayload[0]);
+    }
+  }
+
+  // --- link from the list to the detail --------------------------------------------------
+
+  document.addEventListener("click", function (evt) {
+    var link = evt.target && evt.target.closest ? evt.target.closest(".cadence-detail-link") : null;
+    if (!link) { return; }
+    evt.preventDefault();
+    var location = link.getAttribute("data-location");
+    var material = link.getAttribute("data-material");
+    var row = findRow(location, material);
+    if (!row || !select) { return; }
+    for (var i = 0; i < detailPayload.length; i += 1) {
+      if (detailPayload[i].location_id === location &&
+          detailPayload[i].material === material) {
+        select.value = String(i);
+        break;
+      }
+    }
+    renderDetail(row);
+    if (window.activateTab) { window.activateTab("view-cadence-detail"); }
+    var target = document.getElementById("view-cadence-detail");
+    if (target && target.scrollIntoView) { target.scrollIntoView({ block: "start" }); }
+  });
+})();
+
+  </script>
+</body>
+</html>
