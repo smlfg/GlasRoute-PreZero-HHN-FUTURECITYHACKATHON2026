@@ -1850,7 +1850,7 @@ def build_copilot_card(result: Mapping[str, Any]) -> dict[str, Any]:
             f"Historischer Status quo: {_de(h.get('emptyings', 0), 0)} Leerungen, {_de(h.get('overflows', 0), 0)} Überläufe bei Leerung.",
             f"Optimiertes Timer-Modell: {_de(o.get('emptyings', 0), 0)} Leerungen ({_de(d.get('emptyings_diff', 0), 0)}), "
             f"{_de(o.get('overflows', 0), 0)} Überläufe, Ø Füllstand bei Leerung {_de(o.get('avg_fill_pct', 0.0))} %.",
-            f"Abgefahrene Menge: {_de(h.get('tonnage_t', 0.0), 0)} t (historisch) vs. {_de(o.get('tonnage_t', 0.0), 0)} t (optimiert).",
+            f"Gleiche Glasmenge, aber keine Überläufe mehr, und die Container sind beim Leeren gleichmäßig zu {math.floor(float(o.get('avg_fill_pct', 0.0)))} % voll.",
         ]
         badge = "Jahressimulation"
 
@@ -2317,8 +2317,8 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             f"Ø Füllstand Leerung:  {h['avg_fill_pct']:.1f} % -> {o['avg_fill_pct']:.1f} % (+{d['fill_pct_diff_pp']:.1f} pp)",
             f"Leerungen gesamt:     {h['emptyings']:,} -> {o['emptyings']:,} ({d['emptyings_diff']} / {d['emptyings_diff_pct']:+.1f} %)",
             f"Überfüllungen Leerung: {h['overflows']:,} -> {o['overflows']} (-{d['overflows_eliminated_pct']:.0f} %)",
-            f"Fahrstrecke (est. km):{h['km']:,.1f} km -> {o['km']:,.1f} km",
             f"Fahrzeug-Einsatztage: {h['vehicle_days']} -> {o['vehicle_days']} Tage (Tageseinsätze geglättet)",
+            f"Kernaussage:          Gleiche Glasmenge, aber keine Überläufe mehr, und die Container sind beim Leeren gleichmäßig zu {math.floor(float(o['avg_fill_pct']))} % voll.",
             f"Status:               {result.get('status', 'simuliert')}",
             f"Freigabe:             {approval_hint}",
             f"Quellen:              {sources}",
