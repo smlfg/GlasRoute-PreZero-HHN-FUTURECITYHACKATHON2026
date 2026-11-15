@@ -1851,6 +1851,9 @@ def build_copilot_card(result: Mapping[str, Any]) -> dict[str, Any]:
             f"Optimiertes Timer-Modell: {_de(o.get('emptyings', 0), 0)} Leerungen ({_de(d.get('emptyings_diff', 0), 0)}), "
             f"{_de(o.get('overflows', 0), 0)} Überläufe, Ø Füllstand bei Leerung {_de(o.get('avg_fill_pct', 0.0))} %.",
             f"Gleiche Glasmenge, aber keine Überläufe mehr, und die Container sind beim Leeren gleichmäßig zu {math.floor(float(o.get('avg_fill_pct', 0.0)))} % voll.",
+            f"Ehrlicher Tausch: 0 Überläufe kosten mehr Fahrzeit "
+            f"(Fahrzeugtage {h.get('vehicle_days', 0)} → {o.get('vehicle_days', 0)}, "
+            f"Schichtstunden {_de(h.get('shift_hours', 0.0), 0)} → {_de(o.get('shift_hours', 0.0), 0)} h).",
         ]
         badge = "Jahressimulation"
 
@@ -2319,6 +2322,7 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
             f"Überfüllungen Leerung: {h['overflows']:,} -> {o['overflows']} (-{d['overflows_eliminated_pct']:.0f} %)",
             f"Fahrzeug-Einsatztage: {h['vehicle_days']} -> {o['vehicle_days']} Tage (Tageseinsätze geglättet)",
             f"Kernaussage:          Gleiche Glasmenge, aber keine Überläufe mehr, und die Container sind beim Leeren gleichmäßig zu {math.floor(float(o['avg_fill_pct']))} % voll.",
+            f"Ehrlicher Tausch:     0 Überläufe kosten mehr Fahrzeit (Schichtstunden {h['shift_hours']:,.0f} -> {o['shift_hours']:,.0f} h)",
             f"Status:               {result.get('status', 'simuliert')}",
             f"Freigabe:             {approval_hint}",
             f"Quellen:              {sources}",
