@@ -561,6 +561,163 @@ def _build_forecast_cards_html(summaries: list[dict[str, Any]]) -> str:
     return "\n".join(cards)
 
 
+def _build_route_map_legend_html(metrics: dict[str, Any]) -> str:
+    """Build structured, responsive UI map legend card for route elements."""
+    stops = metrics.get("stops", [])
+    vehicles_info = metrics.get("vehicles") or []
+
+    vehicle_colors = {
+        1: "#2563eb",  # Lkw 1: Blau
+        2: "#7c3aed",  # Lkw 2: Lila
+        3: "#ea580c",  # Lkw 3: Orange
+        4: "#0891b2",  # Lkw 4: Cyan
+        5: "#059669",  # Lkw 5: Smaragdgrün
+        6: "#dc2626",  # Lkw 6: Rot
+    }
+
+    def _veh_color(vid: int) -> str:
+        if vid in vehicle_colors:
+            return vehicle_colors[vid]
+        return vehicle_colors.get((vid - 1) % len(vehicle_colors) + 1, "#2563eb")
+
+    vehicle_items: list[str] = []
+    if vehicles_info:
+        for v in vehicles_info:
+            vid = v.get("vehicle", 1)
+            v_color = _veh_color(vid)
+            st_cnt = v.get("stops", 0)
+            km_val = v.get("km", 0.0)
+            parts = [f"{st_cnt} Stopps", f"{float(km_val):.1f} km".replace(".", ",")]
+            detail_str = " &middot; ".join(parts)
+            vehicle_items.append(
+                f'<div class="legend-item">'
+                f'<span class="legend-color-bar" style="background-color:{v_color};"></span>'
+                f'<span><strong>Lkw {vid}</strong> <span class="muted">({detail_str})</span></span>'
+                f'</div>'
+            )
+    elif stops:
+        v_agg: dict[int, dict[str, Any]] = {}
+        for s in stops:
+            v_raw = s.get("vehicle", 1)
+            try:
+                vid = int(v_raw) if v_raw is not None else 1
+            except (ValueError, TypeError):
+                vid = 1
+            entry = v_agg.setdefault(vid, {"stops": 0, "km": 0.0})
+            if s.get("stop_type") != "unload":
+                entry["stops"] += 1
+            entry["km"] += float(s.get("leg_km") or 0.0)
+        for vid, entry in sorted(v_agg.items()):
+            v_color = _veh_color(vid)
+            st_cnt = entry["stops"]
+            km_val = entry["km"]
+            km_str = f"{float(km_val):.1f} km".replace(".", ",")
+            vehicle_items.append(
+                f'<div class="legend-item">'
+                f'<span class="legend-color-bar" style="background-color:{v_color};"></span>'
+                f'<span><strong>Lkw {vid}</strong> <span class="muted">({st_cnt} Stopps &middot; {km_str})</span></span>'
+                f'</div>'
+            )
+    else:
+        v_needed = metrics.get("vehicles_needed") or 1
+        for vid in range(1, int(v_needed) + 1):
+            v_color = _veh_color(vid)
+            vehicle_items.append(
+                f'<div class="legend-item">'
+                f'<span class="legend-color-bar" style="background-color:{v_color};"></span>'
+                f'<span><strong>Lkw {vid}</strong> <span class="muted">(Tour aktiv)</span></span>'
+                f'</div>'
+            )
+
+    vehicles_html = "\n".join(vehicle_items)
+
+    return f"""
+      <div class="card map-legend-card">
+        <div class="map-legend-header">
+          <h4><span>🗺️</span> Kartenlegende: Touren, Symbole &amp; Containerstatus</h4>
+          <span class="muted" style="font-size: 11.5px;">Echtzeit-Übersicht für Disponenten &amp; Jury</span>
+        </div>
+        <div class="map-legend-grid">
+          <!-- 1. Fahrzeuge & Touren -->
+          <div class="legend-col">
+            <div class="legend-section-title">🚛 Fahrzeuge &amp; Touren</div>
+            <div class="legend-item-list">
+              {vehicles_html}
+            </div>
+          </div>
+
+          <!-- 2. Fahrttypen -->
+          <div class="legend-col">
+            <div class="legend-section-title">🛣️ Fahrttypen</div>
+            <div class="legend-item-list">
+              <div class="legend-item">
+                <span class="legend-color-bar" style="background-color: #2563eb;"></span>
+                <span><strong>Sammelroute</strong> <br><span class="muted" style="font-size: 11px;">(von Container zu Container)</span></span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dash-bar"></span>
+                <span><strong>Entladungsfahrt</strong> <br><span class="muted" style="font-size: 11px;">(Zwischenentladung am Hof)</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Karten-Symbole -->
+          <div class="legend-col">
+            <div class="legend-section-title">📍 Karten-Symbole</div>
+            <div class="legend-item-list">
+              <div class="legend-item">
+                <span style="font-size: 16px; width: 22px; text-align: center; flex-shrink: 0;">🏠</span>
+                <span><strong>Betriebshof</strong> <br><span class="muted" style="font-size: 11px;">(Start &amp; Schichtende)</span></span>
+              </div>
+              <div class="legend-item">
+                <span style="font-size: 16px; width: 22px; text-align: center; flex-shrink: 0;">♻️</span>
+                <span><strong>Glas-Entsorgungsplatz</strong> <br><span class="muted" style="font-size: 11px;">(Abladestation)</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Container-Kritikalität -->
+          <div class="legend-col">
+            <div class="legend-section-title">📊 Container-Kritikalität</div>
+            <div class="legend-item-list">
+              <div class="legend-item">
+                <span class="legend-dot" style="background-color: #b91c1c; border: 1.5px solid #111827;"></span>
+                <span><strong style="color: #b91c1c;">🔴 Rot:</strong> Score &ge; 0,85 <span class="muted">(übervoll)</span></span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background-color: #ea580c; border: 1.5px solid #111827;"></span>
+                <span><strong style="color: #ea580c;">🟠 Orange:</strong> Score &ge; 0,70 <span class="muted">(kritisch)</span></span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background-color: #d97706; border: 1.5px solid #111827;"></span>
+                <span><strong style="color: #d97706;">🟡 Gelb:</strong> Score &ge; 0,45</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background-color: #16a34a; border: 1.5px solid #111827;"></span>
+                <span><strong style="color: #16a34a;">🟢 Grün:</strong> Score &lt; 0,45 <span class="muted">(noch unkritisch)</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Standort-Herkunft -->
+          <div class="legend-col">
+            <div class="legend-section-title">🎯 Standort-Herkunft</div>
+            <div class="legend-item-list">
+              <div class="legend-item">
+                <span class="legend-ring-solid"></span>
+                <span><strong>Durchgezogen:</strong> <br><span class="muted" style="font-size: 11px;">Echter OSM-Standort</span></span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-ring-dashed"></span>
+                <span><strong>Gestrichelt:</strong> <br><span class="muted" style="font-size: 11px;">Simulierte Zuordnung</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    """
+
+
 def _build_route_section_html(
     route_map_html: str,
     route_bundle: dict[str, Any],
@@ -672,6 +829,7 @@ def _build_route_section_html(
         + "</div>"
     )
     comparison_text = html.escape(str(metrics.get("comparison") or "-"))
+    legend_card_html = _build_route_map_legend_html(metrics)
 
     return f"""
       <div class="section-head">
@@ -699,6 +857,7 @@ def _build_route_section_html(
       {ask_html}
 
       <div class="map-wrap">{route_iframe}</div>
+      {legend_card_html}
 
       <div class="stop-list-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
         <div>
@@ -4032,6 +4191,101 @@ def build_ui(
     .card .value {{ font-size: 20px; font-weight: 700; }}
     .card .sub {{ font-size: 12px; color: var(--muted); margin-top: 4px; }}
     .map-wrap {{ margin-bottom: 18px; }}
+    .map-legend-card {{
+      margin-top: -6px;
+      margin-bottom: 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }}
+    .map-legend-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }}
+    .map-legend-header h4 {{
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+    }}
+    .map-legend-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      font-size: 12.5px;
+      line-height: 1.4;
+    }}
+    .legend-section-title {{
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }}
+    .legend-item-list {{
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }}
+    .legend-item {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+    .legend-color-bar {{
+      display: inline-block;
+      width: 20px;
+      height: 4px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }}
+    .legend-dash-bar {{
+      display: inline-block;
+      width: 20px;
+      height: 0;
+      border-top: 2px dashed #6b7280;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }}
+    .legend-dot {{
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }}
+    .legend-ring-solid {{
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      border: 2px solid #1e293b;
+      flex-shrink: 0;
+    }}
+    .legend-ring-dashed {{
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 2px dashed #64748b;
+      flex-shrink: 0;
+    }}
     .location-banner {{ background: #fef3c7; border-bottom: 1px solid #f59e0b; color: #78350f; padding: 8px 20px; font-size: 13px; }}
     .process-note {{ background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 8px; padding: 10px 14px; margin: 8px 0 14px; font-size: 13px; }}
     .coverage-hint {{ background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }}
