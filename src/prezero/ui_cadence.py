@@ -12,23 +12,22 @@ number is the scenario engine output (branch ``lane/model-integration``) in
 If a file is missing, the view says so ("Szenariodaten fehlen
 (scripts/run_scenarios.py ausführen)") and shows no substitute numbers.
 
-Status rules (pure display rules on columns of ``containers.csv``, no simulation):
+Recommendation rule: the ``recommendation`` column of ``containers.csv`` (länger /
+kürzer / gleich) is shown as is; the UI derives nothing.
 
-* red    - ``overflow_events_status_quo > 0`` (the container overflowed in the status quo)
-* yellow - ``skip_14d > 0`` (the mentor policy skipped it: found at/below the skip threshold)
-* ok     - everything else (red wins over yellow)
+The views (persona: PreZero dispatcher - thinks in fixed areas and weeks):
 
-"Takt heute" is the mean interval of the status quo, shown as the two given
-numbers divided: ``period.days / emptyings_status_quo`` (labelled as such).
-
-The views:
-
-1. **Container list** - rate, cadence today, cadence T, status, approval per row.
-2. **Container detail** - the container's raw measured readings
+1. **Wochenplan** - one card per Gebiet: how many containers get a longer / shorter
+   rhythm and the top 5 recommendations as sentences. Needs the columns
+   ``rhythm_weeks_status_quo, rhythm_weeks_new, recommendation, interval_status_quo_days``
+   of ``containers.csv``; if they are missing the card says "Daten folgen".
+2. **Wirkung** - two headline numbers (fill at emptying, overflows; today -> new)
+   from ``summary.json`` (time model real, ``d_status_quo`` vs ``h_area_week_rhythm``,
+   fallback ``f_fixed_areas``), small: emptyings, hours, cost. Worse is shown red.
+3. **Container im Detail** - the container's raw measured readings
    (``data/processed/cleaned_readings.csv``) as a sawtooth, plus one sentence.
-3. **Diese Woche** - the last week of the scenario course and the containers
-   per area; map and route are only a collapsible extra.
-4. **Szenarien** - one table per time model, plus the km decomposition.
+4. **Ausblick: Routing & Szenarien** - the full scenario tables and the km
+   decomposition, collapsed by default.
 
 Everything is generated statically (no server, no live computation in the browser).
 """
@@ -55,12 +54,34 @@ MATERIAL_LABELS: dict[str, str] = {
 #: Label of the areas (``area`` in containers.csv is the cluster number of policy f).
 AREA_PREFIX = "Gebiet"
 
-#: Status labels and the row class behind them.
-STATUS_LABELS: dict[str, str] = {
-    "red": "Kritisch",
-    "yellow": "Im Mentor-Takt übersprungen",
-    "ok": "Im Takt",
-}
+#: Weekdays of the areas 0-4 (fixed area days, Mo-Fr).
+AREA_WEEKDAYS = ("Mo", "Di", "Mi", "Do", "Fr")
+
+#: Columns the Wochenplan needs from containers.csv (delivered by the engine lane).
+WEEK_PLAN_COLUMNS = (
+    "area",
+    "rhythm_weeks_status_quo",
+    "rhythm_weeks_new",
+    "recommendation",
+    "interval_status_quo_days",
+    "avg_fill_status_quo_pct",
+    "overflow_events_status_quo",
+    "material",
+    "location_id",
+)
+
+#: The sentence the owner wants shown literally.
+KEY_SENTENCE = (
+    "Container, die regelmäßig halb leer sind, bekommen einen längeren Takt. "
+    "Die frei gewordene Zeit geht an die kritischen. "
+    "Der Takt passt sich nach jeder neuen Messung an."
+)
+
+#: Hint when a column of the engine output has not arrived yet.
+PENDING_HINT = "Daten folgen"
+
+#: Scenario id of the new area/week rhythm and its fallback.
+NEW_SCENARIO_IDS = ("h_area_week_rhythm", "f_fixed_areas")
 
 #: Hint shown when the scenario output is missing.
 MISSING_HINT = "Szenariodaten fehlen (scripts/run_scenarios.py ausführen)"
@@ -102,13 +123,22 @@ def _material_label(material: str) -> str:
 
 def _area_label(area: Any) -> str:
     try:
-        return f"{AREA_PREFIX} {int(float(area)) + 1}"
+        number = int(float(area))
     except (TypeError, ValueError):
         return f"{AREA_PREFIX} {area}"
+    day = AREA_WEEKDAYS[number] if 0 <= number < len(AREA_WEEKDAYS) else "?"
+    return f"{AREA_PREFIX} {number + 1} ({day})"
 
 
-def _status_label(status: str) -> str:
-    return STATUS_LABELS.get(str(status), "Im Takt")
+def _rhythm_txt(weeks: Any) -> str:
+    """'jede Woche' / 'alle 3 Wochen' for a rhythm in weeks."""
+    try:
+        w = float(weeks)
+    except (TypeError, ValueError):
+        return "?"
+    if w != w:
+        return "?"
+    return "jede Woche" if round(w) == 1 else f"alle {_de(w, 0)} Wochen"
 
 
 def _site_title(location_id: str, material: str) -> str:
@@ -221,45 +251,18 @@ def _missing_block(what: str, missing: Sequence[str]) -> str:
 # --- container table ----------------------------------------------------------------------
 
 
-def _prepare_containers(containers: pd.DataFrame, period_days: float | None = None) -> pd.DataFrame:
-    """Add display columns to ``containers.csv`` (display rules, no simulation).
-
-    * ``current_cadence_days`` - mean interval of the status quo:
-      ``period_days / emptyings_status_quo`` (None when there is no emptying).
-    * ``proposed_cadence_days`` - ``cadence_days_T`` of the file, unchanged.
-    * ``status`` - red/yellow/ok, see the module docstring.
-    """
+def _prepare_containers(containers: pd.DataFrame) -> pd.DataFrame:
+    """Normalise types of ``containers.csv``; derives nothing."""
     work = containers.copy()
     work["location_id"] = work["location_id"].astype(str)
     work["material"] = work["material"].astype(str).str.lower()
-    if "area" not in work.columns:
-        work["area"] = 0
-
-    numeric_columns = (
-        "rate_pct_per_day",
-        "cadence_days_T",
-        "emptyings_status_quo",
-        "emptyings_mentor",
-        "avg_fill_status_quo_pct",
-        "avg_fill_mentor_pct",
-        "overflow_events_status_quo",
-        "skip_14d",
-    )
-    for column in numeric_columns:
-        if column not in work.columns:
-            work[column] = float("nan")
-        work[column] = pd.to_numeric(work[column], errors="coerce").astype(float)
-
-    if period_days:
-        emptyings = work["emptyings_status_quo"].where(work["emptyings_status_quo"] > 0)
-        work["current_cadence_days"] = (float(period_days) / emptyings).astype(float)
-    else:
-        work["current_cadence_days"] = float("nan")
-    work["proposed_cadence_days"] = work["cadence_days_T"]
-
-    work["status"] = "ok"
-    work.loc[work["skip_14d"].fillna(0) > 0, "status"] = "yellow"
-    work.loc[work["overflow_events_status_quo"].fillna(0) > 0, "status"] = "red"
+    for column in (
+        "rate_pct_per_day", "cadence_days_T", "emptyings_status_quo", "emptyings_mentor",
+        "avg_fill_status_quo_pct", "avg_fill_mentor_pct", "overflow_events_status_quo",
+        "skip_14d", "rhythm_weeks_status_quo", "rhythm_weeks_new", "interval_status_quo_days",
+    ):
+        if column in work.columns:
+            work[column] = pd.to_numeric(work[column], errors="coerce").astype(float)
     return work
 
 
@@ -268,360 +271,184 @@ def load_scenario_data(scenario_dir: str | Path = DEFAULT_SCENARIO_DIR) -> Scena
     return ScenarioData(scenario_dir)
 
 
-# --- View 1: container list ---------------------------------------------------------------
+# --- View 1: Wochenplan ---------------------------------------------------------------------
 
 
-def compute_header_kpis(
-    containers: pd.DataFrame,
-    summary: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Header KPIs of the container list - sums/means of columns of the files."""
-    empty = {
-        "containers": 0,
-        "avg_fill_status_quo_pct": None,
-        "overflow_events": 0,
-        "emptyings_status_quo": 0,
-        "emptyings_mentor": 0,
-        "cadence_change_needed": 0,
-        "produced_t": (summary or {}).get("produced_t"),
-        "too_often_emptied": 0,
-        "containers_with_overflow": 0,
-    }
-    if containers is None or containers.empty:
-        return empty
-
-    fills = containers["avg_fill_status_quo_pct"].fillna(0.0)
-    weights = containers["emptyings_status_quo"].fillna(0.0)
-    total = float(weights.sum())
-    avg_fill = float((fills * weights).sum() / total) if total else None
-
-    delta = (containers["proposed_cadence_days"] - containers["current_cadence_days"]).abs()
-    return {
-        "containers": int(len(containers)),
-        "avg_fill_status_quo_pct": avg_fill,
-        "overflow_events": int(containers["overflow_events_status_quo"].fillna(0).sum()),
-        "emptyings_status_quo": int(weights.sum()),
-        "emptyings_mentor": int(containers["emptyings_mentor"].fillna(0).sum()),
-        "cadence_change_needed": int((delta >= 1.0).sum()),
-        "too_often_emptied": int(
-            ((containers["skip_14d"] > 0)
-             | (containers["avg_fill_status_quo_pct"] < OFTEN_EMPTIED_BELOW_PCT)).sum()
-        ),
-        "containers_with_overflow": int((containers["overflow_events_status_quo"] > 0).sum()),
-        "produced_t": (summary or {}).get("produced_t"),
-    }
-
-
-def _sort_table(table: pd.DataFrame) -> pd.DataFrame:
-    """Default sort: "cadence change needed" — the biggest deviation first."""
-    work = table.copy()
-    current = pd.to_numeric(work["current_cadence_days"], errors="coerce")
-    proposed = pd.to_numeric(work["proposed_cadence_days"], errors="coerce")
-    work["delta"] = proposed - current
-    work["_rank"] = work["status"].map({"red": 0, "yellow": 1}).fillna(2)
-    work = work.sort_values(
-        ["_rank", "delta"], ascending=[True, False], na_position="last"
+def _recommendation_sentence(row: Mapping[str, Any]) -> str:
+    """One plain sentence for a container, built from the columns of the file."""
+    site = f"Standort {str(row['location_id'])[:8]}…, {_material_label(row['material'])}"
+    change = (
+        f"{_rhythm_txt(row['rhythm_weeks_new'])} statt "
+        f"{_rhythm_txt(row['rhythm_weeks_status_quo'])}"
     )
-    return work.drop(columns=["_rank"])
+    if row.get("recommendation") == "länger":
+        why = f"war im Schnitt nur {_de(row.get('avg_fill_status_quo_pct'), 0)} % voll"
+    else:
+        n = row.get("overflow_events_status_quo") or 0
+        why = f"lief {_de(n, 0)}× über" if n else f"war im Schnitt {_de(row.get('avg_fill_status_quo_pct'), 0)} % voll"
+    return f"{site}: {change} – {why}"
 
 
-def _render_container_rows(rows: Sequence[Mapping[str, Any]]) -> str:
-    """One table row per container."""
-    out: list[str] = []
-    for row in rows:
-        status = str(row.get("status", "ok"))
-        current = row.get("current_cadence_days")
-        proposed = row.get("proposed_cadence_days")
-        rate = row.get("rate_pct_per_day")
-        location = str(row.get("location_id", ""))
-        material = str(row.get("material", ""))
+def _area_card_html(area: Any, group: pd.DataFrame) -> str:
+    longer = group[group["recommendation"] == "länger"]
+    shorter = group[group["recommendation"] == "kürzer"]
 
-        current_txt = (
-            f"{_de(current, 0)} Tage" if current is not None and current == current else "–"
+    def pairs(frame: pd.DataFrame) -> str:
+        if frame.empty:
+            return ""
+        counts = (
+            frame.groupby(["rhythm_weeks_new", "rhythm_weeks_status_quo"]).size()
+            .sort_values(ascending=False)
         )
-        proposed_txt = f"{_de(proposed, 0)} Tage"
-
-        change_txt = ""
-        note = ""
-        if current is not None and current == current:
-            delta = float(proposed) - float(current)
-            if abs(delta) >= 1.0:
-                sign = "+" if delta > 0 else "−"
-                change_txt = f"{sign}{_de(abs(delta), 0)}"
-
-        approve_btn = (
-            '<button type="button" class="cadence-approve-btn" '
-            f'data-location="{_esc(location)}" data-material="{_esc(material)}" '
-            'title="Taktänderung freigeben">Freigeben</button>'
+        return "; ".join(
+            f"{_de(n, 0)}× {_rhythm_txt(new)} statt {_rhythm_txt(old)}"
+            for (new, old), n in counts.items()
         )
-        note_html = f'<span class="cadence-note">{_esc(note)}</span>' if note else ""
 
-        out.append(
-            f'<tr class="cadence-row status-{_esc(status)}" '
-            f'data-location="{_esc(location)}" data-material="{_esc(material)}" '
-            f'data-status="{_esc(status)}">'
-            f'<td class="cadence-site"><a href="#cadence-detail" class="cadence-detail-link" '
-            f'data-location="{_esc(location)}" data-material="{_esc(material)}">'
-            f"{_esc(_site_title(location, material))}</a>"
-            f'<span class="cadence-id">{_esc(location[:8])}</span></td>'
-            f'<td>{_esc(_area_label(row.get("area")))}</td>'
-            f'<td class="num">{_de(rate, 1)} %/Tag</td>'
-            f"<td class=\"num\">{_esc(current_txt)}</td>"
-            f"<td class=\"num\">{_esc(proposed_txt)}{note_html}</td>"
-            f'<td class="num">{_esc(change_txt)}</td>'
-            f'<td class="num">{_de(row.get("emptyings_status_quo"), 0)}</td>'
-            f'<td><span class="status-pill status-{_esc(status)}">'
-            f"{_esc(_status_label(status))}</span></td>"
-            f"<td>{approve_btn}</td>"
-            "</tr>"
-        )
-    return "".join(out)
-
-
-#: Upper bounds (days) of the cadence buckets of the histogram; the last bucket is open.
-CADENCE_BUCKETS: tuple[tuple[str, float, float], ...] = (
-    ("≤ 7 Tage", float("-inf"), 7.0),
-    ("8–14 Tage", 7.0, 14.0),
-    ("15–30 Tage", 14.0, 30.0),
-    ("> 30 Tage", 30.0, float("inf")),
-)
-
-#: Bar colours per glass colour (decorative).
-MATERIAL_COLORS: dict[str, str] = {"white": "#9aa7b4", "green": "#4c9a5a", "brown": "#8b5e3c"}
-
-#: A container counts as "zu oft geleert" below this mean fill (display rule) or when skipped.
-OFTEN_EMPTIED_BELOW_PCT = 50.0
-
-#: Rows per short list.
-SHORT_LIST_ROWS = 10
-
-
-def _best_scenario(summary: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
-    """The cheapest scenario of the real time model (``flags.cheapest``)."""
-    for scenario in (summary or {}).get("scenarios", []):
-        if str(scenario.get("time_model")) == DEFAULT_TIME_MODEL and (
-            scenario.get("flags") or {}
-        ).get("cheapest"):
-            return scenario
-    return None
-
-
-def _short_list_html(title: str, hint: str, rows: Sequence[Mapping[str, Any]]) -> str:
-    body = "".join(
-        "<tr>"
-        f'<td class="cadence-site"><a href="#cadence-detail" class="cadence-detail-link" '
+    changed = group[group["recommendation"].isin(["länger", "kürzer"])].copy()
+    changed["_step"] = (changed["rhythm_weeks_new"] - changed["rhythm_weeks_status_quo"]).abs()
+    changed = changed.sort_values(
+        ["_step", "overflow_events_status_quo"], ascending=[False, False]
+    ).head(5)
+    items = "".join(
+        f'<li><a href="#cadence-detail" class="cadence-detail-link" '
         f'data-location="{_esc(r["location_id"])}" data-material="{_esc(r["material"])}">'
-        f'{_esc(str(r["location_id"])[:8])}</a></td>'
-        f'<td>{_esc(_material_label(r["material"]))}</td>'
-        f'<td class="num">{_de(r.get("rate_pct_per_day"), 1)} %/Tag</td>'
-        f'<td class="num">{_de(r.get("current_cadence_days"), 0)} → {_de(r.get("proposed_cadence_days"), 0)} Tage</td>'
-        f'<td class="num">{_de(r.get("avg_fill_status_quo_pct"), 1)} %</td>'
-        "</tr>"
-        for r in rows
+        f"{_esc(_recommendation_sentence(r))}</a></li>"
+        for r in changed.to_dict(orient="records")
     )
     return f"""
-      <div class="cadence-short-list">
-        <h3>{_esc(title)}</h3>
-        <p class="muted">{_esc(hint)}</p>
-        <div class="table-scroll"><table class="cadence-table">
-          <thead><tr>
-            <th scope="col">Standort-ID</th><th scope="col">Farbe</th>
-            <th scope="col">Rate</th><th scope="col">Takt heute → Takt T</th>
-            <th scope="col">Ø Füllstand</th>
-          </tr></thead>
-          <tbody>{body}</tbody>
-        </table></div>
+      <div class="card cadence-area-card">
+        <h3>{_esc(_area_label(area))}</h3>
+        <p><strong>{_de(len(group), 0)}</strong> Container</p>
+        <p><strong>{_de(len(longer), 0)}</strong> bekommen einen längeren Rhythmus
+           <span class="muted">{_esc(pairs(longer))}</span></p>
+        <p><strong>{_de(len(shorter), 0)}</strong> bekommen einen kürzeren Rhythmus
+           <span class="muted">{_esc(pairs(shorter))}</span></p>
+        <h4>Die wichtigsten Empfehlungen</h4>
+        <ul class="cadence-recs">{items or '<li class="muted">Keine Änderung empfohlen.</li>'}</ul>
       </div>
     """
 
 
-def _cadence_histogram_svg(containers: pd.DataFrame) -> str:
-    """Bars of the cadence_days_T buckets per colour (counts of containers.csv rows)."""
-    materials = [m for m in MATERIAL_COLORS if m in set(containers["material"])]
-    counts: dict[str, list[int]] = {}
-    for m in materials:
-        t = containers.loc[containers["material"] == m, "cadence_days_T"]
-        counts[m] = [int(((t > lo) & (t <= hi)).sum()) for _, lo, hi in CADENCE_BUCKETS]
-    peak = max((c for v in counts.values() for c in v), default=0) or 1
-    width, height, pad_l, pad_b, pad_t = 640, 240, 40, 36, 16
-    group_w = (width - pad_l - 10) / len(CADENCE_BUCKETS)
-    bar_w = group_w * 0.8 / max(1, len(materials))
-    plot_h = height - pad_b - pad_t
-    out = []
-    for gi, (label, _, _) in enumerate(CADENCE_BUCKETS):
-        gx = pad_l + gi * group_w
-        for mi, m in enumerate(materials):
-            n = counts[m][gi]
-            h = n / peak * plot_h
-            x = gx + group_w * 0.1 + mi * bar_w
-            out.append(
-                f'<rect x="{x:.1f}" y="{pad_t + plot_h - h:.1f}" width="{bar_w:.1f}" '
-                f'height="{h:.1f}" fill="{MATERIAL_COLORS[m]}"><title>{_esc(_material_label(m))}, '
-                f'{_esc(label)}: {n}</title></rect>'
-                f'<text x="{x + bar_w / 2:.1f}" y="{pad_t + plot_h - h - 3:.1f}" '
-                f'class="saw-axis" text-anchor="middle">{n}</text>'
-            )
-        out.append(
-            f'<text x="{gx + group_w / 2:.1f}" y="{height - 14}" class="saw-axis" '
-            f'text-anchor="middle">{_esc(label)}</text>'
-        )
-    legend = " ".join(
-        f'<span><i style="background:{MATERIAL_COLORS[m]};display:inline-block;width:10px;height:10px"></i> '
-        f"{_esc(_material_label(m))}</span>"
-        for m in materials
-    )
-    return f"""
-      <div class="cadence-histogram">
-        <h3>Takt T der Container (Anzahl je Glasfarbe)</h3>
-        <svg class="saw-chart" viewBox="0 0 {width} {height}" role="img"
-             aria-label="Verteilung des Takts T nach Glasfarbe">{''.join(out)}</svg>
-        <p class="muted">{legend}</p>
-      </div>
-    """
-
-
-def build_container_list_html(
+def build_week_plan_html(
     containers: pd.DataFrame | None,
     summary: Mapping[str, Any] | None,
     reference_date: str,
     missing: Sequence[str] = (),
 ) -> str:
-    """View 1 - KPIs, two short lists, cadence histogram; the full list is collapsed."""
+    """View 1 - the Wochenplan: one card per Gebiet."""
     if containers is None or containers.empty:
-        return _missing_block("Die Container-Übersicht", missing)
+        return _missing_block("Der Wochenplan", missing)
 
-    kpis = compute_header_kpis(containers, summary)
-    best = _best_scenario(summary)
-    if best is not None:
-        saved_value = _de(best.get("emptyings_saved_vs_status_quo"), 0)
-        saved_sub = f"günstigstes Szenario (real): {_esc(best.get('label', best.get('id')))}"
+    absent = [c for c in WEEK_PLAN_COLUMNS if c not in containers.columns]
+    if absent:
+        body = f"""
+        <div class="cadence-missing" role="status">
+          <strong>{_esc(PENDING_HINT)}</strong>
+          <p class="muted">Die Empfehlungen je Gebiet brauchen Spalten der Szenario-Engine,
+          die noch nicht geliefert wurden: {_esc(", ".join(absent))}.
+          Es werden bewusst keine Ersatzzahlen gezeigt.</p>
+        </div>"""
     else:
-        saved_value, saved_sub = "-", "kein günstigstes Szenario in summary.json"
-
-    kpi_cards = f"""
-      <div class="card kpi-cadence">
-        <div class="label">Glas produziert</div>
-        <div class="value">{_de(kpis['produced_t'], 1)} t</div>
-        <div class="sub">in jedem Szenario gleich</div>
-      </div>
-      <div class="card kpi-cadence">
-        <div class="label">Zu oft geleert</div>
-        <div class="value">{_de(kpis['too_often_emptied'], 0)}</div>
-        <div class="sub">Container, im Mentor-Takt übersprungen oder Ø Füllstand unter {_de(OFTEN_EMPTIED_BELOW_PCT, 0)} %</div>
-      </div>
-      <div class="card kpi-cadence">
-        <div class="label">Mit Überläufen (Status quo)</div>
-        <div class="value">{_de(kpis['containers_with_overflow'], 0)}</div>
-        <div class="sub">von {_de(kpis['containers'], 0)} Containern</div>
-      </div>
-      <div class="card kpi-cadence">
-        <div class="label">Leerungen vs. Status quo</div>
-        <div class="value">{saved_value}</div>
-        <div class="sub">{saved_sub}; positiv = gespart</div>
-      </div>
-    """
-
-    overflow_rows = (
-        containers[containers["overflow_events_status_quo"] > 0]
-        .sort_values("overflow_events_status_quo", ascending=False)
-        .head(SHORT_LIST_ROWS)
-        .to_dict(orient="records")
-    )
-    often_mask = (containers["skip_14d"] > 0) | (
-        containers["avg_fill_status_quo_pct"] < OFTEN_EMPTIED_BELOW_PCT
-    )
-    often_rows = (
-        containers[often_mask]
-        .sort_values("avg_fill_status_quo_pct", ascending=True)
-        .head(SHORT_LIST_ROWS)
-        .to_dict(orient="records")
-    )
-
-    ordered = _sort_table(containers)
-    rows = ordered.to_dict(orient="records")
-    status_counts = ordered["status"].value_counts().to_dict()
-    filter_buttons = "".join(
-        f'<button type="button" class="cadence-filter-btn{" active" if key == "all" else ""}" '
-        f'data-filter="{_esc(key)}">{_esc(label)}</button>'
-        for key, label in (
-            ("all", f"Alle ({_de(kpis['containers'], 0)})"),
-            ("red", f"Kritisch ({_de(status_counts.get('red', 0), 0)})"),
-            ("yellow", f"Übersprungen ({_de(status_counts.get('yellow', 0), 0)})"),
-            ("ok", f"Im Takt ({_de(status_counts.get('ok', 0), 0)})"),
+        cards = "".join(
+            _area_card_html(area, group)
+            for area, group in containers.groupby("area", sort=True)
         )
-    )
+        body = f'<div class="cadence-area-grid">{cards}</div>'
 
     return f"""
     <section id="view-cadence" class="view-panel cadence-view active">
       <div class="section-head">
-        <h2>Container &amp; Takt</h2>
-        <p class="muted">
-          Jeder Container ist ein Erzeuger-Verbraucher-System: Er füllt sich mit
-          <b>r</b> % pro Tag und wird alle <b>T</b> Tage geleert
-          (<b>T = (Kapazität − Puffer) / r</b>). Die Route ist nur eine nachgelagerte Bündelung.
-          Stand {_esc(_date_de(reference_date))}.
-        </p>
+        <h2>Wochenplan</h2>
+        <p class="cadence-key-sentence"><strong>{_esc(KEY_SENTENCE)}</strong></p>
+        <p class="muted">Jedes Gebiet hat feste Tage in der Woche (Gebiet 1 = Montag bis
+          Gebiet 5 = Freitag). Stand {_esc(_date_de(reference_date))}.</p>
       </div>
+      {body}
+    </section>
+    """
 
-      <div class="kpi-grid cadence-kpi-grid">{kpi_cards}</div>
 
-      <div class="cadence-lists">
-        {_short_list_html("Läuft über – Takt zu lang",
-                          "Die zehn Container mit den meisten Überlauf-Ereignissen im Status quo.",
-                          overflow_rows)}
-        {_short_list_html("Zu oft geleert – Takt zu kurz",
-                          "Die zehn Container mit dem niedrigsten Ø Füllstand bei Leerung.",
-                          often_rows)}
+# --- View 2: Wirkung ------------------------------------------------------------------------
+
+
+def _pick_scenarios(summary: Mapping[str, Any] | None) -> tuple[Mapping[str, Any] | None, Mapping[str, Any] | None]:
+    """Status quo and the new scenario (real time model; h, else f)."""
+    today = new = None
+    for sc in (summary or {}).get("scenarios", []):
+        if str(sc.get("time_model")) != DEFAULT_TIME_MODEL:
+            continue
+        if sc.get("id") == "d_status_quo":
+            today = sc
+    for wanted in NEW_SCENARIO_IDS:
+        for sc in (summary or {}).get("scenarios", []):
+            if str(sc.get("time_model")) == DEFAULT_TIME_MODEL and sc.get("id") == wanted:
+                return today, sc
+    return today, new
+
+
+def _delta_cell(today: Any, new: Any, digits: int, unit: str, higher_is_better: bool | None) -> str:
+    """'today -> new' with an arrow; red when it got worse, green when better."""
+    try:
+        diff = float(new) - float(today)
+    except (TypeError, ValueError):
+        return f"{_de(today, digits)}{unit} → {_de(new, digits)}{unit}"
+    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
+    cls = "same"
+    if diff != 0 and higher_is_better is not None:
+        cls = "good" if (diff > 0) == higher_is_better else "bad"
+    return (
+        f'<span class="impact-{cls}">{_de(today, digits)}{unit} → '
+        f'{_de(new, digits)}{unit} <span class="impact-arrow">{arrow}</span></span>'
+    )
+
+
+def build_impact_html(summary: Mapping[str, Any] | None, missing: Sequence[str] = ()) -> str:
+    """View 2 - the two headline numbers and three small ones."""
+    today, new = _pick_scenarios(summary)
+    if summary is None or today is None:
+        return _missing_block("Die Wirkung", missing or ["summary.json"])
+    if new is None:
+        return f"""
+        <section id="view-cadence-impact" class="view-panel cadence-impact-view">
+          <div class="section-head"><h2>Wirkung</h2>
+          <p class="muted"><strong>{_esc(PENDING_HINT)}</strong> – das neue Szenario
+          ({_esc(NEW_SCENARIO_IDS[0])}) liegt noch nicht in summary.json.</p></div>
+        </section>"""
+
+    note = ""
+    if new.get("id") != NEW_SCENARIO_IDS[0]:
+        note = (f"Hinweis: Das Szenario {NEW_SCENARIO_IDS[0]} liegt noch nicht vor; "
+                f"verglichen wird mit „{new.get('label', new.get('id'))}“.")
+
+    def big(label: str, cell: str) -> str:
+        return f'<div class="card impact-big"><div class="label">{label}</div><div class="value">{cell}</div></div>'
+
+    def small(label: str, cell: str) -> str:
+        return f'<div class="card"><div class="label">{label}</div><div class="value">{cell}</div></div>'
+
+    big_cards = (
+        big("Ø Füllgrad bei Leerung (heute → neu)",
+            _delta_cell(today.get("avg_fill_at_emptying_pct"), new.get("avg_fill_at_emptying_pct"), 1, " %", True))
+        + big("Überläufe (heute → neu)",
+              _delta_cell(today.get("overflow_events"), new.get("overflow_events"), 0, "", False))
+    )
+    small_cards = (
+        small("Leerungen", _delta_cell(today.get("emptyings"), new.get("emptyings"), 0, "", None))
+        + small("Stunden", _delta_cell(today.get("hours"), new.get("hours"), 0, " h", False))
+        + small("Kosten", _delta_cell(today.get("cost_eur"), new.get("cost_eur"), 0, " €", False))
+    )
+    return f"""
+    <section id="view-cadence-impact" class="view-panel cadence-impact-view">
+      <div class="section-head">
+        <h2>Wirkung</h2>
+        <p class="muted">Status quo gegen „{_esc(new.get('label', new.get('id')))}“ über den ganzen
+          Zeitraum, bei gleicher Glasmenge ({_de(summary.get('produced_t'), 2)} t).
+          Rot = schlechter als heute, grün = besser.</p>
+        {f'<p class="muted">{_esc(note)}</p>' if note else ''}
       </div>
-
-      {_cadence_histogram_svg(containers)}
-
-      <details class="cadence-all">
-        <summary>Alle {_de(kpis['containers'], 0)} Container anzeigen</summary>
-        <div class="cadence-toolbar">
-          <input type="search" id="cadence-search" placeholder="Standort-ID oder Farbe suchen"
-                 aria-label="Container suchen">
-          <div class="cadence-filters" role="group" aria-label="Container filtern">
-            {filter_buttons}
-          </div>
-          <div class="cadence-toolbar-actions">
-            <button type="button" class="primary-btn" id="cadence-approve-all-btn">
-              Alle Taktänderungen übernehmen
-            </button>
-            <span id="cadence-approval-status" class="badge pending" role="status">
-              Status: Vorschlag
-            </span>
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table class="cadence-table" id="cadence-table">
-            <caption class="sr-only">
-              Container mit Füllrate, aktuellem Takt, vorgeschlagenem Takt und Status
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Container / Standort</th>
-                <th scope="col">Gebiet</th>
-                <th scope="col">Füllrate</th>
-                <th scope="col">Takt heute</th>
-                <th scope="col">Takt neu</th>
-                <th scope="col">Änderung</th>
-                <th scope="col">Leerungen (Status quo)</th>
-                <th scope="col">Status</th>
-                <th scope="col"><span class="sr-only">Freigabe</span></th>
-              </tr>
-            </thead>
-            <tbody id="cadence-table-body">{_render_container_rows(rows)}</tbody>
-          </table>
-        </div>
-      </details>
-
-      <p class="muted">
-        <b>Rot</b> = Überlauf-Ereignisse im Status quo. <b>Gelb</b> = im Mentor-Takt
-        übersprungen (<code>skip_14d</code>).
-        „Takt heute“ = Zeitraum ÷ Leerungen im Status quo (Mittelwert, Annahme: gleichmäßig verteilt);
-        „Takt T“ = <code>cadence_days_T</code> aus der Szenario-Ausgabe (Modell: docs/MODEL_SPEC.md).
-      </p>
+      <div class="kpi-grid impact-big-grid">{big_cards}</div>
+      <div class="kpi-grid impact-small-grid">{small_cards}</div>
     </section>
     """
 
@@ -721,30 +548,12 @@ def _sawtooth_svg(history: Sequence[Any], width: int = 900, height: int = 260) -
 
 
 def _explanation(row: Mapping[str, Any]) -> str:
-    """One plain-German sentence explaining the cadence (read from the data)."""
-    status = str(row.get("status", "ok"))
-    current = row.get("current_cadence_days")
-    proposed = row.get("proposed_cadence_days")
-    rate = row.get("rate_pct_per_day")
-    fill = row.get("avg_fill_status_quo_pct")
-
-    current_txt = _de(current, 0) if current is not None and current == current else "?"
-    proposed_txt = _de(proposed, 0)
-    takt = f"Takt {current_txt} → {proposed_txt} Tage"
-
-    if status == "red":
-        return (
-            f"{_de(row.get('overflow_events_status_quo'), 0)} Überlauf-Ereignisse im "
-            f"Status quo bei {_de(rate, 1)} % Füllrate pro Tag → {takt}."
-        )
-    if status == "yellow":
-        return (
-            f"Im Status quo im Mittel zu {_de(fill, 0)} % voll geleert und im Mentor-Takt "
-            f"übersprungen → {takt}."
-        )
+    """One plain-German sentence from the columns of the file."""
+    if row.get("rhythm_weeks_new") is None or row.get("rhythm_weeks_status_quo") is None:
+        return f"Takt heute / neu: {PENDING_HINT}. Der Takt wird nach jeder Messung neu berechnet."
     return (
-        f"Füllt sich mit {_de(rate, 1)} % pro Tag, im Status quo zu {_de(fill, 0)} % "
-        f"geleert → {takt}."
+        f"Takt heute {_de(row['rhythm_weeks_status_quo'], 0)} Wochen → neu "
+        f"{_de(row['rhythm_weeks_new'], 0)} Wochen, wird nach jeder Messung neu berechnet."
     )
 
 
@@ -752,33 +561,24 @@ def _detail_body_html(row: Mapping[str, Any] | None) -> str:
     """Server-side rendering of the container detail (works without JavaScript)."""
     if not row:
         return '<p class="muted">Container wählen, um den Verlauf zu sehen.</p>'
-
-    current = row.get("current_cadence_days")
-    current_txt = "–" if current is None or current != current else f"{_de(current, 0)} Tage"
-
     return f"""
       <div class="cadence-detail-title">
         <h3>{_esc(row.get('site_title', ''))}</h3>
-        <span class="status-pill status-{_esc(row.get('status', 'ok'))}">
-          {_esc(row.get('status_label', ''))}
-        </span>
+        <span class="status-pill">{_esc(row.get('recommendation_label', ''))}</span>
       </div>
       <p class="muted">
         {_esc(row.get('area_label', ''))} · {_esc(row.get('material_label', ''))} ·
-        Füllrate {_de(row.get('rate_pct_per_day'), 1)} %/Tag ·
-        {_de(row.get('emptyings_status_quo'), 0)} Leerungen im Status quo ·
-        {"im Mentor-Takt übersprungen" if (row.get('skip_14d') or 0) > 0 else "im Mentor-Takt nicht übersprungen"}
+        füllt sich täglich um etwa {_de(row.get('rate_pct_per_day'), 1)} % ·
+        {_de(row.get('emptyings_status_quo'), 0)} Leerungen im Status quo
       </p>
       <p class="cadence-explain">{_esc(row.get('explanation', ''))}</p>
       <div class="kpi-grid">
-        <div class="card"><div class="label">Takt heute</div>
-          <div class="value">{_esc(current_txt)}</div></div>
-        <div class="card"><div class="label">Takt neu</div>
-          <div class="value">{_de(row.get('proposed_cadence_days'), 0)} Tage</div></div>
-        <div class="card"><div class="label">Ø Füllstand (Status quo)</div>
+        <div class="card"><div class="label">Ø Füllgrad heute</div>
           <div class="value">{_de(row.get('avg_fill_status_quo_pct'), 1)} %</div></div>
-        <div class="card"><div class="label">Ø Füllstand (Mentor)</div>
+        <div class="card"><div class="label">Ø Füllgrad neu</div>
           <div class="value">{_de(row.get('avg_fill_mentor_pct'), 1)} %</div></div>
+        <div class="card"><div class="label">Überläufe heute</div>
+          <div class="value">{_de(row.get('overflow_events_status_quo'), 0)}</div></div>
       </div>
       {_sawtooth_svg(row.get('history') or ())}
     """
@@ -799,7 +599,8 @@ def build_container_detail_html(
         row["site_title"] = _site_title(row.get("location_id", ""), row.get("material", ""))
         row["material_label"] = _material_label(str(row.get("material", "")))
         row["area_label"] = _area_label(row.get("area"))
-        row["status_label"] = _status_label(str(row.get("status", "ok")))
+        row["recommendation_label"] = {"länger": "Längerer Takt", "kürzer": "Kürzerer Takt",
+                                       "gleich": "Takt bleibt"}.get(str(row.get("recommendation")), "")
         row["explanation"] = _explanation(row)
         row["history"] = [
             [pd.Timestamp(ts).strftime("%Y-%m-%d"), float(level)]
@@ -834,7 +635,7 @@ def build_container_detail_html(
     """
 
 
-# --- View 3: Diese Woche -----------------------------------------------------------------
+# --- shared constants of the scenario views -----------------------------------------------------------------
 
 #: The time model shown first (the realistic one).
 DEFAULT_TIME_MODEL = "real"
@@ -864,140 +665,6 @@ def _scenario_label(summary: Mapping[str, Any] | None, scenario_id: str) -> str:
         if str(scenario.get("id")) == scenario_id:
             return str(scenario.get("label") or scenario_id)
     return scenario_id
-
-
-def _week_scenario_table(data: ScenarioData) -> str:
-    """Last 7 days of every scenario's daily course (real time model) - sums of the file."""
-    rows: list[str] = []
-    window = ""
-    for scenario in data.scenarios:
-        if str(scenario.get("time_model")) != DEFAULT_TIME_MODEL:
-            continue
-        daily = data.daily.get((str(scenario.get("id")), DEFAULT_TIME_MODEL))
-        if daily is None or daily.empty:
-            continue
-        last = daily.tail(7)
-        window = f"{_date_de(last['date'].iloc[0])} bis {_date_de(last['date'].iloc[-1])}"
-        rows.append(
-            "<tr>"
-            f"<td>{_esc(scenario.get('label') or scenario.get('id'))}</td>"
-            f'<td class="num">{_de(last["n_emptyings"].sum(), 0)}</td>'
-            f'<td class="num">{_de(last["n_overflow_events"].sum(), 0)}</td>'
-            f'<td class="num">{_de(last["tonnage_t"].sum(), 1)} t</td>'
-            f'<td class="num">{_de(last["stops"].sum(), 0)}</td>'
-            f'<td class="num">{_de(last["vehicles_needed"].max(), 0)}</td>'
-            f'<td class="num">{_de(last["shift_hours"].sum(), 1)} h</td>'
-            f'<td class="num">{_de(last["km"].sum(), 0)} km</td>'
-            "</tr>"
-        )
-    if not rows:
-        return '<p class="muted">Keine Tagesverläufe vorhanden.</p>'
-    return f"""
-      <h3>Letzte Woche des Zeitraums ({_esc(window)})</h3>
-      <div class="table-scroll">
-        <table class="cadence-table week-table">
-          <thead><tr>
-            <th scope="col">Szenario</th>
-            <th scope="col">Leerungen</th>
-            <th scope="col">Überläufe</th>
-            <th scope="col">Gesammelt</th>
-            <th scope="col">Halte</th>
-            <th scope="col">Fahrzeuge (max.)</th>
-            <th scope="col">Stunden</th>
-            <th scope="col">km</th>
-          </tr></thead>
-          <tbody>{"".join(rows)}</tbody>
-        </table>
-      </div>
-    """
-
-
-def _week_area_table(containers: pd.DataFrame) -> str:
-    """Containers per area (cluster of policy f) - counts and means of containers.csv."""
-    rows: list[str] = []
-    for area, group in containers.groupby("area", sort=True):
-        rows.append(
-            "<tr>"
-            f"<td>{_esc(_area_label(area))}</td>"
-            f'<td class="num">{_de(len(group), 0)}</td>'
-            f'<td class="num">{_de(group["rate_pct_per_day"].mean(), 1)} %/Tag</td>'
-            f'<td class="num">{_de(group["cadence_days_T"].median(), 0)} Tage</td>'
-            f'<td class="num">{_de((group["status"] == "red").sum(), 0)}</td>'
-            f'<td class="num">{_de((group["status"] == "yellow").sum(), 0)}</td>'
-            "</tr>"
-        )
-    return f"""
-      <h3>Container je Gebiet</h3>
-      <div class="table-scroll">
-        <table class="cadence-table week-table">
-          <thead><tr>
-            <th scope="col">Gebiet</th>
-            <th scope="col">Container</th>
-            <th scope="col">Ø Füllrate</th>
-            <th scope="col">Takt neu (Median)</th>
-            <th scope="col">Kritisch</th>
-            <th scope="col">Übersprungen</th>
-          </tr></thead>
-          <tbody>{"".join(rows)}</tbody>
-        </table>
-      </div>
-    """
-
-
-def build_week_view_html(
-    data: ScenarioData,
-    containers: pd.DataFrame | None,
-    reference_date: str,
-    route_html: str = "",
-    route_metrics: Mapping[str, Any] | None = None,
-) -> str:
-    """View 3 - the last week of the scenario course and the containers per area.
-
-    Map and route are only a collapsible extra.
-    """
-    if containers is None or containers.empty or not data.daily:
-        return _missing_block("Die Wochenansicht", data.missing)
-
-    metrics_html = ""
-    if route_metrics:
-        metrics_html = (
-            '<div class="kpi-grid">'
-            f'<div class="card"><div class="label">Stopps</div>'
-            f'<div class="value">{_de(route_metrics.get("num_stops"), 0)}</div></div>'
-            f'<div class="card"><div class="label">Strecke</div>'
-            f'<div class="value">{_de(route_metrics.get("planned_km"), 1)} km</div></div>'
-            f'<div class="card"><div class="label">Fahrzeuge</div>'
-            f'<div class="value">{_de(route_metrics.get("vehicles_needed"), 0)}</div></div>'
-            f'<div class="card"><div class="label">Sammelmenge</div>'
-            f'<div class="value">{_de(route_metrics.get("t_collected"), 1)} t</div></div>'
-            "</div>"
-        )
-
-    route_extra = ""
-    if route_html:
-        route_extra = (
-            '<details class="cadence-route-extra">'
-            "<summary>Karte und Route (zusätzlich)</summary>"
-            f"{metrics_html}"
-            f'<div class="map-wrap">{route_html}</div>'
-            "</details>"
-        )
-
-    return f"""
-    <section id="view-cadence-week" class="view-panel cadence-week-view">
-      <div class="section-head">
-        <h2>Diese Woche</h2>
-        <p class="muted">
-          Wochenausschnitt aus dem Szenario-Verlauf (Tageswerte der Engine) und die
-          Container je Gebiet. Die Woche ist die Planungsansicht; das Jahr zeigt, wie sich
-          der Takt einpendelt. Stand {_esc(_date_de(reference_date))}.
-        </p>
-      </div>
-      {_week_scenario_table(data)}
-      {_week_area_table(containers)}
-      {route_extra}
-    </section>
-    """
 
 
 # --- View 4: scenarios ---------------------------------------------------------------------
@@ -1109,13 +776,42 @@ def _km_decomposition_html(
     """
 
 
+def _route_extra(route_html: str, route_metrics: Mapping[str, Any] | None) -> str:
+    if not route_html:
+        return ""
+    metrics_html = ""
+    if route_metrics:
+        metrics_html = (
+            '<div class="kpi-grid">'
+            f'<div class="card"><div class="label">Stopps</div>'
+            f'<div class="value">{_de(route_metrics.get("num_stops"), 0)}</div></div>'
+            f'<div class="card"><div class="label">Strecke</div>'
+            f'<div class="value">{_de(route_metrics.get("planned_km"), 1)} km</div></div>'
+            f'<div class="card"><div class="label">Fahrzeuge</div>'
+            f'<div class="value">{_de(route_metrics.get("vehicles_needed"), 0)}</div></div>'
+            f'<div class="card"><div class="label">Sammelmenge</div>'
+            f'<div class="value">{_de(route_metrics.get("t_collected"), 1)} t</div></div>'
+            "</div>"
+        )
+    return (
+        '<details class="cadence-route-extra">'
+        "<summary>Karte und Route (zusätzlich)</summary>"
+        f'{metrics_html}<div class="map-wrap">{route_html}</div></details>'
+    )
+
+
 def build_scenario_grid_html(
     summary: Mapping[str, Any] | None,
     containers: pd.DataFrame | None = None,
     km_decomposition: Mapping[str, Any] | None = None,
     missing: Sequence[str] = (),
+    route_html: str = "",
+    route_metrics: Mapping[str, Any] | None = None,
 ) -> str:
-    """View 4 - one table per time model (real first), caveats, km decomposition."""
+    """View 4 - Ausblick: one table per time model (real first), caveats, km decomposition.
+
+    Everything is collapsed by default; map and route are a further collapsible extra.
+    """
     scenarios = list((summary or {}).get("scenarios", []))
     if not scenarios:
         return _missing_block("Die Szenarioübersicht", missing or ["summary.json"])
@@ -1149,7 +845,8 @@ def build_scenario_grid_html(
     return f"""
     <section id="view-cadence-scenarios" class="view-panel cadence-scenarios-view">
       <div class="section-head">
-        <h2>Szenarien über den ganzen Zeitraum</h2>
+        <h2>Ausblick: Routing &amp; Szenarien</h2>
+        <p class="muted">Die Route ist nur der Ausblick: Sie bündelt, was der Takt fällig macht.</p>
         <p class="muted">
           Zeitraum {_esc(_date_de(period.get('start')))} bis {_esc(_date_de(period.get('end')))}
           ({_de(period.get('days'), 0)} Tage).
@@ -1163,8 +860,12 @@ def build_scenario_grid_html(
           <li><strong>Mehrkammer vs. ein LKW je Farbe unbekannt</strong> - beide Varianten stehen in den Tabellen.</li>
         </ul>
       </div>
-      {blocks}
-      {_km_decomposition_html(km_decomposition, summary)}
+      <details class="cadence-all">
+        <summary>Szenario-Tabellen und km-Zerlegung anzeigen</summary>
+        {blocks}
+        {_km_decomposition_html(km_decomposition, summary)}
+      </details>
+      {_route_extra(route_html, route_metrics)}
     </section>
     """
 
@@ -1179,20 +880,18 @@ def build_cadence_sections(
     route_html: str = "",
     route_metrics: Mapping[str, Any] | None = None,
 ) -> dict[str, str]:
-    """Build the four cadence views (list, detail, week, scenarios).
+    """Build the four views: plan, impact, detail, scenarios.
 
     Reads the scenario output of the engine; computes nothing itself.
     """
     data = load_scenario_data(scenario_dir)
-    containers = None
-    if data.containers is not None:
-        containers = _prepare_containers(data.containers, data.period.get("days"))
+    containers = _prepare_containers(data.containers) if data.containers is not None else None
     summary = data.summary
     return {
-        "list": build_container_list_html(containers, summary, reference_date, data.missing),
+        "plan": build_week_plan_html(containers, summary, reference_date, data.missing),
+        "impact": build_impact_html(summary, data.missing),
         "detail": build_container_detail_html(containers, readings_df, reference_date, data.missing),
-        "week": build_week_view_html(data, containers, reference_date, route_html, route_metrics),
         "scenarios": build_scenario_grid_html(
-            summary, containers, data.km_decomposition, data.missing
+            summary, containers, data.km_decomposition, data.missing, route_html, route_metrics
         ),
     }

@@ -3271,7 +3271,7 @@ def _build_role_start_html(
     snapshot: dict[str, Any], date: str, cadence_sections_html: Mapping[str, str] | None = None
 ) -> str:
     """Build the Today-First operational views (Disponentin, Fahrer) plus role switcher."""
-    cadence_sections_html = cadence_sections_html or {"list": "", "detail": "", "week": "", "scenarios": ""}
+    cadence_sections_html = cadence_sections_html or {"plan": "", "impact": "", "detail": "", "scenarios": ""}
     stand_de = snapshot["stand_de"]
     short_de = snapshot["short_de"]
     m = snapshot["metrics"]
@@ -3408,7 +3408,7 @@ def _build_role_start_html(
         <p>Einstieg ist immer das gewählte Stichtagsdatum. Disponentin plant heute + nächste 3 Wochen, Fahrer fährt nur die heute freigegebene Tour, Analyse enthält die gesamte Jahres-Zeitachse.</p>
       </div>
       <div class="role-cards">
-        <button type="button" class="role-card" data-role="cadence"><strong>Container &amp; Takt</strong><span>Jeder Container als Erzeuger-Verbraucher: Füllrate, Takt heute, Takt neu, Freigabe</span></button>
+        <button type="button" class="role-card" data-role="cadence"><strong>Container &amp; Takt</strong><span>Wochenplan je Gebiet, Wirkung, Container im Detail, Ausblick Routing</span></button>
         <button type="button" class="role-card" data-role="dispatcher"><strong>Disponentin</strong><span>Heute voll (+0), diese Woche (+7), nächste 3 Wochen &amp; Tourenfreigabe</span></button>
         <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Nur heutige freigegebene Tour, nächste Stopps &amp; Export</span></button>
         <button type="button" class="role-card" data-role="analysis"><strong>Analyse</strong><span>Gesamte Zeitachse: Heatmap, Saisonalität, Fairer Vergleich, Backtest</span></button>
@@ -3417,15 +3417,15 @@ def _build_role_start_html(
 
     <section id="role-cadence" class="role-panel cadence-panel active">
       <nav class="tabs cadence-tabs" role="tablist" aria-label="Ansichten der Taktsteuerung">
-        <button type="button" class="tab-btn active" data-target="view-cadence">1. Container &amp; Takt</button>
-        <button type="button" class="tab-btn" data-target="view-cadence-detail">2. Container im Detail</button>
-        <button type="button" class="tab-btn" data-target="view-cadence-week">3. Diese Woche</button>
-        <button type="button" class="tab-btn" data-target="view-cadence-scenarios">4. Szenarien (Jahr)</button>
+        <button type="button" class="tab-btn active" data-target="view-cadence">1. Wochenplan</button>
+        <button type="button" class="tab-btn" data-target="view-cadence-impact">2. Wirkung</button>
+        <button type="button" class="tab-btn" data-target="view-cadence-detail">3. Container im Detail</button>
+        <button type="button" class="tab-btn" data-target="view-cadence-scenarios">4. Ausblick: Routing &amp; Szenarien</button>
       </nav>
 
-      {cadence_sections_html["list"]}
+      {cadence_sections_html["plan"]}
+      {cadence_sections_html["impact"]}
       {cadence_sections_html["detail"]}
-      {cadence_sections_html["week"]}
       {cadence_sections_html["scenarios"]}
     </section>
 

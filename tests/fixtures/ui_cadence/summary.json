@@ -124,6 +124,64 @@
     "cheapest": false,
     "fewest_overflows": true
    }
+  },
+  {
+   "id": "h_area_week_rhythm",
+   "policy_id": "h_area_week_rhythm",
+   "label": "Gebiete mit festem Wochenrhythmus",
+   "time_model": "real",
+   "truck_mode": "multi_chamber",
+   "co_empty_threshold_pct": null,
+   "collected_t": 95.0,
+   "end_stock_t": 5.0,
+   "mass_balance_ok": true,
+   "avg_fill_at_emptying_pct": 60.0,
+   "overflow_events": 15,
+   "overfull_at_emptying": 3,
+   "emptyings": 95,
+   "emptyings_saved_vs_status_quo": -30,
+   "extra_emptyings_co": 0,
+   "stops": 80,
+   "vehicle_days": 35,
+   "hours": 120.5,
+   "km": 1200.0,
+   "cost_eur": 18000.0,
+   "cost_breakdown": {
+    "total_eur": 22000.0
+   },
+   "flags": {
+    "cheapest": false,
+    "fewest_overflows": false
+   }
+  },
+  {
+   "id": "h_area_week_rhythm",
+   "policy_id": "h_area_week_rhythm",
+   "label": "Gebiete mit festem Wochenrhythmus",
+   "time_model": "km",
+   "truck_mode": "multi_chamber",
+   "co_empty_threshold_pct": null,
+   "collected_t": 95.0,
+   "end_stock_t": 5.0,
+   "mass_balance_ok": true,
+   "avg_fill_at_emptying_pct": 60.0,
+   "overflow_events": 15,
+   "overfull_at_emptying": 3,
+   "emptyings": 95,
+   "emptyings_saved_vs_status_quo": -30,
+   "extra_emptyings_co": 0,
+   "stops": 80,
+   "vehicle_days": 35,
+   "hours": 120.5,
+   "km": 1200.0,
+   "cost_eur": 18000.0,
+   "cost_breakdown": {
+    "total_eur": 24200.000000000004
+   },
+   "flags": {
+    "cheapest": false,
+    "fewest_overflows": false
+   }
   }
  ]
 }

@@ -42,6 +42,12 @@ CSS = r"""
   flex: 1 1 180px;
 }
 
+.cadence-area-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.cadence-key-sentence { font-size: 1.1rem; margin: 8px 0; }
+.cadence-recs { padding-left: 18px; }
+.impact-big .value { font-size: 2rem; }
+.impact-good { color: #1a7f37; } .impact-bad { color: #c62828; }
+.impact-arrow { font-weight: 700; }
 .cadence-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
 .cadence-all > summary { cursor: pointer; font-weight: 600; margin: 12px 0; }
 .cadence-caveats { margin: 8px 0 0 18px; }

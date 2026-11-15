@@ -141,10 +141,10 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     pages = {
-        "ansicht_1_container.html": ("Container & Takt", sections["list"]),
-        "ansicht_2_detail.html": ("Container im Detail", sections["detail"]),
-        "ansicht_3_woche.html": ("Diese Woche", sections["week"]),
-        "ansicht_4_szenarien.html": ("Szenarien (Jahr)", sections["scenarios"]),
+        "ansicht_1_wochenplan.html": ("Wochenplan", sections["plan"]),
+        "ansicht_2_wirkung.html": ("Wirkung", sections["impact"]),
+        "ansicht_3_detail.html": ("Container im Detail", sections["detail"]),
+        "ansicht_4_ausblick.html": ("Ausblick: Routing & Szenarien", sections["scenarios"]),
     }
     for name, (title, body) in pages.items():
         page = _standalone_page(f"GlasRoute — {title}", body)

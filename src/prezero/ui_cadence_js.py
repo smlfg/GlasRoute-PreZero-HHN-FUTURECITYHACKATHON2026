@@ -219,31 +219,24 @@ JS = r"""
       body.innerHTML = '<p class="muted">Container wählen, um den Verlauf zu sehen.</p>';
       return;
     }
-    var current = row.current_cadence_days;
-    var proposed = row.proposed_cadence_days;
-    var currentTxt = current === null || current === undefined ? "–" : de(current, 0) + " Tage";
-    var proposedTxt = de(proposed, 0) + " Tage";
 
     body.innerHTML =
       '<div class="cadence-detail-title">' +
         "<h3>" + esc(row.site_title) + "</h3>" +
-        '<span class="status-pill status-' + esc(row.status) + '">' +
-        esc(row.status_label) + "</span>" +
+        '<span class="status-pill">' + esc(row.recommendation_label) + "</span>" +
       "</div>" +
       '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
-        " · Füllrate " + de(row.rate_pct_per_day, 1) + " %/Tag" +
+        " · füllt sich täglich um etwa " + de(row.rate_pct_per_day, 1) + " %" +
         " · " + de(row.emptyings_status_quo, 0) + " Leerungen im Status quo" +
         " · " + (row.skip_14d > 0 ? "im Mentor-Takt übersprungen" : "im Mentor-Takt nicht übersprungen") + "</p>" +
       '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
       '<div class="kpi-grid">' +
-        '<div class="card"><div class="label">Takt heute</div><div class="value">' +
-          currentTxt + '</div></div>' +
-        '<div class="card"><div class="label">Takt neu</div><div class="value">' +
-          proposedTxt + '</div></div>' +
-        '<div class="card"><div class="label">Ø Füllstand (Status quo)</div><div class="value">' +
+        '<div class="card"><div class="label">Ø Füllgrad heute</div><div class="value">' +
           de(row.avg_fill_status_quo_pct, 1) + " %</div></div>" +
-        '<div class="card"><div class="label">Ø Füllstand (Mentor)</div><div class="value">' +
+        '<div class="card"><div class="label">Ø Füllgrad neu</div><div class="value">' +
           de(row.avg_fill_mentor_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Überläufe heute</div><div class="value">' +
+          de(row.overflow_events_status_quo, 0) + "</div></div>" +
       "</div>" +
       sawtoothSvg(row);
   }
@@ -253,7 +246,7 @@ JS = r"""
     var options = [];
     detailPayload.forEach(function (row, index) {
       options.push('<option value="' + index + '">' + esc(row.site_title) +
-        " · " + esc(row.status_label) + "</option>");
+        " · " + esc(row.recommendation_label) + "</option>");
     });
     select.innerHTML = options.join("");
   }

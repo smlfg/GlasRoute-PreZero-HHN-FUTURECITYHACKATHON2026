@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GlasRoute — Szenarien (Jahr)</title>
+  <title>GlasRoute — Ausblick: Routing & Szenarien</title>
   <style>
     :root {
       --bg: #f8fafc;
@@ -98,6 +98,12 @@
   flex: 1 1 180px;
 }
 
+.cadence-area-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.cadence-key-sentence { font-size: 1.1rem; margin: 8px 0; }
+.cadence-recs { padding-left: 18px; }
+.impact-big .value { font-size: 2rem; }
+.impact-good { color: #1a7f37; } .impact-bad { color: #c62828; }
+.impact-arrow { font-weight: 700; }
 .cadence-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
 .cadence-all > summary { cursor: pointer; font-weight: 600; margin: 12px 0; }
 .cadence-caveats { margin: 8px 0 0 18px; }
@@ -429,7 +435,8 @@
 
     <section id="view-cadence-scenarios" class="view-panel cadence-scenarios-view">
       <div class="section-head">
-        <h2>Szenarien über den ganzen Zeitraum</h2>
+        <h2>Ausblick: Routing &amp; Szenarien</h2>
+        <p class="muted">Die Route ist nur der Ausblick: Sie bündelt, was der Takt fällig macht.</p>
         <p class="muted">
           Zeitraum 17.10.2025 bis 30.09.2026
           (349 Tage).
@@ -443,7 +450,9 @@
           <li><strong>Mehrkammer vs. ein LKW je Farbe unbekannt</strong> - beide Varianten stehen in den Tabellen.</li>
         </ul>
       </div>
-      
+      <details class="cadence-all">
+        <summary>Szenario-Tabellen und km-Zerlegung anzeigen</summary>
+        
         <div class="scenario-block" data-time-model="real">
           <h3>Zeitmodell: Real (7/15 min Fahrt, 5 min je Halt, Depot)</h3>
           
@@ -544,7 +553,7 @@
     
         </div>
         
-      
+        
       <div class="scenario-block km-decomposition">
         <h3>Woher kommen die Mehr-km? (Zerlegung gegen den Status quo)</h3>
         <div class="table-scroll">
@@ -564,6 +573,8 @@
         (Quelle: <code>km_decomposition.json</code>).</p>
       </div>
     
+      </details>
+      
     </section>
     
   </div>
@@ -781,31 +792,24 @@
       body.innerHTML = '<p class="muted">Container wählen, um den Verlauf zu sehen.</p>';
       return;
     }
-    var current = row.current_cadence_days;
-    var proposed = row.proposed_cadence_days;
-    var currentTxt = current === null || current === undefined ? "–" : de(current, 0) + " Tage";
-    var proposedTxt = de(proposed, 0) + " Tage";
 
     body.innerHTML =
       '<div class="cadence-detail-title">' +
         "<h3>" + esc(row.site_title) + "</h3>" +
-        '<span class="status-pill status-' + esc(row.status) + '">' +
-        esc(row.status_label) + "</span>" +
+        '<span class="status-pill">' + esc(row.recommendation_label) + "</span>" +
       "</div>" +
       '<p class="muted">' + esc(row.area_label) + " · " + esc(row.material_label) +
-        " · Füllrate " + de(row.rate_pct_per_day, 1) + " %/Tag" +
+        " · füllt sich täglich um etwa " + de(row.rate_pct_per_day, 1) + " %" +
         " · " + de(row.emptyings_status_quo, 0) + " Leerungen im Status quo" +
         " · " + (row.skip_14d > 0 ? "im Mentor-Takt übersprungen" : "im Mentor-Takt nicht übersprungen") + "</p>" +
       '<p class="cadence-explain">' + esc(row.explanation) + "</p>" +
       '<div class="kpi-grid">' +
-        '<div class="card"><div class="label">Takt heute</div><div class="value">' +
-          currentTxt + '</div></div>' +
-        '<div class="card"><div class="label">Takt neu</div><div class="value">' +
-          proposedTxt + '</div></div>' +
-        '<div class="card"><div class="label">Ø Füllstand (Status quo)</div><div class="value">' +
+        '<div class="card"><div class="label">Ø Füllgrad heute</div><div class="value">' +
           de(row.avg_fill_status_quo_pct, 1) + " %</div></div>" +
-        '<div class="card"><div class="label">Ø Füllstand (Mentor)</div><div class="value">' +
+        '<div class="card"><div class="label">Ø Füllgrad neu</div><div class="value">' +
           de(row.avg_fill_mentor_pct, 1) + " %</div></div>" +
+        '<div class="card"><div class="label">Überläufe heute</div><div class="value">' +
+          de(row.overflow_events_status_quo, 0) + "</div></div>" +
       "</div>" +
       sawtoothSvg(row);
   }
@@ -815,7 +819,7 @@
     var options = [];
     detailPayload.forEach(function (row, index) {
       options.push('<option value="' + index + '">' + esc(row.site_title) +
-        " · " + esc(row.status_label) + "</option>");
+        " · " + esc(row.recommendation_label) + "</option>");
     });
     select.innerHTML = options.join("");
   }

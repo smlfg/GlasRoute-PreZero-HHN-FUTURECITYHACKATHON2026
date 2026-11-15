@@ -60,46 +60,71 @@ def test_missing_files_are_reported(tmp_path: Path):
     assert not ui_cadence.load_scenario_data(tmp_path / "nope").available
 
 
-def test_prepare_status_rules():
+def test_prepare_keeps_the_file_values():
     data = ui_cadence.load_scenario_data(FIXTURE_DIR)
-    work = ui_cadence._prepare_containers(data.containers, 349)
-    status = dict(zip(work["location_id"] + work["material"], work["status"]))
-    assert status["L1white"] == "ok"
-    assert status["L1brown"] == "yellow"  # skip_14d = 1
-    assert status["L2brown"] == "red"  # overflow > 0
-    # Takt heute = period / emptyings, Takt neu = cadence_days_T
-    assert work.loc[0, "current_cadence_days"] == pytest.approx(349 / 9)
-    assert work.loc[0, "proposed_cadence_days"] == 5.0
+    work = ui_cadence._prepare_containers(data.containers)
+    assert list(work["recommendation"]) == ["gleich", "länger", "kürzer", "länger"]
+    assert work["rhythm_weeks_new"].tolist() == [1.0, 4.0, 1.0, 3.0]
 
 
-# --- tab 1 ----------------------------------------------------------------------------------
+# --- tab 1: Wochenplan ------------------------------------------------------------------
 
 
-def test_list_has_kpis_short_lists_histogram_and_collapsed_full_list():
-    html = _sections()["list"]
-    assert "100,0 t" in html  # produced_t
-    assert "Läuft über – Takt zu lang" in html and "Zu oft geleert – Takt zu kurz" in html
-    assert "<svg" in html and "cadence-histogram" in html
-    assert re.search(r"<details class=\"cadence-all\">\s*<summary>Alle 4 Container anzeigen", html)
-    assert "cadence-search" in html
-    assert "%/Tag" in html and "5,0 %/Tag" in html
+def test_week_plan_has_key_sentence_and_one_card_per_area():
+    html = _sections()["plan"]
+    assert ui_cadence.KEY_SENTENCE in html
+    assert html.count("cadence-area-card") == 2  # areas 0 and 1 (CSS class counted once per card tag)
+    assert "Gebiet 1 (Mo)" in html and "Gebiet 2 (Di)" in html
+    assert "<table" not in html  # the long container table is gone
 
 
-def test_list_kpi_counts_and_best_scenario():
-    data = ui_cadence.load_scenario_data(FIXTURE_DIR)
-    work = ui_cadence._prepare_containers(data.containers, 349)
-    kpis = ui_cadence.compute_header_kpis(work, data.summary)
-    assert kpis["containers_with_overflow"] == 2
-    assert kpis["too_often_emptied"] == 2  # L1 brown (skipped) and L3 green (45 %)
-    html = _sections()["list"]
-    assert "Mentor-Takt" in html  # cheapest scenario (real) named
-    assert ">-30<" in html or "-30" in html
+def test_week_plan_recommendation_sentences():
+    html = _sections()["plan"]
+    assert "Standort L1…" in html or "Standort L1" in html
+    assert "alle 4 Wochen statt alle 2 Wochen – war im Schnitt nur 22 % voll" in html
+    assert "jede Woche statt alle 2 Wochen – lief 3× über" in html
+    assert "bekommen einen längeren Rhythmus" in html and "bekommen einen kürzeren Rhythmus" in html
 
 
-def test_list_without_data_shows_hint_and_no_numbers(tmp_path: Path):
-    html = _sections(tmp_path / "nope")["list"]
-    assert "Szenariodaten fehlen (scripts/run_scenarios.py ausführen)" in html
-    assert "%/Tag" not in html
+def test_week_plan_missing_columns_say_daten_folgen(tmp_path: Path):
+    shutil.copytree(FIXTURE_DIR, tmp_path / "s")
+    c = pd.read_csv(tmp_path / "s" / "containers.csv").drop(columns=["recommendation", "rhythm_weeks_new"])
+    c.to_csv(tmp_path / "s" / "containers.csv", index=False)
+    html = _sections(tmp_path / "s")["plan"]
+    assert "Daten folgen" in html and "rhythm_weeks_new" in html
+    assert "cadence-area-card" not in html
+
+
+def test_plan_without_data_shows_hint(tmp_path: Path):
+    assert "Szenariodaten fehlen (scripts/run_scenarios.py ausführen)" in _sections(tmp_path / "nope")["plan"]
+
+
+# --- tab 2: Wirkung ---------------------------------------------------------------------
+
+
+def test_impact_shows_today_to_new_and_marks_worse_red():
+    html = _sections()["impact"]
+    assert "67,0 % → 60,0 %" in html  # fill goes DOWN
+    assert "impact-bad" in html  # ... and is shown red
+    assert "40 → 15" in html  # overflows down: good (green)
+    assert "Ø Füllgrad bei Leerung" in html and "Überläufe" in html
+    assert "Leerungen" in html and "Stunden" in html and "Kosten" in html
+
+
+def test_impact_falls_back_to_f_fixed_areas(tmp_path: Path):
+    shutil.copytree(FIXTURE_DIR, tmp_path / "s")
+    summary = json.loads((tmp_path / "s" / "summary.json").read_text(encoding="utf-8"))
+    for sc in summary["scenarios"]:
+        if sc["id"] == "h_area_week_rhythm":
+            sc["id"] = "f_fixed_areas"
+    (tmp_path / "s" / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+    html = _sections(tmp_path / "s")["impact"]
+    assert "f_fixed_areas" not in html or "67,0 %" in html
+    assert "noch nicht vor" in html
+
+
+def test_impact_without_data_shows_hint(tmp_path: Path):
+    assert "Szenariodaten fehlen" in _sections(tmp_path / "nope")["impact"]
 
 
 # --- tab 2 ----------------------------------------------------------------------------------
@@ -112,26 +137,17 @@ def test_detail_sawtooth_from_readings_and_explanation():
     assert len(rows) == 4
     by = {(r["location_id"], r["material"]): r for r in rows}
     assert by[("L1", "white")]["history"]
-    assert "übersprungen" in by[("L1", "brown")]["explanation"]
-    assert "Überlauf" in by[("L2", "brown")]["explanation"]
+    assert by[("L1", "brown")]["explanation"] == (
+        "Takt heute 2 Wochen → neu 4 Wochen, wird nach jeder Messung neu berechnet."
+    )
 
 
 def test_detail_without_data_shows_hint(tmp_path: Path):
     assert "Szenariodaten fehlen" in _sections(tmp_path / "nope")["detail"]
 
 
-# --- tab 3 ----------------------------------------------------------------------------------
-
-
-def test_week_view_has_daily_sums_and_areas():
-    html = _sections()["week"]
-    assert "Diese Woche" in html and "Gebiet 1" in html and "Gebiet 2" in html
-    assert "70" in html  # 7 days x 10 emptyings
-    assert "<details" not in html
-
-
-def test_week_view_route_is_collapsible():
-    html = _sections(route_html="<div>MAP</div>", route_metrics={"num_stops": 3})["week"]
+def test_route_is_a_collapsible_extra_in_the_outlook():
+    html = _sections(route_html="<div>MAP</div>", route_metrics={"num_stops": 3})["scenarios"]
     assert "<summary>Karte und Route (zusätzlich)</summary>" in html and "MAP" in html
 
 
@@ -140,6 +156,8 @@ def test_week_view_route_is_collapsible():
 
 def test_scenarios_one_table_per_time_model_real_first_with_caveats():
     html = _sections()["scenarios"]
+    assert '<details class="cadence-all">' in html  # collapsed by default
+    assert "<details class=\"cadence-all\" open" not in html
     assert html.index('data-time-model="real"') < html.index('data-time-model="km"')
     assert "Gleiche Glasmenge: 100,00 t in jedem Szenario" in html
     assert "Standorte simuliert: 3 IDs auf 3 OSM-Punkten" in html
@@ -169,7 +187,6 @@ def test_renders_against_real_outputs():
     sections = ui_cadence.build_cadence_sections(None, "2026-04-15", scenario_dir=REAL_DIR)
     assert "Szenariodaten fehlen" not in "".join(sections.values())
     produced = ui_cadence._de(summary["produced_t"], 2)
-    assert produced in sections["scenarios"]
+    assert produced in sections["scenarios"] and produced in sections["impact"]
     for scenario in summary["scenarios"]:
         assert f'data-scenario="{scenario["id"]}"' in sections["scenarios"]
-    assert ui_cadence._de(summary["produced_t"], 1) in sections["list"]
