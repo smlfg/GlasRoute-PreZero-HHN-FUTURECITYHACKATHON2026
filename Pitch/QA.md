@@ -2,9 +2,9 @@
 
 Stand: 15.11.2026 · Jede Antwort: 2 Sätze, ehrlich, mit Beleg. **OPEN** = können wir nicht ehrlich beantworten.
 
-**Hinweis zur Quelle:** Eine Datei `demo_day_numbers.json` gibt es im Repo nicht. Die Single Source of Truth ist
-`Pitch/demo_facts.txt` (geprüft mit `Projek-Management/proof/verify_pitch_numbers.py`, Beleg `A3_pitch_zahlen.txt`: „ALL MATCH“).
-Alle Zahlen unten stammen von dort, aus `docs/BENCHMARK.md` oder `docs/BACKTEST.md`.
+**Hinweis zur Quelle:** Die Demo-Zahlen sind in `Projek-Management/proof/demo_day_numbers.json` gepinnt (geprüft mit
+`Projek-Management/proof/verify_pitch_numbers.py`, Beleg `A3_pitch_zahlen.txt`: „ALL MATCH“); die lesbare Kurzfassung
+steht in `Pitch/demo_facts.txt`. Alle Zahlen unten stammen von dort, aus `docs/BENCHMARK.md` oder `docs/BACKTEST.md`.
 
 | # | Thema | Status |
 |---|---|---|
