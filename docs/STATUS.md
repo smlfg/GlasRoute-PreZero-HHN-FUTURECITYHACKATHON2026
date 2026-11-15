@@ -1,7 +1,7 @@
 # Status — GlasRoute (PreZero Challenge, Future City Hackathon 2026)
 
-**Stand:** Sa 14.11.2026, 20:20 · **Feature-Freeze:** So 15.11. 11:00 · **Abgabe:** So 15.11. 13:00
-**Code-Stand der Zahlen unten:** `1577c74` (Pitch-Zahlen) · zuletzt verifiziert auf `abd9ca2`
+**Stand:** So 15.11.2026, 09:40 · **Feature-Freeze:** So 15.11. 11:00 · **Abgabe:** So 15.11. 13:00
+**Code-Stand der Zahlen unten:** `611178b` (Pitch-Zahlen) · zuletzt verifiziert auf `fb980e8`
 
 ## In 30 Sekunden
 
@@ -18,12 +18,18 @@ pip install -e ".[test]"                       # Installation (bs4 nur für die 
 prezero-route run --date 2026-04-15            # Pipeline + Website
 prezero-route propose                          # Vorschlag (nichts wird ohne Freigabe dispatcht)
 prezero-route approve --by "Disponentin"       # Freigabe + Beleg data/processed/approval_<datum>.json
-prezero-route ui --date 2026-04-15             # ui_2026-04-15.html (9 Tabs, offline nutzbar*)
+prezero-route ui --date 2026-04-15             # ui_2026-04-15.html (11 Tabs, offline nutzbar*)
 prezero-route forecast --date 2026-04-15       # Prognose +7/+14/+21 Tage, forecast_16.html
 python scripts/backtest.py && python scripts/benchmark.py   # Rhythmus + fairer Vergleich (~2 min)
-PYTHONPATH=src pytest -q                        # 119 Tests grün
+PYTHONPATH=src pytest -q                        # 151 grün, 2 bekannte Fehler (Copilot-Änderung, noch nicht committed)
 PYTHONPATH=src python Projek-Management/proof/verify_pitch_numbers.py   # "RESULT: ALL MATCH"
 ```
+
+**Teststand (gemessen am 15.11.2026, 09:40):** 151 von 153 Tests grün. Die 2 roten Tests sind
+`tests/test_copilot.py::test_approve_tour_is_forbidden_as_chat_tool` und
+`tests/test_copilot.py::test_copilot_all_ten_intents_return_structured_output_with_stand_and_sources` —
+beide erwarten noch die alte Tool-Liste (12 Einträge) gegen die laufende, noch nicht committete
+Copilot-Änderung (13 Einträge). Sie gehören zum Copilot-Thread, nicht zu diesem Dokumentationsstand.
 
 Erwartete Ausgabe von `run`:
 `106 critical physical sites (276 critical IDs, 509 containers) · 249.9 km planned (25 stops) vs 1202.24 km full round`
@@ -31,7 +37,7 @@ Erwartete Ausgabe von `run`:
 \* Kartenkacheln kommen von OpenStreetMap — **ohne Internet bleiben die Karten leer**, Tabellen und
 Kennzahlen funktionieren. Vor dem Pitch einmal offline prüfen.
 
-## Pitch-Zahlen (Stand `1577c74`, Beleg `Projek-Management/proof/A3_pitch_zahlen.txt`)
+## Pitch-Zahlen (Stand `611178b`, Beleg `Projek-Management/proof/A3_pitch_zahlen.txt`)
 
 | Kennzahl | Wert | Spanne |
 |---|---|---|
