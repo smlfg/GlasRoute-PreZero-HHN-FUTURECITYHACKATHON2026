@@ -14,7 +14,7 @@
 | **Seite: Trends Chart** | `32f9e14` (2026-11-14 15:14:49) | `plot_trends` (`src/prezero/viz.py`) | Matplotlib, `data/raw/` | Ja | Keine; Monatsdurchschnitte nach Glasfarbe | Statisches PNG ohne interaktive Hover-Tooltips | **M** (nach Freeze: interaktives Plotly-Chart) |
 | **Tab 2: Forecast** (`view-forecast`) | `085b816` (2026-11-14 18:33:55) | `render_forecast_timeline_map_html` (`src/prezero/ui.py`) | `forecast.py`, `viz.plot_forecast_map` | Ja | Keine; Horizons (+0/+7/+14/+21 d) und Füllstandsdeckel 110 % korrekt erklärt | Fehlendes „Kartenkoordinaten simuliert“-Honesty-Banner direkt über der Karte | **S** (Honesty-Banner für simulierte OSM-Kartenpunkte ergänzen) |
 | **Tab 3: Heatmap** (`view-heatmap`) | `085b816` (2026-11-14 18:33:55) | `_build_heatmap_section_html` (`src/prezero/ui.py`) | `heatmap.py`, `data/processed/scored_*.csv` | Ja | Keine; 52 Kalenderwochen synchron mit Rohdaten | Fehlender Stand-Badge; Link zu Tab 4 („Route & Freigabe“) im Beschreibungstext war rein statischer Text | **S** (Stand-Badge im Header; interaktiven Sprunglink zu Tab 4 verdrahten) |
-| **Tab 6: Variablen** (`view-variables`) | `8070765` (2026-11-14 18:38:10) | `_build_variables_section_html` (`src/prezero/ui.py`) | `prezero_config.json`, `OperationalConfig` | Ja | Keine; 11 t Gewicht, 26 m³ Volumen, 8 h Schicht, 1.202,24 km Vollrunde | Fehlender Stand-Badge; Text sprach von „heute selbst gescrapt“ statt präzise „simulierte Zuordnung auf OSM-Containerpunkten“ | **S** (Stand-Badge; Präzisierung der OSM-Zuordnung) |
+| **Tab 6: Variablen** (`view-variables`) | `8070765` (2026-11-14 18:38:10) | `_build_variables_section_html` (`src/prezero/ui.py`) | `prezero_config.json`, `OperationalConfig` | Ja | Keine; 11 t Gewicht, 26 m³ Volumen, 8 h Schicht, 1.368,78 km Vollrunde | Fehlender Stand-Badge; Text sprach von „heute selbst gescrapt“ statt präzise „simulierte Zuordnung auf OSM-Containerpunkten“ | **S** (Stand-Badge; Präzisierung der OSM-Zuordnung) |
 | **Tab 2: Backtest-Card** (`view-forecast`) | `2005f7f` (2026-11-14 19:33:48) | `_build_backtest_section_html` (`src/prezero/ui.py`) | `scripts/backtest.py`, `backtest_summary.json` | Ja | Keine; Braunglas-Median 95,4 d vs. 42,0 d, Weißglas 32,5 d, MAE 19,9 pp | Vollständig synchron mit Pitch-Proof A3 | **Kein Fix nötig** |
 | **Tab 4: Stopp-Daten** (`view-route`) | `cdd7529` (2026-11-14 19:35:37) | `render_route_view_data` (`src/prezero/ui.py`) | `routing.py`, `tour.py` | Ja | Keine; 25 Stopps, 16 Runden, 3 Fahrzeuge, 116,18 t, 227,2 km | Vollständig synchron mit Backend-Route | **Kein Fix nötig** |
 | **Tab 1: Daten** (`view-data`) | `abd9ca2` (2026-11-14 20:13:45) | `_build_data_section_html` (`src/prezero/ui.py`) | `compute_measurement_analysis`, `glass_fill_levels_anonymized_f.csv` | Ja | Keine; 11.701 Messungen, 1.192 overfull, 1.061 Container | Fehlender Stand-Badge; Hinweis in Top 20 zum Copilot war nicht verlinkt | **S** (Stand-Badge ergänzen; Tab-Link zu Tab 5 Copilot setzen) |
@@ -68,10 +68,10 @@
 
 ---
 
-## 4. Status Quo Differenzierung: 1.202,24 km vs. B1 (1.662,70 km)
+## 4. Status Quo Differenzierung: 1.368,78 km vs. B1 (1.662,70 km)
 
 Im UI wird sauber und belegbar zwischen zwei Referenzpunkten differenziert:
-- **1.202,24 km (Status Quo Vollrunde für den Demo-Tag in Tab 4 / Hero):**  
+- **1.368,78 km (Status Quo Vollrunde für den Demo-Tag in Tab 4 / Hero):**  
   Berechnet in `src/prezero/routing.py` als kapazitätsbeschränkte Nearest-Neighbor-Tour über alle 142 physischen Standorte unter denselben physikalischen Regeln (11 t Gewicht, 26 m³ Volumen, 8 h Schicht, Depots). Dient als direkter operativer Vergleich zur geplanten 25-Stopp-Tour (227,2 km, -83,4 % km).
 - **1.662,70 km (B1 im wissenschaftlichen Benchmark in Tab 7):**  
   Berechnet in `scripts/benchmark.py` als optimierter Status Quo über 121 Standorte im 4-Stufen-Vergleich gegen B0 (1.795,9 km), B2 (1.165,9 km) und B4 (1.053,3 km), woraus sich der Bedarfs-Effekt (29,9 %) und der Gesamteffekt (36,7 %) ableiten.
