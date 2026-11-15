@@ -61,8 +61,8 @@ Aber nur Altglas ist echt: 11.701 Messungen; Papier, Bio, Gastro und Plastik sin
 
 ## 8. Warum fährt die Jahressimulation *mehr* Kilometer als der Status quo?
 
-**Weil sie mehr Glas abholt, nicht weil sie schlechter ist.** Optimiert: 28.497,8 km und 9.451 t gegen 20.538,5 km und 7.719 t Status quo (`docs/KOSTENMODELL.md` §1), dafür Ø-Füllstand bei Leerung 83,5 % statt 66,0 % und 0 statt 1.192 Überfüllungen.
-Das ist ein Schwachpunkt: Die Tonnen sind nicht gleich, der Vergleich ist kein „gleiche Arbeit, weniger km“, und die 0 Überläufe folgen teils aus der Regel „bei drohenden ≥ 110 % einplanen“ (§2.2) und sind kein unabhängiger Befund; die km-Ersparnis belegt nur der Stichtags-Benchmark (B1→B4).
+**Weil ein reiner Timer pro Container die Glasfarben eines Standorts auseinanderreißt.** Die alte Jahressimulation hatte einen Rechenfehler (mehr Glas gesammelt als produziert, `docs/MODEL_SPEC.md` §2); korrigiert fällt in jedem Szenario dieselbe Glasmenge an. Bei gleicher Menge fährt der reine 80-%-Timer trotzdem mehr, weil er weiß, grün und braun eines Standorts an verschiedenen Tagen holt: mehr als doppelt so viele Halte bei fast gleich vielen Leerungen.
+Daraus folgt unser Modell: Takt pro Container, aber gebündelt pro Standort und in festen Gebieten. Die km-Ersparnis belegt bisher nur der Stichtags-Benchmark (B1→B4, −36,7 %); der Szenario-Vergleich über das Jahr läuft.
 
 ## 9. Warum vergleicht ihr gegen B1 (optimierter Status quo) und nicht gegen die Papierliste?
 
@@ -86,7 +86,7 @@ Alle 449 Standorte sind echte OSM-Punkte, aber die Zuordnung zu den anonymen IDs
 
 ## 13. Macht späteres Leeren die Füllraten-Vorhersage genauer?
 
-**Bestätigt ist nur die Gleichmäßigkeit, nicht die Prognosegenauigkeit.** Die Füllstände beim Leeren werden viel gleichmäßiger (Streuung sinkt von 31 auf 4 pp, Ø ~83,5 %, 0 statt 1.192 Überläufe). Ob die Vorhersage dadurch genauer wird, lässt sich empirisch nicht belegen, da es für simuliert verschobene Leerungen keine realen Messwerte gibt.
+**Nicht belegt.** Die Werte aus der alten Jahressimulation (Ø ~83,5 %, 0 Überläufe) ziehen wir zurück, sie stammten aus dem Rechenfehler in §8. Ob die Vorhersage dadurch genauer wird, lässt sich empirisch nicht belegen, da es für simuliert verschobene Leerungen keine realen Messwerte gibt.
 **Der methodische Haken:** Wir leeren fast nur noch bei ≥ 80 % (99,8 %) und beobachten im Regelbetrieb kaum noch halbvolle Container (< 50 % sinkt von 31,2 % auf 0,04 %). **Unsere Lösung:** Regelmäßige Zufallskontrollen einzelner unkritischer Container, um Füllkurven unvoreingenommen nachzukalibrieren.
 
 ---

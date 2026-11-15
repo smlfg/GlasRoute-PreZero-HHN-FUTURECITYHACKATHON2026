@@ -1210,7 +1210,7 @@
     <!-- ==========================================
          SLIDE 7: LIVE DEMO & A/B REPLAY
          ========================================== -->
-    <div class="slide" data-slide="7" data-time="25" data-notes="(0-8s): Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen. (8-17s): Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht. (17-25s): Im Replay sehen Sie live, wie die LKW fahren — und wie nur die wirklich fälligen Container angefahren werden, während kein einziger Container überläuft. Die Gesamt-Ersparnis zeigt gleich der faire Vergleich: minus 36,7 Prozent.">
+    <div class="slide" data-slide="7" data-time="25" data-notes="(0-8s): Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen. (8-17s): Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht. (17-25s): Im Replay sehen Sie live, wie die LKW fahren — und dass nur die wirklich fälligen Container angefahren werden. Die Gesamt-Ersparnis zeigt gleich der faire Vergleich: minus 36,7 Prozent.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">07 · Live Demonstration</span>
@@ -1415,7 +1415,7 @@
     <!-- ==========================================
          SLIDE 9: COST MODEL & SIMULATION
          ========================================== -->
-    <div class="slide" data-slide="9" data-time="25" data-notes="(0-8s): Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €). (8-16s): Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle treiben die Fahrzeugtage hoch. (16-25s): Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll. Die Streuung sinkt von 31 auf 4 pp, 0 Überläufe. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.">
+    <div class="slide" data-slide="9" data-time="25" data-notes="(0-8s): Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €). (8-16s): Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle treiben die Fahrzeugtage hoch. (16-25s): Wichtig: In jedem Szenario fällt gleich viel Glas an — wir holen nicht mehr, wir holen es mit weniger Halten. Heute wird bei 66 % geleert, 1.192 Mal war der Container übervoll, Braunglas wird zu 89 % zu früh geleert. Der Hebel ist der Takt pro Container, gebündelt pro Standort.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">09 · Economics & Feasibility</span>
@@ -1423,7 +1423,7 @@
         </div>
         <div class="prezero-badge">
           <div class="prezero-dot"></div>
-          <span>349-Tage Jahressimulation</span>
+          <span>11.701 echte Leerungen</span>
         </div>
       </div>
 
@@ -1442,34 +1442,34 @@
           </div>
 
           <div class="card" style="margin-top: 0.4vw; padding: 0.7vw;">
-            <div style="font-size: 0.82vw; font-weight: 700; color: white; margin-bottom: 0.2vw;">Hebel-Vergleich: Naives Modell vs. GlasRoute Taktung</div>
+            <div style="font-size: 0.82vw; font-weight: 700; color: white; margin-bottom: 0.2vw;">Was die echten Daten zeigen (Status quo)</div>
             <table class="slide-table" style="font-size: 0.76vw;">
               <thead>
                 <tr>
-                  <th>Modellierung</th>
-                  <th>Tage</th>
-                  <th>Leerungs-Füllstand</th>
-                  <th>Überläufe</th>
+                  <th>Kennzahl</th>
+                  <th>Heute</th>
+                  <th>Quelle</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Status quo</td>
-                  <td>345 d</td>
-                  <td>66,0 % (Streuung 31 pp)</td>
-                  <td>1.192</td>
+                  <td>Ø Füllstand bei Leerung</td>
+                  <td><strong>66,0 %</strong></td>
+                  <td>11.701 Messungen</td>
                 </tr>
-                <tr style="background: rgba(239, 68, 68, 0.08);">
-                  <td>Naiv (60 % / 346 d)</td>
-                  <td><strong style="color: var(--danger);">628 d</strong></td>
-                  <td>~72 %</td>
-                  <td>Kostenexplosion</td>
+                <tr>
+                  <td>Leerungen „übervoll“</td>
+                  <td><strong style="color: var(--danger);">1.192</strong></td>
+                  <td>Rohdaten</td>
+                </tr>
+                <tr>
+                  <td>Braunglas zu früh geleert</td>
+                  <td><strong>89,1 %</strong> (alle 42 statt ~95 Tage)</td>
+                  <td>Backtest</td>
                 </tr>
                 <tr class="highlight-row">
-                  <td><span class="sol-badge">LÖSUNG</span> <span class="sol-hl">GlasRoute</span></td>
-                  <td><strong>381 d</strong></td>
-                  <td><span class="sol-hl">83,5 % (Streuung 4 pp)</span></td>
-                  <td><span class="sol-hl">0 (−100 %)</span></td>
+                  <td><span class="sol-badge">REGEL</span> <span class="sol-hl">Massenerhaltung</span></td>
+                  <td colspan="2"><span class="sol-hl">Gleiche Glasmenge in jedem Szenario — gespart wird nur an Halten</span></td>
                 </tr>
               </tbody>
             </table>
@@ -1478,9 +1478,9 @@
           <div class="card card-warning" style="margin-top: 0.4vw; padding: 0.6vw;">
             <div style="font-size: 0.8vw; font-weight: 700; color: var(--warning);">EHRLICHE VALIDIERUNG &amp; DER HAKEN</div>
             <p style="font-size: 0.75vw; color: #f1f5f9; margin-top: 0.2vw; line-height: 1.35; font-style: italic;">
-              „Wir leeren viel gleichmäßiger bei ~83 % statt zwischen leer und übervoll (Streuung 4 statt 31 pp, 0 Überläufe).<br>
-              <strong>Der Haken:</strong> Wir sehen nicht mehr, wie sich halbvolle Container verhalten.<br>
-              <strong>Lösung:</strong> Regelmäßige Zufallskontrollen zur Modellkalibrierung.“
+              „Ein Timer nur pro Container reißt die Glasfarben eines Standorts auseinander — mehr Halte statt weniger.<br>
+              <strong>Darum:</strong> Takt pro Container, gebündelt pro Standort und in festen Gebieten.<br>
+              <strong>Haken:</strong> Halbvolle Container sehen wir seltener — Zufallskontrollen kalibrieren nach.“
             </p>
           </div>
         </div>
@@ -1506,7 +1506,7 @@
       <div class="slide-footer">
         <div class="key-takeaway">
           <span class="badge">KOSTEN-HEBEL</span>
-          Gleichmäßige Leerung (~83 %, Streuung 4 statt 31 pp, 0 Überläufe). Beobachtungs-Haken ehrlich durch Zufallsstichproben gelöst.
+          Gleiche Glasmenge, weniger Halte: Takt pro Container, gebündelt pro Standort. Haken ehrlich durch Zufallsstichproben gelöst.
         </div>
         <div>Folie 9 / 12 · 25 s</div>
       </div>
@@ -1656,7 +1656,7 @@
     <!-- ==========================================
          SLIDE 12: THE ASK & PARTNERSHIP
          ========================================== -->
-    <div class="slide" data-slide="12" data-time="20" data-notes="(0-7s): Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar. (7-14s): PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und 0 Überläufe in Heilbronn garantieren. Oder 36,7% der Kilometer einsparen. (14-20s): Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.">
+    <div class="slide" data-slide="12" data-time="20" data-notes="(0-7s): Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar. (7-14s): PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und die frei werdenden Halte an die kritischen Standorte geben — weniger Überläufe. Oder 36,7% der Kilometer einsparen. (14-20s): Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.">
       <div class="slide-header">
         <div>
           <span class="slide-tag">12 · Next Steps &amp; Value</span>
@@ -1676,7 +1676,7 @@
               <div style="background: #0f172a; padding: 0.5vw; border-radius: 6px; border-left: 3px solid var(--accent);">
                 <div style="font-size: 0.85vw; font-weight: 800; color: var(--accent);">Option A: Saubere Stadt</div>
                 <div style="font-size: 0.75vw; color: #f1f5f9; margin-top: 0.1vw;">
-                  Gleiche Flottengröße beibehalten, aber <span class="sol-hl">100 % Überlauf-Vermeidung</span> in ganz Heilbronn.
+                  Gleiche Flottengröße, frei werdende Halte gehen an <span class="sol-hl">kritische Standorte: weniger Überläufe</span>.
                 </div>
               </div>
               <div style="background: #0f172a; padding: 0.5vw; border-radius: 6px; border-left: 3px solid var(--info);">

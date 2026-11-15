@@ -220,21 +220,18 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 
 - **Drei-Komponenten-Kostenformel:**
   $$\text{Gesamtkosten} = (\text{Fahrzeugtage} \times 500\,\text{€}) + (\text{Crew-Stunden} \times 2 \times 32\,\text{€/h}) + (\text{Strecke in km} \times 0{,}65\,\text{€/km})$$
-- **Hebel-Analyse der Jahressimulation (349 Tage, Massenerhaltungsbilanz):**
-  - **Größter Hebel = Einsatztage:** Bereitstellung (500 €/Tag) und 2-Personen-Crew (64 €/h) dominieren weit vor dem reinen Kraftstoff (0,65 €/km).
-  - **Gefahr naiver Modelle:** Wer Container zu früh triggert (z. B. 60-%-Schwelle) oder an 346 Tagen statt nur an den 229 Werktagen fährt, lässt die Fahrzeugtage von 345 auf 628 explodieren (+141.500 € allein Bereitstellung!).
-  - **Ergebnis GlasRoute (80-%-Bedarfstaktung):**
-    - **Ø Füllstand bei Leerung:** von **66,0 %** (Streuung: 31 pp) auf **83,5 %** (Streuung: 4 pp) gesteigert (**+17,5 pp**, Füllstände deutlich gleichmäßiger).
-    - **Überfüllungen:** 1.192 Überfüllungen auf **0** eliminiert.
-    - **Fahrzeugtage:** Glättung auf 381 Tage (stabil und schichtkonform).
+- **Was die echten Daten zeigen (Status quo, 11.701 Leerungen):**
+  - **Ø Füllstand bei Leerung:** 66,0 %; **1.192** Leerungen „übervoll“.
+  - **Braunglas:** 89,1 % der Leerungen zu früh (Median alle 42 statt ~95 Tage, `backtest_summary.json`).
+  - **Massenerhaltung:** In jedem Szenario fällt dieselbe Glasmenge an; gespart wird nur an Halten, nie an Glas.
 - **Ehrliche Schlussfolgerung & der Haken:**
-  > *„Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.“*
+  > *„Ein Timer nur pro Container reißt die Glasfarben eines Standorts auseinander — mehr Halte statt weniger. Darum: Takt pro Container, gebündelt pro Standort und in festen Gebieten. Halbvolle Container sehen wir seltener, deshalb kontrollieren wir regelmäßig ein paar Container zufällig.“*
 
 ### Speaker Notes
 
 - **0–8 s:** „Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €).“
-- **8–16 s:** „Dabei wird klar: Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle, die zu früh anfahren oder Wochenenden disponieren, treiben die Fahrzeugtage von 345 auf 628 hoch.“
-- **16–25 s:** „Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll – die Streuung sinkt von 31 auf 4 pp, 0 Überläufe. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.“
+- **8–16 s:** „Der größte Hebel sind die Einsatztage, nicht der Sprit. Und: In jedem Szenario fällt gleich viel Glas an — wir holen nicht mehr, wir holen es mit weniger Halten.“
+- **16–25 s:** „Heute wird bei 66 % geleert, 1.192 Mal war der Container übervoll, Braunglas wird zu 89 % zu früh geleert. Der Hebel ist der Takt pro Container, gebündelt pro Standort.“
 
 ---
 
@@ -297,14 +294,14 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
   - Nutzlast (11 t), Ladevolumen (26 m³), Schichtzeit (8 h), Glasdichte (400 kg/m³), Hub- & Entladezeiten.
   - Das Tool ist kein starrer Prototyp, sondern passt sich sofort an jeden Fahrzeugtyp an.
 - **Zwei strategische Optionen für PreZero:**
-  - **Option A (Saubere Stadt):** Gleiche Flotte wie heute, aber **0 Überläufe** in ganz Heilbronn.
+  - **Option A (Saubere Stadt):** Gleiche Flotte wie heute, frei werdende Halte gehen an kritische Standorte: **weniger Überläufe**.
   - **Option B (Maximale Effizienz):** **−36,7 % Fahrstrecke**, weniger Fahrzeugverschleiß und deutliche CO₂-Reduktion.
 - **Unser Ask:** Drei reale Zahlen von PreZero (Depot-Standort, Fahrzeugflotte, echte Koordinaten) für einen 4-wöchigen Pilotbetrieb.
 
 ### Speaker Notes
 
 - **0–7 s:** „Alle elf Betriebsvariablen — vom Fahrzeugvolumen bis zur Schichtdauer — sind in einer Konfigurationsdatei austauschbar.“
-- **7–14 s:** „PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und 0 Überläufe in Heilbronn garantieren. Oder 36,7 % der Kilometer einsparen.“
+- **7–14 s:** „PreZero hat zwei Optionen: Entweder dieselbe Flotte fahren und die frei werdenden Halte an die kritischen Standorte geben — weniger Überläufe. Oder 36,7 % der Kilometer einsparen.“
 - **14–20 s:** „Geben Sie uns Ihre echten Standorte und Fahrzeugdaten für einen vierwöchigen Piloten. Wir sind ab Montag einsatzbereit.“
 
 ---
