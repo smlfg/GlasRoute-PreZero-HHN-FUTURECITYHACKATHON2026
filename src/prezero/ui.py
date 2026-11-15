@@ -2553,7 +2553,7 @@ def _build_dispatcher_slideshow_html(snapshot: dict[str, Any], date: str) -> str
         <div class="disp-slide-header">
           <div>
             <strong id="disp-slide-title">1 / 3 · 3-Wochen-Prognose (Heute bis KW+3)</strong>
-            <div class="muted" id="disp-slide-subtitle" style="margin:2px 0 0;">Wie viele Container laufen in den nächsten 3 Wochen voll? &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+            <div class="muted" id="disp-slide-subtitle" style="margin:2px 0 0;">Wie viele Container laufen in den nächsten 3 Wochen voll?</div>
           </div>
           <div class="disp-slide-controls">
             <button type="button" class="secondary-btn disp-slide-btn" id="disp-slide-prev" aria-label="Vorheriger Graph">&lsaquo; Zurück</button>
@@ -2617,8 +2617,7 @@ def _build_top3_urgent_html(
     return f"""
     <div id="dispatcher-top3-urgent" class="dispatcher-box" style="margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-        <strong>Top 3 dringendste Container</strong>
-        <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        <strong><span class="sol-step-tag">1. AUSWAHL</span> <span class="sol-hl">Top 3 dringendste Container</span></strong>
       </div>
       <div class="table-wrap" style="margin-bottom:0;">
         <table>
@@ -2642,7 +2641,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         <div class="card">
           <div class="label">{html.escape(h['title'])} &middot; KW {h['kw']:02d} ({html.escape(h['target_de'])})</div>
           <div class="value">{h['critical']} kritisch</div>
-          <div class="sub">Rot (&gt;80 %): {h['red']} &middot; Übervoll (&ge;110 %): {h['black']} &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+          <div class="sub">Rot (&gt;80 %): {h['red']} &middot; Übervoll (&ge;110 %): {h['black']}</div>
         </div>
         """
         for h in snapshot["horizons"]
@@ -2741,9 +2740,8 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
 
     horizon_details_content = f"""
       <div id="dispatcher-horizon-3w" class="dispatcher-box">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:gap:8px;margin-bottom:8px;">
           <strong>Zeitachse nächste 3 Wochen (KW+1, KW+2, KW+3)</strong>
-          <span class="muted stand-label" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
         </div>
         <div id="dispatcher-horizon-cards" class="kpi-grid" style="margin-bottom:0;">
           {horizon_cards_html}
@@ -2764,7 +2762,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
     return f"""
     <section id="start-screen" class="role-screen" style="display:none;">
       <div class="role-hero">
-        <p class="eyebrow">GlasRoute &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></p>
+        <p class="eyebrow">GlasRoute</p>
         <h2>Welche Ansicht brauchst du?</h2>
         <p>Einstieg ist immer das gewählte Stichtagsdatum. Disponentin plant heute + nächste 3 Wochen, Fahrer fährt nur die heute freigegebene Tour, Analyse enthält die gesamte Jahres-Zeitachse.</p>
       </div>
@@ -2781,29 +2779,28 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
           <h2>Disponentin &middot; Tagesübersicht &amp; Tourvorschlag (<span class="js-short-date">{html.escape(short_de)}</span>)</h2>
           <p class="muted">&bdquo;Ich öffne das Tool am <span class="js-short-date">{html.escape(short_de)}</span>&ldquo; &ndash; Was ist <strong>heute</strong> voll, was wird <strong>diese Woche (+7)</strong> voll, und welche Tour fahren wir heute? Ausschließlich nächste 3 Wochen (KW+1 bis KW+3). <strong class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</strong>.</p>
         </div>
-        <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
       </div>
 
       <div id="dispatcher-kpi-grid" class="kpi-grid">
         <div class="card">
           <div class="label">Heute voll (geschätzt, +0 Tage)</div>
           <div class="value" id="disp-kpi-today-val">{snapshot['today_critical_containers']} Container</div>
-          <div class="sub" id="disp-kpi-today-sub">{snapshot['today_red_containers']} Rot (&gt;80 %) &middot; {snapshot['today_overfull_containers']} Übervoll (&ge;110 %) &middot; {m['total_critical_locations']} krit. Standorte &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+          <div class="sub" id="disp-kpi-today-sub">{snapshot['today_red_containers']} Rot (&gt;80 %) &middot; {snapshot['today_overfull_containers']} Übervoll (&ge;110 %) &middot; {m['total_critical_locations']} krit. Standorte</div>
         </div>
         <div class="card">
           <div class="label">Diese Woche voll (+7 Tage, KW+1)</div>
           <div class="value" id="disp-kpi-w1-val">{snapshot['week1_critical_containers']} Container</div>
-          <div class="sub" id="disp-kpi-w1-sub">{html.escape(delta_w1_str)} bis {html.escape(snapshot['week1_date_de'])} (KW {snapshot['week1_kw']:02d}) &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+          <div class="sub" id="disp-kpi-w1-sub">{html.escape(delta_w1_str)} bis {html.escape(snapshot['week1_date_de'])} (KW {snapshot['week1_kw']:02d})</div>
         </div>
         <div class="card">
           <div class="label">Tourvorschlag für heute</div>
           <div class="value" id="disp-kpi-tour-val">{m['num_stops']} Stopps &middot; {_fmt_de(m['planned_km'], 1)} km</div>
-          <div class="sub" id="disp-kpi-tour-sub">{m['vehicles_needed']} Fahrzeug(e) &middot; {m['rounds']} Runden &middot; {_fmt_de(m['t_collected'], 1)} t &middot; {_fmt_de(m['saved_pct'], 1)} % gespart vs. alle leeren &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+          <div class="sub" id="disp-kpi-tour-sub">{m['vehicles_needed']} Fahrzeug(e) &middot; {m['rounds']} Runden &middot; {_fmt_de(m['t_collected'], 1)} t &middot; {_fmt_de(m['saved_pct'], 1)} % gespart vs. alle leeren</div>
         </div>
         <div class="card">
           <div class="label">Zeitachse: nächste 3 Wochen</div>
           <div class="value" id="disp-kpi-3w-val">KW+1: {h1['critical']} &middot; KW+2: {h2['critical']} &middot; KW+3: {h3['critical']}</div>
-          <div class="sub" id="disp-kpi-3w-sub">Vorausschau bis {html.escape(snapshot['week3_end_de'])} (kein Jahresverlauf) &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div>
+          <div class="sub" id="disp-kpi-3w-sub">Vorausschau bis {html.escape(snapshot['week3_end_de'])} (kein Jahresverlauf)</div>
         </div>
       </div>
 
@@ -2811,15 +2808,14 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
 
       <div class="approval-box">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-          <strong>Tourvorschlag für heute prüfen, ändern &amp; freigeben</strong>
-          <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+          <strong><span class="sol-step-tag">3. FREIGABE</span> <span class="sol-hl">Tourvorschlag für heute prüfen, ändern &amp; freigeben</span></strong>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;">
           <label for="dispatcher-tour-variant-select">Tour anpassen:</label>
           <select id="dispatcher-tour-variant-select" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
             {variant_options_html}
           </select>
-          <span id="dispatcher-variant-summary" class="muted" style="margin:0;">{default_var_summary} &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></span>
+          <span id="dispatcher-variant-summary" class="muted" style="margin:0;">{default_var_summary}</span>
         </div>
         <div class="approval-controls">
           <label for="role-dispatcher-name">Freigegeben durch</label>
@@ -2837,14 +2833,12 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
             <h3 style="margin:0;">Heute voll (Top 3)</h3>
-            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
           </div>
           {today_full_wrap_html}
         </div>
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
             <h3 style="margin:0;">Diese Woche voll (+7 Tage, Top 3)</h3>
-            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
           </div>
           {week1_full_wrap_html}
         </div>
@@ -2853,8 +2847,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
       {_details_more_html('Fahrer-Rückmeldung übernehmen', feedback_details_content)}
 
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-        <h3 style="margin:0;">Heutiger Tourvorschlag (nächste 3 Stopps)</h3>
-        <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        <h3 style="margin:0;"><span class="sol-step-tag">2. TOUR</span> <span class="sol-hl">Heutiger Tourvorschlag (nächste 3 Stopps)</span></h3>
       </div>
       {dispatcher_rows_html}
     </section>
@@ -2865,9 +2858,8 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
           <h2>Fahrer &middot; heutige Tour (<span class="js-short-date">{html.escape(short_de)}</span>)</h2>
           <p class="muted">Nur die heute von der Disponentin freigegebene Tour &ndash; nächste Stopps und Export. <strong class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</strong>.</p>
         </div>
-        <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
       </div>
-      <div id="driver-locked" class="coverage-hint pending-approval">Diese Tour (<span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>) ist noch nicht freigegeben.</div>
+      <div id="driver-locked" class="coverage-hint pending-approval">Diese Tour ist noch nicht freigegeben.</div>
       <div id="driver-tour">
         <div class="driver-actions">
           {maps_link}
@@ -3675,6 +3667,16 @@ def build_ui(
       background: var(--surface);
       border-bottom: 1px solid var(--border);
     }}
+    nav.tabs.analysis-workspace {{
+      display: none;
+    }}
+    nav.tabs.analysis-workspace.active {{
+      display: flex;
+    }}
+    body.role-dispatcher nav.tabs,
+    body.role-driver nav.tabs {{
+      display: none !important;
+    }}
     nav.tabs button {{
       border: 1px solid var(--border);
       background: var(--bg);
@@ -3700,16 +3702,28 @@ def build_ui(
     .section-head h2 {{ margin: 0 0 4px; font-size: 18px; }}
     .muted {{ margin: 0 0 14px; color: var(--muted); font-size: 13px; }}
     .kpi-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       margin-bottom: 16px;
+    }}
+    .kpi-grid > .card,
+    .kpi-grid > div {{
+      flex: 1 1 200px;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      box-sizing: border-box;
     }}
     .card {{
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 12px 14px;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      box-sizing: border-box;
     }}
     .card .label {{ font-size: 12px; color: var(--muted); margin-bottom: 4px; }}
     .card .value {{ font-size: 20px; font-weight: 700; }}
@@ -3742,19 +3756,56 @@ def build_ui(
     }}
     .table-wrap {{
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #94a3b8 #f1f5f9;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
       margin-bottom: 18px;
+      max-width: 100%;
+    }}
+    .table-wrap::-webkit-scrollbar {{
+      height: 8px;
+    }}
+    .table-wrap::-webkit-scrollbar-track {{
+      background: #f1f5f9;
+      border-radius: 4px;
+    }}
+    .table-wrap::-webkit-scrollbar-thumb {{
+      background: #94a3b8;
+      border-radius: 4px;
+    }}
+    .table-wrap::-webkit-scrollbar-thumb:hover {{
+      background: #64748b;
     }}
     table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
     th, td {{
       padding: 8px 10px;
       border-bottom: 1px solid #e2e8f0;
       text-align: left;
+    }}
+    th {{
+      background: #f1f5f9;
+      font-weight: 600;
+      white-space: normal;
+      vertical-align: bottom;
+    }}
+    td {{
       white-space: nowrap;
     }}
-    th {{ background: #f1f5f9; font-weight: 600; }}
+    @media (max-width: 850px) {{
+      .kpi-grid > .card,
+      .kpi-grid > div {{
+        flex: 1 1 calc(50% - 12px);
+      }}
+    }}
+    @media (max-width: 520px) {{
+      .kpi-grid > .card,
+      .kpi-grid > div {{
+        flex: 1 1 100%;
+      }}
+    }}
     .approval-box {{
       background: var(--accent-soft);
       border: 1px solid #93c5fd;
@@ -3776,13 +3827,16 @@ def build_ui(
       font-size: 13px;
     }}
     .approval-controls button {{
-      background: #16a34a;
+      background: #15803d;
       color: #ffffff;
-      border: none;
+      border: 1px solid #14532d;
       padding: 8px 14px;
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
+    }}
+    .approval-controls button:hover, .approval-controls button:focus {{
+      background: #166534;
     }}
     .badge {{
       padding: 4px 10px;
@@ -4056,7 +4110,8 @@ def build_ui(
     .primary-btn, .secondary-btn {{
       display: inline-block; border-radius: 6px; padding: 10px 14px; font-weight: 700; cursor: pointer; text-decoration: none;
     }}
-    .primary-btn {{ border: 1px solid #166534; background: #16a34a; color: #fff; }}
+    .primary-btn {{ border: 1px solid #14532d; background: #15803d; color: #fff; }}
+    .primary-btn:hover, .primary-btn:focus {{ background: #166534; }}
     .secondary-btn {{ border: 1px solid var(--border); background: var(--surface); color: var(--text); }}
     .tab-link-btn {{ background: none; border: none; color: #2563eb; text-decoration: underline; cursor: pointer; padding: 0; font: inherit; font-size: inherit; display: inline; }}
     .tab-link-btn:hover {{ color: #1d4ed8; }}
@@ -4079,13 +4134,55 @@ def build_ui(
     }}
     .role-nav-btn.active {{ background: #2563eb; border-color: #60a5fa; color: #ffffff; }}
     .stand-badge {{
-      display: inline-block; background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd;
+      display: inline-block; background: #dbeafe; color: #172554; border: 1px solid #93c5fd;
       border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 700;
     }}
-    header .stand-badge {{ background: #1d4ed8; color: #ffffff; border-color: #60a5fa; }}
+    header .stand-badge {{ background: #dbeafe; color: #172554; border-color: #93c5fd; }}
+    .card .stand-label,
+    .card .stand-badge,
+    .table-wrap .stand-label,
+    .table-wrap .stand-badge,
+    table .stand-label,
+    table .stand-badge,
+    .kpi-grid .stand-label,
+    .kpi-grid .stand-badge,
+    .dispatcher-box .stand-label,
+    .dispatcher-box .stand-badge,
+    .role-cards .stand-label,
+    .role-cards .stand-badge,
+    .copilot-card-view .stand-label {{
+      display: none !important;
+    }}
     .dispatcher-box {{
       background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
       padding: 12px 14px; margin-bottom: 16px;
+    }}
+    .sol-hl {{
+      font-weight: 800;
+      text-decoration: underline;
+      text-decoration-color: #16a34a;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+      background: rgba(22, 163, 74, 0.12);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }}
+    .hero-block .sol-hl {{
+      color: #4ade80;
+      background: rgba(22, 163, 74, 0.20);
+      text-decoration-color: #4ade80;
+    }}
+    .sol-step-tag {{
+      display: inline-block;
+      background: #16a34a;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+      margin-right: 6px;
+      vertical-align: middle;
     }}
     .dispatcher-slideshow {{ padding: 14px 16px; }}
     .disp-slide-header {{
@@ -4141,7 +4238,7 @@ def build_ui(
       <nav class="role-switcher" aria-label="Arbeitsbereich wählen">
         <button type="button" class="role-nav-btn active" data-role="dispatcher">Disponentin (Heute)</button>
         <button type="button" class="role-nav-btn" data-role="driver">Fahrer (Schicht)</button>
-        <button type="button" class="role-nav-btn" data-role="analysis">Analyse / Management</button>
+        <button type="button" class="role-nav-btn" data-role="analysis" style="opacity:0.55;font-size:12px;">Analyse / Management</button>
       </nav>
     </div>
   </header>
@@ -4327,7 +4424,7 @@ def build_ui(
         var statusKm = m.full_round_km > 0 ? m.full_round_km : (snap.status_quo_km || 0);
         var inTour = h.in_tour_overfull_count || 0;
         var excluded = h.excluded_overflow || [];
-        var steps = ["Daten", "Prognose", "Auswahl", "Tour", "Freigabe"];
+        var steps = ["Auswahl", "Tour", "Freigabe"];
         var active = h.process_step || "Auswahl";
         var chain = steps.map(function(name, idx) {{
           var cls = name === active ? "hero-chain-step hero-chain-active" : "hero-chain-step";
@@ -4359,7 +4456,7 @@ def build_ui(
           'passt in <strong>' + intDe(m.vehicles_needed) + ' LKW</strong> &middot; ' +
           '<strong>' + fmtDe(m.max_vehicle_shift_hours, 2) + ' h</strong> Schicht &middot; ' +
           '<strong>' + fmtDe(m.t_collected, 2) + ' t</strong></p>' +
-          '<p class="hero-sentence">Wir leeren, was voll wird, nicht was im Plan steht – unter Kapazität und Arbeitszeit.</p>' +
+          '<p class="hero-sentence"><span class="sol-step-tag">LÖSUNG</span> <span class="sol-hl">Wir leeren, was voll wird, nicht was im Plan steht &ndash; unter Kapazität und Arbeitszeit.</span></p>' +
           '<div class="hero-chain">' + chain + '</div>' + exBlock + '</div>';
       }}
       function updateHeroMount(snap) {{
