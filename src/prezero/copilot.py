@@ -152,7 +152,10 @@ OLLAMA_TOOLS_SCHEMA: list[dict[str, Any]] = [
 _SYSTEM_PROMPT = (
     "Du bist der GlasRoute-Dispositions-Copilot. "
     "Du berechnest NIEMALS selbst Routen, Scores oder Kennzahlen und erfindest keine Werte. "
-    "Wähle genau eines der verfügbaren Tools aus: get_tour_overview, explain_container, simulate_what_if. "
+    "Wähle genau eines der verfügbaren Tools aus: "
+    "get_tour_overview, explain_container, simulate_what_if, get_today_hero, explain_measure_empty_model, "
+    "get_benchmark_summary, get_depot_and_unloads, get_driver_export_info, get_location_planning_info, "
+    "get_replay_comparison, get_cost_model, get_waste_streams_info. "
     "Ein Standort kann bis zu drei Container haben (white, green, brown); gib bei explain_container "
     "immer location_id UND material (oder container_key) an. "
     "Du darfst keine Tour freigeben (kein approve_tour)."
@@ -1151,6 +1154,7 @@ def precompute_ui_copilot_bundle(
                 "container_key": key,
                 "Location_id": loc_id,
                 "material_type": mat,
+                "explanation": exp,
                 "formatted": format_copilot_output(exp),
                 "in_planned_tour": exp["in_planned_tour"],
                 "stop_order": exp["stop_order"],
@@ -1321,6 +1325,11 @@ def get_today_hero(
     reason = hero._excluded_reason(snapshot)
 
     stand = f"Stand {_fmt_date_de(date)}"
+    planned_km = float(route_data.get("planned_km", route_data.get("km", 0.0)))
+    full_round_km = float(route_data.get("full_round_km", 0.0))
+    vehicles_needed = int(route_data.get("vehicles_needed", 0))
+    t_collected = float(route_data.get("t_collected", 0.0))
+    max_shift_hours = float(route_data.get("max_vehicle_shift_hours", 0.0))
     return {
         "tool": "get_today_hero",
         "date": date,
@@ -1329,13 +1338,16 @@ def get_today_hero(
         "in_tour_overfull": in_tour_overfull,
         "unserved_overfull": unserved_overfull,
         "exclusion_reason": reason,
-        "planned_km": float(route_data.get("planned_km", route_data.get("km", 0.0))),
-        "full_round_km": float(route_data.get("full_round_km", 0.0)),
-        "vehicles_needed": int(route_data.get("vehicles_needed", 0)),
+        "planned_km": planned_km,
+        "full_round_km": full_round_km,
+        "status_quo_km": full_round_km,
+        "vehicles_needed": vehicles_needed,
+        "vehicles": vehicles_needed,
         "rounds": int(route_data.get("rounds", 0)),
-        "shift_hours": float(route_data.get("max_vehicle_shift_hours", 0.0)),
+        "shift_hours": max_shift_hours,
         "shift_limit": float(route_data.get("max_shift_hours_limit", 8.0)),
-        "t_collected": float(route_data.get("t_collected", 0.0)),
+        "t_collected": t_collected,
+        "tons": t_collected,
         "num_stops": int(route_data.get("num_stops", len(coll_stops))),
         "status": "echte Füllstände (10-%-Schritte), simulierte OSM-Standortzuordnung",
         "sources": _dedupe_sources(sources),
@@ -1508,18 +1520,23 @@ def get_location_planning_info(
     scored_path: str | Path | None = None,
     locations_path: str | Path = "data/external/locations.csv",
     readings_path: str | Path = "data/processed/cleaned_readings.csv",
+    config_path: str | Path = "prezero_config.json",
 ) -> dict[str, Any]:
     """Return what-if location planning impact (adoption curve, neighbor drop, conserved demand)."""
     from prezero import location_planning
     sources: list[str] = ["src/prezero/location_planning.py"]
     scored_df = _load_scored_data(date, scored_path, readings_path, sources)
     locs_df = _load_locations_data(locations_path, sources)
+    cfg = routing.load_config(config_path)
+    sources.append(str(config_path))
 
-    lp = location_planning.plan_new_locations(scored_df, locs_df)
+    lp = location_planning.plan_new_locations(scored_df, locs_df, cfg)
     new_sites = lp.get("new_sites", [])
     top_site = new_sites[0] if new_sites else {}
     timeline = lp.get("timeline", [])
     week12 = timeline[-1] if timeline else {}
+    lp_cfg = lp.get("config", {})
+    adoption_weeks = lp_cfg.get("adoption_weeks", cfg.location_planning_adoption_weeks)
 
     stand = f"Stand {_fmt_date_de(date)}"
     return {
@@ -1533,9 +1550,9 @@ def get_location_planning_info(
         "top_site_score": top_site.get("score"),
         "affected_containers": lp.get("affected_containers", 0),
         "demand_conserved": bool(lp.get("demand_conserved", True)),
-        "adoption_weeks": 12,
+        "adoption_weeks": adoption_weeks,
         "week12_adoption_pct": week12.get("adoption_pct", 100.0),
-        "week12_overflow_reduction": (week12.get("overflow_count_before", 328) - week12.get("overflow_count_after", 259)),
+        "week12_overflow_reduction": (week12.get("overflow_count_before", 0) - week12.get("overflow_count_after", 0)),
         "status": "simulierte Standortplanung (12-Wochen-Adoptionskurve, Mengenerhaltung)",
         "sources": _dedupe_sources(sources),
     }
@@ -2040,6 +2057,7 @@ def dispatch_tool_call(
             scored_path=ctx_scored,
             locations_path=ctx_locations,
             readings_path=ctx_readings,
+            config_path=ctx_config or "prezero_config.json",
         )
 
     if name == "get_replay_comparison":
