@@ -61,6 +61,26 @@ Welt für **beide** Seiten; Status quo = Replay der realen Leerungstage gegen di
 (reproduziert die gemessene In-Fenster-Masse per Konstruktion); gleicher Anfangsbestand,
 Endbestand ausgewiesen; Reset auf exakt 0 %; keine Kappung der Masse.
 
+**Gemessen nach dem Fix (W1, `PYTHONPATH=src python3 scripts/simulate_daily.py`, 349 Tage):**
+
+| Kennzahl | Status quo | Timer-Modell |
+|---|---:|---:|
+| Produziert (`produced_total`, Σ r_c × aktive Tage) | 7.613,95 t | 7.613,95 t |
+| Gesammelt im Fenster | 6.943,50 t | 7.157,52 t |
+| Endbestand 30.09.2026 | 670,45 t | 456,43 t |
+| Gesammelt + Endbestand | 7.613,95 t | 7.613,95 t |
+| Leerungen | 10.363 | 10.954 |
+| Ø wahrer Füllstand bei Leerung (ungekappt) | 67,0 % | 65,3 % |
+| Überfüllte Leerungen (≥ 110 %) | 1.196 | 214 |
+| Überlauf-Containertage (≥ 110 %) | 19.047 | 1.484 |
+| km / Fahrzeugtage / Stunden | 19.007,6 / 317 / 1.593,3 | 25.684,6 / 339 / 2.026,2 |
+
+Entscheidungen: erste Messung = Start der Systemgrenze auf beiden Seiten (keine Leerung, keine Masse;
+11.701 − 1.338 Container = 10.363 Leerungen im Status quo). Ø Füllstand ungekappt. Die In-Fenster-Tonnage
+unterscheidet sich um +3,1 %, genau um die Endbestands-Differenz (214 t); der ±2-%-Test vergleicht daher
+für beide Seiten gleich „gesammelt + Endbestand“. Das Timer-Modell leert **nicht voller** als der Status quo,
+weil die Walk-Forward-Schätzung über der wahren Rate liegt und die Regel deshalb zu früh leert.
+
 ## 3. Entscheidungsvariablen
 
 | Symbol | Bedeutung | Einheit |
@@ -125,3 +145,52 @@ Kostenformel (Annahme): `Kosten = Fahrzeugtage × 500 € + Crew-h × 64 € + k
 
 Tonnage (muss gleich sein), Überlauf-Ereignisse, Ø Füllstand bei Leerung, Stopps, Fahrzeugtage,
 Stunden, km, Kosten. Jede Zahl stammt aus einer Skriptausgabe; Quelle wird im Vergleich zitiert.
+
+## 9. Entscheidungen 15.11. (Owner)
+
+1. **Tonnage-Vergleich:** „gesammelt + Endbestand“ (= produziert) muss gleich sein. In der
+   Vergleichstabelle stehen **beide** Spalten offen: gesammelt im Fenster und Endbestand.
+2. **Schätzer überall:** Walk-Forward-Rate = Σ Füllstand / Σ Tage (Quotient der Summen) aus Messungen
+   mit Datum < d. `mean(level/Δt)` ist verboten (Bias, §2).
+3. **Neue Frage km-Delta (+35 % km bei +6 % Leerungen):** zerlegen in (1) zusätzliche Leerungen,
+   (2) gestreute Tages-Fälligkeiten statt fester Gebiete, (3) zusätzliche Fahrzeuge inkl. Depot hin/zurück,
+   (4) zusätzliche Entlade-/Depotfahrten, (5) Aufspaltung der Glasfarben eines Standorts
+   (gemessen: Status quo 2,79 Container je Standortbesuch, Timer 1,35; 3.714 vs 8.092 Standortbesuche).
+4. **Politik (f) „feste Gebiete“:** jeder Container gehört zu genau einem Gebiet (geografisches Clustering),
+   jedes Gebiet hat feste Wochentage; ein fälliger Container wird am nächsten Gebietstag geleert,
+   der Puffer muss Überläufe bis dahin verhindern.
+5. **Standort-Bündelung (Parameter):** ist ein Container eines Standorts fällig, werden die anderen
+   Farben mitgeleert, wenn ihr geschätzter Füllstand ≥ Mitnahme-Schwelle (Standard 50 %, Annahme).
+6. **Kein Merge nach master/main vor 16:00** (Pitch 15:00 läuft auf eingefrorenem Stand).
+
+## 10. Datenmodell: Container, Standort, Halt
+
+| Begriff | Definition | Anzahl |
+|---|---|---|
+| **Container** | (Location_id, material_type ∈ {white, green, brown}); Füllrate r, Takt T und Fälligkeit gelten **pro Container** | 1.338 |
+| **Standort** | eine Location_id = bis zu 3 Container (eine je Farbe) | 449 (441 mit 3 Farben, 7 mit 2, 1 mit 1) |
+| **Halt** | ein physischer Punkt (lat/lon); der LKW hält einmal und leert alles, was an diesem Punkt geleert wird | 121 Punkte |
+
+**Warum 449 IDs auf nur 121 Punkten liegen (kein Geocoding-Fehler, sondern Absicht):**
+`data/external/locations.csv` hat für alle 449 IDs `source=osm_assigned`, `confidence=simulated_mapping`,
+`match_reason="real OSM site, ID assignment simulated"`. PreZero hat die IDs anonymisiert und keine Koordinaten
+geliefert. `locations.assign_osm_sites` (src/prezero/locations.py:215) verteilt jede ID **zufällig mit Zurücklegen**
+(`rng.randrange`, fester Seed) auf eine der 121 echten OSM-Glascontainer-Punkte in Heilbronn. Ergebnis:
+nur 11 Punkte haben genau 1 ID, 438 IDs teilen sich einen Punkt mit anderen (bis zu 9 IDs = 27 Container je Punkt).
+**Folge:** Halte bündeln in der Simulation mehr Container als in der Realität; absolute km/Halte sind illustrativ.
+Mit PreZeros echter Standortliste ändert sich nur `locations.csv`.
+
+**Heutiges Verhalten:** Nur **fällige** Container eines Halts werden geleert
+(Demo-Tour: `routing.py:292-293`, nur `crit_mass_kg`/`crit_volume_m3` geladen; Jahressimulation:
+`scripts/simulate_daily.py` ~Z. 529-571, nur `due`-Container in `site_dict`). Nicht fällige Farben am selben
+Halt bleiben stehen und werden Tage später erneut angefahren.
+
+**Offene Frage (Annahme, Parameter `truck_mode`):**
+- `multi_chamber` (Standard-Annahme): ein LKW nimmt alle 3 Farben in einem Halt mit (Mehrkammer).
+- `per_colour`: ein LKW je Farbe; jede Farbe eines Halts ist ein eigener Halt einer eigenen Tour.
+Ob PreZero Mehrkammer-Fahrzeuge einsetzt, ist **unbekannt** → beide Varianten werden gerechnet.
+
+**Szenario (g) „co-empty“:** wird ein Halt angefahren, werden auch die anderen Container dort mit
+geschätztem Füllstand ≥ X % geleert (Parameter, Standard X = 50 %, Annahme). Berichtet: zusätzliche
+Leerungen vs. eingesparte spätere Halte, km, Stunden, Ø Füllstand, Überläufe — bei gleicher Tonnage.
+In `per_colour` ist co-empty nur innerhalb derselben Farbe möglich (mehrere IDs derselben Farbe am selben Punkt).

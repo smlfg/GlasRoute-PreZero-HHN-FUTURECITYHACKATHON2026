@@ -1,0 +1,76 @@
+{
+  "question": "Zeitersparnis im Status quo, wenn Container mit Fuellstand <= 20 % nicht geleert werden (Mentor 15.11.)",
+  "primary_world_consistent_replay": {
+    "n_visits": 10363,
+    "n_visits_le_20pct": 753,
+    "share_pct": 7.27,
+    "tonnage_in_those_visits_t": 106.013,
+    "tonnage_note": "Glas bleibt im Container stehen und wird beim naechsten Besuch geholt - nicht verloren.",
+    "lower_bound_service_only": {
+      "saved_service_h": 62.75,
+      "saved_drive_h": 0.0,
+      "saved_total_h": 62.75,
+      "saved_truck_days": 7.84,
+      "saved_cost_eur": 7937.88
+    },
+    "site_aware_service_plus_hop_if_whole_site_skipped": {
+      "saved_service_h": 62.75,
+      "saved_drive_h": 14.05,
+      "saved_total_h": 76.8,
+      "saved_truck_days": 9.6,
+      "saved_cost_eur": 9715.2
+    },
+    "upper_bound_service_plus_hop": {
+      "saved_service_h": 62.75,
+      "saved_drive_h": 105.32,
+      "saved_total_h": 168.07,
+      "saved_truck_days": 21.01,
+      "saved_cost_eur": 21260.43
+    }
+  },
+  "cross_check_raw_measured_readings": {
+    "label": "Kreuzprobe mit gemessenen Fuellstaenden (level <= 20), nicht weltkonsistent",
+    "n_visits": 10363,
+    "n_visits_le_20pct": 1286,
+    "share_pct": 12.41,
+    "tonnage_in_those_visits_t": 220.3,
+    "tonnage_note": "Glas bleibt im Container stehen und wird beim naechsten Besuch geholt - nicht verloren.",
+    "lower_bound_service_only": {
+      "saved_service_h": 107.17,
+      "saved_drive_h": 0.0,
+      "saved_total_h": 107.17,
+      "saved_truck_days": 13.4,
+      "saved_cost_eur": 13556.58
+    },
+    "site_aware_service_plus_hop_if_whole_site_skipped": {
+      "saved_service_h": 107.17,
+      "saved_drive_h": 19.35,
+      "saved_total_h": 126.52,
+      "saved_truck_days": 15.81,
+      "saved_cost_eur": 16004.36
+    },
+    "upper_bound_service_plus_hop": {
+      "saved_service_h": 107.17,
+      "saved_drive_h": 179.63,
+      "saved_total_h": 286.8,
+      "saved_truck_days": 35.85,
+      "saved_cost_eur": 36280.2
+    }
+  },
+  "reference_status_quo_emptyings_w1": 10363,
+  "assumptions": {
+    "service_min_per_stop": 5.0,
+    "hop_urban_min": 7.0,
+    "hop_rural_min": 15.0,
+    "rural_rule": "Annahme: Abstand zum Zentrum Heilbronn (49.1427, 9.2109) > 6.0 km = laendlich (W4 besitzt die verbindliche Regel)",
+    "shift_h": 8.0,
+    "rates": {
+      "vehicle_day_eur": 500.0,
+      "crew_hour_eur": 64.0,
+      "km_eur": 0.65
+    },
+    "rates_label": "Annahme",
+    "km_note": "km unbekannt -> 0 angesetzt; Kosten = Fahrzeugtage + Crew-h",
+    "bounds": "lower = nur 5 min Service (andere Container am Standort werden ohnehin geleert); upper = Service + Fahrzeit-Hop je uebersprungenem Stopp; site_aware = Hop nur, wenn alle Container des Standorts am Tag <= 20 %."
+  }
+}

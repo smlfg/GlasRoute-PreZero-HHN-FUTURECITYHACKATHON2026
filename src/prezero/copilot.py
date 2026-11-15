@@ -1591,7 +1591,9 @@ def get_replay_comparison(
         h_empty = int(h_df["n_emptyings"].sum())
         o_empty = int(o_df["n_emptyings"].sum())
         h_over = int(h_df["n_containers_overfull_at_visit"].sum())
-        o_over = int(o_df["n_containers_overfull_at_visit"].sum() + o_df["n_overflows_simulated"].sum())
+        o_over = int(o_df["n_containers_overfull_at_visit"].sum())
+        # separate: container-days >= 110 % that the timer left unserved (not an emptying)
+        o_unserved = int(o_df["n_overflows_simulated"].sum())
         h_fill = round(float((h_df["avg_fill_at_emptying_pct"] * h_df["n_emptyings"]).sum() / max(1, h_empty)), 1)
         o_fill = round(float((o_df["avg_fill_at_emptying_pct"] * o_df["n_emptyings"]).sum() / max(1, o_empty)), 1)
         h_km = round(float(h_df["est_km"].sum()), 1)
@@ -1603,13 +1605,13 @@ def get_replay_comparison(
         h_hours = round(float(h_df["shift_hours"].sum()), 1)
         o_hours = round(float(o_df["shift_hours"].sum()), 1)
     else:
-        h_empty, o_empty = 11701, 11321
-        h_over, o_over = 1192, 0
-        h_fill, o_fill = 66.0, 83.5
-        h_km, o_km = 20538.5, 28497.8
-        h_vdays, o_vdays = 345, 381
-        h_tons, o_tons = 7719.2, 9451.0
-        h_hours, o_hours = 1749.7, 2237.0
+        h_empty, o_empty = 10363, 10954
+        h_over, o_over, o_unserved = 1196, 214, 1484
+        h_fill, o_fill = 67.0, 65.3
+        h_km, o_km = 19007.6, 25684.6
+        h_vdays, o_vdays = 317, 339
+        h_tons, o_tons = 6943.5, 7157.5
+        h_hours, o_hours = 1593.3, 2026.2
 
     stand = f"Stand {_fmt_date_de(date)}"
     return {
@@ -1630,6 +1632,7 @@ def get_replay_comparison(
         "optimized": {
             "emptyings": o_empty,
             "overflows": o_over,
+            "overflow_days_unserved": o_unserved,
             "avg_fill_pct": o_fill,
             "km": o_km,
             "vehicle_days": o_vdays,
@@ -1640,7 +1643,9 @@ def get_replay_comparison(
             "fill_pct_diff_pp": round(o_fill - h_fill, 1),
             "emptyings_diff": o_empty - h_empty,
             "emptyings_diff_pct": round((o_empty - h_empty) / max(1, h_empty) * 100.0, 1),
-            "overflows_eliminated_pct": 100.0,
+            # (h - o) / h on overfull-at-emptying only; negative if the timer is worse.
+            # Unserved overflow container-days of the timer are reported separately.
+            "overflows_eliminated_pct": round((h_over - o_over) / max(1, h_over) * 100.0, 1),
         },
         "status": "Historisch: 11.701 reale Messungen · Optimiert: kausale Walk-Forward-Simulation",
         "sources": _dedupe_sources(sources),
@@ -1840,20 +1845,20 @@ def build_copilot_card(result: Mapping[str, Any]) -> dict[str, Any]:
         o = result.get("optimized", {})
         d = result.get("delta", {})
         kpis = {
-            "Ø Füllstand": f"{_de(h.get('avg_fill_pct', 0.0))} % → {_de(o.get('avg_fill_pct', 0.0))} % (+{_de(d.get('fill_pct_diff_pp', 0.0))} pp)",
+            "Ø Füllstand": f"{_de(h.get('avg_fill_pct', 0.0))} % → {_de(o.get('avg_fill_pct', 0.0))} % ({'+' if d.get('fill_pct_diff_pp', 0.0) >= 0 else ''}{_de(d.get('fill_pct_diff_pp', 0.0))} pp)",
             "Leerungen": f"{_de(h.get('emptyings', 0), 0)} → {_de(o.get('emptyings', 0), 0)} ({_de(d.get('emptyings_diff', 0), 0)})",
-            "Überfüllungen": f"{_de(h.get('overflows', 0), 0)} → {_de(o.get('overflows', 0), 0)} (-{_de(d.get('overflows_eliminated_pct', 0.0), 0)} %)",
+            "Überfüllungen": f"{_de(h.get('overflows', 0), 0)} → {_de(o.get('overflows', 0), 0)} ({_de(-d.get('overflows_eliminated_pct', 0.0), 0)} %), zusätzlich {_de(o.get('overflow_days_unserved', 0), 0)} Container-Tage ≥ 110 % ungeleert",
             "Fahrzeugtage": f"{h.get('vehicle_days', 0)} → {o.get('vehicle_days', 0)} (geglättet)",
         }
         lines = [
             f"Replay über {result.get('days', 0)} Kalendertage ({result.get('period', '-')}).",
             f"Historischer Status quo: {_de(h.get('emptyings', 0), 0)} Leerungen, {_de(h.get('overflows', 0), 0)} Überläufe bei Leerung.",
             f"Optimiertes Timer-Modell: {_de(o.get('emptyings', 0), 0)} Leerungen ({_de(d.get('emptyings_diff', 0), 0)}), "
-            f"{_de(o.get('overflows', 0), 0)} Überläufe, Ø Füllstand bei Leerung {_de(o.get('avg_fill_pct', 0.0))} %.",
-            f"Gleiche Glasmenge, aber keine Überläufe mehr, und die Container sind beim Leeren gleichmäßig zu {math.floor(float(o.get('avg_fill_pct', 0.0)))} % voll.",
-            f"Ehrlicher Tausch: 0 Überläufe kosten mehr Fahrzeit "
-            f"(Fahrzeugtage {h.get('vehicle_days', 0)} → {o.get('vehicle_days', 0)}, "
-            f"Schichtstunden {_de(h.get('shift_hours', 0.0), 0)} → {_de(o.get('shift_hours', 0.0), 0)} h).",
+            f"{_de(o.get('overflows', 0), 0)} Überfüllungen bei Leerung, Ø Füllstand bei Leerung {_de(o.get('avg_fill_pct', 0.0))} %.",
+            f"Zusätzlich ließ das Timer-Modell {_de(o.get('overflow_days_unserved', 0), 0)} Container-Tage mit ≥ 110 % Füllstand ungeleert.",
+            f"Aufwand: Fahrzeugtage {h.get('vehicle_days', 0)} → {o.get('vehicle_days', 0)}, "
+            f"Schichtstunden {_de(h.get('shift_hours', 0.0), 0)} → {_de(o.get('shift_hours', 0.0), 0)} h, "
+            f"km {_de(h.get('km', 0.0), 0)} → {_de(o.get('km', 0.0), 0)}.",
         ]
         badge = "Jahressimulation"
 
@@ -2317,12 +2322,11 @@ def format_copilot_output(result: Mapping[str, Any]) -> str:
         d = result['delta']
         lines = [
             f"=== GlasRoute Copilot: 349-Tage-Replay ({result['period']}, {result['stand']}) ===",
-            f"Ø Füllstand Leerung:  {h['avg_fill_pct']:.1f} % -> {o['avg_fill_pct']:.1f} % (+{d['fill_pct_diff_pp']:.1f} pp)",
+            f"Ø Füllstand Leerung:  {h['avg_fill_pct']:.1f} % -> {o['avg_fill_pct']:.1f} % ({d['fill_pct_diff_pp']:+.1f} pp)",
             f"Leerungen gesamt:     {h['emptyings']:,} -> {o['emptyings']:,} ({d['emptyings_diff']} / {d['emptyings_diff_pct']:+.1f} %)",
-            f"Überfüllungen Leerung: {h['overflows']:,} -> {o['overflows']} (-{d['overflows_eliminated_pct']:.0f} %)",
+            f"Überfüllungen Leerung: {h['overflows']:,} -> {o['overflows']:,} ({-d['overflows_eliminated_pct']:+.0f} %), zusätzlich {o['overflow_days_unserved']:,} Container-Tage >= 110 % ungeleert",
             f"Fahrzeug-Einsatztage: {h['vehicle_days']} -> {o['vehicle_days']} Tage (Tageseinsätze geglättet)",
-            f"Kernaussage:          Gleiche Glasmenge, aber keine Überläufe mehr, und die Container sind beim Leeren gleichmäßig zu {math.floor(float(o['avg_fill_pct']))} % voll.",
-            f"Ehrlicher Tausch:     0 Überläufe kosten mehr Fahrzeit (Schichtstunden {h['shift_hours']:,.0f} -> {o['shift_hours']:,.0f} h)",
+            f"Aufwand:             Schichtstunden {h['shift_hours']:,.0f} -> {o['shift_hours']:,.0f} h, km {h['km']:,.0f} -> {o['km']:,.0f}",
             f"Status:               {result.get('status', 'simuliert')}",
             f"Freigabe:             {approval_hint}",
             f"Quellen:              {sources}",
