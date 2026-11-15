@@ -1,0 +1,431 @@
+{
+  "generated_at": "2026-11-15T13:05:57",
+  "period": {
+    "start": "2025-10-17",
+    "end": "2026-09-30",
+    "days": 349
+  },
+  "produced_t": 7719.2,
+  "scenarios": [
+    {
+      "id": "a_zero_overflow",
+      "label": "Null Überlauf (früh leeren)",
+      "time_model": "real",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.98,
+      "overflow_events": 4,
+      "emptyings": 9899,
+      "emptyings_saved_vs_status_quo": 19,
+      "stops": 7499,
+      "vehicle_days": 326,
+      "hours": 1753.15,
+      "km": 24640.27,
+      "cost_eur": 291217.78,
+      "cost_breakdown": {
+        "vehicle_days_eur": 163000.0,
+        "crew_eur": 112201.6,
+        "km_eur": 16016.18
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": true
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "a_zero_overflow",
+      "label": "Null Überlauf (früh leeren)",
+      "time_model": "hop5",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.98,
+      "overflow_events": 4,
+      "emptyings": 9899,
+      "emptyings_saved_vs_status_quo": 19,
+      "stops": 7529,
+      "vehicle_days": 285,
+      "hours": 1314.12,
+      "km": 24731.59,
+      "cost_eur": 242679.21,
+      "cost_breakdown": {
+        "vehicle_days_eur": 142500.0,
+        "crew_eur": 84103.68,
+        "km_eur": 16075.53
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "a_zero_overflow",
+      "label": "Null Überlauf (früh leeren)",
+      "time_model": "hop10",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.98,
+      "overflow_events": 4,
+      "emptyings": 9899,
+      "emptyings_saved_vs_status_quo": 19,
+      "stops": 7498,
+      "vehicle_days": 316,
+      "hours": 1674.69,
+      "km": 24539.77,
+      "cost_eur": 281131.01,
+      "cost_breakdown": {
+        "vehicle_days_eur": 158000.0,
+        "crew_eur": 107180.16,
+        "km_eur": 15950.85
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "b_min_km",
+      "label": "Minimum km (spät leeren)",
+      "time_model": "real",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 97.62,
+      "overflow_events": 9,
+      "emptyings": 7907,
+      "emptyings_saved_vs_status_quo": 2011,
+      "stops": 6381,
+      "vehicle_days": 306,
+      "hours": 1572.38,
+      "km": 23078.04,
+      "cost_eur": 268633.05,
+      "cost_breakdown": {
+        "vehicle_days_eur": 153000.0,
+        "crew_eur": 100632.32,
+        "km_eur": 15000.73
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "b_min_km",
+      "label": "Minimum km (spät leeren)",
+      "time_model": "hop5",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 97.62,
+      "overflow_events": 9,
+      "emptyings": 7907,
+      "emptyings_saved_vs_status_quo": 2011,
+      "stops": 6398,
+      "vehicle_days": 273,
+      "hours": 1155.56,
+      "km": 23042.08,
+      "cost_eur": 225433.19,
+      "cost_breakdown": {
+        "vehicle_days_eur": 136500.0,
+        "crew_eur": 73955.84,
+        "km_eur": 14977.35
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "b_min_km",
+      "label": "Minimum km (spät leeren)",
+      "time_model": "hop10",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 97.62,
+      "overflow_events": 9,
+      "emptyings": 7907,
+      "emptyings_saved_vs_status_quo": 2011,
+      "stops": 6385,
+      "vehicle_days": 297,
+      "hours": 1498.87,
+      "km": 22933.37,
+      "cost_eur": 259334.37,
+      "cost_breakdown": {
+        "vehicle_days_eur": 148500.0,
+        "crew_eur": 95927.68,
+        "km_eur": 14906.69
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "c_max_fill",
+      "label": "Maximum Füllgrad",
+      "time_model": "real",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.98,
+      "overflow_events": 4,
+      "emptyings": 9899,
+      "emptyings_saved_vs_status_quo": 19,
+      "stops": 7499,
+      "vehicle_days": 326,
+      "hours": 1753.15,
+      "km": 24640.27,
+      "cost_eur": 291217.78,
+      "cost_breakdown": {
+        "vehicle_days_eur": 163000.0,
+        "crew_eur": 112201.6,
+        "km_eur": 16016.18
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "c_max_fill",
+      "label": "Maximum Füllgrad",
+      "time_model": "hop5",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.98,
+      "overflow_events": 4,
+      "emptyings": 9899,
+      "emptyings_saved_vs_status_quo": 19,
+      "stops": 7529,
+      "vehicle_days": 285,
+      "hours": 1314.12,
+      "km": 24731.59,
+      "cost_eur": 242679.21,
+      "cost_breakdown": {
+        "vehicle_days_eur": 142500.0,
+        "crew_eur": 84103.68,
+        "km_eur": 16075.53
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "c_max_fill",
+      "label": "Maximum Füllgrad",
+      "time_model": "hop10",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.98,
+      "overflow_events": 4,
+      "emptyings": 9899,
+      "emptyings_saved_vs_status_quo": 19,
+      "stops": 7498,
+      "vehicle_days": 316,
+      "hours": 1674.69,
+      "km": 24539.77,
+      "cost_eur": 281131.01,
+      "cost_breakdown": {
+        "vehicle_days_eur": 158000.0,
+        "crew_eur": 107180.16,
+        "km_eur": 15950.85
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "d_status_quo",
+      "label": "Status quo (reale Leerungstage)",
+      "time_model": "real",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.83,
+      "overflow_events": 1858,
+      "emptyings": 9918,
+      "emptyings_saved_vs_status_quo": 0,
+      "stops": 4233,
+      "vehicle_days": 294,
+      "hours": 1489.33,
+      "km": 19396.21,
+      "cost_eur": 254924.66,
+      "cost_breakdown": {
+        "vehicle_days_eur": 147000.0,
+        "crew_eur": 95317.12,
+        "km_eur": 12607.54
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "d_status_quo",
+      "label": "Status quo (reale Leerungstage)",
+      "time_model": "hop5",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.83,
+      "overflow_events": 1858,
+      "emptyings": 9918,
+      "emptyings_saved_vs_status_quo": 0,
+      "stops": 4263,
+      "vehicle_days": 230,
+      "hours": 1144.67,
+      "km": 19396.88,
+      "cost_eur": 200866.85,
+      "cost_breakdown": {
+        "vehicle_days_eur": 115000.0,
+        "crew_eur": 73258.88,
+        "km_eur": 12607.97
+      },
+      "flags": {
+        "cheapest": true,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "d_status_quo",
+      "label": "Status quo (reale Leerungstage)",
+      "time_model": "hop10",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 77.83,
+      "overflow_events": 1858,
+      "emptyings": 9918,
+      "emptyings_saved_vs_status_quo": 0,
+      "stops": 4232,
+      "vehicle_days": 289,
+      "hours": 1427.87,
+      "km": 19329.9,
+      "cost_eur": 248448.12,
+      "cost_breakdown": {
+        "vehicle_days_eur": 144500.0,
+        "crew_eur": 91383.68,
+        "km_eur": 12564.44
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "e_mentor",
+      "label": "Mentor-Politik (14-Tage-Rhythmus)",
+      "time_model": "real",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 34.16,
+      "overflow_events": 4,
+      "emptyings": 22597,
+      "emptyings_saved_vs_status_quo": -12679,
+      "stops": 10411,
+      "vehicle_days": 444,
+      "hours": 2588.15,
+      "km": 28481.86,
+      "cost_eur": 406154.81,
+      "cost_breakdown": {
+        "vehicle_days_eur": 222000.0,
+        "crew_eur": 165641.6,
+        "km_eur": 18513.21
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "e_mentor",
+      "label": "Mentor-Politik (14-Tage-Rhythmus)",
+      "time_model": "hop5",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 34.16,
+      "overflow_events": 4,
+      "emptyings": 22597,
+      "emptyings_saved_vs_status_quo": -12679,
+      "stops": 10472,
+      "vehicle_days": 392,
+      "hours": 2094.43,
+      "km": 28927.18,
+      "cost_eur": 348846.19,
+      "cost_breakdown": {
+        "vehicle_days_eur": 196000.0,
+        "crew_eur": 134043.52,
+        "km_eur": 18802.67
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    },
+    {
+      "id": "e_mentor",
+      "label": "Mentor-Politik (14-Tage-Rhythmus)",
+      "time_model": "hop10",
+      "collected_t": 7719.2,
+      "end_stock_t": 0.0,
+      "produced_t": 7719.2,
+      "mass_balance_ok": true,
+      "avg_fill_at_emptying_pct": 34.16,
+      "overflow_events": 4,
+      "emptyings": 22597,
+      "emptyings_saved_vs_status_quo": -12679,
+      "stops": 10422,
+      "vehicle_days": 438,
+      "hours": 2511.12,
+      "km": 28684.09,
+      "cost_eur": 398356.34,
+      "cost_breakdown": {
+        "vehicle_days_eur": 219000.0,
+        "crew_eur": 160711.68,
+        "km_eur": 18644.66
+      },
+      "flags": {
+        "cheapest": false,
+        "fewest_overflows": false
+      },
+      "source": "scripts/run_scenarios.py"
+    }
+  ]
+}
