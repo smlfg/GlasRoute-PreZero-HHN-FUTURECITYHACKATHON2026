@@ -145,3 +145,20 @@ Kostenformel (Annahme): `Kosten = Fahrzeugtage × 500 € + Crew-h × 64 € + k
 
 Tonnage (muss gleich sein), Überlauf-Ereignisse, Ø Füllstand bei Leerung, Stopps, Fahrzeugtage,
 Stunden, km, Kosten. Jede Zahl stammt aus einer Skriptausgabe; Quelle wird im Vergleich zitiert.
+
+## 9. Entscheidungen 15.11. (Owner)
+
+1. **Tonnage-Vergleich:** „gesammelt + Endbestand“ (= produziert) muss gleich sein. In der
+   Vergleichstabelle stehen **beide** Spalten offen: gesammelt im Fenster und Endbestand.
+2. **Schätzer überall:** Walk-Forward-Rate = Σ Füllstand / Σ Tage (Quotient der Summen) aus Messungen
+   mit Datum < d. `mean(level/Δt)` ist verboten (Bias, §2).
+3. **Neue Frage km-Delta (+35 % km bei +6 % Leerungen):** zerlegen in (1) zusätzliche Leerungen,
+   (2) gestreute Tages-Fälligkeiten statt fester Gebiete, (3) zusätzliche Fahrzeuge inkl. Depot hin/zurück,
+   (4) zusätzliche Entlade-/Depotfahrten, (5) Aufspaltung der Glasfarben eines Standorts
+   (gemessen: Status quo 2,79 Container je Standortbesuch, Timer 1,35; 3.714 vs 8.092 Standortbesuche).
+4. **Politik (f) „feste Gebiete“:** jeder Container gehört zu genau einem Gebiet (geografisches Clustering),
+   jedes Gebiet hat feste Wochentage; ein fälliger Container wird am nächsten Gebietstag geleert,
+   der Puffer muss Überläufe bis dahin verhindern.
+5. **Standort-Bündelung (Parameter):** ist ein Container eines Standorts fällig, werden die anderen
+   Farben mitgeleert, wenn ihr geschätzter Füllstand ≥ Mitnahme-Schwelle (Standard 50 %, Annahme).
+6. **Kein Merge nach master/main vor 16:00** (Pitch 15:00 läuft auf eingefrorenem Stand).
