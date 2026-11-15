@@ -222,17 +222,17 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
   - **Größter Hebel = Einsatztage:** Bereitstellung (500 €/Tag) und 2-Personen-Crew (64 €/h) dominieren weit vor dem reinen Kraftstoff (0,65 €/km).
   - **Gefahr naiver Modelle:** Wer Container zu früh triggert (z. B. 60-%-Schwelle) oder an 346 Tagen statt nur an den 229 Werktagen fährt, lässt die Fahrzeugtage von 345 auf 628 explodieren (+141.500 € allein Bereitstellung!).
   - **Ergebnis GlasRoute (80-%-Bedarfstaktung):**
-    - **Ø Füllstand bei Leerung:** von **66,0 %** auf **83,5 %** gesteigert (**+17,5 pp**).
+    - **Ø Füllstand bei Leerung:** von **66,0 %** (Streuung: 31 pp) auf **83,5 %** (Streuung: 4 pp) gesteigert (**+17,5 pp**, Füllstände deutlich gleichmäßiger).
     - **Überfüllungen:** 1.192 Überfüllungen auf **0** eliminiert.
     - **Fahrzeugtage:** Glättung auf 381 Tage (stabil und schichtkonform).
-- **Ehrliche Schlussfolgerung:**
-  > *„Wir können die betrieblichen Auswirkungen simulieren und unsere Annahmen offenlegen. Reale Kostenersparnisse müssen allerdings erst unter den tatsächlichen Betriebsregeln validiert werden.“*
+- **Ehrliche Schlussfolgerung & der Haken:**
+  > *„Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.“*
 
 ### Speaker Notes
 
 - **0–8 s:** „Wir haben die Jahreskosten mathematisch in drei Komponenten zerlegt: Fahrzeugpauschale (500 €), 2er-Crew (64 €/h) und Kilometergeld (0,65 €).“
-- **8–17 s:** „Dabei wird klar: Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle, die zu früh anfahren oder Wochenenden disponieren, treiben die Fahrzeugtage von 345 auf 628 hoch.“
-- **17–25 s:** „Unser Modell glättet die Einsatztage, hebt den Leerungsfüllstand auf 83,5 % und stoppt 100 % der Überläufe. Aber: Reale Kostenersparnisse müssen erst unter den echten Betriebsregeln von PreZero validiert werden.“
+- **8–16 s:** „Dabei wird klar: Der größte Hebel sind die Einsatztage, nicht der Sprit. Naive Modelle, die zu früh anfahren oder Wochenenden disponieren, treiben die Fahrzeugtage von 345 auf 628 hoch.“
+- **16–25 s:** „Wir leeren gleichmäßiger, bei etwa 83 % statt zwischen leer und übervoll – die Streuung sinkt von 31 auf 4 pp, 0 Überläufe. Und wir sehen nicht mehr, wie sich halbvolle Container verhalten. Dafür kontrollieren wir regelmäßig ein paar Container zufällig.“
 
 ---
 

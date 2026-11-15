@@ -20,6 +20,7 @@ steht in `Pitch/demo_facts.txt`. Alle Zahlen unten stammen von dort, aus `docs/B
 | 10 | Wie viele Überläufe verpasst euer Timer? | beantwortet |
 | 11 | Wie verlässlich sind eure Betriebsannahmen? | beantwortet |
 | 12 | Wie lange läuft es und was kostet der Betrieb? | **OPEN** |
+| 13 | Wird die Vorhersage durch optimierte Leerung genauer? | beantwortet (Haken & Lösung) |
 
 ---
 
@@ -82,6 +83,11 @@ Alle 449 Standorte sind echte OSM-Punkte, aber die Zuordnung zu den anonymen IDs
 
 **Rechenzeit ist belegt, Betriebskosten nicht.** Eine Tourberechnung dauert 0,12–0,31 s (`docs/BENCHMARK.md`, `runtime_s`), das System ist ein lokales Python-CLI ohne Cloud-Zwang (`pyproject.toml`: pandas, OR-Tools, folium), und der Copilot rechnet laut `src/prezero/copilot.py:5` nie selbst, der LLM-Teil ist optional (`use_llm=False` als Default, `:2490`).
 **OPEN:** Eine Zahl für Betrieb, Integration, Fahrer-Schulung (Tablet/Formular, `tour_feedback_<datum>.csv`) oder Wartung haben wir nicht; ob Disponenten das Freigabe-Workflow (`src/prezero/approval.py`) im Alltag nutzen würden, ist ungetestet.
+
+## 13. Macht späteres Leeren die Füllraten-Vorhersage genauer?
+
+**Bestätigt ist nur die Gleichmäßigkeit, nicht die Prognosegenauigkeit.** Die Füllstände beim Leeren werden viel gleichmäßiger (Streuung sinkt von 31 auf 4 pp, Ø ~83,5 %, 0 statt 1.192 Überläufe). Ob die Vorhersage dadurch genauer wird, lässt sich empirisch nicht belegen, da es für simuliert verschobene Leerungen keine realen Messwerte gibt.
+**Der methodische Haken:** Wir leeren fast nur noch bei ≥ 80 % (99,8 %) und beobachten im Regelbetrieb kaum noch halbvolle Container (< 50 % sinkt von 31,2 % auf 0,04 %). **Unsere Lösung:** Regelmäßige Zufallskontrollen einzelner unkritischer Container, um Füllkurven unvoreingenommen nachzukalibrieren.
 
 ---
 
