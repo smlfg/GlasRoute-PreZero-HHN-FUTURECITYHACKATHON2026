@@ -162,3 +162,35 @@ Stunden, km, Kosten. Jede Zahl stammt aus einer Skriptausgabe; Quelle wird im Ve
 5. **Standort-Bündelung (Parameter):** ist ein Container eines Standorts fällig, werden die anderen
    Farben mitgeleert, wenn ihr geschätzter Füllstand ≥ Mitnahme-Schwelle (Standard 50 %, Annahme).
 6. **Kein Merge nach master/main vor 16:00** (Pitch 15:00 läuft auf eingefrorenem Stand).
+
+## 10. Datenmodell: Container, Standort, Halt
+
+| Begriff | Definition | Anzahl |
+|---|---|---|
+| **Container** | (Location_id, material_type ∈ {white, green, brown}); Füllrate r, Takt T und Fälligkeit gelten **pro Container** | 1.338 |
+| **Standort** | eine Location_id = bis zu 3 Container (eine je Farbe) | 449 (441 mit 3 Farben, 7 mit 2, 1 mit 1) |
+| **Halt** | ein physischer Punkt (lat/lon); der LKW hält einmal und leert alles, was an diesem Punkt geleert wird | 121 Punkte |
+
+**Warum 449 IDs auf nur 121 Punkten liegen (kein Geocoding-Fehler, sondern Absicht):**
+`data/external/locations.csv` hat für alle 449 IDs `source=osm_assigned`, `confidence=simulated_mapping`,
+`match_reason="real OSM site, ID assignment simulated"`. PreZero hat die IDs anonymisiert und keine Koordinaten
+geliefert. `locations.assign_osm_sites` (src/prezero/locations.py:215) verteilt jede ID **zufällig mit Zurücklegen**
+(`rng.randrange`, fester Seed) auf eine der 121 echten OSM-Glascontainer-Punkte in Heilbronn. Ergebnis:
+nur 11 Punkte haben genau 1 ID, 438 IDs teilen sich einen Punkt mit anderen (bis zu 9 IDs = 27 Container je Punkt).
+**Folge:** Halte bündeln in der Simulation mehr Container als in der Realität; absolute km/Halte sind illustrativ.
+Mit PreZeros echter Standortliste ändert sich nur `locations.csv`.
+
+**Heutiges Verhalten:** Nur **fällige** Container eines Halts werden geleert
+(Demo-Tour: `routing.py:292-293`, nur `crit_mass_kg`/`crit_volume_m3` geladen; Jahressimulation:
+`scripts/simulate_daily.py` ~Z. 529-571, nur `due`-Container in `site_dict`). Nicht fällige Farben am selben
+Halt bleiben stehen und werden Tage später erneut angefahren.
+
+**Offene Frage (Annahme, Parameter `truck_mode`):**
+- `multi_chamber` (Standard-Annahme): ein LKW nimmt alle 3 Farben in einem Halt mit (Mehrkammer).
+- `per_colour`: ein LKW je Farbe; jede Farbe eines Halts ist ein eigener Halt einer eigenen Tour.
+Ob PreZero Mehrkammer-Fahrzeuge einsetzt, ist **unbekannt** → beide Varianten werden gerechnet.
+
+**Szenario (g) „co-empty“:** wird ein Halt angefahren, werden auch die anderen Container dort mit
+geschätztem Füllstand ≥ X % geleert (Parameter, Standard X = 50 %, Annahme). Berichtet: zusätzliche
+Leerungen vs. eingesparte spätere Halte, km, Stunden, Ø Füllstand, Überläufe — bei gleicher Tonnage.
+In `per_colour` ist co-empty nur innerhalb derselben Farbe möglich (mehrere IDs derselben Farbe am selben Punkt).
