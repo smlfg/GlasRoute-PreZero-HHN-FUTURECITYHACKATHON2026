@@ -1049,13 +1049,281 @@ def compute_route_insights(
         }
 
 
-def _build_overview_html(overview_text: str) -> str:
+def _parse_overview_text(overview_text: str) -> dict[str, Any]:
+    """Extract structured fields from overview_text template as fallback."""
+    data: dict[str, Any] = {
+        "num_stops": 0,
+        "total_critical_locations": 0,
+        "total_critical_pairs": 0,
+        "unserved_critical_locations": 0,
+        "planned_km": 0.0,
+        "full_round_km": 0.0,
+        "saved_km": 0.0,
+        "saved_pct": 0.0,
+        "vehicles_needed": 1,
+        "rounds": 1,
+        "shift_hours": 0.0,
+        "max_vehicle_shift_hours": 0.0,
+        "max_shift_hours_limit": 8.0,
+        "t_collected": 0.0,
+        "approval_status": "pending",
+        "top_stops": [],
+        "approval_hint": "",
+        "sources": [],
+        "stand": "",
+    }
+    m_stand = re.search(r"Stand\s+([0-9\.\-]+)", overview_text)
+    if m_stand:
+        data["stand"] = m_stand.group(1).strip()
+    m_stops = re.search(r"Stopps geplant:\s*(\d+)", overview_text)
+    if m_stops:
+        data["num_stops"] = int(m_stops.group(1))
+    m_crit_loc = re.search(r"von (\d+) kritischen Standorten", overview_text)
+    if m_crit_loc:
+        data["total_critical_locations"] = int(m_crit_loc.group(1))
+    m_crit_cont = re.search(r"(\d+) kritischen Containern", overview_text)
+    if m_crit_cont:
+        data["total_critical_pairs"] = int(m_crit_cont.group(1))
+    m_unserved = re.search(r"Unbedient kritisch:\s*(\d+)", overview_text)
+    if m_unserved:
+        data["unserved_critical_locations"] = int(m_unserved.group(1))
+    m_km = re.search(
+        r"Strecke geplant:\s*([\d\.]+) km vs\. volle Runde ([\d\.]+) km \(Ersparnis: ([\d\.]+) km / ([\d\.]+) %\)",
+        overview_text,
+    )
+    if m_km:
+        data["planned_km"] = float(m_km.group(1))
+        data["full_round_km"] = float(m_km.group(2))
+        data["saved_km"] = float(m_km.group(3))
+        data["saved_pct"] = float(m_km.group(4))
+    m_veh = re.search(r"(\d+) Fahrzeug\(e\),\s*(\d+) Runde\(n\)", overview_text)
+    if m_veh:
+        data["vehicles_needed"] = int(m_veh.group(1))
+        data["rounds"] = int(m_veh.group(2))
+    m_hrs = re.search(r"Fahrzeugstunden/Menge:\s*([\d\.]+) h", overview_text)
+    if m_hrs:
+        data["shift_hours"] = float(m_hrs.group(1))
+    m_shift_max = re.search(r"längste Schicht ([\d\.]+) h", overview_text)
+    if m_shift_max:
+        data["max_vehicle_shift_hours"] = float(m_shift_max.group(1))
+    m_shift_lim = re.search(r"Limit ([\d\.]+) h", overview_text)
+    if m_shift_lim:
+        data["max_shift_hours_limit"] = float(m_shift_lim.group(1))
+    m_tons = re.search(r"([\d\.]+) t", overview_text)
+    if m_tons:
+        data["t_collected"] = float(m_tons.group(1))
+    m_stat = re.search(r"Freigabe-Status:\s*(\w+)", overview_text)
+    if m_stat:
+        data["approval_status"] = m_stat.group(1).strip()
+    m_app = re.search(r"Freigabe:\s*(.+)", overview_text)
+    if m_app:
+        data["approval_hint"] = m_app.group(1).strip()
+    m_src = re.search(r"Quellen:\s*(.+)", overview_text)
+    if m_src:
+        data["sources"] = [s.strip() for s in m_src.group(1).split(",") if s.strip()]
+
+    stop_matches = list(
+        re.finditer(
+            r"^\s*#(\d+):\s*(.*?)\s*\|\s*Füllstand\s*(\d+)\s*%\s*\|\s*Dringlichkeit\s*([\d\.]+)\s*\|\s*(.*?)\s*$",
+            overview_text,
+            re.M,
+        )
+    )
+    for sm in stop_matches:
+        data["top_stops"].append(
+            {
+                "order": int(sm.group(1)),
+                "label": sm.group(2).strip(),
+                "fill_level": float(sm.group(3)),
+                "score": float(sm.group(4)),
+                "assignment": sm.group(5).strip(),
+            }
+        )
+    return data
+
+
+def _build_overview_html(
+    overview_text: str, overview_data: Mapping[str, Any] | None = None
+) -> str:
     if not overview_text.strip():
         return ""
+    data = dict(overview_data) if overview_data else _parse_overview_text(overview_text)
+
+    approved = str(data.get("approval_status", "")).lower() == "approved"
+    badge_style = (
+        "background:#dcfce7;color:#15803d;border:1px solid #86efac;"
+        if approved
+        else "background:#fef3c7;color:#92400e;border:1px solid #fde68a;"
+    )
+    badge_text = "Freigegeben (Approved)" if approved else "Prüfung ausstehend"
+    stand_text = str(data.get("stand") or data.get("date") or "")
+    stand_badge = (
+        f'<span class="badge stand-badge" style="font-size:11px;">Stand {html.escape(stand_text)}</span>'
+        if stand_text
+        else ""
+    )
+
+    num_stops = int(data.get("num_stops", 0))
+    crit_locs = int(data.get("total_critical_locations", 0))
+    crit_cont = int(data.get("total_critical_pairs", 0))
+    unserved = int(data.get("unserved_critical_locations", 0))
+    pct_stops = (num_stops / crit_locs * 100.0) if crit_locs > 0 else 0.0
+
+    planned_km = float(data.get("planned_km", 0.0))
+    full_km = float(data.get("full_round_km", 0.0))
+    saved_km = float(data.get("saved_km", 0.0))
+    saved_pct = float(data.get("saved_pct", 0.0))
+
+    vehicles = int(data.get("vehicles_needed", 0))
+    rounds = int(data.get("rounds", 0))
+    shift_hrs = float(data.get("shift_hours", 0.0))
+    max_shift = float(data.get("max_vehicle_shift_hours", 0.0))
+    limit_shift = float(data.get("max_shift_hours_limit", 8.0))
+    pct_shift = min(100.0, (max_shift / limit_shift * 100.0)) if limit_shift > 0 else 0.0
+
+    tonnes = float(data.get("t_collected", 0.0))
+
+    top_stops = data.get("top_stops", [])
+    top_stops_rows: list[str] = []
+    for s in top_stops[:5]:
+        ord_num = s.get("order", 1)
+        lbl = str(s.get("label", ""))
+        fill = float(s.get("fill_level", s.get("last_fill_level", 0.0)))
+        score = float(s.get("score", 0.0))
+        assign = str(s.get("assignment", ""))
+        if not assign and "vehicle" in s and "round" in s:
+            assign = f"Fzg {s['vehicle']} Runde {s['round']}"
+
+        mat_badge = ""
+        lbl_lower = lbl.lower()
+        if "braunglas" in lbl_lower or "brown" in lbl_lower:
+            mat_badge = '<span class="badge-glass-brown">Braunglas</span>'
+        elif "grünglas" in lbl_lower or "green" in lbl_lower:
+            mat_badge = '<span class="badge-glass-green">Grünglas</span>'
+        elif "weißglas" in lbl_lower or "white" in lbl_lower:
+            mat_badge = '<span class="badge-glass-white">Weißglas</span>'
+
+        fill_badge = (
+            f'<span class="badge-fill-alarm">{fill:.0f} %</span>'
+            if fill >= 100
+            else f'<span style="font-weight:600;">{fill:.0f} %</span>'
+        )
+
+        top_stops_rows.append(f"""
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 10px;font-weight:700;">#{ord_num}</td>
+            <td style="padding:6px 10px;">{html.escape(lbl)}</td>
+            <td style="padding:6px 10px;">{mat_badge}</td>
+            <td style="padding:6px 10px;">{fill_badge}</td>
+            <td style="padding:6px 10px;font-family:monospace;">{score:.2f}</td>
+            <td style="padding:6px 10px;"><span style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">{html.escape(assign)}</span></td>
+          </tr>
+        """)
+
+    top_stops_table = ""
+    if top_stops_rows:
+        top_stops_table = f"""
+        <div style="margin-top:14px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff;">
+          <div style="background:#f8fafc;padding:8px 12px;font-size:12px;font-weight:700;border-bottom:1px solid #e2e8f0;color:#334155;display:flex;justify-content:space-between;align-items:center;">
+            <span>Top-Priorisierte Stopps der Route</span>
+            <span style="font-size:11px;font-weight:normal;color:var(--muted);">{len(top_stops_rows)} Stopps dargestellt</span>
+          </div>
+          <div class="table-wrap" style="margin-bottom:0;border:none;">
+            <table>
+              <thead>
+                <tr style="background:#f8fafc;font-size:11px;color:#64748b;">
+                  <th>#</th><th>Standort &amp; Straße</th><th>Glasart</th><th>Füllstand</th><th>Score</th><th>Zuweisung</th>
+                </tr>
+              </thead>
+              <tbody>
+                {''.join(top_stops_rows)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        """
+
+    approval_hint = (
+        data.get("approval_hint")
+        or "Keine automatische Freigabe: Disponent prüft die Kennzahlen und gibt explizit frei."
+    )
+    sources = data.get("sources", [])
+    sources_pills = "".join(
+        f'<span style="display:inline-block;background:#f1f5f9;border:1px solid #cbd5e1;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:10px;margin-right:4px;">{html.escape(Path(s).name)}</span>'
+        for s in sources
+    )
+
     return f"""
       <div id="copilot-overview-box" class="copilot-box">
-        <strong>Copilot Touren-Überblick (vorberechnet, deterministisch):</strong>
-        <pre id="copilot-overview-text" class="copilot-pre">{html.escape(overview_text)}</pre>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;">
+          <div>
+            <strong style="font-size:15px;color:#0f172a;">Copilot Touren-Überblick (vorberechnet, deterministisch)</strong>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Objektive Pipelinedaten ohne LLM-Halluzination</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            {stand_badge}
+            <span class="badge" style="{badge_style}padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;">{badge_text}</span>
+          </div>
+        </div>
+
+        <div class="copilot-overview-grid">
+          <!-- KPI 1 -->
+          <div class="copilot-stat-tile">
+            <div class="copilot-stat-label">Stopps &amp; Auslastung</div>
+            <div class="copilot-stat-val">{num_stops} <span style="font-size:12px;font-weight:normal;color:var(--muted);">Stopps</span></div>
+            <div class="copilot-stat-sub">von {crit_locs} krit. Standorten ({pct_stops:.1f} %)</div>
+            <div style="width:100%;background:#e2e8f0;height:4px;border-radius:2px;margin:6px 0 4px;overflow:hidden;">
+              <div style="background:#007A3D;height:4px;width:{min(100.0, pct_stops):.1f}%;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);">{unserved} Standorte verbleiben</div>
+          </div>
+
+          <!-- KPI 2 -->
+          <div class="copilot-stat-tile highlight">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="copilot-stat-label" style="color:#166534;">Fahrstrecke</div>
+              <span style="font-size:11px;font-weight:700;color:#166534;background:#dcfce7;padding:1px 5px;border-radius:4px;">&minus;{saved_pct:.1f} %</span>
+            </div>
+            <div class="copilot-stat-val" style="color:#14532d;">{planned_km:.1f} <span style="font-size:12px;font-weight:normal;">km</span></div>
+            <div class="copilot-stat-sub" style="color:#166534;">Vollrunde: {full_km:.1f} km</div>
+            <div style="font-size:11px;color:#166534;font-weight:600;margin-top:4px;">🌱 &minus;{saved_km:.1f} km Ersparnis</div>
+          </div>
+
+          <!-- KPI 3 -->
+          <div class="copilot-stat-tile">
+            <div class="copilot-stat-label">Flotte &amp; Schichten</div>
+            <div class="copilot-stat-val">{vehicles} <span style="font-size:12px;font-weight:normal;color:var(--muted);">Fzg. &middot; {rounds} Runden</span></div>
+            <div class="copilot-stat-sub">{shift_hrs:.2f} h Gesamteinsatz</div>
+            <div style="width:100%;background:#e2e8f0;height:4px;border-radius:2px;margin:6px 0 4px;overflow:hidden;">
+              <div style="background:#f59e0b;height:4px;width:{pct_shift:.1f}%;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);">Längste Schicht: <strong>{max_shift:.2f} h</strong> (Limit {limit_shift:.1f} h)</div>
+          </div>
+
+          <!-- KPI 4 -->
+          <div class="copilot-stat-tile">
+            <div class="copilot-stat-label">Sammelmenge</div>
+            <div class="copilot-stat-val">{tonnes:.2f} <span style="font-size:12px;font-weight:normal;color:var(--muted);">Tonnen</span></div>
+            <div class="copilot-stat-sub">{crit_cont} kritische Behälter</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;">Altglas (Braun &middot; Grün &middot; Weiß)</div>
+          </div>
+        </div>
+
+        {top_stops_table}
+
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;font-size:12px;color:#1e40af;margin-top:12px;display:flex;align-items:flex-start;gap:8px;">
+          <span style="font-size:14px;line-height:1;">🔒</span>
+          <div>
+            <strong>Human-in-the-Loop Governance:</strong> {html.escape(approval_hint)}
+          </div>
+        </div>
+
+        {f'<div style="margin-top:10px;font-size:11px;color:var(--muted);"><strong>Quellen:</strong> {sources_pills}</div>' if sources_pills else ''}
+
+        <details class="copilot-raw-details" style="margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:8px;">
+          <summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:600;">Original CLI-Text (Rohdaten) anzeigen</summary>
+          <pre id="copilot-overview-text" class="copilot-pre" style="margin-top:6px;">{html.escape(overview_text)}</pre>
+        </details>
       </div>
     """
 
@@ -3532,7 +3800,10 @@ def build_ui(
     )
     copilot_section_html = _build_copilot_section_html(
         route_date=str(route_bundle["metrics"].get("date") or date),
-        overview_html=_build_overview_html(insights.get("overview_text", "")),
+        overview_html=_build_overview_html(
+            insights.get("overview_text", ""),
+            overview_data=insights.get("overview"),
+        ),
         what_if_html=_build_what_if_html(insights["presets"]),
         ask_html=_build_ask_html(insights.get("ask_examples", [])),
         stops=route_bundle["metrics"].get("stops", []),
@@ -3870,6 +4141,46 @@ def build_ui(
       line-height: 1.45;
       overflow-x: auto;
     }}
+    .copilot-overview-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }}
+    .copilot-stat-tile {{
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }}
+    .copilot-stat-tile.highlight {{
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }}
+    .copilot-stat-label {{
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+    .copilot-stat-val {{
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 4px 0 2px;
+    }}
+    .copilot-stat-sub {{
+      font-size: 12px;
+      color: #64748b;
+    }}
+    .badge-glass-brown {{ background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }}
+    .badge-glass-green {{ background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }}
+    .badge-glass-white {{ background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }}
+    .badge-fill-alarm {{ background: #fee2e2; color: #b91c1c; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 11px; }}
     .copilot-card-view {{
       margin-top: 10px;
       padding: 14px 16px;
