@@ -85,7 +85,7 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 - **Prozess:** Der Fahrer scannt den Container beim Leerungsbesuch und schätzt den Füllstand in **10-%-Schritten**.
 - **Datenbasis:** **11.701 Messungen**, **449 Container**, **1.338 Standort-Material-Zeitreihen** (17.10.2025–30.09.2026).
 - **Herausforderung:** Wir haben keinen Live-Stream, sondern asynchrone Schätzungen.
-- **Lösung:** Aus der Historie lernt das System container- und farbindividuelle **Füllraten** und berechnet einen tagesaktuellen Timer.
+- **Lösung:** **<u>Aus der Historie lernt das System container- und farbindividuelle Füllraten (% pro Tag) und berechnet einen tagesaktuellen Timer — ganz ohne neue Sensoren.</u>**
 
 ### Speaker Notes
 
@@ -134,13 +134,13 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 
 ### Folien-Text
 
-- **End-to-End Pipeline:** Ingest → Füllraten-Timer → Kritikalitäts-Scoring → Tourenoptimierung (Google OR-Tools) → Freigabe.
+- **End-to-End Pipeline (der direkte Weg):** **<u>Auswahl (Timer ≥ 80 %) → Tour (OR-Tools: 11 t, 26 m³, 8 h) → Freigabe (Disponentin)</u>** → Closed Loop.
 - **Operational Constraints (`prezero_config.json`):**
-  - Fahrzeugkapazität: **11.000 kg Nutzlast**, **26,0 m³ Ladevolumen**
-  - Schichtbeschränkung: max. **8,0 Stunden**, Entladezeit Betriebshof **20 min**, Hubzeit **3 min/Container**
+  - Fahrzeugkapazität: **<u>11.000 kg Nutzlast, 26,0 m³ Ladevolumen</u>**
+  - Schichtbeschränkung: **<u>max. 8,0 Stunden</u>**, Entladezeit Betriebshof **20 min**, Hubzeit **3 min/Container**
 - **Human-in-the-Loop & Closed Loop:** Kein LKW fährt autonom los!
   - `prezero-route propose`: Algorithmus schlägt Tour für fällige Container vor.
-  - `prezero-route approve`: Disponentin prüft und gibt verbindlich frei. Revisionssicher mit Zeitstempel.
+  - `prezero-route approve`: **<u>Disponentin prüft und gibt verbindlich frei.</u>** Revisionssicher mit Zeitstempel.
   - **Lernender Kreislauf:** Fahrer scannt/leert → System kalibriert Füllrate → nächste Tour wird noch präziser.
 
 ### Speaker Notes
@@ -159,20 +159,22 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 
 ### Folien-Text
 
-- **Live-Simulation (Tab 11: „Bisher vs. Optimiert“):** Synchronisierter Split-Screen auf echter OpenStreetMap-Karte von Heilbronn (Status quo vs. bedarfsgesteuerte Tour).
-- **Befehl & Freigabe:** `prezero-route run --date 2026-04-15` & `prezero-route approve --by "Disponentin"`
+- **Live-Demo-Pfad (nur dieser eine Weg):** **<u>Auswahl → Tour → Freigabe</u>**
+  1. **<u>Auswahl:</u>** Welche Container sind heute fällig (≥ 80 %)?
+  2. **<u>Tour:</u>** Passt das in Lkw (11 t / 26 m³) und Schicht (≤ 8 h)?
+  3. **<u>Freigabe:</u>** Disponentin prüft und gibt frei (`prezero-route approve --by "Disponentin"`).
 - **Ergebnis der Tagestour (Stopp-Limit 25 fälligste Standorte):**
   - **25 Standorte bedient** · **227,2 km Gesamtfahrstrecke**
   - **3 Fahrzeuge im Einsatz** · **16 Entleerungs-Runden**
   - **116,18 t Glas gesammelt** · max. Schichtdauer **7,96 h** (voll im 8-h-Limit)
-  - **−86,3 % km gespart** (1.435,5 km weniger) gegenüber ungefilterter Gebietsbefahrung (1.662,70 km)
-- **UI mit Rollen & Replay:** Fahrer (mobile Tourliste) · Disponentin (Freigabe-Cockpit) · Leitung (What-If & Analysen) · **A/B-Replay auf echten Straßen**.
+  - **<u>−86,3 % km gespart</u>** (1.435,5 km weniger) gegenüber ungefilterter Gebietsbefahrung (1.662,70 km)
+- **Operative Rollen:** **<u>Disponentin (Auswahl → Tour → Freigabe)</u>** · Fahrer (nur freigegebene Stoppliste & Export).
 
 ### Speaker Notes
 
-- **0–8 s:** „Ein Klick in unser Cockpit zeigt den direkten Vergleich in Tab 11: Links der starre Status quo, rechts unsere optimierte Tour auf echten Heilbronner Straßen.“
-- **8–17 s:** „Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht.“
-- **17–25 s:** „Im Replay sehen Sie live, wie die LKW fahren — und wie 86 % der Leerfahrten an diesem Tag wegfallen, während kein einziger Container überläuft.“
+  - **0–8 s:** „In der Demo zeigen wir genau einen Weg: Auswahl, Tour, Freigabe.“
+  - **8–17 s:** „Das System wählt die 25 kritischsten Standorte: 227,2 km Fahrstrecke mit 3 Fahrzeugen, 116 Tonnen Glas, kein Fahrer überschreitet die 8-Stunden-Schicht.“
+  - **17–25 s:** „Die Disponentin prüft und gibt frei — erst dann sieht der Fahrer seine Stoppliste.“
 
 ---
 
@@ -188,8 +190,8 @@ Messungen nach Füllstand bei Besuch (Quelle: data/raw, 11.701 Besuche):
 |---|---|---:|---:|---:|---:|
 | **B0** | Status quo (Papierliste, Gebietsrunde) | 121 | 1.795,91 km | 95 | Baseline |
 | **B1** | Status quo optimiert (gleiche Standorte, TSP) | 121 | 1.662,70 km | 98 | −7,4 % |
-| **B2** | **Bedarfsfilter** (nur fällige ≥ 80 %, Nearest Neighbor) | **112** | **1.165,90 km** | 67 | **−29,9 %** (B1→B2) |
-| **B4** | **Bedarfsfilter + Google OR-Tools VRP** | **112** | **1.053,29 km** | **55** | **−36,7 %** (B1→B4) |
+| **B2** | **<u>Bedarfsfilter</u>** (nur fällige ≥ 80 %, Nearest Neighbor) | **112** | **1.165,90 km** | 67 | **−29,9 %** (B1→B2) |
+| **B4** | **<u>Bedarfsfilter + Google OR-Tools VRP</u>** | **112** | **1.053,29 km** | **55** | **<u>−36,7 %</u>** (B1→B4) |
 
 - **Effekt-Zerlegung:**
   - **Bedarfs-Effekt (Fälligkeitstimer): 29,9 %** der Strecke entfällt, weil halbleere Container nicht angefahren werden.

@@ -325,6 +325,33 @@
       font-weight: 800;
     }
 
+    /* Direct Solution Highlight */
+    .sol-hl {
+      font-weight: 800;
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.14);
+      padding: 0 0.25vw;
+      border-radius: 3px;
+    }
+
+    .sol-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #020617;
+      font-weight: 800;
+      font-size: 0.72vw;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.12vw 0.45vw;
+      border-radius: 4px;
+      margin-right: 0.35vw;
+      vertical-align: middle;
+    }
+
     /* Deck Controls Bar (Bottom overlay) */
     #deck-controls {
       position: fixed;
@@ -550,8 +577,8 @@
 
       <div class="slide-footer">
         <div class="key-takeaway">
-          <span class="badge">KERNBEFUND</span>
-          Feste Gebietslisten verbrennen Diesel an halbleeren Behältern und übersehen gleichzeitig die vollen.
+          <span class="badge">KERNBEFUND &rarr; LÖSUNG</span>
+          Feste Gebietslisten verbrennen Diesel an halbleeren Behältern. <span class="sol-hl">Lösung: Welche Container müssen heute raus — und passt das in Lkw &amp; Schicht?</span>
         </div>
         <div>Folie 1 / 10 · 20 s</div>
       </div>
@@ -598,7 +625,7 @@
 
           <div class="card">
             <div style="font-size: 0.9vw; color: #e2e8f0;">
-              <strong>Die analytische Herausforderung:</strong> Wir haben keinen lückenlosen Datenstrom, sondern asynchrone Schnappschüsse. Unsere Pipeline lernt aus diesen historischen Intervallen die container- und farbgenaue <strong>Füllrate (% pro Tag)</strong>.
+              <span class="sol-badge">LÖSUNG</span> <strong>Aus Schätzungen wird Steuerung:</strong> Wir haben keinen Live-Stream, sondern asynchrone Schnappschüsse. Unsere Pipeline lernt aus diesen historischen Intervallen die <span class="sol-hl">container- und farbindividuelle Füllrate (% pro Tag)</span> — ganz ohne neue Sensoren.
             </div>
           </div>
         </div>
@@ -720,7 +747,7 @@
       <div class="slide-footer">
         <div class="key-takeaway">
           <span class="badge">FARBEN-DYNAMIK</span>
-          Weißglas läuft über, während Braunglas doppelt so oft wie nötig angefahren wird. Unser Timer entkoppelt die Farben.
+          Weißglas läuft über, Braunglas wird doppelt so oft geleert wie nötig. <span class="sol-hl">Lösung: Ein eigener Füllraten-Timer pro Container entkoppelt die Farben.</span>
         </div>
         <div>Folie 3 / 10 · 25 s</div>
       </div>
@@ -745,31 +772,26 @@
       <div class="slide-body">
         <div class="col col-2">
           <div class="card">
-            <div style="font-size: 1vw; font-weight: 700; color: white;">End-to-End Pipeline mit Closed Loop</div>
+            <div style="font-size: 1vw; font-weight: 700; color: white;"><span class="sol-badge">LÖSUNG</span> Der direkte Weg: <span class="sol-hl">Auswahl &rarr; Tour &rarr; Freigabe</span></div>
             <div class="flow-steps">
-              <div class="flow-step">
+              <div class="flow-step active">
                 <div class="flow-num">1</div>
-                <div class="flow-title">Ingest</div>
-                <div class="flow-desc">11.701 Scans bereinigen</div>
+                <div class="flow-title">Auswahl</div>
+                <div class="flow-desc"><span class="sol-hl">Fällig ab &ge; 80 %</span> (statt feste Liste)</div>
               </div>
-              <div class="flow-step">
+              <div class="flow-step active">
                 <div class="flow-num">2</div>
-                <div class="flow-title">Timer</div>
-                <div class="flow-desc">Fällig wenn ≥ 80 % Füllung</div>
+                <div class="flow-title">Tour</div>
+                <div class="flow-desc"><span class="sol-hl">OR-Tools: 11 t, 26 m³, 8 h</span></div>
               </div>
               <div class="flow-step active">
                 <div class="flow-num">3</div>
-                <div class="flow-title">OR-Tools</div>
-                <div class="flow-desc">VRP mit 11 t &amp; 8 h Schicht</div>
-              </div>
-              <div class="flow-step active">
-                <div class="flow-num">4</div>
                 <div class="flow-title">Freigabe</div>
-                <div class="flow-desc">Disponentin prüft &amp; freigibt</div>
+                <div class="flow-desc"><span class="sol-hl">Disponentin prüft &amp; gibt frei</span></div>
               </div>
               <div class="flow-step">
-                <div class="flow-num">5</div>
-                <div class="flow-title">Feedback</div>
+                <div class="flow-num">4</div>
+                <div class="flow-title">Closed Loop</div>
                 <div class="flow-desc">Fahrer-Scan kalibriert Timer</div>
               </div>
             </div>
@@ -778,8 +800,8 @@
           <div class="card card-highlight">
             <h4 style="font-size: 1vw; color: var(--accent); margin-bottom: 0.4vw;">Reale betriebliche Restriktionen (`prezero_config.json`)</h4>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8vw; font-size: 0.85vw;">
-              <div>• <strong>Nutzlast &amp; Ladevolumen:</strong> 11.000 kg / 26,0 m³</div>
-              <div>• <strong>Schichtdauer:</strong> max. 8,0 h (inkl. 20 min Entladung)</div>
+              <div>• <span class="sol-hl">Nutzlast &amp; Ladevolumen: 11.000 kg / 26,0 m³</span></div>
+              <div>• <span class="sol-hl">Schichtdauer: max. 8,0 h</span> (inkl. 20 min Entladung)</div>
               <div>• <strong>Glasdichte:</strong> 400 kg/m³ (Behälter 2,5 m³)</div>
               <div>• <strong>Bedienzeiten:</strong> 2 min Rüstzeit + 3 min/Hub</div>
             </div>
@@ -861,21 +883,22 @@
             </div>
           </div>
 
-          <div class="card" style="border-color: var(--info);">
-            <div style="font-size: 0.95vw; font-weight: 700; color: var(--info);">Interaktiver Tab 11 im System: „Bisher vs. Optimiert“</div>
-            <p style="font-size: 0.85vw; color: #f1f5f9; margin-top: 0.3vw;">
-              Synchroner Split-Screen auf echten <strong>OpenStreetMap-Kacheln von Heilbronn</strong> (Neckar, B27/B39). Vergleicht die starre Gebietsabfahrt Sekunde für Sekunde mit unserer optimierten Tour.
+          <div class="card" style="border-color: var(--accent);">
+            <div style="font-size: 0.95vw; font-weight: 700; color: var(--accent);"><span class="sol-badge">DEMO-PFAD</span> Ein klarer Weg: <span class="sol-hl">Auswahl &rarr; Tour &rarr; Freigabe</span></div>
+            <p style="font-size: 0.85vw; color: #f1f5f9; margin-top: 0.3vw; line-height: 1.5;">
+              1. <span class="sol-hl">Auswahl:</span> Welche Container sind heute fällig (&ge; 80 %)?<br>
+              2. <span class="sol-hl">Tour:</span> Passt das in <strong>3 LKW</strong> (11 t / 26 m³) und <strong>7,96 h</strong> (&le; 8 h Schicht)?<br>
+              3. <span class="sol-hl">Freigabe:</span> Disponentin prüft, gibt frei &rarr; Fahrer erhält Stoppliste.
             </p>
           </div>
         </div>
 
         <div class="col">
           <div class="card" style="text-align: center;">
-            <div style="font-size: 0.9vw; color: var(--text-muted);">Drei Rollen im System</div>
+            <div style="font-size: 0.9vw; color: var(--text-muted);">Operative Rollen im Cockpit</div>
             <div style="display: flex; flex-direction: column; gap: 0.6vw; margin-top: 0.8vw; text-align: left; font-size: 0.85vw;">
-              <div style="background: #0f172a; padding: 0.6vw; border-radius: 6px;">📱 <strong>Fahrer:</strong> Mobile Tourliste &amp; Navigation</div>
-              <div style="background: #0f172a; padding: 0.6vw; border-radius: 6px;">🖥️ <strong>Disponentin:</strong> Freigabe-Cockpit &amp; Eingriff</div>
-              <div style="background: #0f172a; padding: 0.6vw; border-radius: 6px;">📊 <strong>Leitung:</strong> What-If Simulationen &amp; Audit</div>
+              <div style="background: #0f172a; padding: 0.6vw; border-radius: 6px; border-left: 3px solid var(--accent);">🖥️ <span class="sol-hl">Disponentin:</span> Auswahl &rarr; Tour &rarr; Freigabe</div>
+              <div style="background: #0f172a; padding: 0.6vw; border-radius: 6px;">📱 <strong>Fahrer:</strong> Nur freigegebene Stoppliste &amp; Export</div>
             </div>
           </div>
         </div>
@@ -938,7 +961,7 @@
               </tr>
               <tr style="background: rgba(56, 189, 248, 0.08);">
                 <td><strong>B2</strong></td>
-                <td><strong>Bedarfsfilter</strong> (nur fällig ≥ 80 %, Nearest Neighbor)</td>
+                <td><span class="sol-hl">Bedarfsfilter (nur fällig ≥ 80 %</span>, Nearest Neighbor)</td>
                 <td>112</td>
                 <td>1.165,90 km</td>
                 <td>67</td>
@@ -946,7 +969,7 @@
               </tr>
               <tr class="highlight-row">
                 <td><strong>B4</strong></td>
-                <td><strong>Bedarfsfilter + Google OR-Tools VRP</strong></td>
+                <td><span class="sol-hl">Bedarfsfilter + Google OR-Tools VRP</span></td>
                 <td><strong>112</strong></td>
                 <td><strong>1.053,29 km</strong></td>
                 <td><strong>55</strong></td>
@@ -956,13 +979,13 @@
           </table>
 
           <div class="card" style="margin-top: 0.5vw;">
-            <div style="font-size: 0.95vw; font-weight: 700; color: white; margin-bottom: 0.4vw;">Effekt-Zerlegung: Woher kommt die Ersparnis?</div>
+            <div style="font-size: 0.95vw; font-weight: 700; color: white; margin-bottom: 0.4vw;"><span class="sol-badge">LÖSUNG</span> Effekt-Zerlegung: Woher kommt die Ersparnis?</div>
             <div style="display: flex; gap: 1vw; font-size: 0.9vw;">
               <div style="flex: 3; background: #0f172a; padding: 0.8vw; border-radius: 6px; border-left: 3px solid var(--info);">
-                <strong>29,9 % Bedarfs-Effekt:</strong> Entsteht rein durch das Weglassen halbleerer Container (&lt; 80 %).
+                <span class="sol-hl">29,9 % Bedarfs-Effekt:</span> Entsteht rein durch das Weglassen halbleerer Container (&lt; 80 %).
               </div>
               <div style="flex: 1; background: #0f172a; padding: 0.8vw; border-radius: 6px; border-left: 3px solid var(--accent);">
-                <strong>9,7 % Routing-Effekt:</strong> OR-Tools Optimierung auf der gleichen fälligen Stoppmenge.
+                <span class="sol-hl">9,7 % Routing-Effekt:</span> OR-Tools Optimierung auf der gleichen fälligen Stoppmenge.
               </div>
             </div>
           </div>
@@ -1048,10 +1071,10 @@
                   <td>Kostenexplosion (+141.500 €)</td>
                 </tr>
                 <tr class="highlight-row">
-                  <td><strong>GlasRoute (80 % Timer)</strong></td>
+                  <td><span class="sol-badge">LÖSUNG</span> <span class="sol-hl">GlasRoute (80 % Timer)</span></td>
                   <td><strong>381 Tage (geglättet)</strong></td>
-                  <td><strong>83,5 % (+17,5 pp)</strong></td>
-                  <td><strong style="color: var(--accent);">0 Überläufe (−100 %)</strong></td>
+                  <td><span class="sol-hl">83,5 % (+17,5 pp)</span></td>
+                  <td><span class="sol-hl">0 Überläufe (−100 %)</span></td>
                 </tr>
               </tbody>
             </table>
@@ -1119,9 +1142,9 @@
 
         <div class="col">
           <div class="card" style="border-color: var(--info);">
-            <div style="font-size: 1.1vw; font-weight: 700; color: var(--info);">3. Swap-Pfad: 1-Sekunden-Tausch</div>
+            <div style="font-size: 1.1vw; font-weight: 700; color: var(--info);"><span class="sol-badge">LÖSUNG</span> 3. Swap-Pfad: 1-Sekunden-Tausch</div>
             <p style="font-size: 0.9vw; color: #f1f5f9; margin-top: 0.5vw; line-height: 1.4;">
-              PreZero legt die echte Datei `locations_real.csv` ab. Das gesamte System rechnet sofort auf den echten Koordinaten — <strong>ohne eine Codeänderung</strong>.
+              PreZero legt die echte Datei `locations_real.csv` ab. Das gesamte System rechnet sofort auf den echten Koordinaten — <span class="sol-hl">ohne eine Codeänderung</span>.
             </p>
           </div>
         </div>
@@ -1227,13 +1250,13 @@
               <div style="background: #0f172a; padding: 1.2vw; border-radius: 8px; border: 1px solid var(--accent);">
                 <div style="font-size: 1.1vw; font-weight: 800; color: var(--accent);">Option A: Saubere Stadt</div>
                 <div style="font-size: 0.85vw; color: #f1f5f9; margin-top: 0.5vw; line-height: 1.4;">
-                  Gleiche Flottengröße beibehalten, aber <strong>100 % Überlauf-Vermeidung</strong> in ganz Heilbronn. Maximale Bürger- und Kommunenzufriedenheit.
+                  Gleiche Flottengröße beibehalten, aber <span class="sol-hl">100 % Überlauf-Vermeidung</span> in ganz Heilbronn. Maximale Bürger- und Kommunenzufriedenheit.
                 </div>
               </div>
               <div style="background: #0f172a; padding: 1.2vw; border-radius: 8px; border: 1px solid var(--info);">
                 <div style="font-size: 1.1vw; font-weight: 800; color: var(--info);">Option B: Maximale Effizienz</div>
                 <div style="font-size: 0.85vw; color: #f1f5f9; margin-top: 0.5vw; line-height: 1.4;">
-                  <strong>−36,7 % Fahrstrecke</strong> einsparen, Leerfahrten eliminieren, CO₂-Bilanz drastisch senken und Fahrzeugverschleiß minimieren.
+                  <span class="sol-hl">−36,7 % Fahrstrecke einsparen</span>, Leerfahrten eliminieren, CO₂-Bilanz drastisch senken und Fahrzeugverschleiß minimieren.
                 </div>
               </div>
             </div>
