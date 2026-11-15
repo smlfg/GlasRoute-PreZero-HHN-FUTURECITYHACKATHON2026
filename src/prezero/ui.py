@@ -895,6 +895,183 @@ def _build_route_section_html(
     """
 
 
+_ANALYSEN_HIGHLIGHT_NRS = ("22", "28", "29", "27")
+
+
+def _load_analysen_index() -> list[dict[str, str]]:
+    """Parse ``docs/analysen/INDEX.md`` into rows (nr, titel, kern, kennzahl, profil, gruppe)."""
+    candidates = [
+        Path(__file__).resolve().parents[2] / "docs" / "analysen" / "INDEX.md",
+        Path("docs/analysen/INDEX.md"),
+    ]
+    text = ""
+    for path in candidates:
+        if path.is_file():
+            try:
+                text = path.read_text(encoding="utf-8")
+                break
+            except OSError:
+                continue
+    rows: list[dict[str, str]] = []
+    group = ""
+    for line in text.splitlines():
+        heading = re.match(r"^##\s+\d+\.\s+(.*?)\s*\((\d{2})[–-](\d{2})\)\s*$", line)
+        if heading:
+            group = heading.group(1).strip()
+            continue
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != 5 or not re.fullmatch(r"\d{1,2}", cells[0]):
+            continue
+        title_cell = cells[1]
+        link = re.match(r"^\[(.*?)\]\((.*?)\)$", title_cell)
+        title = link.group(1) if link else re.sub(r"\*\(.*?\)\*", "", title_cell).strip()
+        rows.append(
+            {
+                "nr": f"{int(cells[0]):02d}",
+                "titel": title,
+                "datei": link.group(2) if link else "",
+                "archiviert": "" if link else "1",
+                "kern": cells[2],
+                "kennzahl": cells[3],
+                "profil": cells[4],
+                "gruppe": group,
+            }
+        )
+    return rows
+
+
+def _build_analysen_section_html() -> str:
+    """Tab 13: browsable index of the data analyses (read from docs/analysen/INDEX.md)."""
+    rows = _load_analysen_index()
+    if not rows:
+        return (
+            '<div class="section-head"><h2>Datenanalysen</h2>'
+            '<p class="muted">docs/analysen/INDEX.md wurde nicht gefunden.</p></div>'
+        )
+
+    esc = html.escape
+    groups: list[str] = []
+    for row in rows:
+        if row["gruppe"] not in groups:
+            groups.append(row["gruppe"])
+    profile_class = {"Modell": "an-p-model", "Daten": "an-p-data", "Konzept": "an-p-concept"}
+
+    highlights = []
+    by_nr = {r["nr"]: r for r in rows}
+    for nr in _ANALYSEN_HIGHLIGHT_NRS:
+        r = by_nr.get(nr)
+        if r:
+            highlights.append(
+                '<div class="an-hl"><span class="an-hl-nr">Analyse '
+                f"{esc(r['nr'])}</span><strong>{esc(r['kennzahl'])}</strong>"
+                f"<span class=\"muted\">{esc(r['titel'])}</span></div>"
+            )
+
+    chips = ['<button type="button" class="an-chip active" data-an-group="">Alle</button>']
+    chips += [
+        f'<button type="button" class="an-chip" data-an-group="{esc(g)}">{esc(g)}</button>'
+        for g in groups
+    ]
+
+    body_rows = []
+    for r in rows:
+        pclass = profile_class.get(r["profil"], "an-p-concept")
+        file_hint = (
+            f'<code>docs/analysen/{esc(r["datei"])}</code>'
+            if r["datei"]
+            else '<span class="muted">archiviert, ersetzt durch das Timer-Modell</span>'
+        )
+        search_blob = " ".join([r["nr"], r["titel"], r["kern"], r["kennzahl"], r["profil"]]).lower()
+        body_rows.append(
+            f'<tr class="an-row{" an-archived" if r["archiviert"] else ""}" '
+            f'data-an-group="{esc(r["gruppe"])}" data-an-profile="{esc(r["profil"])}" '
+            f'data-an-search="{esc(search_blob)}">'
+            f'<td class="an-nr">{esc(r["nr"])}</td>'
+            f'<td><strong>{esc(r["titel"])}</strong><br>{file_hint}</td>'
+            f'<td>{esc(r["kern"])}</td>'
+            f'<td class="an-kpi">{esc(r["kennzahl"])}</td>'
+            f'<td><span class="an-profile {pclass}">{esc(r["profil"])}</span></td>'
+            "</tr>"
+        )
+
+    template = """
+<style>
+  .an-hl-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:12px 0 16px; }
+  .an-hl { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:4px; }
+  .an-hl strong { font-size:17px; }
+  .an-hl-nr { font-size:11px; font-weight:800; text-transform:uppercase; color:#10b981; letter-spacing:.04em; }
+  .an-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0 12px; }
+  .an-chip { border:1px solid var(--border); background:var(--surface); border-radius:999px; padding:5px 12px; font-size:12.5px; cursor:pointer; color:inherit; }
+  .an-chip.active { background:#10b981; border-color:#10b981; color:#fff; font-weight:700; }
+  .an-search { flex:1 1 220px; max-width:320px; padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:var(--surface); color:inherit; }
+  .an-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .an-table th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); border-bottom:2px solid var(--border); padding:6px 8px; }
+  .an-table td { padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .an-nr { font-weight:800; color:var(--muted); width:34px; }
+  .an-kpi { font-weight:700; white-space:nowrap; }
+  .an-archived { opacity:.55; }
+  .an-profile { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:800; text-transform:uppercase; }
+  .an-p-model { background:#ecfdf5; color:#065f46; border:1px solid #10b981; }
+  .an-p-data { background:#eff6ff; color:#1e40af; border:1px solid #3b82f6; }
+  .an-p-concept { background:#fffbeb; color:#92400e; border:1px solid #f59e0b; }
+  .an-note { background:#fffbeb; border:1px solid #f59e0b; color:#78350f; border-radius:8px; padding:10px 14px; font-size:13px; margin:12px 0; }
+  .an-count { font-size:12.5px; color:var(--muted); margin-left:auto; }
+</style>
+<div class="section-head">
+  <h2>Datenanalysen: __COUNT__ Auswertungen hinter den Aussagen</h2>
+  <p class="muted">Die Analysen beschreiben das Verhalten der 11.701 Messungen (449 Container). Sie sind Evidenz und Ideenspeicher; die Tour selbst rechnet das Timer-Modell (Tab 6 und 7). Profil: <strong>Daten</strong> = reine Auswertung, <strong>Modell</strong> = mit Modellannahme, <strong>Konzept</strong> = Vorschlag, noch nicht umgesetzt.</p>
+</div>
+<div class="an-hl-grid">__HIGHLIGHTS__</div>
+<div class="an-note"><strong>Einordnung:</strong> Einzelne Analysen können überholt sein, wenn das Timer-Modell sie ersetzt hat. Die Standorte sind eine simulierte Zuordnung auf echte OSM-Punkte; ortsbezogene Befunde (z. B. Cluster, Pilotgebiete) sind deshalb Illustration, die Messwerte selbst sind echt.</div>
+<div class="an-toolbar">
+  __CHIPS__
+  <input id="an-search" class="an-search" type="search" placeholder="Suchen (z. B. Weißglas, Saison, Brier)" aria-label="Analysen durchsuchen">
+  <span id="an-count" class="an-count"></span>
+</div>
+<table class="an-table" id="an-table">
+  <thead><tr><th>Nr</th><th>Analyse</th><th>Kernaussage</th><th>Kennzahl</th><th>Profil</th></tr></thead>
+  <tbody>__ROWS__</tbody>
+</table>
+<script>
+(function() {
+  var group = "";
+  var rows = Array.prototype.slice.call(document.querySelectorAll("#an-table .an-row"));
+  var search = document.getElementById("an-search");
+  var counter = document.getElementById("an-count");
+  function apply() {
+    var q = (search.value || "").toLowerCase().trim();
+    var shown = 0;
+    rows.forEach(function(row) {
+      var okGroup = !group || row.getAttribute("data-an-group") === group;
+      var okText = !q || row.getAttribute("data-an-search").indexOf(q) !== -1;
+      var visible = okGroup && okText;
+      row.style.display = visible ? "" : "none";
+      if (visible) shown++;
+    });
+    counter.textContent = shown + " von " + rows.length + " Analysen";
+  }
+  document.querySelectorAll(".an-chip").forEach(function(chip) {
+    chip.addEventListener("click", function() {
+      group = chip.getAttribute("data-an-group") || "";
+      document.querySelectorAll(".an-chip").forEach(function(c) { c.classList.toggle("active", c === chip); });
+      apply();
+    });
+  });
+  search.addEventListener("input", apply);
+  apply();
+})();
+</script>
+"""
+    return (
+        template.replace("__COUNT__", str(len(rows)))
+        .replace("__HIGHLIGHTS__", "".join(highlights))
+        .replace("__CHIPS__", "".join(chips))
+        .replace("__ROWS__", "".join(body_rows))
+    )
+
+
 def _build_datacheck_section_html(
     data_check: dict[str, Any],
     trends_uri: str,
@@ -4012,6 +4189,7 @@ def build_ui(
         }
     )
     stand_de = _fmt_stand_de(date)
+    analysen_section_html = _build_analysen_section_html()
     datacheck_section_html = _build_datacheck_section_html(
         data_check, trends_uri, date=date, stand_de=stand_de
     )
@@ -4943,6 +5121,7 @@ def build_ui(
     <button type="button" class="tab-btn" data-target="view-location-planning">10. Standortplanung</button>
     <button type="button" class="tab-btn" data-target="view-demo">11. Bisher vs. Optimiert</button>
     <button type="button" class="tab-btn" data-target="view-streams">12. Weitere Abfallströme</button>
+    <button type="button" class="tab-btn" data-target="view-analysen">13. Analysen</button>
   </nav>
 
   <main class="analysis-workspace">
@@ -5000,6 +5179,10 @@ def build_ui(
 
     <section id="view-demo" class="view-panel">
       {demo_section_html}
+    </section>
+
+    <section id="view-analysen" class="view-panel">
+      {analysen_section_html}
     </section>
 
     <section id="view-streams" class="view-panel">

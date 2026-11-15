@@ -1060,3 +1060,16 @@ def test_driver_view_vehicle_count_matches_approved_plan(tmp_path: Path) -> None
 
 
 
+
+
+def test_analysen_tab_lists_all_indexed_analyses() -> None:
+    from prezero.ui import _build_analysen_section_html, _load_analysen_index
+
+    rows = _load_analysen_index()
+    assert len(rows) == 36
+    assert rows[0]["nr"] == "01" and rows[-1]["nr"] == "36"
+    assert any(r["nr"] == "16" and r["archiviert"] for r in rows)
+
+    section = _build_analysen_section_html()
+    assert section.count('class="an-row') == 36
+    assert "Datenanalysen: 36 Auswertungen" in section
