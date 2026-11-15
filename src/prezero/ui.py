@@ -8,7 +8,7 @@ import json
 import statistics
 import tempfile
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 import folium
 import pandas as pd
@@ -2302,8 +2302,9 @@ def _build_date_snapshots(
 
 
 def _render_driver_rows_html(driver_stops: list[dict[str, Any]]) -> str:
+    """Render only the next stops for the driver view (full tour lives in exports)."""
     rows: list[str] = []
-    for s in driver_stops:
+    for s in driver_stops[:3]:
         if s.get("is_yard"):
             rows.append(
                 f'<tr class="yard-row"><td>&ndash;</td><td colspan="5"><strong>{html.escape(s["summary"])}</strong></td></tr>'
@@ -2328,22 +2329,28 @@ def _render_driver_rows_html(driver_stops: list[dict[str, Any]]) -> str:
     return "".join(rows) or '<tr><td colspan="6">Keine freigegebenen Stopps</td></tr>'
 
 
+def _render_dispatcher_stop_row(s: dict[str, Any]) -> str:
+    if s.get("is_yard"):
+        return f'<tr class="yard-row"><td>&ndash;</td><td colspan="4"><strong>{html.escape(s["summary"])}</strong></td></tr>'
+    return (
+        f"<tr><td>{html.escape(s['order'])}</td>"
+        f"<td><strong>{html.escape(s['site_title'])}</strong><br><span class=\"muted\" style=\"font-size:12px;\">{html.escape(s['site_subtitle'])}</span></td>"
+        f"<td>{html.escape(s['mat_display'])}</td>"
+        f"<td>{html.escape(s['level_text'])}</td>"
+        f"<td>{html.escape(s['prio_text'])}</td></tr>"
+    )
+
+
 def _render_dispatcher_stops_html(dispatcher_stops: list[dict[str, Any]]) -> str:
-    rows: list[str] = []
-    for s in dispatcher_stops:
-        if s.get("is_yard"):
-            rows.append(
-                f'<tr class="yard-row"><td>&ndash;</td><td colspan="4"><strong>{html.escape(s["summary"])}</strong></td></tr>'
-            )
-        else:
-            rows.append(
-                f"<tr><td>{html.escape(s['order'])}</td>"
-                f"<td><strong>{html.escape(s['site_title'])}</strong><br><span class=\"muted\" style=\"font-size:12px;\">{html.escape(s['site_subtitle'])}</span></td>"
-                f"<td>{html.escape(s['mat_display'])}</td>"
-                f"<td>{html.escape(s['level_text'])}</td>"
-                f"<td>{html.escape(s['prio_text'])}</td></tr>"
-            )
-    return "".join(rows) or '<tr><td colspan="5">Keine Stopps</td></tr>'
+    """Render dispatcher stops as next-3 visible + <details> with the full list."""
+    return _build_collapsible_list_html(
+        dispatcher_stops,
+        header_cols=["#", "Standort", "Glas", "Geschätzt heute", "Priorität / Timer"],
+        render_row=_render_dispatcher_stop_row,
+        wrap_id="dispatcher-stops-wrap",
+        empty_msg="Keine Stopps",
+        details_label="Alle Stopps anzeigen",
+    )
 
 
 def _svg_horizons_chart(horizons: list[dict[str, Any]]) -> str:
@@ -2532,6 +2539,62 @@ def _build_dispatcher_slideshow_html(snapshot: dict[str, Any], date: str) -> str
     """
 
 
+def _build_collapsible_list_html(
+    items: list[dict[str, Any]],
+    header_cols: list[str],
+    render_row: Callable[[dict[str, Any]], str],
+    wrap_id: str,
+    table_id: str | None = None,
+    empty_msg: str = "Keine Daten",
+    details_label: str = "Alle anzeigen",
+    top_n: int = 3,
+) -> str:
+    """Render a list as top-N visible table plus <details> with the remaining rows."""
+    top = items[:top_n]
+    rest = items[top_n:]
+    header = "".join(f"<th>{html.escape(c)}</th>" for c in header_cols)
+    cols = len(header_cols)
+    top_body = "".join(render_row(r) for r in top) if top else f'<tr><td colspan="{cols}">{html.escape(empty_msg)}</td></tr>'
+    table_id_attr = f' id="{html.escape(table_id, quote=True)}"' if table_id else ""
+    top_table = f'<div class="table-wrap"><table{table_id_attr}><thead><tr>{header}</tr></thead><tbody>{top_body}</tbody></table></div>'
+    if not rest:
+        return f'<div id="{html.escape(wrap_id, quote=True)}">{top_table}</div>'
+    rest_body = "".join(render_row(r) for r in rest)
+    rest_table = f'<div class="table-wrap" style="margin-bottom:0;"><table><thead><tr>{header}</tr></thead><tbody>{rest_body}</tbody></table></div>'
+    details = _details_more_html(f"{details_label} ({len(rest)} weitere)", rest_table)
+    return f'<div id="{html.escape(wrap_id, quote=True)}">{top_table}{details}</div>'
+
+
+def _build_top3_urgent_html(
+    today_list: list[dict[str, Any]], stand_de: str, date: str
+) -> str:
+    """Always-visible top 3 most urgent containers for the dispatcher's first 10 seconds."""
+    top3 = today_list[:3]
+    if not top3:
+        return '<p class="muted">Heute keine kritischen Container.</p>'
+    rows = "".join(
+        f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
+        f"<td>{_fmt_de(r['today_pct'], 0)} %</td>"
+        f"<td>{'Überfüllt' if r['today_pct'] >= 110 else 'Kritisch'}</td>"
+        f"<td>{html.escape(r['in_tour'])}</td></tr>"
+        for r in top3
+    )
+    return f"""
+    <div id="dispatcher-top3-urgent" class="dispatcher-box" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        <strong>Top 3 dringendste Container</strong>
+        <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+      </div>
+      <div class="table-wrap" style="margin-bottom:0;">
+        <table>
+          <thead><tr><th>Standort</th><th>Glasart</th><th>Heute</th><th>Status</th><th>Tour heute</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+    </div>
+    """
+
+
 def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
     """Build the Today-First operational views (Disponentin, Fahrer) plus role switcher."""
     stand_de = snapshot["stand_de"]
@@ -2550,20 +2613,34 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         for h in snapshot["horizons"]
     )
 
-    today_rows_html = "".join(
-        f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
-        f"<td>{_fmt_de(r['today_pct'], 0)} %</td>"
-        f"<td>{'Überfüllt' if r['today_pct'] >= 110 else 'Kritisch'}</td>"
-        f"<td>{html.escape(r['in_tour'])}</td></tr>"
-        for r in snapshot["today_full_list"]
-    ) or '<tr><td colspan="5">Heute keine kritischen Container</td></tr>'
+    today_full_wrap_html = _build_collapsible_list_html(
+        snapshot["today_full_list"],
+        header_cols=["Standort", "Glasart", "Heute", "Status", "Tour heute"],
+        render_row=lambda r: (
+            f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
+            f"<td>{_fmt_de(r['today_pct'], 0)} %</td>"
+            f"<td>{'Überfüllt' if r['today_pct'] >= 110 else 'Kritisch'}</td>"
+            f"<td>{html.escape(r['in_tour'])}</td></tr>"
+        ),
+        wrap_id="dispatcher-today-full-wrap",
+        table_id="dispatcher-today-full-table",
+        empty_msg="Heute keine kritischen Container",
+    )
 
-    week1_rows_html = "".join(
-        f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
-        f"<td>{_fmt_de(r['today_pct'], 0)} %</td><td>{_fmt_de(r['week1_pct'], 0)} %</td>"
-        f"<td>{'Überfüllt' if r['week1_pct'] >= 110 else 'Voll (+7 Tage)'}</td></tr>"
-        for r in snapshot["week1_full_list"]
-    ) or '<tr><td colspan="5">Keine Behälter bis +7 Tage voll</td></tr>'
+    week1_full_wrap_html = _build_collapsible_list_html(
+        snapshot["week1_full_list"],
+        header_cols=["Standort", "Glasart", "Heute", "In +7 d", "Status KW+1"],
+        render_row=lambda r: (
+            f"<tr><td>{html.escape(r['site_title'])}</td><td>{html.escape(r['mat_label'])}</td>"
+            f"<td>{_fmt_de(r['today_pct'], 0)} %</td><td>{_fmt_de(r['week1_pct'], 0)} %</td>"
+            f"<td>{'Überfüllt' if r['week1_pct'] >= 110 else 'Voll (+7 Tage)'}</td></tr>"
+        ),
+        wrap_id="dispatcher-week-full-wrap",
+        table_id="dispatcher-week-full-table",
+        empty_msg="Keine Behälter bis +7 Tage voll",
+    )
+
+    top3_urgent_html = _build_top3_urgent_html(snapshot["today_full_list"], stand_de, date)
 
     variant_options_html = "".join(
         f'<option value="{html.escape(v["id"], quote=True)}">{html.escape(v["label"])}</option>'
@@ -2587,7 +2664,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         else '<a id="driver-maps-link" class="secondary-btn" target="_blank" rel="noopener" hidden>Google Maps öffnen</a>'
     )
 
-    # New driver export widgets: GPX download, per-vehicle Google Maps legs, QR code.
+    # Driver export widgets: GPX download, per-vehicle Google Maps legs, QR code.
     maps_legs = snapshot.get("maps_legs") or {}
     gpx_xml = snapshot.get("gpx_xml") or ""
 
@@ -2627,6 +2704,28 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
     delta_w1_str = f"+{delta_w1} gegenüber heute" if delta_w1 >= 0 else f"{delta_w1} gegenüber heute"
     dispatcher_slideshow_html = _build_dispatcher_slideshow_html(snapshot, date)
 
+    horizon_details_content = f"""
+      <div id="dispatcher-horizon-3w" class="dispatcher-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+          <strong>Zeitachse nächste 3 Wochen (KW+1, KW+2, KW+3)</strong>
+          <span class="muted stand-label" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+        </div>
+        <div id="dispatcher-horizon-cards" class="kpi-grid" style="margin-bottom:0;">
+          {horizon_cards_html}
+        </div>
+      </div>
+    """
+
+    feedback_details_content = f"""
+      <div class="approval-box">
+        <strong>Fahrer-Rückmeldung übernehmen</strong>
+        <p class="muted">Die exportierte CSV enthält die Tourenstopps mit der optionalen Rückmeldespalte <code>geleert</code>. Der Browser bleibt offline; der CLI-Befehl erzeugt daraus die aktualisierten Daten und die nächste Tour.</p>
+        <input id="feedback-file-input" type="file" accept=".csv,text/csv">
+        <span id="feedback-upload-status" class="muted">Noch keine Rückmeldung ausgewählt.</span>
+        <div class="command-box"><code id="feedback-command">prezero-route run --input &lt;feedback.csv&gt;</code><button type="button" class="secondary-btn" id="copy-feedback-command">Befehl kopieren</button></div>
+      </div>
+    """
+
     return f"""
     <section id="start-screen" class="role-screen" style="display:none;">
       <div class="role-hero">
@@ -2636,7 +2735,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
       </div>
       <div class="role-cards">
         <button type="button" class="role-card" data-role="dispatcher"><strong>Disponentin</strong><span>Heute voll (+0), diese Woche (+7), nächste 3 Wochen &amp; Tourenfreigabe</span></button>
-        <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Nur heutige freigegebene Tour, Stopp für Stopp &amp; Rückmeldung</span></button>
+        <button type="button" class="role-card" data-role="driver"><strong>Fahrer</strong><span>Nur heutige freigegebene Tour, nächste Stopps &amp; Export</span></button>
         <button type="button" class="role-card" data-role="analysis"><strong>Analyse</strong><span>Gesamte Zeitachse: Heatmap, Saisonalität, Fairer Vergleich, Backtest</span></button>
       </div>
     </section>
@@ -2673,44 +2772,7 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         </div>
       </div>
 
-      <div id="dispatcher-horizon-3w" class="dispatcher-box">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-          <strong>Zeitachse nächste 3 Wochen (KW+1, KW+2, KW+3)</strong>
-          <span class="muted stand-label" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
-        </div>
-        <div id="dispatcher-horizon-cards" class="kpi-grid" style="margin-bottom:0;">
-          {horizon_cards_html}
-        </div>
-      </div>
-
-      {dispatcher_slideshow_html}
-
-      <div class="two-col">
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
-            <h3 style="margin:0;">Heute voll (geschätzt, Top 15)</h3>
-            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
-          </div>
-          <div class="table-wrap">
-            <table id="dispatcher-today-full-table">
-              <thead><tr><th>Standort</th><th>Glasart</th><th>Heute</th><th>Status</th><th>Tour heute</th></tr></thead>
-              <tbody id="dispatcher-today-full-body">{today_rows_html}</tbody>
-            </table>
-          </div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
-            <h3 style="margin:0;">Diese Woche voll (+7 Tage, KW+1)</h3>
-            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
-          </div>
-          <div class="table-wrap">
-            <table id="dispatcher-week-full-table">
-              <thead><tr><th>Standort</th><th>Glasart</th><th>Heute</th><th>In +7 d</th><th>Status KW+1</th></tr></thead>
-              <tbody id="dispatcher-week-full-body">{week1_rows_html}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      {top3_urgent_html}
 
       <div class="approval-box">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
@@ -2732,39 +2794,46 @@ def _build_role_start_html(snapshot: dict[str, Any], date: str) -> str:
         </div>
       </div>
 
-      <div class="approval-box">
-        <strong>Fahrer-Rückmeldung übernehmen</strong>
-        <p class="muted">Die exportierte CSV enthält die Tourenstopps mit der optionalen Rückmeldespalte <code>geleert</code>. Der Browser bleibt offline; der CLI-Befehl erzeugt daraus die aktualisierten Daten und die nächste Tour.</p>
-        <input id="feedback-file-input" type="file" accept=".csv,text/csv">
-        <span id="feedback-upload-status" class="muted">Noch keine Rückmeldung ausgewählt.</span>
-        <div class="command-box"><code id="feedback-command">prezero-route run --input &lt;feedback.csv&gt;</code><button type="button" class="secondary-btn" id="copy-feedback-command">Befehl kopieren</button></div>
+      {_details_more_html('3-Wochen-Horizont anzeigen', horizon_details_content)}
+
+      {_details_more_html('Operative Visualisierungen anzeigen', dispatcher_slideshow_html)}
+
+      <div class="two-col">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+            <h3 style="margin:0;">Heute voll (Top 3)</h3>
+            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+          </div>
+          {today_full_wrap_html}
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+            <h3 style="margin:0;">Diese Woche voll (+7 Tage, Top 3)</h3>
+            <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
+          </div>
+          {week1_full_wrap_html}
+        </div>
       </div>
 
+      {_details_more_html('Fahrer-Rückmeldung übernehmen', feedback_details_content)}
+
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-        <h3 style="margin:0;">Heutiger Tourvorschlag (Stoppliste in Fahrreihenfolge)</h3>
+        <h3 style="margin:0;">Heutiger Tourvorschlag (nächste 3 Stopps)</h3>
         <span class="stand-label muted" style="margin:0;" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Standort</th><th>Glas</th><th>Geschätzt heute</th><th>Priorität / Timer</th></tr></thead>
-          <tbody id="dispatcher-stops-tbody">{dispatcher_rows_html}</tbody>
-        </table>
-      </div>
+      {dispatcher_rows_html}
     </section>
 
     <section id="role-driver" class="role-panel driver-panel">
       <div class="section-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">
         <div>
           <h2>Fahrer &middot; heutige Tour (<span class="js-short-date">{html.escape(short_de)}</span>)</h2>
-          <p class="muted">Stoppliste in <strong>Fahrreihenfolge (nicht Dringlichkeits-Reihenfolge)</strong>. Nur die heute von der Disponentin freigegebene Tour &ndash; ohne Historie und ohne Charts. <strong class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</strong>.</p>
+          <p class="muted">Nur die heute von der Disponentin freigegebene Tour &ndash; nächste Stopps und Export. <strong class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</strong>.</p>
         </div>
         <span class="badge stand-badge stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>
       </div>
       <div id="driver-locked" class="coverage-hint">Diese Tour (<span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span>) ist noch nicht freigegeben.</div>
       <div id="driver-tour" hidden>
-        <div id="driver-summary-strip" class="kpi-grid" style="margin-bottom:12px;">
-          <div class="card"><div class="label">Heutige Schicht</div><div class="value" id="drv-kpi-stops">{m['num_stops']} Stopps &middot; {_fmt_de(m['planned_km'], 1)} km</div><div class="sub" id="drv-kpi-meta">{m['vehicles_needed']} Fahrzeug(e) &middot; {m['rounds']} Runden &middot; {_fmt_de(m['t_collected'], 1)} t &middot; <span class="stand-label" data-stand-date="{html.escape(date)}">{html.escape(stand_de)}</span></div></div>
-        </div>
         <div class="driver-actions">
           {maps_link}
           {maps_legs_html}
