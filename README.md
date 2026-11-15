@@ -4,7 +4,7 @@ Prototype for the PreZero Challenge at Future City Hackathon 2026.
 
 ## Problem
 
-PreZero empties glass containers in Heilbronn on fixed routes. Trucks visit half-empty bins while others overflow. For the demo day (2026-04-15) the data shows **106 critical physical sites** with **509 critical containers**, **488 of them estimated ≥ 110 % full**.
+PreZero empties glass containers in Heilbronn on fixed routes. Trucks visit half-empty bins while others overflow. For the demo day (2026-04-15) the data shows **127 critical physical sites** with **509 critical containers**, **488 of them estimated ≥ 110 % full**.
 
 ## Solution in 4 steps
 
