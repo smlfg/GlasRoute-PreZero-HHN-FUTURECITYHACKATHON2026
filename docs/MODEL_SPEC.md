@@ -4,6 +4,20 @@ Stand 15.11.2026. Gilt für `scripts/simulate_daily.py` und alle Szenario-Läufe
 Quellen-Label: **Daten** = `data/processed/cleaned_readings.csv` (11.701 Leerungen, 449 Standorte),
 **Mentor 15.11.** = PreZero-Mentor-Gespräch, **Config** = `prezero_config.json`, **Annahme** = von uns gesetzt.
 
+## 0. Kernmodell (hat Vorrang vor allem Folgenden)
+
+Erzeuger-Verbraucher-Problem **pro Container**, kein Routing-Problem.
+
+- **Erzeuger:** Haushalte füllen Container c mit nahezu konstanter Rate r_c (kg/Tag), geschätzt aus
+  Füllstand bei Leerung / Tage seit der letzten Leerung (jeder Besuch = messen + auf 0 setzen).
+- **Verbraucher:** Leerungstakt T_c (Tage) je Container.
+- **Ziel:** T_c an r_c anpassen: `T_c = (Kapazität − Sicherheitspuffer) / r_c`, nach jeder neuen Messung neu.
+- **Glasmenge pro Jahr = Σ_c r_c × 365** — in jedem Szenario identisch. Ein Szenario, das mehr sammelt, ist falsch.
+- **Routing/Flotte** ist nachgelagert: bündelt fällige Container zu Gebietstouren. Es ändert nie,
+  welches Glas existiert, nur wie effizient es geholt wird.
+- **Primäre Kennzahlen** (bei gleicher Tonnage): Ø Füllstand bei Leerung, Überläufe, eingesparte
+  Leerungen (Stopps). km/Flotte sind sekundär.
+
 ## 1. Grundsatz: ein Weltmodell, viele Politiken
 
 Jedes Szenario läuft gegen **dieselbe Welt** (Nachfrage = Glasanfall pro Container und Tag).
