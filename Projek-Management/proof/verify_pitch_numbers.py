@@ -114,5 +114,84 @@ check("raw ids", raw["Location_id"].nunique(), EXPECTED_RAW["ids"])
 fill = raw["fill_level_perc"].str.strip().str.lower()
 check("raw overfull", int((fill == "overfull").sum()), EXPECTED_RAW["overfull"])
 
+print("\n# Projek-Management/proof/demo_day_numbers.json")
+demo_day_path = ROOT / "Projek-Management" / "proof" / "demo_day_numbers.json"
+if not demo_day_path.is_file():
+    failures.append("demo_day_numbers.json missing")
+else:
+    demo_nums = json.loads(demo_day_path.read_text(encoding="utf-8"))
+    check("demo_day containers_due", demo_nums.get("containers_due"), 509)
+    check("demo_day in_tour_stops", demo_nums.get("in_tour_stops"), 25)
+    check("demo_day km_optimized", demo_nums.get("km_optimized"), 249.9)
+    check("demo_day km_status_quo_b1", demo_nums.get("km_status_quo_b1"), 1662.70)
+    check("demo_day vehicles", demo_nums.get("vehicles"), 4)
+    check("demo_day hours", demo_nums.get("hours"), 7.58)
+    check("demo_day tonnes", demo_nums.get("tonnes"), 142.82)
+
+    # UI cross-check
+    print("\n# UI cross-check against demo_day_numbers.json")
+    ui_snaps_match = re.search(
+        r'<script id="date-snapshots-payload" type="application/json">(.*?)</script>',
+        page,
+        re.S,
+    )
+    if ui_snaps_match:
+        ui_snaps = json.loads(ui_snaps_match.group(1).replace("<\\/", "</"))
+        demo_snap = ui_snaps.get(demo_nums.get("demo_date", "2026-04-15"), {})
+        snap_metrics = demo_snap.get("metrics", {})
+        check("ui planned_km", snap_metrics.get("planned_km"), demo_nums.get("km_optimized"))
+        check("ui num_stops", snap_metrics.get("num_stops"), demo_nums.get("in_tour_stops"))
+        check("ui vehicles", snap_metrics.get("vehicles_needed"), demo_nums.get("vehicles"))
+        check("ui longest_shift", snap_metrics.get("max_vehicle_shift_hours"), demo_nums.get("hours"))
+        check("ui tonnes", snap_metrics.get("t_collected"), demo_nums.get("tonnes"))
+        check("ui critical_containers", demo_snap.get("today_critical_containers"), demo_nums.get("containers_due"))
+
+    # Docs (docs/STATUS.md) cross-check
+    print("\n# Docs (docs/STATUS.md) cross-check against demo_day_numbers.json")
+    status_doc = (ROOT / "docs" / "STATUS.md").read_text(encoding="utf-8")
+    for key, text_pattern in [
+        ("demo_date", demo_nums.get("demo_date", "2026-04-15")),
+        ("containers_due", str(demo_nums.get("containers_due"))),
+        ("in_tour_stops", f"{demo_nums.get('in_tour_stops')} von {demo_nums.get('locations_due')}"),
+        ("km_optimized", f"{demo_nums.get('km_optimized'):.1f}".replace(".", ",")),
+        ("vehicles", f"{demo_nums.get('vehicles')} Fahrzeuge"),
+        ("hours", f"{demo_nums.get('hours'):.2f}".replace(".", ",")),
+        ("tonnes", f"{demo_nums.get('tonnes'):.1f}".replace(".", ",")),
+    ]:
+        ok = text_pattern in status_doc
+        print(f"{'OK  ' if ok else 'FAIL'}     docs/STATUS.md contains '{text_pattern}' ({key})")
+        if not ok:
+            failures.append(f"STATUS.md missing {text_pattern}")
+
+    # Pitch (Pitch/NOTES.md + Pitch/deck.md) cross-check
+    print("\n# Pitch (Pitch/NOTES.md + Pitch/deck.md) cross-check against demo_day_numbers.json")
+    notes_doc = (ROOT / "Pitch" / "NOTES.md").read_text(encoding="utf-8")
+    deck_doc = (ROOT / "Pitch" / "deck.md").read_text(encoding="utf-8")
+    for key, pattern in [
+        ("containers_due", f"{demo_nums.get('containers_due')}"),
+        ("in_tour_stops", f"{demo_nums.get('in_tour_stops')} von {demo_nums.get('locations_due')}"),
+        ("km_optimized", f"{demo_nums.get('km_optimized'):.1f}".replace(".", ",")),
+        ("km_status_quo_b1", "1.662,70"),
+        ("vehicles", f"{demo_nums.get('vehicles')} Fahrzeuge"),
+        ("hours", f"{demo_nums.get('hours'):.2f}".replace(".", ",")),
+        ("tonnes", "142,8"),
+    ]:
+        ok = pattern in notes_doc
+        print(f"{'OK  ' if ok else 'FAIL'}     Pitch/NOTES.md contains '{pattern}' ({key})")
+        if not ok:
+            failures.append(f"NOTES.md missing {pattern}")
+
+    for key, pattern in [
+        ("km_optimized_vs_b1", "249,9 km** vs. **1.662,70 km"),
+        ("stops", "25 Standorte bedient"),
+        ("vehicles", "4 Fahrzeuge im Einsatz"),
+        ("hours", "7,58 h"),
+        ("tonnes", "142,82 t"),
+    ]:
+        ok = pattern in deck_doc
+        print(f"{'OK  ' if ok else 'FAIL'}     Pitch/deck.md contains '{pattern}' ({key})")
+        if not ok:
+            failures.append(f"deck.md missing {pattern}")
+
 print("\nRESULT:", "ALL MATCH" if not failures else f"{len(failures)} MISMATCH: {failures}")
 sys.exit(1 if failures else 0)

@@ -1,0 +1,17 @@
+{
+  "demo_date": "2026-04-15",
+  "containers_due": 509,
+  "locations_due": 106,
+  "in_tour_stops": 25,
+  "in_tour_containers": 137,
+  "km_optimized": 249.9,
+  "km_status_quo_b1": 1662.7,
+  "km_full_round": 1202.24,
+  "saved_km_vs_b1": 1412.8,
+  "saved_pct_vs_b1": 85.0,
+  "vehicles": 4,
+  "rounds": 19,
+  "hours": 7.58,
+  "shift_hours_total": 22.68,
+  "tonnes": 142.82
+}
