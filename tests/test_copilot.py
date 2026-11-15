@@ -275,7 +275,20 @@ def test_simulate_what_if_compares_against_baseline_without_overwriting_route_fi
 
 
 def test_approve_tour_is_forbidden_as_chat_tool(tmp_path: Path) -> None:
-    assert ALLOWED_TOOLS == ("get_tour_overview", "explain_container", "simulate_what_if")
+    assert ALLOWED_TOOLS == (
+        "get_tour_overview",
+        "explain_container",
+        "simulate_what_if",
+        "get_today_hero",
+        "explain_measure_empty_model",
+        "get_benchmark_summary",
+        "get_depot_and_unloads",
+        "get_driver_export_info",
+        "get_location_planning_info",
+        "get_replay_comparison",
+        "get_cost_model",
+        "get_waste_streams_info",
+    )
 
     for forbidden in ("approve_tour", "approve_route", "approve", "reject_route"):
         with pytest.raises(CopilotValidationError) as exc_info:
@@ -559,3 +572,32 @@ def test_precompute_what_if_presets_and_explain_stop(tmp_path: Path) -> None:
     # Score is the estimated level now scaled to 110 % = 1.0; the timer explains it.
     assert c["score"] == pytest.approx(min(1.0, c["est_fill_level"] / 110.0), abs=0.002)
     assert "status" in c and "due_date" in c
+
+
+def test_copilot_all_ten_intents_return_structured_output_with_stand_and_sources() -> None:
+    """Verify each of the 10 domain intents returns non-empty German answer with Stand and Quellen."""
+    from prezero.copilot import ask_copilot, ALLOWED_TOOLS
+
+    assert len(ALLOWED_TOOLS) == 12
+
+    intents = [
+        ("Wie viele Container laufen heute über, wie viele sind in der Tour, warum fehlen welche?", "get_today_hero"),
+        ("Warum ist ein Container fällig?", "explain_measure_empty_model"),
+        ("Wie sieht der faire Benchmark aus?", "get_benchmark_summary"),
+        ("Wann entlädt Fahrzeug 2 am Depot?", "get_depot_and_unloads"),
+        ("Welche Export-Formate stehen dem Fahrer für die Tour zur Verfügung?", "get_driver_export_info"),
+        ("Was passiert mit einem neuen Container an Standort X?", "get_location_planning_info"),
+        ("Wie schneidet die Jahres-Simulation im Replay gegen die historische Praxis ab?", "get_replay_comparison"),
+        ("Welche Kosteneinsparungen und Hebel ergeben sich aus dem 3-Komponenten-Modell?", "get_cost_model"),
+        ("Welche Abfallströme und Fraktionen werden unterstützt?", "get_waste_streams_info"),
+        ("Wie sieht der Touren-Überblick aus?", "get_tour_overview"),
+    ]
+
+    for question, expected_tool in intents:
+        res = ask_copilot(question, date="2026-04-15", use_llm=False)
+        assert res["mode"] == "deterministic_fallback"
+        assert res["tool_name"] == expected_tool, f"Expected {expected_tool} for '{question}', got {res['tool_name']}"
+        out = res["formatted_output"]
+        assert "Stand 15.04.2026" in out or "Stand 2026-04-15" in out or "Stand:" in out
+        assert "Quellen:" in out
+        assert len(res["sources"]) > 0

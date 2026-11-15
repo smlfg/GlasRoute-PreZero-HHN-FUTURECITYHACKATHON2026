@@ -1056,6 +1056,7 @@ def _build_ask_html(ask_examples: list[dict[str, Any]]) -> str:
           <button id="copilot-ask-submit" type="button">Antwort anzeigen</button>
         </div>
         <div class="ask-examples">{buttons}</div>
+        <div id="copilot-ask-card-mount"></div>
         <pre id="copilot-ask-output" class="copilot-pre">{first_answer}</pre>
       </div>
     """
@@ -3609,6 +3610,83 @@ def build_ui(
       line-height: 1.45;
       overflow-x: auto;
     }}
+    .copilot-card-view {{
+      margin-top: 10px;
+      padding: 14px 16px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }}
+    .copilot-card-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }}
+    .copilot-card-title {{
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }}
+    .copilot-card-badge {{
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }}
+    .copilot-card-kpis {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }}
+    .copilot-kpi-item {{
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }}
+    .copilot-kpi-label {{
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+    .copilot-kpi-value {{
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+    }}
+    .copilot-card-bullets {{
+      margin: 0 0 12px;
+      padding-left: 20px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #334155;
+    }}
+    .copilot-card-bullets li {{
+      margin-bottom: 4px;
+    }}
+    .copilot-card-footer {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #64748b;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
+    }}
+    .copilot-card-sources {{
+      font-style: italic;
+    }}
     .ask-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }}
     .ask-controls input {{
       flex: 1 1 320px;
@@ -4620,16 +4698,51 @@ def build_ui(
         }});
       }});
 
+      function buildCardHtml(card) {{
+        if (!card) return "";
+        var kpisHtml = "";
+        var kpis = card.kpis || {{}};
+        for (var k in kpis) {{
+          if (Object.prototype.hasOwnProperty.call(kpis, k)) {{
+            kpisHtml += '<div class="copilot-kpi-item"><div class="copilot-kpi-label">' + esc(k) + '</div><div class="copilot-kpi-value">' + esc(String(kpis[k])) + '</div></div>';
+          }}
+        }}
+        var bulletsHtml = "";
+        var lines = card.summary_lines || [];
+        for (var i = 0; i < lines.length; i++) {{
+          bulletsHtml += '<li>' + esc(lines[i]) + '</li>';
+        }}
+        var sourcesStr = (card.sources || []).join(", ");
+        var statusStr = card.data_status || "simuliert";
+        return '<div class="copilot-card-view">' +
+          '<div class="copilot-card-header">' +
+            '<h3 class="copilot-card-title">' + esc(card.title || "Copilot-Antwort") + '</h3>' +
+            '<span class="copilot-card-badge">' + esc(card.badge || "Copilot") + ' &middot; ' + esc(card.stand || "") + '</span>' +
+          '</div>' +
+          (kpisHtml ? '<div class="copilot-card-kpis">' + kpisHtml + '</div>' : '') +
+          (bulletsHtml ? '<ul class="copilot-card-bullets">' + bulletsHtml + '</ul>' : '') +
+          '<div class="copilot-card-footer">' +
+            '<span class="copilot-card-sources">Quellen: ' + esc(sourcesStr || "-") + '</span>' +
+            '<span>Status: ' + esc(statusStr) + '</span>' +
+          '</div>' +
+        '</div>';
+      }}
+
       var askInput = document.getElementById("copilot-ask-input");
       var askSubmit = document.getElementById("copilot-ask-submit");
       var askOutput = document.getElementById("copilot-ask-output");
       var askBtns = document.querySelectorAll(".copilot-ask-btn");
+      var askCardMount = document.getElementById("copilot-ask-card-mount");
+
       function renderAskAnswer(idx) {{
         var ex = (insights.ask_examples || [])[idx];
         if (!ex || !askOutput) return;
         askBtns.forEach(function(b) {{ b.classList.toggle("active", Number(b.getAttribute("data-ask-idx")) === idx); }});
         if (askInput) askInput.value = ex.question;
         askOutput.textContent = ex.answer;
+        if (askCardMount) {{
+          askCardMount.innerHTML = ex.card ? buildCardHtml(ex.card) : "";
+        }}
       }}
       function resolveAskInput() {{
         if (!askInput || !askOutput) return;
@@ -4659,7 +4772,10 @@ def build_ui(
           renderAskAnswer(Number(btn.getAttribute("data-ask-idx")));
         }});
       }});
-      if (askBtns.length > 0) askBtns[0].classList.add("active");
+      if (askBtns.length > 0) {{
+        askBtns[0].classList.add("active");
+        renderAskAnswer(0);
+      }}
       if (askSubmit) askSubmit.addEventListener("click", resolveAskInput);
       if (askInput) {{
         askInput.addEventListener("change", resolveAskInput);
