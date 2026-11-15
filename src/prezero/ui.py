@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import html
 import json
+import re
 import statistics
 import tempfile
 from pathlib import Path
@@ -4502,8 +4503,7 @@ def build_ui(
           return '<div class="card">' +
             '<div class="label">' + esc(h.title) + ' &middot; KW ' + kwStr + ' (' + esc(h.target_de) + ')</div>' +
             '<div class="value">' + esc(h.critical) + ' kritisch</div>' +
-            '<div class="sub">Rot (&gt;80 %): ' + esc(h.red) + ' &middot; Übervoll (&ge;110 %): ' + esc(h.black) +
-            ' &middot; <span class="stand-label" data-stand-date="' + esc(dateIso) + '">' + esc(standDe) + '</span></div>' +
+            '<div class="sub">Rot (&gt;80 %): ' + esc(h.red) + ' &middot; Übervoll (&ge;110 %): ' + esc(h.black) + '</div>' +
             '</div>';
         }}).join("");
       }}
@@ -4636,7 +4636,7 @@ def build_ui(
         var drvMetaEl = document.getElementById("drv-kpi-meta");
         if (drvMetaEl) {{
           drvMetaEl.innerHTML = esc(activePlan.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(m.rounds || "-") + ' Runden &middot; ' +
-            fmtDe(m.t_collected, 1) + ' t &middot; <span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+            fmtDe(m.t_collected, 1) + ' t';
         }}
 
         var lockedEl = document.getElementById("driver-locked");
@@ -4649,7 +4649,7 @@ def build_ui(
             lockedEl.innerHTML = 'Tour freigegeben durch <strong>' + esc(activePlan.approved_by || "Disponent/in") + '</strong> &middot; Freigegebener Plan: <strong>' + esc(activePlan.vehicles_needed) + ' Fahrzeug(e)</strong> (' + esc(stopCount) + ' Stopps).';
           }} else {{
             lockedEl.className = "coverage-hint pending-approval";
-            lockedEl.innerHTML = 'Diese Tour (<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>) ist <strong>noch nicht freigegeben</strong> (Standardvorschlag: ' + esc(activePlan.vehicles_needed) + ' Fahrzeuge).';
+            lockedEl.innerHTML = 'Diese Tour ist <strong>noch nicht freigegeben</strong> (Standardvorschlag: ' + esc(activePlan.vehicles_needed) + ' Fahrzeuge).';
           }}
         }}
 
@@ -4689,16 +4689,14 @@ def build_ui(
         if (sumEl) {{
           sumEl.innerHTML = esc(vm.num_stops) + ' Stopps &middot; ' + fmtDe(vm.planned_km, 1) + ' km &middot; ' +
             esc(vm.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(vm.rounds) + ' Runden &middot; ' +
-            fmtDe(vm.shift_hours, 1) + ' h &middot; ' + fmtDe(vm.t_collected, 1) + ' t &middot; ' +
-            '<span class="stand-label" data-stand-date="' + esc(snap.date) + '">' + esc(snap.stand_de) + '</span>';
+            fmtDe(vm.shift_hours, 1) + ' h &middot; ' + fmtDe(vm.t_collected, 1) + ' t';
         }}
         var tv = document.getElementById("disp-kpi-tour-val");
         if (tv) tv.textContent = vm.num_stops + " Stopps · " + fmtDe(vm.planned_km, 1) + " km";
         var ts = document.getElementById("disp-kpi-tour-sub");
         if (ts) {{
           ts.innerHTML = esc(vm.vehicles_needed) + ' Fahrzeug(e) &middot; ' + esc(vm.rounds) + ' Runden &middot; ' +
-            fmtDe(vm.t_collected, 1) + ' t &middot; ' + fmtDe(snap.metrics.saved_pct, 1) + ' % gespart vs. alle leeren &middot; ' +
-            '<span class="stand-label" data-stand-date="' + esc(snap.date) + '">' + esc(snap.stand_de) + '</span>';
+            fmtDe(vm.t_collected, 1) + ' t &middot; ' + fmtDe(snap.metrics.saved_pct, 1) + ' % gespart vs. alle leeren';
         }}
         renderDispatcherSlides(snap, variantId);
       }}
@@ -4724,7 +4722,7 @@ def build_ui(
         var sEl = document.getElementById("disp-slide-subtitle");
         var snap = dateSnapshots[currentDate];
         if (sEl && snap) {{
-          sEl.innerHTML = esc(meta.sub) + ' &middot; <span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+          sEl.innerHTML = esc(meta.sub);
         }}
       }}
       function renderSvgHorizons(horizons) {{
@@ -4866,8 +4864,7 @@ def build_ui(
         if (todaySub) {{
           todaySub.innerHTML = esc(snap.today_red_containers) + ' Rot (&gt;80 %) &middot; ' +
             esc(snap.today_overfull_containers) + ' Übervoll (&ge;110 %) &middot; ' +
-            esc(m.total_critical_locations) + ' krit. Standorte &middot; ' +
-            '<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+            esc(m.total_critical_locations) + ' krit. Standorte';
         }}
         var w1Val = document.getElementById("disp-kpi-w1-val");
         if (w1Val) w1Val.textContent = snap.week1_critical_containers + " Container";
@@ -4875,8 +4872,7 @@ def build_ui(
         if (w1Sub) {{
           var dStr = (snap.week1_new_delta >= 0 ? "+" : "") + snap.week1_new_delta + " gegenüber heute";
           var kwS = String(snap.week1_kw < 10 ? "0" + snap.week1_kw : snap.week1_kw);
-          w1Sub.innerHTML = esc(dStr) + ' bis ' + esc(snap.week1_date_de) + ' (KW ' + kwS + ') &middot; ' +
-            '<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+          w1Sub.innerHTML = esc(dStr) + ' bis ' + esc(snap.week1_date_de) + ' (KW ' + kwS + ')';
         }}
         var k3Val = document.getElementById("disp-kpi-3w-val");
         if (k3Val && h.length >= 4) {{
@@ -4884,8 +4880,7 @@ def build_ui(
         }}
         var k3Sub = document.getElementById("disp-kpi-3w-sub");
         if (k3Sub) {{
-          k3Sub.innerHTML = 'Vorausschau bis ' + esc(snap.week3_end_de) + ' (kein Jahresverlauf) &middot; ' +
-            '<span class="stand-label" data-stand-date="' + esc(currentDate) + '">' + esc(snap.stand_de) + '</span>';
+          k3Sub.innerHTML = 'Vorausschau bis ' + esc(snap.week3_end_de) + ' (kein Jahresverlauf)';
         }}
         var hCards = document.getElementById("dispatcher-horizon-cards");
         if (hCards) hCards.innerHTML = renderHorizonCardsHtml(h, snap.stand_de, currentDate);
